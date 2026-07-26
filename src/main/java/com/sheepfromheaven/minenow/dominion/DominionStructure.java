@@ -1,16 +1,17 @@
 package com.sheepfromheaven.minenow.dominion;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class DominionStructure {
     private final UUID id;
     private String name;
     private StructureType type;
     private final BlockPos markerPos;
-    private final Set<BlockPos> roomBlocks;
+    private Set<BlockPos> roomBlocks;
 
     public DominionStructure(String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks) {
         this.id = UUID.randomUUID();
@@ -56,7 +57,41 @@ public class DominionStructure {
         return roomBlocks;
     }
 
+    public void setRoomBlocks(Set<BlockPos> roomBlocks) {
+        this.roomBlocks = roomBlocks;
+    }
+
     public boolean containsBlock(BlockPos pos) {
         return roomBlocks.contains(pos);
+    }
+
+    public List<RequirementStatus> checkRequirements(Level level) {
+        var interiorAndWalls = collectInteriorAndWalls();
+        var results = new ArrayList<RequirementStatus>();
+        for (var req : type.getRequirements()) {
+            int found = 0;
+            for (var bp : interiorAndWalls) {
+                var state = level.getBlockState(bp);
+                if (req.matcher().test(state)) {
+                    found++;
+                }
+            }
+            results.add(new RequirementStatus(req.displayName(), req.count(), found));
+        }
+        return results;
+    }
+
+    private Set<BlockPos> collectInteriorAndWalls() {
+        var all = new HashSet<>(roomBlocks);
+        for (var bp : roomBlocks) {
+            for (var dir : Direction.values()) {
+                all.add(bp.relative(dir));
+            }
+        }
+        return all;
+    }
+
+    public record RequirementStatus(String name, int required, int found) {
+        public boolean satisfied() { return found >= required; }
     }
 }

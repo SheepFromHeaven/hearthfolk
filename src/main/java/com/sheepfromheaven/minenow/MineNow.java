@@ -45,6 +45,8 @@ public final class MineNow {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         ModNetwork.register();
+        com.sheepfromheaven.minenow.dominion.StructureRequirementsConfig.load(
+                net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
     }
 
     private static void addCreative(BuildCreativeModeTabContentsEvent event) {

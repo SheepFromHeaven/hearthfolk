@@ -88,8 +88,10 @@ public class StructureMarkerBlock extends BaseEntityBlock {
                     dominion.addStructure(structure);
                     data.setDirty();
 
+                    var statuses = structure.checkRequirements(level);
                     if (level.getBlockEntity(pos) instanceof StructureMarkerBlockEntity be) {
                         be.setStructureData(structure.getName(), structure.getType(), dominion.getId(), structure.getId());
+                        be.setRequirementStatuses(statuses);
                     }
 
                     spawnDebugParticles(serverLevel, blocks, 50, 255, 50);
@@ -110,11 +112,19 @@ public class StructureMarkerBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (level.isClientSide()) {
+        if (level instanceof ServerLevel serverLevel) {
+            var data = DominionSavedData.get(serverLevel);
+            var dominion = data.findDominionContaining(pos);
+            if (dominion != null) {
+                var structure = dominion.getStructureAt(pos);
+                if (structure != null && level.getBlockEntity(pos) instanceof StructureMarkerBlockEntity be) {
+                    be.setRequirementStatuses(structure.checkRequirements(level));
+                }
+            }
+        } else if (level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof StructureMarkerBlockEntity be && be.getDominionId() != null) {
                 Minecraft.getInstance().setScreen(new StructureMarkerScreen(
-                        be.getStructureName(), be.getStructureType(), pos));
-                return InteractionResult.SUCCESS;
+                        be.getStructureName(), be.getStructureType(), pos, be.getRequirementStatuses()));
             }
         }
         return InteractionResult.SUCCESS;

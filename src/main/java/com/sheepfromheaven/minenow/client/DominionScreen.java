@@ -62,8 +62,8 @@ public class DominionScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
 
-        graphics.drawCenteredString(font, dominionName, width / 2, top + 8, 0xFFFFFF);
-        graphics.drawCenteredString(font, tier.getDisplayName(), width / 2, top + 22, 0xFFD700);
+        graphics.drawCenteredString(font, dominionName, width / 2, top + 8, 0xFFFFFFFF);
+        graphics.drawCenteredString(font, tier.getDisplayName(), width / 2, top + 22, 0xFFFFD700);
     }
 
     @Override
