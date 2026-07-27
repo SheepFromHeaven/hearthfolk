@@ -10,10 +10,15 @@ import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.entity.ModEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.AABB;
 
 import java.util.Set;
@@ -181,6 +186,43 @@ public class DominionTests {
                     "Inhabitant's work structure should point at the new job only");
             helper.assertTrue(jobB.getId().equals(inhabitant.getWorkStructureId()),
                     "Inhabitant entity's work structure should point at the new job only");
+        });
+    }
+
+    public static void assigningHouseReservesBedFromVanillaVillagers(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var bedRelPos = new BlockPos(3, 1, 3);
+        helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.NORTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+
+        var level = helper.getLevel();
+        var bedPos = helper.absolutePos(bedRelPos);
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+        var structure = new DominionStructure("Home", StructureType.HOUSE, bedPos, Set.of(bedPos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(1, 1, 1));
+        inhabitant.setDominionId(dominion.getId());
+        var dominionInhabitant = new DominionInhabitant(inhabitant.getUUID(), "Test Inhabitant");
+        dominion.addInhabitant(dominionInhabitant);
+
+        var poiManager = level.getPoiManager();
+        boolean freeBeforeAssign = poiManager.getCountInRange(type -> type.is(PoiTypes.HOME), bedPos, 1, PoiManager.Occupancy.HAS_SPACE) > 0;
+
+        dominion.assignHouse(structure, dominionInhabitant.getId(), level);
+        boolean freeAfterAssign = poiManager.getCountInRange(type -> type.is(PoiTypes.HOME), bedPos, 1, PoiManager.Occupancy.HAS_SPACE) > 0;
+
+        dominion.assignHouse(structure, null, level);
+        boolean freeAfterUnassign = poiManager.getCountInRange(type -> type.is(PoiTypes.HOME), bedPos, 1, PoiManager.Occupancy.HAS_SPACE) > 0;
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(freeBeforeAssign, "Bed should have a free ticket before it's assigned to an inhabitant");
+            helper.assertTrue(!freeAfterAssign, "Bed should have no free tickets left for a vanilla villager once assigned to an inhabitant");
+            helper.assertTrue(freeAfterUnassign, "Bed should have a free ticket again once unassigned from the inhabitant");
         });
     }
 }

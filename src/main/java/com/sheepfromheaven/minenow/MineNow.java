@@ -58,6 +58,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.DominionTests::assigningNewHomeUnassignsInhabitantFromPreviousHome);
                     helper.register("assigning_new_job_unassigns_inhabitant_from_previous_job",
                             com.sheepfromheaven.minenow.gametest.DominionTests::assigningNewJobUnassignsInhabitantFromPreviousJob);
+                    helper.register("assigning_house_reserves_bed_from_vanilla_villagers",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::assigningHouseReservesBedFromVanillaVillagers);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

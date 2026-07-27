@@ -247,7 +247,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         }
         var inhabitant = dominion.getInhabitantByEntityUuid(getUUID());
         if (inhabitant != null) {
-            dominion.removeInhabitant(inhabitant.getId());
+            dominion.removeInhabitant(inhabitant.getId(), serverLevel);
             data.setDirty();
         }
         var owner = serverLevel.getServer().getPlayerList().getPlayer(dominion.getOwnerUuid());

@@ -3,6 +3,10 @@ package com.sheepfromheaven.minenow.dominion;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.state.properties.BedPart;
 
 import java.util.*;
 
@@ -88,6 +92,7 @@ public class Dominion {
             }
         }
         structure.setAssignedInhabitantId(null);
+        releaseHomePoi(structure, level);
     }
 
     public void unassignWorker(DominionStructure structure, ServerLevel level) {
@@ -127,6 +132,36 @@ public class Dominion {
         if (entity instanceof InhabitantEntity ie) {
             ie.setHomeStructureId(structure.getId());
         }
+        claimHomePoi(structure, level);
+    }
+
+    /**
+     * Reserves the structure's bed as a vanilla "home" point of interest so wandering vanilla
+     * villagers can't claim it as their own bed once it's assigned to an inhabitant.
+     */
+    private void claimHomePoi(DominionStructure structure, ServerLevel level) {
+        var bedPos = resolveHomePoiPos(structure, level);
+        if (bedPos == null) return;
+        level.getPoiManager().take(type -> type.is(PoiTypes.HOME), (type, pos) -> pos.equals(bedPos), bedPos, 1);
+    }
+
+    private void releaseHomePoi(DominionStructure structure, ServerLevel level) {
+        var bedPos = resolveHomePoiPos(structure, level);
+        if (bedPos == null) return;
+        var poiManager = level.getPoiManager();
+        if (poiManager.exists(bedPos, type -> type.is(PoiTypes.HOME))) {
+            poiManager.release(bedPos);
+        }
+    }
+
+    private BlockPos resolveHomePoiPos(DominionStructure structure, ServerLevel level) {
+        var bedPos = structure.findBedPos(level);
+        var state = level.getBlockState(bedPos);
+        if (!state.is(BlockTags.BEDS)) return null;
+        if (state.getValue(BedBlock.PART) != BedPart.HEAD) {
+            bedPos = bedPos.relative(BedBlock.getConnectedDirection(state));
+        }
+        return bedPos;
     }
 
     /**
@@ -184,13 +219,14 @@ public class Dominion {
         inhabitants.put(inhabitant.getId(), inhabitant);
     }
 
-    public void removeInhabitant(UUID inhabitantId) {
+    public void removeInhabitant(UUID inhabitantId, ServerLevel level) {
         var inhabitant = inhabitants.remove(inhabitantId);
         if (inhabitant == null) return;
         if (inhabitant.getHomeStructureId() != null) {
             var structure = structures.get(inhabitant.getHomeStructureId());
             if (structure != null) {
                 structure.setAssignedInhabitantId(null);
+                releaseHomePoi(structure, level);
             }
         }
         if (inhabitant.getWorkStructureId() != null) {
