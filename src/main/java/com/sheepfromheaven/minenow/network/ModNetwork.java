@@ -17,8 +17,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.MenuType;
+import com.sheepfromheaven.minenow.inventory.InhabitantInventoryMenu;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -156,7 +155,7 @@ public class ModNetwork {
                             if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
                             player.openMenu(new SimpleMenuProvider(
                                     (containerId, playerInv, p) ->
-                                            new ChestMenu(MenuType.GENERIC_9x1, containerId, playerInv, inhabitant.getInventory(), 1),
+                                            new InhabitantInventoryMenu(containerId, playerInv, inhabitant, inhabitant.getInventory()),
                                     inhabitant.getName()));
                         })
                         .addMain(AssignHousePacket.class, AssignHousePacket.CODEC, (msg, ctx) -> {

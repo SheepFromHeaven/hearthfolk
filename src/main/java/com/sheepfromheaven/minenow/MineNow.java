@@ -28,6 +28,7 @@ public final class MineNow {
         ModItems.register(modBusGroup);
         ModCreativeTabs.register(modBusGroup);
         com.sheepfromheaven.minenow.entity.ModEntities.register(modBusGroup);
+        com.sheepfromheaven.minenow.inventory.ModMenus.register(modBusGroup);
 
         FMLCommonSetupEvent.getBus(modBusGroup).addListener(this::commonSetup);
 
@@ -56,6 +57,9 @@ public final class MineNow {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
+            event.enqueueWork(() -> net.minecraft.client.gui.screens.MenuScreens.register(
+                    com.sheepfromheaven.minenow.inventory.ModMenus.INHABITANT_INVENTORY.get(),
+                    com.sheepfromheaven.minenow.client.InhabitantInventoryScreen::new));
         }
     }
 

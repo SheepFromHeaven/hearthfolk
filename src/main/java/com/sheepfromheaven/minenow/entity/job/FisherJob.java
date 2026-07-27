@@ -10,7 +10,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -94,7 +93,7 @@ public class FisherJob implements Job {
             if (level.getBlockEntity(pos) instanceof Container container) {
                 var rod = ContainerUtil.extractStack(container, Items.FISHING_ROD);
                 if (!rod.isEmpty()) {
-                    ContainerUtil.insertItem(inhabitant.getInventory(), rod);
+                    inhabitant.setItemSlot(EquipmentSlot.MAINHAND, rod);
                     missingItem = null;
                     phase = Phase.GOTO_WATER;
                     return true;
@@ -197,9 +196,7 @@ public class FisherJob implements Job {
 
     private boolean tickCatching(InhabitantEntity inhabitant, ServerLevel level) {
         keepOnShore(inhabitant);
-        var inventory = inhabitant.getInventory();
-        int rodSlot = findRodSlot(inventory);
-        var rod = rodSlot >= 0 ? inventory.getItem(rodSlot) : ItemStack.EMPTY;
+        var rod = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
         if (waterPos != null && !rod.isEmpty()) {
             var lootParams = new LootParams.Builder(level)
                     .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(waterPos))
@@ -208,16 +205,13 @@ public class FisherJob implements Job {
                     .create(LootContextParamSets.FISHING);
             var lootTable = level.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
             for (var caught : lootTable.getRandomItems(lootParams)) {
-                inventory.addItem(caught);
+                inhabitant.getInventory().addItem(caught);
             }
             rod.hurtAndBreak(ROD_DAMAGE_PER_CATCH, inhabitant, EquipmentSlot.MAINHAND);
-            if (rod.isEmpty()) {
-                inventory.setItem(rodSlot, ItemStack.EMPTY);
-            }
         }
 
-        boolean rodBroken = !hasRod(inhabitant);
-        boolean full = !inventory.canAddItem(new ItemStack(Items.COD));
+        boolean rodBroken = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
+        boolean full = !inhabitant.getInventory().canAddItem(new ItemStack(Items.COD));
         if (rodBroken) {
             phase = Phase.RETURN_TO_HUT;
         } else if (full || !isDaytime(level)) {
@@ -277,16 +271,7 @@ public class FisherJob implements Job {
     }
 
     private boolean hasRod(InhabitantEntity inhabitant) {
-        return findRodSlot(inhabitant.getInventory()) >= 0;
-    }
-
-    private int findRodSlot(SimpleContainer inventory) {
-        for (int i = 0; i < inventory.getContainerSize(); i++) {
-            if (inventory.getItem(i).is(Items.FISHING_ROD)) {
-                return i;
-            }
-        }
-        return -1;
+        return inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.FISHING_ROD);
     }
 
     private boolean isDaytime(ServerLevel level) {

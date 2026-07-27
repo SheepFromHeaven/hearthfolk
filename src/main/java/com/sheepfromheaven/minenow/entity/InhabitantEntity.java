@@ -46,7 +46,7 @@ import java.util.UUID;
 
 public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier {
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
-    private final SimpleContainer inventory = new SimpleContainer(9);
+    private final SimpleContainer inventory = new SimpleContainer(2);
 
     private UUID dominionId;
     private UUID homeStructureId;
