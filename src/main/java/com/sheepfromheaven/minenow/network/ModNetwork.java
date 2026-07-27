@@ -188,6 +188,42 @@ public class ModNetwork {
                             dominion.assignWorker(structure, inhabitantId, level);
                             data.setDirty();
                         })
+                        .addMain(SetWorkAreaCenterPacket.class, SetWorkAreaCenterPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.findDominionContaining(msg.markerPos());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            var structure = dominion.getStructureAt(msg.markerPos());
+                            if (structure == null || !structure.getType().getJobType().map(t -> t.hasWorkArea()).orElse(false)) return;
+                            if (!isWithinStructureRange(structure, msg.markerPos(), msg.center())) return;
+
+                            structure.setWorkAreaCenter(msg.center());
+                            data.setDirty();
+                            if (level.getBlockEntity(msg.markerPos()) instanceof StructureMarkerBlockEntity be) {
+                                be.setWorkArea(structure.getWorkAreaCenter(), structure.getWorkAreaRadius());
+                            }
+                            var center = structure.getWorkAreaCenter();
+                            player.displayClientMessage(Component.literal(structure.getName() + "'s work area centered on "
+                                    + center.getX() + ", " + center.getY() + ", " + center.getZ()), false);
+                        })
+                        .addMain(SetWorkAreaRadiusPacket.class, SetWorkAreaRadiusPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.findDominionContaining(msg.markerPos());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            var structure = dominion.getStructureAt(msg.markerPos());
+                            if (structure == null || !structure.getType().getJobType().map(t -> t.hasWorkArea()).orElse(false)) return;
+
+                            structure.setWorkAreaRadius(msg.radius());
+                            data.setDirty();
+                            if (level.getBlockEntity(msg.markerPos()) instanceof StructureMarkerBlockEntity be) {
+                                be.setWorkArea(structure.getWorkAreaCenter(), structure.getWorkAreaRadius());
+                            }
+                        })
                 )
                 .clientbound(flow -> flow
                         .addMain(OpenDominionScreenPacket.class, OpenDominionScreenPacket.CODEC,
@@ -252,7 +288,8 @@ public class ModNetwork {
         CHANNEL.send(new OpenStructureScreenPacket(
                 structure.getName(), structure.getType().name(), structure.getMarkerPos(),
                 inhabitants, assignedId != null ? assignedId.toString() : "",
-                assignedWorkerId != null ? assignedWorkerId.toString() : ""
+                assignedWorkerId != null ? assignedWorkerId.toString() : "",
+                structure.getWorkAreaCenter(), structure.getWorkAreaRadius()
         ), PacketDistributor.PLAYER.with(player));
     }
 
@@ -262,6 +299,26 @@ public class ModNetwork {
 
     public static void sendAssignWorker(BlockPos markerPos, String inhabitantId) {
         CHANNEL.send(new AssignWorkerPacket(markerPos, inhabitantId), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendSetWorkAreaCenter(BlockPos markerPos, BlockPos center) {
+        CHANNEL.send(new SetWorkAreaCenterPacket(markerPos, center), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendSetWorkAreaRadius(BlockPos markerPos, int radius) {
+        CHANNEL.send(new SetWorkAreaRadiusPacket(markerPos, radius), PacketDistributor.SERVER.noArg());
+    }
+
+    /**
+     * The work area center must stay within the structure's fixed horizontal range around its marker
+     * (not the work area itself). Height is intentionally unbounded - a marker placed high up (e.g. in a
+     * building's roof) should still be able to center on ground level far below, or vice versa.
+     */
+    private static boolean isWithinStructureRange(com.sheepfromheaven.minenow.dominion.DominionStructure structure, BlockPos markerPos, BlockPos candidate) {
+        int radius = structure.getType().getRangeRadius();
+        int dx = candidate.getX() - markerPos.getX();
+        int dz = candidate.getZ() - markerPos.getZ();
+        return dx * dx + dz * dz <= radius * radius;
     }
 
     public record RenameDominionPacket(BlockPos bannerPos, String newName) {
@@ -349,8 +406,25 @@ public class ModNetwork {
         );
     }
 
+    public record SetWorkAreaCenterPacket(BlockPos markerPos, BlockPos center) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, SetWorkAreaCenterPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, SetWorkAreaCenterPacket::markerPos,
+                BlockPos.STREAM_CODEC, SetWorkAreaCenterPacket::center,
+                SetWorkAreaCenterPacket::new
+        );
+    }
+
+    public record SetWorkAreaRadiusPacket(BlockPos markerPos, int radius) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, SetWorkAreaRadiusPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, SetWorkAreaRadiusPacket::markerPos,
+                ByteBufCodecs.VAR_INT, SetWorkAreaRadiusPacket::radius,
+                SetWorkAreaRadiusPacket::new
+        );
+    }
+
     public record OpenStructureScreenPacket(String structureName, String structureType, BlockPos markerPos,
-                                            String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
+                                            String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
+                                            BlockPos workAreaCenter, int workAreaRadius) {
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenStructureScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureName,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureType,
@@ -358,6 +432,8 @@ public class ModNetwork {
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::inhabitantData,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedInhabitantId,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedWorkerId,
+                BlockPos.STREAM_CODEC, OpenStructureScreenPacket::workAreaCenter,
+                ByteBufCodecs.VAR_INT, OpenStructureScreenPacket::workAreaRadius,
                 OpenStructureScreenPacket::new
         );
     }

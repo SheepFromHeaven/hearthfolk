@@ -88,11 +88,22 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeSkipsLogPillarWithoutLeaves);
                     helper.register("find_tree_in_range_ignores_nearby_log_house_and_still_finds_real_tree",
                             com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree);
+                    helper.register("default_work_area_is_centered_on_marker_with_default_radius",
+                            com.sheepfromheaven.minenow.gametest.WorkAreaTests::defaultWorkAreaIsCenteredOnMarkerWithDefaultRadius);
+                    helper.register("setting_work_area_center_and_radius_is_respected",
+                            com.sheepfromheaven.minenow.gametest.WorkAreaTests::settingWorkAreaCenterAndRadiusIsRespected);
+                    helper.register("work_area_radius_is_clamped_to_valid_range",
+                            com.sheepfromheaven.minenow.gametest.WorkAreaTests::workAreaRadiusIsClampedToValidRange);
+                    helper.register("find_tree_in_range_ignores_tree_outside_moved_work_area",
+                            com.sheepfromheaven.minenow.gametest.WorkAreaTests::findTreeInRangeIgnoresTreeOutsideMovedWorkArea);
+                    helper.register("find_tree_in_range_finds_tree_after_moving_work_area_center",
+                            com.sheepfromheaven.minenow.gametest.WorkAreaTests::findTreeInRangeFindsTreeAfterMovingWorkAreaCenter);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             registerRenderers();
             com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(context);
+            com.sheepfromheaven.minenow.client.WorldPickMode.register();
         }
     }
 

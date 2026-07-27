@@ -22,6 +22,8 @@ public class StructureMarkerBlockEntity extends BlockEntity {
     private List<DominionStructure.RequirementStatus> requirementStatuses = new ArrayList<>();
     private List<DominionStructure.RequirementStatus> rangeRequirementStatuses = new ArrayList<>();
     private DominionStructure.RequirementStatus spaceStatus = null;
+    private BlockPos workAreaCenter = null;
+    private int workAreaRadius = 0;
 
     public StructureMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.STRUCTURE_MARKER_BE.get(), pos, state);
@@ -79,10 +81,28 @@ public class StructureMarkerBlockEntity extends BlockEntity {
         }
     }
 
+    public BlockPos getWorkAreaCenter() {
+        return workAreaCenter;
+    }
+
+    public int getWorkAreaRadius() {
+        return workAreaRadius;
+    }
+
+    public void setWorkArea(BlockPos center, int radius) {
+        this.workAreaCenter = center;
+        this.workAreaRadius = radius;
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
+    }
+
     public void refreshStatuses(DominionStructure structure, Level level) {
         setRequirementStatuses(structure.checkRequirements(level));
         setSpaceStatus(structure.getSpaceStatus());
         setRangeRequirementStatuses(structure.checkRangeRequirements(level));
+        setWorkArea(structure.getWorkAreaCenter(), structure.getWorkAreaRadius());
     }
 
     public void setStructureData(String name, StructureType type, UUID dominionId, UUID structureId) {
@@ -125,6 +145,12 @@ public class StructureMarkerBlockEntity extends BlockEntity {
                 child.putInt("Found", rs.found());
             }
         }
+        if (workAreaCenter != null) {
+            output.putInt("WorkAreaCenterX", workAreaCenter.getX());
+            output.putInt("WorkAreaCenterY", workAreaCenter.getY());
+            output.putInt("WorkAreaCenterZ", workAreaCenter.getZ());
+            output.putInt("WorkAreaRadius", workAreaRadius);
+        }
     }
 
     @Override
@@ -151,20 +177,35 @@ public class StructureMarkerBlockEntity extends BlockEntity {
                     child.getIntOr("Required", 0),
                     child.getIntOr("Found", 0)));
         }
+        workAreaCenter = input.getInt("WorkAreaRadius").isPresent()
+                ? new BlockPos(input.getIntOr("WorkAreaCenterX", 0), input.getIntOr("WorkAreaCenterY", 0), input.getIntOr("WorkAreaCenterZ", 0))
+                : null;
+        workAreaRadius = input.getIntOr("WorkAreaRadius", 0);
     }
 
     @Override
     public AABB getRenderBoundingBox() {
+        var box = new AABB(getBlockPos());
+
         int radius = structureType.getRangeRadius();
-        if (radius <= 0) {
-            return new AABB(getBlockPos());
+        if (radius > 0) {
+            int height = structureType.getRangeHeight();
+            var pos = getBlockPos();
+            box = box.minmax(new AABB(
+                    pos.getX() - radius, pos.getY() - height, pos.getZ() - radius,
+                    pos.getX() + radius + 1, pos.getY() + height + 1, pos.getZ() + radius + 1
+            ));
         }
-        int height = structureType.getRangeHeight();
-        var pos = getBlockPos();
-        return new AABB(
-                pos.getX() - radius, pos.getY() - height, pos.getZ() - radius,
-                pos.getX() + radius + 1, pos.getY() + height + 1, pos.getZ() + radius + 1
-        );
+
+        if (workAreaCenter != null && workAreaRadius > 0) {
+            int height = structureType.getRangeHeight();
+            box = box.minmax(new AABB(
+                    workAreaCenter.getX() - workAreaRadius, workAreaCenter.getY() - height, workAreaCenter.getZ() - workAreaRadius,
+                    workAreaCenter.getX() + workAreaRadius + 1, workAreaCenter.getY() + height + 1, workAreaCenter.getZ() + workAreaRadius + 1
+            ));
+        }
+
+        return box;
     }
 
     @Override

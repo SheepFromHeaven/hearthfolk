@@ -28,6 +28,7 @@ public class ClientNetworkHandlers {
     public static void openStructureScreen(ModNetwork.OpenStructureScreenPacket msg) {
         Minecraft.getInstance().execute(() -> Minecraft.getInstance().setScreen(new StructureMarkerScreen(
                 msg.structureName(), StructureType.valueOf(msg.structureType()), msg.markerPos(),
-                msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId())));
+                msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId(),
+                msg.workAreaCenter(), msg.workAreaRadius())));
     }
 }

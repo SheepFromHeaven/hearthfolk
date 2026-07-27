@@ -13,6 +13,10 @@ import net.minecraft.world.level.Level;
 import java.util.*;
 
 public class DominionStructure {
+    public static final int MIN_WORK_AREA_RADIUS = 2;
+    public static final int MAX_WORK_AREA_RADIUS = 6;
+    public static final int DEFAULT_WORK_AREA_RADIUS = 6;
+
     private final UUID id;
     private String name;
     private StructureType type;
@@ -21,6 +25,9 @@ public class DominionStructure {
     private UUID assignedInhabitantId;
     private UUID assignedWorkerId;
     private BlockPos cachedBedPos;
+    /** Offset from {@link #markerPos}; {@link BlockPos#ZERO} means the work area is centered on the marker. */
+    private BlockPos workAreaOffset = BlockPos.ZERO;
+    private int workAreaRadius = DEFAULT_WORK_AREA_RADIUS;
 
     public DominionStructure(String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks) {
         this.id = UUID.randomUUID();
@@ -31,7 +38,8 @@ public class DominionStructure {
     }
 
     public DominionStructure(UUID id, String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks,
-                              UUID assignedInhabitantId, UUID assignedWorkerId) {
+                              UUID assignedInhabitantId, UUID assignedWorkerId,
+                              BlockPos workAreaOffset, int workAreaRadius) {
         this.id = id;
         this.name = name;
         this.type = type;
@@ -39,6 +47,33 @@ public class DominionStructure {
         this.roomBlocks = roomBlocks;
         this.assignedInhabitantId = assignedInhabitantId;
         this.assignedWorkerId = assignedWorkerId;
+        this.workAreaOffset = workAreaOffset;
+        this.workAreaRadius = clampWorkAreaRadius(workAreaRadius);
+    }
+
+    public BlockPos getWorkAreaCenter() {
+        return markerPos.offset(workAreaOffset);
+    }
+
+    /** The raw offset from the marker, as persisted by the save codec. */
+    public BlockPos getWorkAreaOffset() {
+        return workAreaOffset;
+    }
+
+    public void setWorkAreaCenter(BlockPos center) {
+        this.workAreaOffset = center.subtract(markerPos);
+    }
+
+    public int getWorkAreaRadius() {
+        return workAreaRadius;
+    }
+
+    public void setWorkAreaRadius(int radius) {
+        this.workAreaRadius = clampWorkAreaRadius(radius);
+    }
+
+    private static int clampWorkAreaRadius(int radius) {
+        return Math.clamp(radius, MIN_WORK_AREA_RADIUS, MAX_WORK_AREA_RADIUS);
     }
 
     public UUID getId() {
@@ -186,16 +221,14 @@ public class DominionStructure {
      * log blocks that turn out to be part of a player-built structure rather than a real trunk.
      */
     public Optional<List<BlockPos>> findTreeInRange(Level level) {
-        int radius = type.getRangeRadius();
+        int radius = workAreaRadius;
         int height = type.getRangeHeight();
-        if (radius <= 0) {
-            return Optional.empty();
-        }
+        var center = getWorkAreaCenter();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (dx * dx + dz * dz > radius * radius) continue;
                 for (int dy = -height; dy <= height; dy++) {
-                    var pos = markerPos.offset(dx, dy, dz);
+                    var pos = center.offset(dx, dy, dz);
                     if (level.getBlockState(pos).is(BlockTags.LOGS)) {
                         var tree = TreeScanner.findTree(level, pos);
                         if (tree.isPresent()) {

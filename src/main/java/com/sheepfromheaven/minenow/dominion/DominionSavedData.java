@@ -20,12 +20,15 @@ public class DominionSavedData extends SavedData {
                     BlockPos.CODEC.fieldOf("markerPos").forGetter(DominionStructure::getMarkerPos),
                     BlockPos.CODEC.listOf().fieldOf("roomBlocks").forGetter(s -> new ArrayList<>(s.getRoomBlocks())),
                     Codec.STRING.optionalFieldOf("assignedInhabitantId", "").forGetter(s -> s.getAssignedInhabitantId() != null ? s.getAssignedInhabitantId().toString() : ""),
-                    Codec.STRING.optionalFieldOf("assignedWorkerId", "").forGetter(s -> s.getAssignedWorkerId() != null ? s.getAssignedWorkerId().toString() : "")
-            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId) ->
+                    Codec.STRING.optionalFieldOf("assignedWorkerId", "").forGetter(s -> s.getAssignedWorkerId() != null ? s.getAssignedWorkerId().toString() : ""),
+                    BlockPos.CODEC.optionalFieldOf("workAreaOffset", BlockPos.ZERO).forGetter(DominionStructure::getWorkAreaOffset),
+                    Codec.INT.optionalFieldOf("workAreaRadius", DominionStructure.DEFAULT_WORK_AREA_RADIUS).forGetter(DominionStructure::getWorkAreaRadius)
+            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius) ->
                     new DominionStructure(UUID.fromString(id), name, StructureType.valueOf(type),
                             markerPos, new HashSet<>(roomBlocks),
                             assignedId.isEmpty() ? null : UUID.fromString(assignedId),
-                            workerId.isEmpty() ? null : UUID.fromString(workerId))
+                            workerId.isEmpty() ? null : UUID.fromString(workerId),
+                            workAreaOffset, workAreaRadius)
             )
     );
 

@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.client;
 
 import com.sheepfromheaven.minenow.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
+import com.sheepfromheaven.minenow.dominion.JobType;
 import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.client.Minecraft;
@@ -33,7 +34,7 @@ public class StructureMarkerScreen extends Screen {
     private static final int SATISFIED = 0xFF3CB043;
     private static final int UNSATISFIED = 0xFFCC3333;
 
-    private enum Tab { GENERAL, REQUIREMENTS }
+    private enum Tab { GENERAL, REQUIREMENTS, WORK_AREA }
 
     private String structureName;
     private StructureType structureType;
@@ -41,6 +42,8 @@ public class StructureMarkerScreen extends Screen {
     private final List<InhabitantEntry> inhabitants;
     private int selectedInhabitantIndex;
     private int selectedWorkerIndex;
+    private BlockPos workAreaCenter;
+    private int workAreaRadius;
 
     private Tab currentTab = Tab.GENERAL;
     private EditBox nameField;
@@ -49,14 +52,18 @@ public class StructureMarkerScreen extends Screen {
 
     private record GeneralLayout(int residentY, int workerY, int rangeToggleY, int totalExtra) {}
     private record RequirementsLayout(int spaceY, int reqY, int rangeReqY, int totalExtra) {}
+    private record WorkAreaLayout(int sliderY, int buttonY, int toggleY, int totalExtra) {}
 
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
-                                 String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
+                                 String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
+                                 BlockPos workAreaCenter, int workAreaRadius) {
         super(Component.literal("Structure"));
         this.structureName = structureName;
         this.structureType = structureType;
         this.markerPos = markerPos;
         this.inhabitants = parseInhabitants(inhabitantData);
+        this.workAreaCenter = workAreaCenter;
+        this.workAreaRadius = workAreaRadius;
         this.selectedInhabitantIndex = 0;
         for (int i = 0; i < inhabitants.size(); i++) {
             if (inhabitants.get(i).id().equals(assignedInhabitantId)) {
@@ -124,6 +131,10 @@ public class StructureMarkerScreen extends Screen {
         return structureType.getJobType().isPresent();
     }
 
+    private boolean hasWorkArea() {
+        return structureType.getJobType().map(JobType::hasWorkArea).orElse(false);
+    }
+
     private boolean hasSpaceRequirement() {
         return structureType.getMinSize() > 0;
     }
@@ -183,8 +194,21 @@ public class StructureMarkerScreen extends Screen {
         return new RequirementsLayout(spaceY, reqY, rangeReqY, y - CONTENT_START);
     }
 
+    private WorkAreaLayout computeWorkAreaLayout() {
+        int y = CONTENT_START + TEXT_ROW_HEIGHT;
+        int sliderY = y;
+        y += BUTTON_ROW_HEIGHT;
+        int buttonY = y;
+        y += BUTTON_ROW_HEIGHT;
+        int toggleY = y;
+        y += BUTTON_ROW_HEIGHT;
+        return new WorkAreaLayout(sliderY, buttonY, toggleY, y - CONTENT_START);
+    }
+
     private int panelHeight() {
-        int extra = Math.max(computeGeneralLayout().totalExtra(), computeRequirementsLayout().totalExtra());
+        int extra = Math.max(computeGeneralLayout().totalExtra(),
+                Math.max(computeRequirementsLayout().totalExtra(),
+                        hasWorkArea() ? computeWorkAreaLayout().totalExtra() : 0));
         return BASE_HEIGHT + extra;
     }
 
@@ -206,28 +230,64 @@ public class StructureMarkerScreen extends Screen {
         return label;
     }
 
+    private Component tabLabel(Tab tab) {
+        return switch (tab) {
+            case GENERAL -> Component.literal("General");
+            case REQUIREMENTS -> requirementsTabLabel();
+            case WORK_AREA -> Component.literal("Work Area");
+        };
+    }
+
     @Override
     protected void init() {
         super.init();
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - panelHeight()) / 2;
-        int tabWidth = (PANEL_WIDTH - 20) / 2;
 
-        addRenderableWidget(new NiceTabButton(left + 10, top + TAB_Y, tabWidth, TAB_HEIGHT,
-                Component.literal("General"), () -> currentTab == Tab.GENERAL, () -> {
-            currentTab = Tab.GENERAL;
-            rebuildWidgets();
-        }));
+        var tabs = new ArrayList<Tab>();
+        tabs.add(Tab.GENERAL);
+        tabs.add(Tab.REQUIREMENTS);
+        if (hasWorkArea()) tabs.add(Tab.WORK_AREA);
+        int tabWidth = (PANEL_WIDTH - 20) / tabs.size();
 
-        addRenderableWidget(new NiceTabButton(left + 10 + tabWidth, top + TAB_Y, tabWidth, TAB_HEIGHT,
-                requirementsTabLabel(), () -> currentTab == Tab.REQUIREMENTS, () -> {
-            currentTab = Tab.REQUIREMENTS;
-            rebuildWidgets();
-        }));
+        for (int i = 0; i < tabs.size(); i++) {
+            var tab = tabs.get(i);
+            addRenderableWidget(new NiceTabButton(left + 10 + tabWidth * i, top + TAB_Y, tabWidth, TAB_HEIGHT,
+                    tabLabel(tab), () -> currentTab == tab, () -> {
+                currentTab = tab;
+                rebuildWidgets();
+            }));
+        }
 
         if (currentTab == Tab.GENERAL) {
             initGeneralTab(left, top);
+        } else if (currentTab == Tab.WORK_AREA) {
+            initWorkAreaTab(left, top);
         }
+    }
+
+    private void initWorkAreaTab(int left, int top) {
+        var layout = computeWorkAreaLayout();
+
+        addRenderableWidget(new WorkAreaRadiusSlider(left + 10, top + layout.sliderY(), PANEL_WIDTH - 20, 20,
+                workAreaRadius, radius -> {
+            workAreaRadius = radius;
+            ModNetwork.sendSetWorkAreaRadius(markerPos, radius);
+        }));
+
+        addRenderableWidget(Button.builder(Component.literal("Set Center of Workarea"), button -> {
+            WorldPickMode.activate(markerPos, structureName, structureType.getRangeRadius());
+            onClose();
+        }).pos(left + 10, top + layout.buttonY()).size(PANEL_WIDTH - 20, 20).build());
+
+        boolean showing = WorkAreaTracker.isShowingWorkArea(markerPos);
+        addRenderableWidget(Button.builder(
+                Component.literal(showing ? "Hide Workarea" : "Show Workarea"),
+                button -> {
+                    WorkAreaTracker.toggleWorkArea(markerPos);
+                    rebuildWidgets();
+                }
+        ).pos(left + 10, top + layout.toggleY()).size(PANEL_WIDTH - 20, 20).build());
     }
 
     private void initGeneralTab(int left, int top) {
@@ -315,6 +375,9 @@ public class StructureMarkerScreen extends Screen {
 
         if (currentTab == Tab.REQUIREMENTS) {
             renderRequirementsTab(graphics, mouseX, mouseY, left, top);
+        } else if (currentTab == Tab.WORK_AREA) {
+            drawCentered(graphics, "Center: " + workAreaCenter.getX() + ", " + workAreaCenter.getY() + ", " + workAreaCenter.getZ(),
+                    top + CONTENT_START, TEXT_LABEL);
         }
     }
 
