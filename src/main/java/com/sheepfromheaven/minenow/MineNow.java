@@ -60,6 +60,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.DominionTests::assigningNewJobUnassignsInhabitantFromPreviousJob);
                     helper.register("assigning_house_reserves_bed_from_vanilla_villagers",
                             com.sheepfromheaven.minenow.gametest.DominionTests::assigningHouseReservesBedFromVanillaVillagers);
+                    helper.register("storage_containers_skips_workstations",
+                            com.sheepfromheaven.minenow.gametest.FisheryStorageTests::storageContainersSkipsWorkstations);
+                    helper.register("storage_containers_finds_extra_containers_not_just_required_barrel",
+                            com.sheepfromheaven.minenow.gametest.FisheryStorageTests::storageContainersFindsExtraContainersNotJustRequiredBarrel);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
