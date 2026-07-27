@@ -2,6 +2,7 @@
 package com.sheepfromheaven.minenow;
 
 import com.sheepfromheaven.minenow.block.ModBlocks;
+import com.sheepfromheaven.minenow.item.ModCreativeTabs;
 import com.sheepfromheaven.minenow.item.ModItems;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import com.mojang.logging.LogUtils;
@@ -25,6 +26,7 @@ public final class MineNow {
 
         ModBlocks.register(modBusGroup);
         ModItems.register(modBusGroup);
+        ModCreativeTabs.register(modBusGroup);
         com.sheepfromheaven.minenow.entity.ModEntities.register(modBusGroup);
 
         FMLCommonSetupEvent.getBus(modBusGroup).addListener(this::commonSetup);
