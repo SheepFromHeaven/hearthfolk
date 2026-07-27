@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -150,6 +151,20 @@ public class StructureMarkerBlockEntity extends BlockEntity {
                     child.getIntOr("Required", 0),
                     child.getIntOr("Found", 0)));
         }
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        int radius = structureType.getRangeRadius();
+        if (radius <= 0) {
+            return new AABB(getBlockPos());
+        }
+        int height = structureType.getRangeHeight();
+        var pos = getBlockPos();
+        return new AABB(
+                pos.getX() - radius, pos.getY() - height, pos.getZ() - radius,
+                pos.getX() + radius + 1, pos.getY() + height + 1, pos.getZ() + radius + 1
+        );
     }
 
     @Override
