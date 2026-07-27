@@ -103,8 +103,12 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
 
     @Override
     protected PathNavigation createNavigation(Level level) {
-        var navigation = super.createNavigation(level);
+        var navigation = new InhabitantPathNavigation(this, level);
         navigation.setCanOpenDoors(true);
+        // Default path search budget/region (tied to FOLLOW_RANGE, 16 blocks) is too small once
+        // a detour around a player-built structure is longer than the straight-line distance to
+        // the target; widen it so GoHomeGoal can route around houses instead of getting stuck.
+        navigation.setRequiredPathLength(48.0F);
         return navigation;
     }
 
@@ -113,6 +117,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         workGoal = new WorkGoal(this);
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, new OpenDoorGoal(this, true));
+        goalSelector.addGoal(1, new OpenFenceGateGoal(this));
         goalSelector.addGoal(2, new GoHomeGoal(this));
         goalSelector.addGoal(3, workGoal);
         goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.35));
