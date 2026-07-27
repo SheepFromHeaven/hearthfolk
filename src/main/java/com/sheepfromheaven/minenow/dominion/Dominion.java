@@ -104,6 +104,56 @@ public class Dominion {
         structure.setAssignedWorkerId(null);
     }
 
+    /**
+     * Assigns {@code inhabitantId} as the structure's inhabitant, clearing whoever previously
+     * lived there and unassigning the inhabitant from any other structure it called home -
+     * an inhabitant can only ever have one home at a time. Pass {@code null} to just vacate it.
+     */
+    public void assignHouse(DominionStructure structure, UUID inhabitantId, ServerLevel level) {
+        unassignInhabitant(structure, level);
+        if (inhabitantId == null) return;
+        var newInhabitant = inhabitants.get(inhabitantId);
+        if (newInhabitant == null) return;
+
+        for (var s : structures.values()) {
+            if (inhabitantId.equals(s.getAssignedInhabitantId())) {
+                unassignInhabitant(s, level);
+            }
+        }
+
+        structure.setAssignedInhabitantId(inhabitantId);
+        newInhabitant.setHomeStructureId(structure.getId());
+        var entity = level.getEntity(newInhabitant.getEntityUuid());
+        if (entity instanceof InhabitantEntity ie) {
+            ie.setHomeStructureId(structure.getId());
+        }
+    }
+
+    /**
+     * Assigns {@code inhabitantId} as the structure's worker, clearing whoever previously worked
+     * there and unassigning the inhabitant from any other job it held - an inhabitant can only
+     * ever hold one job at a time. Pass {@code null} to just vacate it.
+     */
+    public void assignWorker(DominionStructure structure, UUID inhabitantId, ServerLevel level) {
+        unassignWorker(structure, level);
+        if (inhabitantId == null) return;
+        var newInhabitant = inhabitants.get(inhabitantId);
+        if (newInhabitant == null) return;
+
+        for (var s : structures.values()) {
+            if (inhabitantId.equals(s.getAssignedWorkerId())) {
+                unassignWorker(s, level);
+            }
+        }
+
+        structure.setAssignedWorkerId(inhabitantId);
+        newInhabitant.setWorkStructureId(structure.getId());
+        var entity = level.getEntity(newInhabitant.getEntityUuid());
+        if (entity instanceof InhabitantEntity ie) {
+            ie.setWorkStructureId(structure.getId());
+        }
+    }
+
     public DominionStructure getStructureById(UUID structureId) {
         return structures.get(structureId);
     }

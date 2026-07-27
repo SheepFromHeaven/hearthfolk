@@ -1,6 +1,8 @@
 package com.sheepfromheaven.minenow.gametest;
 
 import com.sheepfromheaven.minenow.block.ModBlocks;
+import com.sheepfromheaven.minenow.block.StructureMarkerBlock;
+import com.sheepfromheaven.minenow.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.block.TownBannerBlock;
 import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
@@ -61,6 +63,124 @@ public class DominionTests {
 
             helper.assertTrue(DominionSavedData.get(level).getDominionById(dominionId) == null,
                     "Dominion data should be deleted after disband");
+        });
+    }
+
+    public static void destroyingStructureRemovesInhabitantHomeAndJob(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var level = helper.getLevel();
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+        var data = DominionSavedData.get(level);
+        var dominion = data.createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+
+        var structureRelPos = new BlockPos(3, 1, 3);
+        var structurePos = helper.absolutePos(structureRelPos);
+        helper.setBlock(structureRelPos, ModBlocks.STRUCTURE_MARKER.get());
+
+        var structure = new DominionStructure("Home", StructureType.HOUSE, structurePos, Set.of(structurePos));
+        dominion.addStructure(structure);
+        var structureId = structure.getId();
+
+        if (level.getBlockEntity(structurePos) instanceof StructureMarkerBlockEntity be) {
+            be.setStructureData(structure.getName(), structure.getType(), dominion.getId(), structureId);
+        }
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(2, 1, 2));
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setHomeStructureId(structureId);
+        inhabitant.setWorkStructureId(structureId);
+
+        var dominionInhabitant = new DominionInhabitant(inhabitant.getUUID(), "Test Inhabitant");
+        dominionInhabitant.setHomeStructureId(structureId);
+        dominionInhabitant.setWorkStructureId(structureId);
+        dominion.addInhabitant(dominionInhabitant);
+        structure.setAssignedInhabitantId(dominionInhabitant.getId());
+        structure.setAssignedWorkerId(dominionInhabitant.getId());
+
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
+        var structureMarkerBlock = (StructureMarkerBlock) level.getBlockState(structurePos).getBlock();
+        structureMarkerBlock.playerWillDestroy(level, structurePos, level.getBlockState(structurePos), player);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(dominion.getStructureById(structureId) == null,
+                    "Structure should be removed from the dominion after being destroyed");
+            helper.assertTrue(inhabitant.getHomeStructureId() == null,
+                    "Inhabitant's home structure should be cleared after the structure is destroyed");
+            helper.assertTrue(inhabitant.getWorkStructureId() == null,
+                    "Inhabitant's work structure should be cleared after the structure is destroyed");
+            helper.assertTrue(!inhabitant.isRemoved(),
+                    "Inhabitant should remain in the dominion, only unassigned from its home/job");
+        });
+    }
+
+    public static void assigningNewHomeUnassignsInhabitantFromPreviousHome(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var level = helper.getLevel();
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+
+        var houseAPos = helper.absolutePos(new BlockPos(3, 1, 3));
+        var houseA = new DominionStructure("House A", StructureType.HOUSE, houseAPos, Set.of(houseAPos));
+        dominion.addStructure(houseA);
+
+        var houseBPos = helper.absolutePos(new BlockPos(5, 1, 3));
+        var houseB = new DominionStructure("House B", StructureType.HOUSE, houseBPos, Set.of(houseBPos));
+        dominion.addStructure(houseB);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(2, 1, 2));
+        inhabitant.setDominionId(dominion.getId());
+        var dominionInhabitant = new DominionInhabitant(inhabitant.getUUID(), "Test Inhabitant");
+        dominion.addInhabitant(dominionInhabitant);
+
+        dominion.assignHouse(houseA, dominionInhabitant.getId(), level);
+        dominion.assignHouse(houseB, dominionInhabitant.getId(), level);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(houseA.getAssignedInhabitantId() == null,
+                    "Previous house should no longer be assigned to the inhabitant");
+            helper.assertTrue(dominionInhabitant.getId().equals(houseB.getAssignedInhabitantId()),
+                    "New house should be assigned to the inhabitant");
+            helper.assertTrue(houseB.getId().equals(dominionInhabitant.getHomeStructureId()),
+                    "Inhabitant's home structure should point at the new house only");
+            helper.assertTrue(houseB.getId().equals(inhabitant.getHomeStructureId()),
+                    "Inhabitant entity's home structure should point at the new house only");
+        });
+    }
+
+    public static void assigningNewJobUnassignsInhabitantFromPreviousJob(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var level = helper.getLevel();
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+
+        var jobAPos = helper.absolutePos(new BlockPos(3, 1, 3));
+        var jobA = new DominionStructure("Fishery A", StructureType.FISHERY, jobAPos, Set.of(jobAPos));
+        dominion.addStructure(jobA);
+
+        var jobBPos = helper.absolutePos(new BlockPos(5, 1, 3));
+        var jobB = new DominionStructure("Fishery B", StructureType.FISHERY, jobBPos, Set.of(jobBPos));
+        dominion.addStructure(jobB);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(2, 1, 2));
+        inhabitant.setDominionId(dominion.getId());
+        var dominionInhabitant = new DominionInhabitant(inhabitant.getUUID(), "Test Inhabitant");
+        dominion.addInhabitant(dominionInhabitant);
+
+        dominion.assignWorker(jobA, dominionInhabitant.getId(), level);
+        dominion.assignWorker(jobB, dominionInhabitant.getId(), level);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(jobA.getAssignedWorkerId() == null,
+                    "Previous job should no longer be assigned to the inhabitant");
+            helper.assertTrue(dominionInhabitant.getId().equals(jobB.getAssignedWorkerId()),
+                    "New job should be assigned to the inhabitant");
+            helper.assertTrue(jobB.getId().equals(dominionInhabitant.getWorkStructureId()),
+                    "Inhabitant's work structure should point at the new job only");
+            helper.assertTrue(jobB.getId().equals(inhabitant.getWorkStructureId()),
+                    "Inhabitant entity's work structure should point at the new job only");
         });
     }
 }

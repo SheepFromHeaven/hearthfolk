@@ -170,25 +170,8 @@ public class ModNetwork {
                             var structure = dominion.getStructureAt(msg.markerPos());
                             if (structure == null || structure.getType() != StructureType.HOUSE) return;
 
-                            dominion.unassignInhabitant(structure, level);
-
-                            if (!msg.inhabitantId().isEmpty()) {
-                                UUID newId = UUID.fromString(msg.inhabitantId());
-                                var newInhabitant = dominion.getInhabitant(newId);
-                                if (newInhabitant != null) {
-                                    for (var s : dominion.getStructures()) {
-                                        if (newId.equals(s.getAssignedInhabitantId())) {
-                                            dominion.unassignInhabitant(s, level);
-                                        }
-                                    }
-                                    structure.setAssignedInhabitantId(newId);
-                                    newInhabitant.setHomeStructureId(structure.getId());
-                                    var entity = level.getEntity(newInhabitant.getEntityUuid());
-                                    if (entity instanceof InhabitantEntity ie) {
-                                        ie.setHomeStructureId(structure.getId());
-                                    }
-                                }
-                            }
+                            var inhabitantId = msg.inhabitantId().isEmpty() ? null : UUID.fromString(msg.inhabitantId());
+                            dominion.assignHouse(structure, inhabitantId, level);
                             data.setDirty();
                         })
                         .addMain(AssignWorkerPacket.class, AssignWorkerPacket.CODEC, (msg, ctx) -> {
@@ -201,25 +184,8 @@ public class ModNetwork {
                             var structure = dominion.getStructureAt(msg.markerPos());
                             if (structure == null || structure.getType().getJobType().isEmpty()) return;
 
-                            dominion.unassignWorker(structure, level);
-
-                            if (!msg.inhabitantId().isEmpty()) {
-                                UUID newId = UUID.fromString(msg.inhabitantId());
-                                var newInhabitant = dominion.getInhabitant(newId);
-                                if (newInhabitant != null) {
-                                    for (var s : dominion.getStructures()) {
-                                        if (newId.equals(s.getAssignedWorkerId())) {
-                                            dominion.unassignWorker(s, level);
-                                        }
-                                    }
-                                    structure.setAssignedWorkerId(newId);
-                                    newInhabitant.setWorkStructureId(structure.getId());
-                                    var entity = level.getEntity(newInhabitant.getEntityUuid());
-                                    if (entity instanceof InhabitantEntity ie) {
-                                        ie.setWorkStructureId(structure.getId());
-                                    }
-                                }
-                            }
+                            var inhabitantId = msg.inhabitantId().isEmpty() ? null : UUID.fromString(msg.inhabitantId());
+                            dominion.assignWorker(structure, inhabitantId, level);
                             data.setDirty();
                         })
                 )

@@ -52,6 +52,12 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantOpensGateToReachBed);
                     helper.register("disbanding_dominion_converts_inhabitants_and_clears_data",
                             com.sheepfromheaven.minenow.gametest.DominionTests::disbandingDominionConvertsInhabitantsAndClearsData);
+                    helper.register("destroying_structure_removes_inhabitant_home_and_job",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::destroyingStructureRemovesInhabitantHomeAndJob);
+                    helper.register("assigning_new_home_unassigns_inhabitant_from_previous_home",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::assigningNewHomeUnassignsInhabitantFromPreviousHome);
+                    helper.register("assigning_new_job_unassigns_inhabitant_from_previous_job",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::assigningNewJobUnassignsInhabitantFromPreviousJob);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
