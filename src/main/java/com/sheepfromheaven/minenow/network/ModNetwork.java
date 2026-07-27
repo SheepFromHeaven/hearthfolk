@@ -16,8 +16,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.SimpleMenuProvider;
-import com.sheepfromheaven.minenow.inventory.InhabitantInventoryMenu;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.EquipmentSlot;
+import com.sheepfromheaven.minenow.inventory.EquipmentSlotContainer;
+import com.sheepfromheaven.minenow.inventory.ModMenus;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -153,10 +155,10 @@ public class ModNetwork {
                             var data = DominionSavedData.get(level);
                             var dominion = data.getDominionById(inhabitant.getDominionId());
                             if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
-                            player.openMenu(new SimpleMenuProvider(
-                                    (containerId, playerInv, p) ->
-                                            new InhabitantInventoryMenu(containerId, playerInv, inhabitant, inhabitant.getInventory()),
-                                    inhabitant.getName()));
+                            player.openMenu(ModMenus.INHABITANT_INVENTORY.createView(
+                                    inhabitant.getName(),
+                                    new Container[] {new EquipmentSlotContainer(inhabitant, EquipmentSlot.MAINHAND)},
+                                    inhabitant.getInventory()));
                         })
                         .addMain(AssignHousePacket.class, AssignHousePacket.CODEC, (msg, ctx) -> {
                             var player = ctx.getSender();
