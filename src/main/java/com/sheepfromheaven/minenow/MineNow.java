@@ -40,10 +40,7 @@ public final class MineNow {
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             registerRenderers();
-            context.registerExtensionPoint(
-                    net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
-                    () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory(
-                            parent -> new com.sheepfromheaven.minenow.client.ConfigScreen(parent)));
+            com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(context);
         }
     }
 

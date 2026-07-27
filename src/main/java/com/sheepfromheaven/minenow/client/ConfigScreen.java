@@ -5,12 +5,22 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.gui.widget.ForgeSlider;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 public class ConfigScreen extends Screen {
     private final Screen parent;
     private ForgeSlider radiusSlider;
     private ForgeSlider roomSizeSlider;
+
+    // Kept out of MineNow's constructor so its class file never references Screen directly;
+    // referencing a client-only class there crashes mod construction on a dedicated server.
+    public static void registerExtensionPoint(FMLJavaModLoadingContext context) {
+        context.registerExtensionPoint(
+                ConfigScreenHandler.ConfigScreenFactory.class,
+                () -> new ConfigScreenHandler.ConfigScreenFactory(ConfigScreen::new));
+    }
 
     public ConfigScreen(Screen parent) {
         super(Component.literal("MineNow Settings"));

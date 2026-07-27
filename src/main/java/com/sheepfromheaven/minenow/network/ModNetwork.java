@@ -222,32 +222,12 @@ public class ModNetwork {
                         })
                 )
                 .clientbound(flow -> flow
-                        .addMain(OpenDominionScreenPacket.class, OpenDominionScreenPacket.CODEC, (msg, ctx) -> {
-                            net.minecraft.client.Minecraft.getInstance().execute(() -> {
-                                var inhabitantNames = msg.inhabitantNames().isEmpty()
-                                        ? List.<String>of()
-                                        : List.of(msg.inhabitantNames().split(","));
-                                net.minecraft.client.Minecraft.getInstance().setScreen(
-                                        new com.sheepfromheaven.minenow.client.DominionScreen(
-                                                msg.dominionName(), DominionTier.valueOf(msg.tier()),
-                                                msg.bannerPos(), inhabitantNames));
-                            });
-                        })
-                        .addMain(OpenInhabitantScreenPacket.class, OpenInhabitantScreenPacket.CODEC, (msg, ctx) -> {
-                            net.minecraft.client.Minecraft.getInstance().execute(() ->
-                                    net.minecraft.client.Minecraft.getInstance().setScreen(
-                                            new com.sheepfromheaven.minenow.client.InhabitantScreen(
-                                                    msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest(),
-                                                    msg.jobStatus())));
-                        })
-                        .addMain(OpenStructureScreenPacket.class, OpenStructureScreenPacket.CODEC, (msg, ctx) -> {
-                            net.minecraft.client.Minecraft.getInstance().execute(() ->
-                                    net.minecraft.client.Minecraft.getInstance().setScreen(
-                                            new com.sheepfromheaven.minenow.client.StructureMarkerScreen(
-                                                    msg.structureName(), StructureType.valueOf(msg.structureType()),
-                                                    msg.markerPos(), msg.inhabitantData(), msg.assignedInhabitantId(),
-                                                    msg.assignedWorkerId())));
-                        })
+                        .addMain(OpenDominionScreenPacket.class, OpenDominionScreenPacket.CODEC,
+                                (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openDominionScreen(msg))
+                        .addMain(OpenInhabitantScreenPacket.class, OpenInhabitantScreenPacket.CODEC,
+                                (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openInhabitantScreen(msg))
+                        .addMain(OpenStructureScreenPacket.class, OpenStructureScreenPacket.CODEC,
+                                (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openStructureScreen(msg))
                 );
     }
 
