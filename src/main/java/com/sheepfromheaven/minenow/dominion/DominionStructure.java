@@ -2,7 +2,10 @@ package com.sheepfromheaven.minenow.dominion;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.Container;
 import net.minecraft.world.level.Level;
 
@@ -149,6 +152,20 @@ public class DominionStructure {
         var results = new ArrayList<RequirementStatus>();
         for (int i = 0; i < rangeReqs.size(); i++) {
             results.add(new RequirementStatus(rangeReqs.get(i).displayName(), rangeReqs.get(i).count(), counts[i]));
+        }
+        return results;
+    }
+
+    private static final TagKey<net.minecraft.world.level.block.Block> STORAGE_TAG =
+            TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minenow", "storage"));
+
+    public List<BlockPos> findStorageContainers(Level level) {
+        var results = new ArrayList<BlockPos>();
+        for (var bp : collectInteriorAndWalls()) {
+            var state = level.getBlockState(bp);
+            if (state.is(STORAGE_TAG) && level.getBlockEntity(bp) instanceof Container) {
+                results.add(bp);
+            }
         }
         return results;
     }

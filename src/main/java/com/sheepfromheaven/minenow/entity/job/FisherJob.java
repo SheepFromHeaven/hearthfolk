@@ -89,7 +89,7 @@ public class FisherJob implements Job {
             phase = Phase.GOTO_WATER;
             return true;
         }
-        for (var pos : workplace.findContainers(level)) {
+        for (var pos : workplace.findStorageContainers(level)) {
             if (level.getBlockEntity(pos) instanceof Container container) {
                 var rod = ContainerUtil.extractStack(container, Items.FISHING_ROD);
                 if (!rod.isEmpty()) {
@@ -232,7 +232,7 @@ public class FisherJob implements Job {
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         var carried = inhabitant.getInventory();
-        for (var pos : workplace.findContainers(level)) {
+        for (var pos : workplace.findStorageContainers(level)) {
             if (level.getBlockEntity(pos) instanceof Container container) {
                 for (int i = 0; i < carried.getContainerSize(); i++) {
                     var stack = carried.getItem(i);
