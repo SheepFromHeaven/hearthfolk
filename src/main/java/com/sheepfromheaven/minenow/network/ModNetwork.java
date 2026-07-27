@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -87,9 +88,8 @@ public class ModNetwork {
                                         case RoomDetector.Result.Success(var blocks) -> {
                                             structure.setRoomBlocks(blocks);
                                             data.setDirty();
-                                            var statuses = structure.checkRequirements(level);
                                             if (level.getBlockEntity(msg.markerPos()) instanceof StructureMarkerBlockEntity be) {
-                                                be.setRequirementStatuses(statuses);
+                                                be.refreshStatuses(structure, level);
                                             }
                                             player.displayClientMessage(Component.literal(
                                                     "Structure recalculated! " + blocks.size() + " blocks detected."), false);
@@ -122,10 +122,9 @@ public class ModNetwork {
                                         var type = StructureType.valueOf(msg.typeName());
                                         structure.setType(type);
                                         data.setDirty();
-                                        var statuses = structure.checkRequirements(level);
                                         if (level.getBlockEntity(msg.markerPos()) instanceof StructureMarkerBlockEntity be) {
                                             be.setStructureData(structure.getName(), type, dominion.getId(), structure.getId());
-                                            be.setRequirementStatuses(statuses);
+                                            be.refreshStatuses(structure, level);
                                         }
                                     } catch (IllegalArgumentException ignored) {}
                                 }
@@ -142,6 +141,37 @@ public class ModNetwork {
                             if (dominion != null && dominion.getOwnerUuid().equals(player.getUUID())) {
                                 inhabitant.goHome();
                             }
+                        })
+                        .addMain(AssignHousePacket.class, AssignHousePacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.findDominionContaining(msg.markerPos());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            var structure = dominion.getStructureAt(msg.markerPos());
+                            if (structure == null || structure.getType() != StructureType.HOUSE) return;
+
+                            dominion.unassignInhabitant(structure, level);
+
+                            if (!msg.inhabitantId().isEmpty()) {
+                                UUID newId = UUID.fromString(msg.inhabitantId());
+                                var newInhabitant = dominion.getInhabitant(newId);
+                                if (newInhabitant != null) {
+                                    for (var s : dominion.getStructures()) {
+                                        if (newId.equals(s.getAssignedInhabitantId())) {
+                                            dominion.unassignInhabitant(s, level);
+                                        }
+                                    }
+                                    structure.setAssignedInhabitantId(newId);
+                                    newInhabitant.setHomeStructureId(structure.getId());
+                                    var entity = level.getEntity(newInhabitant.getEntityUuid());
+                                    if (entity instanceof InhabitantEntity ie) {
+                                        ie.setHomeStructureId(structure.getId());
+                                    }
+                                }
+                            }
+                            data.setDirty();
                         })
                 )
                 .clientbound(flow -> flow
@@ -161,6 +191,13 @@ public class ModNetwork {
                                     net.minecraft.client.Minecraft.getInstance().setScreen(
                                             new com.sheepfromheaven.minenow.client.InhabitantScreen(
                                                     msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest())));
+                        })
+                        .addMain(OpenStructureScreenPacket.class, OpenStructureScreenPacket.CODEC, (msg, ctx) -> {
+                            net.minecraft.client.Minecraft.getInstance().execute(() ->
+                                    net.minecraft.client.Minecraft.getInstance().setScreen(
+                                            new com.sheepfromheaven.minenow.client.StructureMarkerScreen(
+                                                    msg.structureName(), StructureType.valueOf(msg.structureType()),
+                                                    msg.markerPos(), msg.inhabitantData(), msg.assignedInhabitantId())));
                         })
                 );
     }
@@ -199,6 +236,22 @@ public class ModNetwork {
 
     public static void sendGoHome(int entityId) {
         CHANNEL.send(new GoHomePacket(entityId), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendOpenStructureScreen(ServerPlayer player, Dominion dominion,
+                                                com.sheepfromheaven.minenow.dominion.DominionStructure structure) {
+        var inhabitants = dominion.getInhabitants().stream()
+                .map(i -> i.getId().toString() + ":" + i.getName())
+                .collect(Collectors.joining(","));
+        var assignedId = structure.getAssignedInhabitantId();
+        CHANNEL.send(new OpenStructureScreenPacket(
+                structure.getName(), structure.getType().name(), structure.getMarkerPos(),
+                inhabitants, assignedId != null ? assignedId.toString() : ""
+        ), PacketDistributor.PLAYER.with(player));
+    }
+
+    public static void sendAssignHouse(BlockPos markerPos, String inhabitantId) {
+        CHANNEL.send(new AssignHousePacket(markerPos, inhabitantId), PacketDistributor.SERVER.noArg());
     }
 
     public record RenameDominionPacket(BlockPos bannerPos, String newName) {
@@ -258,6 +311,26 @@ public class ModNetwork {
         public static final StreamCodec<RegistryFriendlyByteBuf, GoHomePacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, GoHomePacket::entityId,
                 GoHomePacket::new
+        );
+    }
+
+    public record AssignHousePacket(BlockPos markerPos, String inhabitantId) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, AssignHousePacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, AssignHousePacket::markerPos,
+                ByteBufCodecs.STRING_UTF8, AssignHousePacket::inhabitantId,
+                AssignHousePacket::new
+        );
+    }
+
+    public record OpenStructureScreenPacket(String structureName, String structureType, BlockPos markerPos,
+                                            String inhabitantData, String assignedInhabitantId) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenStructureScreenPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureName,
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureType,
+                BlockPos.STREAM_CODEC, OpenStructureScreenPacket::markerPos,
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::inhabitantData,
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedInhabitantId,
+                OpenStructureScreenPacket::new
         );
     }
 }

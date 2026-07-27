@@ -63,6 +63,8 @@ public final class MineNow {
         net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers.BUS.addListener(event -> {
             event.registerBlockEntityRenderer(ModBlocks.TOWN_BANNER_BE.get(),
                     com.sheepfromheaven.minenow.client.TownBannerRenderer::new);
+            event.registerBlockEntityRenderer(ModBlocks.STRUCTURE_MARKER_BE.get(),
+                    com.sheepfromheaven.minenow.client.StructureMarkerRenderer::new);
             event.registerEntityRenderer(com.sheepfromheaven.minenow.entity.ModEntities.INHABITANT.get(),
                     com.sheepfromheaven.minenow.client.InhabitantRenderer::new);
         });

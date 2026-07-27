@@ -2,9 +2,8 @@ package com.sheepfromheaven.minenow.block;
 
 import com.mojang.serialization.MapCodec;
 import com.sheepfromheaven.minenow.Config;
-import com.sheepfromheaven.minenow.client.StructureMarkerScreen;
 import com.sheepfromheaven.minenow.dominion.*;
-import net.minecraft.client.Minecraft;
+import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
@@ -88,10 +87,9 @@ public class StructureMarkerBlock extends BaseEntityBlock {
                     dominion.addStructure(structure);
                     data.setDirty();
 
-                    var statuses = structure.checkRequirements(level);
                     if (level.getBlockEntity(pos) instanceof StructureMarkerBlockEntity be) {
                         be.setStructureData(structure.getName(), structure.getType(), dominion.getId(), structure.getId());
-                        be.setRequirementStatuses(statuses);
+                        be.refreshStatuses(structure, level);
                     }
 
                     spawnDebugParticles(serverLevel, blocks, 50, 255, 50);
@@ -112,19 +110,15 @@ public class StructureMarkerBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (level instanceof ServerLevel serverLevel) {
+        if (level instanceof ServerLevel serverLevel && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
             var data = DominionSavedData.get(serverLevel);
             var dominion = data.findDominionContaining(pos);
             if (dominion != null) {
                 var structure = dominion.getStructureAt(pos);
                 if (structure != null && level.getBlockEntity(pos) instanceof StructureMarkerBlockEntity be) {
-                    be.setRequirementStatuses(structure.checkRequirements(level));
+                    be.refreshStatuses(structure, level);
+                    ModNetwork.sendOpenStructureScreen(serverPlayer, dominion, structure);
                 }
-            }
-        } else if (level.isClientSide()) {
-            if (level.getBlockEntity(pos) instanceof StructureMarkerBlockEntity be && be.getDominionId() != null) {
-                Minecraft.getInstance().setScreen(new StructureMarkerScreen(
-                        be.getStructureName(), be.getStructureType(), pos, be.getRequirementStatuses()));
             }
         }
         return InteractionResult.SUCCESS;
@@ -138,7 +132,7 @@ public class StructureMarkerBlock extends BaseEntityBlock {
                 for (var dominion : data.getAllDominions()) {
                     var structure = dominion.getStructureAt(pos);
                     if (structure != null) {
-                        dominion.removeStructure(structure.getId());
+                        dominion.removeStructure(structure.getId(), serverLevel);
                         data.setDirty();
                         player.displayClientMessage(Component.literal(structure.getName() + " has been removed."), false);
                         break;

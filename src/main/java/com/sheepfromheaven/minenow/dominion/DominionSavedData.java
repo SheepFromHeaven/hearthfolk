@@ -18,10 +18,12 @@ public class DominionSavedData extends SavedData {
                     Codec.STRING.fieldOf("name").forGetter(DominionStructure::getName),
                     Codec.STRING.fieldOf("type").forGetter(s -> s.getType().name()),
                     BlockPos.CODEC.fieldOf("markerPos").forGetter(DominionStructure::getMarkerPos),
-                    BlockPos.CODEC.listOf().fieldOf("roomBlocks").forGetter(s -> new ArrayList<>(s.getRoomBlocks()))
-            ).apply(instance, (id, name, type, markerPos, roomBlocks) ->
+                    BlockPos.CODEC.listOf().fieldOf("roomBlocks").forGetter(s -> new ArrayList<>(s.getRoomBlocks())),
+                    Codec.STRING.optionalFieldOf("assignedInhabitantId", "").forGetter(s -> s.getAssignedInhabitantId() != null ? s.getAssignedInhabitantId().toString() : "")
+            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId) ->
                     new DominionStructure(UUID.fromString(id), name, StructureType.valueOf(type),
-                            markerPos, new HashSet<>(roomBlocks))
+                            markerPos, new HashSet<>(roomBlocks),
+                            assignedId.isEmpty() ? null : UUID.fromString(assignedId))
             )
     );
 

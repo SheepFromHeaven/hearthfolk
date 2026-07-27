@@ -44,6 +44,14 @@ public class InvitationItem extends Item {
             return InteractionResult.FAIL;
         }
 
+        int max = dominion.getTier().getMaxInhabitants();
+        if (dominion.getInhabitants().size() >= max) {
+            player.displayClientMessage(Component.literal(
+                    "Your " + dominion.getTier().getDisplayName().toLowerCase() + " can only support " + max
+                            + " inhabitants. Increase your dominion tier to recruit more!"), false);
+            return InteractionResult.FAIL;
+        }
+
         var entityUuid = villager.getUUID();
         var name = INHABITANT_NAMES[(int) (entityUuid.getLeastSignificantBits() & 0x7FFFFFFF) % INHABITANT_NAMES.length];
 

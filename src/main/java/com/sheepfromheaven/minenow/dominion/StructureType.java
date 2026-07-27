@@ -25,5 +25,25 @@ public enum StructureType {
         return StructureRequirementsConfig.getRequirements(this);
     }
 
-    public record Requirement(String displayName, int count, Predicate<BlockState> matcher, Supplier<ItemStack> icon) {}
+    public int getMinSize() {
+        return StructureRequirementsConfig.getMinSize(this);
+    }
+
+    public int getRangeRadius() {
+        return StructureRequirementsConfig.getRangeRadius(this);
+    }
+
+    public int getRangeHeight() {
+        return StructureRequirementsConfig.getRangeHeight(this);
+    }
+
+    public List<Requirement> getRangeRequirements() {
+        return StructureRequirementsConfig.getRangeRequirements(this);
+    }
+
+    public record Requirement(String displayName, int count, Predicate<BlockState> matcher, Supplier<ItemStack> icon, int airAbove) {
+        public Requirement(String displayName, int count, Predicate<BlockState> matcher, Supplier<ItemStack> icon) {
+            this(displayName, count, matcher, icon, 0);
+        }
+    }
 }

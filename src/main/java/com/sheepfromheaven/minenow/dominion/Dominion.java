@@ -1,6 +1,8 @@
 package com.sheepfromheaven.minenow.dominion;
 
+import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
 import java.util.*;
 
@@ -65,8 +67,30 @@ public class Dominion {
         structures.put(structure.getId(), structure);
     }
 
-    public void removeStructure(UUID structureId) {
-        structures.remove(structureId);
+    public void removeStructure(UUID structureId, ServerLevel level) {
+        var structure = structures.get(structureId);
+        if (structure != null) {
+            unassignInhabitant(structure, level);
+            structures.remove(structureId);
+        }
+    }
+
+    public void unassignInhabitant(DominionStructure structure, ServerLevel level) {
+        UUID inhabitantId = structure.getAssignedInhabitantId();
+        if (inhabitantId == null) return;
+        var inhabitant = inhabitants.get(inhabitantId);
+        if (inhabitant != null) {
+            inhabitant.setHomeStructureId(null);
+            var entity = level.getEntity(inhabitant.getEntityUuid());
+            if (entity instanceof InhabitantEntity ie) {
+                ie.setHomeStructureId(null);
+            }
+        }
+        structure.setAssignedInhabitantId(null);
+    }
+
+    public DominionStructure getStructureById(UUID structureId) {
+        return structures.get(structureId);
     }
 
     public DominionStructure getStructureAt(BlockPos markerPos) {
@@ -96,7 +120,13 @@ public class Dominion {
     }
 
     public void removeInhabitant(UUID inhabitantId) {
-        inhabitants.remove(inhabitantId);
+        var inhabitant = inhabitants.remove(inhabitantId);
+        if (inhabitant != null && inhabitant.getHomeStructureId() != null) {
+            var structure = structures.get(inhabitant.getHomeStructureId());
+            if (structure != null) {
+                structure.setAssignedInhabitantId(null);
+            }
+        }
     }
 
     public DominionInhabitant getInhabitant(UUID inhabitantId) {

@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.dominion;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 
 import java.util.*;
@@ -12,6 +13,8 @@ public class DominionStructure {
     private StructureType type;
     private final BlockPos markerPos;
     private Set<BlockPos> roomBlocks;
+    private UUID assignedInhabitantId;
+    private BlockPos cachedBedPos;
 
     public DominionStructure(String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks) {
         this.id = UUID.randomUUID();
@@ -21,12 +24,13 @@ public class DominionStructure {
         this.roomBlocks = roomBlocks;
     }
 
-    public DominionStructure(UUID id, String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks) {
+    public DominionStructure(UUID id, String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks, UUID assignedInhabitantId) {
         this.id = id;
         this.name = name;
         this.type = type;
         this.markerPos = markerPos;
         this.roomBlocks = roomBlocks;
+        this.assignedInhabitantId = assignedInhabitantId;
     }
 
     public UUID getId() {
@@ -59,10 +63,36 @@ public class DominionStructure {
 
     public void setRoomBlocks(Set<BlockPos> roomBlocks) {
         this.roomBlocks = roomBlocks;
+        this.cachedBedPos = null;
+    }
+
+    public UUID getAssignedInhabitantId() {
+        return assignedInhabitantId;
+    }
+
+    public void setAssignedInhabitantId(UUID assignedInhabitantId) {
+        this.assignedInhabitantId = assignedInhabitantId;
     }
 
     public boolean containsBlock(BlockPos pos) {
         return roomBlocks.contains(pos);
+    }
+
+    public BlockPos findBedPos(Level level) {
+        if (cachedBedPos != null && level.getBlockState(cachedBedPos).is(BlockTags.BEDS)) {
+            return cachedBedPos;
+        }
+        for (var bp : collectInteriorAndWalls()) {
+            if (level.getBlockState(bp).is(BlockTags.BEDS)) {
+                cachedBedPos = bp;
+                return bp;
+            }
+        }
+        return markerPos;
+    }
+
+    public RequirementStatus getSpaceStatus() {
+        return new RequirementStatus("Space", type.getMinSize(), roomBlocks.size());
     }
 
     public List<RequirementStatus> checkRequirements(Level level) {
@@ -79,6 +109,46 @@ public class DominionStructure {
             results.add(new RequirementStatus(req.displayName(), req.count(), found));
         }
         return results;
+    }
+
+    public List<RequirementStatus> checkRangeRequirements(Level level) {
+        int radius = type.getRangeRadius();
+        var rangeReqs = type.getRangeRequirements();
+        if (radius <= 0 || rangeReqs.isEmpty()) {
+            return List.of();
+        }
+        int height = type.getRangeHeight();
+        var counts = new int[rangeReqs.size()];
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx * dx + dz * dz > radius * radius) continue;
+                for (int dy = -height; dy <= height; dy++) {
+                    var pos = markerPos.offset(dx, dy, dz);
+                    var state = level.getBlockState(pos);
+                    for (int i = 0; i < rangeReqs.size(); i++) {
+                        var req = rangeReqs.get(i);
+                        if (req.matcher().test(state) && hasOpenAirAbove(level, pos, req.airAbove())) {
+                            counts[i]++;
+                        }
+                    }
+                }
+            }
+        }
+        var results = new ArrayList<RequirementStatus>();
+        for (int i = 0; i < rangeReqs.size(); i++) {
+            results.add(new RequirementStatus(rangeReqs.get(i).displayName(), rangeReqs.get(i).count(), counts[i]));
+        }
+        return results;
+    }
+
+    private boolean hasOpenAirAbove(Level level, BlockPos pos, int required) {
+        for (int i = 1; i <= required; i++) {
+            var above = pos.above(i);
+            if (!level.getBlockState(above).getCollisionShape(level, above).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Set<BlockPos> collectInteriorAndWalls() {

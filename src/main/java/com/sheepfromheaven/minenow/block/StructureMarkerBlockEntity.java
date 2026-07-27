@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.block;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.dominion.StructureType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -18,6 +19,8 @@ public class StructureMarkerBlockEntity extends BlockEntity {
     private UUID dominionId = null;
     private UUID structureId = null;
     private List<DominionStructure.RequirementStatus> requirementStatuses = new ArrayList<>();
+    private List<DominionStructure.RequirementStatus> rangeRequirementStatuses = new ArrayList<>();
+    private DominionStructure.RequirementStatus spaceStatus = null;
 
     public StructureMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.STRUCTURE_MARKER_BE.get(), pos, state);
@@ -51,6 +54,36 @@ public class StructureMarkerBlockEntity extends BlockEntity {
         }
     }
 
+    public List<DominionStructure.RequirementStatus> getRangeRequirementStatuses() {
+        return rangeRequirementStatuses;
+    }
+
+    public void setRangeRequirementStatuses(List<DominionStructure.RequirementStatus> statuses) {
+        this.rangeRequirementStatuses = statuses;
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public DominionStructure.RequirementStatus getSpaceStatus() {
+        return spaceStatus;
+    }
+
+    public void setSpaceStatus(DominionStructure.RequirementStatus spaceStatus) {
+        this.spaceStatus = spaceStatus;
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public void refreshStatuses(DominionStructure structure, Level level) {
+        setRequirementStatuses(structure.checkRequirements(level));
+        setSpaceStatus(structure.getSpaceStatus());
+        setRangeRequirementStatuses(structure.checkRangeRequirements(level));
+    }
+
     public void setStructureData(String name, StructureType type, UUID dominionId, UUID structureId) {
         this.structureName = name;
         this.structureType = type;
@@ -78,6 +111,19 @@ public class StructureMarkerBlockEntity extends BlockEntity {
                 child.putInt("Found", rs.found());
             }
         }
+        if (spaceStatus != null) {
+            output.putInt("SpaceRequired", spaceStatus.required());
+            output.putInt("SpaceFound", spaceStatus.found());
+        }
+        if (!rangeRequirementStatuses.isEmpty()) {
+            var rangeList = output.childrenList("RangeRequirements");
+            for (var rs : rangeRequirementStatuses) {
+                var child = rangeList.addChild();
+                child.putString("Name", rs.name());
+                child.putInt("Required", rs.required());
+                child.putInt("Found", rs.found());
+            }
+        }
     }
 
     @Override
@@ -90,6 +136,16 @@ public class StructureMarkerBlockEntity extends BlockEntity {
         requirementStatuses = new ArrayList<>();
         for (var child : input.childrenListOrEmpty("Requirements")) {
             requirementStatuses.add(new DominionStructure.RequirementStatus(
+                    child.getStringOr("Name", ""),
+                    child.getIntOr("Required", 0),
+                    child.getIntOr("Found", 0)));
+        }
+        spaceStatus = input.getInt("SpaceRequired").isPresent()
+                ? new DominionStructure.RequirementStatus("Space", input.getIntOr("SpaceRequired", 0), input.getIntOr("SpaceFound", 0))
+                : null;
+        rangeRequirementStatuses = new ArrayList<>();
+        for (var child : input.childrenListOrEmpty("RangeRequirements")) {
+            rangeRequirementStatuses.add(new DominionStructure.RequirementStatus(
                     child.getStringOr("Name", ""),
                     child.getIntOr("Required", 0),
                     child.getIntOr("Found", 0)));

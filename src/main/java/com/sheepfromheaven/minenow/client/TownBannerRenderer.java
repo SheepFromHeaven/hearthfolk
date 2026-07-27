@@ -27,7 +27,7 @@ public class TownBannerRenderer extends BannerRenderer {
     public void submit(BannerRenderState renderState, PoseStack poseStack, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState) {
         super.submit(renderState, poseStack, nodeCollector, cameraRenderState);
 
-        if (DominionRangeTracker.isShowingRange(renderState.blockPos)) {
+        if (RangeTracker.isShowingRange(renderState.blockPos)) {
             int radius = Config.defaultDominionRadius;
             AABB box = new AABB(
                     renderState.blockPos.getX() - radius,

@@ -55,11 +55,11 @@ public class DominionScreen extends Screen {
             }
         }).pos(left + 10, top + 62).size(PANEL_WIDTH - 20, 20).build());
 
-        boolean showing = DominionRangeTracker.isShowingRange(bannerPos);
+        boolean showing = RangeTracker.isShowingRange(bannerPos);
         addRenderableWidget(Button.builder(
                 Component.literal(showing ? "Hide Range" : "Show Range"),
                 button -> {
-                    DominionRangeTracker.toggleRange(bannerPos);
+                    RangeTracker.toggleRange(bannerPos);
                     rebuildWidgets();
                 }
         ).pos(left + 10, top + 88).size(PANEL_WIDTH - 20, 20).build());

@@ -79,6 +79,30 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
     }
 
     @Override
+    public void aiStep() {
+        super.aiStep();
+        if (!level().isClientSide() && tickCount % 200 == 0) {
+            if (homeStructureId == null) {
+                setNeed(NeedType.SHELTER, getNeed(NeedType.SHELTER) - 0.02f);
+            } else {
+                setNeed(NeedType.SHELTER, Math.min(1.0f, getNeed(NeedType.SHELTER) + 0.05f));
+            }
+            syncShelterToDominion();
+        }
+    }
+
+    private void syncShelterToDominion() {
+        if (dominionId == null || !(level() instanceof ServerLevel serverLevel)) return;
+        var data = DominionSavedData.get(serverLevel);
+        var dominion = data.getDominionById(dominionId);
+        if (dominion == null) return;
+        var inhabitant = dominion.getInhabitantByEntityUuid(getUUID());
+        if (inhabitant == null) return;
+        inhabitant.setNeed(NeedType.SHELTER, getNeed(NeedType.SHELTER));
+        data.setDirty();
+    }
+
+    @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!level().isClientSide() && level() instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
             var dominion = dominionId != null ? DominionSavedData.get(serverLevel).getDominionById(dominionId) : null;
@@ -107,7 +131,18 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
             return null;
         }
         var dominion = DominionSavedData.get(serverLevel).getDominionById(dominionId);
-        return dominion != null ? dominion.getBannerPos() : null;
+        if (dominion == null) return null;
+        if (homeStructureId != null) {
+            var structure = dominion.getStructureById(homeStructureId);
+            if (structure != null) {
+                return structure.findBedPos(serverLevel);
+            }
+        }
+        return dominion.getBannerPos();
+    }
+
+    boolean hasAssignedHome() {
+        return homeStructureId != null;
     }
 
     @Override
