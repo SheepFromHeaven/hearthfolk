@@ -72,19 +72,23 @@ public class InhabitantScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
 
-        graphics.drawCenteredString(font, inhabitantName, width / 2, top + 8, TEXT_DARK);
-        graphics.drawCenteredString(font, dominionName, width / 2, top + 22, 0xFF8A6D00);
+        drawCentered(graphics, inhabitantName, top + 8, TEXT_DARK);
+        drawCentered(graphics, dominionName, top + 22, 0xFF8A6D00);
 
         if (currentTab == Tab.NEEDS) {
             renderNeedsTab(graphics, left, top);
         }
     }
 
+    private void drawCentered(GuiGraphics graphics, String text, int y, int color) {
+        graphics.drawString(font, text, width / 2 - font.width(text) / 2, y, color, false);
+    }
+
     private void renderNeedsTab(GuiGraphics graphics, int left, int top) {
         int barLeft = left + (PANEL_WIDTH - BAR_WIDTH) / 2;
         int contentTop = top + 70;
 
-        graphics.drawString(font, "Needs", left + 10, contentTop, TEXT_DARK);
+        graphics.drawString(font, "Needs", left + 10, contentTop, TEXT_DARK, false);
 
         var types = NeedType.values();
         var values = new float[] { shelter, food, rest };
@@ -94,7 +98,7 @@ public class InhabitantScreen extends Screen {
     }
 
     private void drawNeedBar(GuiGraphics graphics, int x, int y, NeedType type, float value) {
-        graphics.drawString(font, type.getDisplayName(), x, y, TEXT_DARK);
+        graphics.drawString(font, type.getDisplayName(), x, y, TEXT_DARK, false);
 
         int barY = y + 12;
         int fillColor = value >= 0.66f ? 0xFF3CB043 : value >= 0.33f ? 0xFFD9A400 : 0xFFCC3333;

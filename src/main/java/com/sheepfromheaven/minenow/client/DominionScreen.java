@@ -16,6 +16,11 @@ public class DominionScreen extends Screen {
     private static final int BASE_HEIGHT = 130;
     private static final int INHABITANT_LINE_HEIGHT = 12;
 
+    private static final int PANEL_FILL = 0xFFC6C6C6;
+    private static final int TEXT_DARK = 0xFF404040;
+    private static final int TEXT_LABEL = 0xFF404040;
+    private static final int TEXT_BODY = 0xFF303030;
+
     private final String dominionName;
     private final DominionTier tier;
     private final BlockPos bannerPos;
@@ -72,19 +77,23 @@ public class DominionScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - panelHeight()) / 2;
 
-        graphics.drawCenteredString(font, dominionName, width / 2, top + 8, 0xFFFFFFFF);
-        graphics.drawCenteredString(font, tier.getDisplayName(), width / 2, top + 22, 0xFFFFD700);
+        drawCentered(graphics, dominionName, top + 8, TEXT_DARK);
+        drawCentered(graphics, tier.getDisplayName(), top + 22, 0xFF8A6D00);
 
         if (!inhabitantNames.isEmpty()) {
             int secY = top + 114;
-            graphics.drawString(font, "Inhabitants (" + inhabitantNames.size() + "):", left + 10, secY, 0xFFAAAAAA);
+            graphics.drawString(font, "Inhabitants (" + inhabitantNames.size() + "):", left + 10, secY, TEXT_LABEL, false);
             secY += 14;
 
             for (var name : inhabitantNames) {
-                graphics.drawString(font, "  " + name, left + 10, secY, 0xFFDDDDDD);
+                graphics.drawString(font, "  " + name, left + 10, secY, TEXT_BODY, false);
                 secY += INHABITANT_LINE_HEIGHT;
             }
         }
+    }
+
+    private void drawCentered(GuiGraphics graphics, String text, int y, int color) {
+        graphics.drawString(font, text, width / 2 - font.width(text) / 2, y, color, false);
     }
 
     @Override
@@ -95,11 +104,7 @@ public class DominionScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - ph) / 2;
 
-        graphics.fill(left, top, left + PANEL_WIDTH, top + ph, 0xCC000000);
-        graphics.fill(left, top, left + PANEL_WIDTH, top + 1, 0xFF555555);
-        graphics.fill(left, top + ph - 1, left + PANEL_WIDTH, top + ph, 0xFF555555);
-        graphics.fill(left, top, left + 1, top + ph, 0xFF555555);
-        graphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + ph, 0xFF555555);
+        BeveledBox.draw(graphics, left, top, PANEL_WIDTH, ph, PANEL_FILL, false);
     }
 
     @Override

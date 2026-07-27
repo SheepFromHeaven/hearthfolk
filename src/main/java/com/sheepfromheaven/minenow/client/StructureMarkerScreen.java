@@ -27,6 +27,12 @@ public class StructureMarkerScreen extends Screen {
     private static final int SLOT_GAP = 4;
     private static final int REQ_ROW_HEIGHT = 14 + SLOT_SIZE + 4;
 
+    private static final int PANEL_FILL = 0xFFC6C6C6;
+    private static final int TEXT_DARK = 0xFF404040;
+    private static final int TEXT_LABEL = 0xFF404040;
+    private static final int SATISFIED = 0xFF3CB043;
+    private static final int UNSATISFIED = 0xFFCC3333;
+
     private enum Tab { GENERAL, REQUIREMENTS }
 
     private String structureName;
@@ -260,6 +266,10 @@ public class StructureMarkerScreen extends Screen {
         }
     }
 
+    private void drawCentered(GuiGraphics graphics, String text, int y, int color) {
+        graphics.drawString(font, text, width / 2 - font.width(text) / 2, y, color, false);
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
@@ -267,8 +277,8 @@ public class StructureMarkerScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - panelHeight()) / 2;
 
-        graphics.drawCenteredString(font, structureName, width / 2, top + 8, 0xFFFFFFFF);
-        graphics.drawCenteredString(font, structureType.getDisplayName(), width / 2, top + 22, 0xFF55FF55);
+        drawCentered(graphics, structureName, top + 8, TEXT_DARK);
+        drawCentered(graphics, structureType.getDisplayName(), top + 22, 0xFF8A6D00);
 
         if (currentTab == Tab.REQUIREMENTS) {
             renderRequirementsTab(graphics, mouseX, mouseY, left, top);
@@ -281,9 +291,9 @@ public class StructureMarkerScreen extends Screen {
 
         if (layout.spaceY() >= 0) {
             var spaceStatus = getSpaceStatus();
-            int color = spaceStatus.satisfied() ? 0xFF55FF55 : 0xFFFF5555;
-            graphics.drawCenteredString(font, "Space: " + spaceStatus.found() + "/" + spaceStatus.required(),
-                    width / 2, top + layout.spaceY(), color);
+            int color = spaceStatus.satisfied() ? SATISFIED : UNSATISFIED;
+            drawCentered(graphics, "Space: " + spaceStatus.found() + "/" + spaceStatus.required(),
+                    top + layout.spaceY(), color);
         }
 
         if (layout.reqY() >= 0) {
@@ -305,7 +315,7 @@ public class StructureMarkerScreen extends Screen {
     private Component drawRequirementRow(GuiGraphics graphics, int mouseX, int mouseY, int left, int rowTop,
                                           String label, List<StructureType.Requirement> reqs,
                                           List<DominionStructure.RequirementStatus> statuses) {
-        graphics.drawString(font, label, left + 10, rowTop, 0xFFAAAAAA);
+        graphics.drawString(font, label, left + 10, rowTop, TEXT_LABEL, false);
         int iconY = rowTop + 14;
 
         int totalWidth = reqs.size() * SLOT_SIZE + (reqs.size() - 1) * SLOT_GAP;
@@ -344,11 +354,7 @@ public class StructureMarkerScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - ph) / 2;
 
-        graphics.fill(left, top, left + PANEL_WIDTH, top + ph, 0xCC000000);
-        graphics.fill(left, top, left + PANEL_WIDTH, top + 1, 0xFF555555);
-        graphics.fill(left, top + ph - 1, left + PANEL_WIDTH, top + ph, 0xFF555555);
-        graphics.fill(left, top, left + 1, top + ph, 0xFF555555);
-        graphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + ph, 0xFF555555);
+        BeveledBox.draw(graphics, left, top, PANEL_WIDTH, ph, PANEL_FILL, false);
     }
 
     @Override
