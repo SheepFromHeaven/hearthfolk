@@ -26,10 +26,12 @@ public class InhabitantScreen extends Screen {
     private final float shelter;
     private final float food;
     private final float rest;
+    private final String jobStatus;
 
     private Tab currentTab = Tab.GENERAL;
 
-    public InhabitantScreen(int entityId, String inhabitantName, String dominionName, float shelter, float food, float rest) {
+    public InhabitantScreen(int entityId, String inhabitantName, String dominionName, float shelter, float food, float rest,
+                             String jobStatus) {
         super(Component.literal("Inhabitant"));
         this.entityId = entityId;
         this.inhabitantName = inhabitantName;
@@ -37,6 +39,7 @@ public class InhabitantScreen extends Screen {
         this.shelter = shelter;
         this.food = food;
         this.rest = rest;
+        this.jobStatus = jobStatus;
     }
 
     @Override
@@ -62,6 +65,10 @@ public class InhabitantScreen extends Screen {
             addRenderableWidget(Button.builder(Component.literal("Go Home"), button ->
                     ModNetwork.sendGoHome(entityId)
             ).pos(left + 10, top + 70).size(PANEL_WIDTH - 20, 20).build());
+
+            addRenderableWidget(Button.builder(Component.literal("View Inventory"), button ->
+                    ModNetwork.sendViewInventory(entityId)
+            ).pos(left + 10, top + 96).size(PANEL_WIDTH - 20, 20).build());
         }
     }
 
@@ -75,7 +82,9 @@ public class InhabitantScreen extends Screen {
         drawCentered(graphics, inhabitantName, top + 8, TEXT_DARK);
         drawCentered(graphics, dominionName, top + 22, 0xFF8A6D00);
 
-        if (currentTab == Tab.NEEDS) {
+        if (currentTab == Tab.GENERAL) {
+            drawCentered(graphics, "Job: " + jobStatus, top + 126, TEXT_DARK);
+        } else if (currentTab == Tab.NEEDS) {
             renderNeedsTab(graphics, left, top);
         }
     }

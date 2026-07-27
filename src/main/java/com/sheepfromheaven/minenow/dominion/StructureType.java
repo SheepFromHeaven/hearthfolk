@@ -4,21 +4,28 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public enum StructureType {
-    HOUSE("House"),
-    FISHERY("Fishery");
+    HOUSE("House", null),
+    FISHERY("Fishery", JobType.FISHER);
 
     private final String displayName;
+    private final JobType jobType;
 
-    StructureType(String displayName) {
+    StructureType(String displayName, JobType jobType) {
         this.displayName = displayName;
+        this.jobType = jobType;
     }
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public Optional<JobType> getJobType() {
+        return Optional.ofNullable(jobType);
     }
 
     public List<Requirement> getRequirements() {

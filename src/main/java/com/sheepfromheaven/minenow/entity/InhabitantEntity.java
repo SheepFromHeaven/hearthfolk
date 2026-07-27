@@ -1,14 +1,18 @@
 package com.sheepfromheaven.minenow.entity;
 
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
+import com.sheepfromheaven.minenow.dominion.JobType;
 import com.sheepfromheaven.minenow.dominion.NeedType;
+import com.sheepfromheaven.minenow.entity.job.WorkGoal;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -17,10 +21,13 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -29,20 +36,25 @@ import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animatable.manager.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.object.PlayState;
+import software.bernie.geckolib.animation.state.AnimationTest;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import javax.annotation.Nullable;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class InhabitantEntity extends PathfinderMob implements GeoEntity {
+public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier {
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
+    private final SimpleContainer inventory = new SimpleContainer(9);
 
     private UUID dominionId;
     private UUID homeStructureId;
     private UUID workStructureId;
     private final Map<NeedType, Float> needs = new EnumMap<>(NeedType.class);
     private boolean goHomeRequested;
+    private WorkGoal workGoal;
+    private boolean showingWorkWarning;
 
     public InhabitantEntity(EntityType<? extends InhabitantEntity> type, Level level) {
         super(type, level);
@@ -54,14 +66,33 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        // GeckoLib requires at least one registered controller even with no animations yet.
-        // This one is a no-op until animations/inhabitant.animation.json exists.
-        controllers.add(new AnimationController<>("idle", 0, test -> PlayState.STOP));
+        // Stubs for the animations still to be authored in animations/inhabitant.animation.json:
+        // idle, walk, cast_rod. Each returns STOP until its animation exists and the predicate is filled in.
+        controllers.add(new AnimationController<>("idle", 0, this::idlePredicate));
+        controllers.add(new AnimationController<>("walk", 0, this::walkPredicate));
+        controllers.add(new AnimationController<>("cast_rod", 0, this::castRodPredicate));
+    }
+
+    private PlayState idlePredicate(AnimationTest<InhabitantEntity> test) {
+        return PlayState.STOP;
+    }
+
+    private PlayState walkPredicate(AnimationTest<InhabitantEntity> test) {
+        return PlayState.STOP;
+    }
+
+    private PlayState castRodPredicate(AnimationTest<InhabitantEntity> test) {
+        return PlayState.STOP;
     }
 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return animatableInstanceCache;
+    }
+
+    @Override
+    public SimpleContainer getInventory() {
+        return inventory;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -79,11 +110,14 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     protected void registerGoals() {
+        workGoal = new WorkGoal(this);
         goalSelector.addGoal(0, new FloatGoal(this));
-        goalSelector.addGoal(1, new GoHomeGoal(this));
-        goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 0.35));
-        goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0f));
-        goalSelector.addGoal(4, new RandomLookAroundGoal(this));
+        goalSelector.addGoal(1, new OpenDoorGoal(this, true));
+        goalSelector.addGoal(2, new GoHomeGoal(this));
+        goalSelector.addGoal(3, workGoal);
+        goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.35));
+        goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0f));
+        goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
 
     @Override
@@ -97,6 +131,45 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
             }
             syncShelterToDominion();
         }
+        if (!level().isClientSide() && tickCount % 20 == 0) {
+            updateWorkWarning();
+        }
+    }
+
+    private void updateWorkWarning() {
+        var missingItem = workGoal != null ? workGoal.getMissingItem() : null;
+        boolean shouldWarn = missingItem != null;
+        if (shouldWarn == showingWorkWarning) {
+            return;
+        }
+        showingWorkWarning = shouldWarn;
+        var baseName = resolveBaseName();
+        if (shouldWarn) {
+            setCustomName(Component.literal(baseName + " §c!§r Needs " + missingItem.getDefaultInstance().getHoverName().getString()));
+        } else {
+            setCustomName(Component.literal(baseName));
+        }
+        setCustomNameVisible(true);
+    }
+
+    private String resolveBaseName() {
+        if (dominionId != null && level() instanceof ServerLevel serverLevel) {
+            var dominion = DominionSavedData.get(serverLevel).getDominionById(dominionId);
+            if (dominion != null) {
+                var inhabitant = dominion.getInhabitantByEntityUuid(getUUID());
+                if (inhabitant != null) return inhabitant.getName();
+            }
+        }
+        return getName().getString();
+    }
+
+    public String getJobStatus() {
+        return workGoal != null ? workGoal.getStatusDescription() : "Idle";
+    }
+
+    @Nullable
+    public Item getMissingWorkItem() {
+        return workGoal != null ? workGoal.getMissingItem() : null;
     }
 
     private void syncShelterToDominion() {
@@ -126,7 +199,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
         goHomeRequested = true;
     }
 
-    boolean isGoHomeRequested() {
+    public boolean isGoHomeRequested() {
         return goHomeRequested;
     }
 
@@ -218,6 +291,13 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
         output.putFloat("NeedShelter", getNeed(NeedType.SHELTER));
         output.putFloat("NeedFood", getNeed(NeedType.FOOD));
         output.putFloat("NeedRest", getNeed(NeedType.REST));
+        if (workGoal != null) {
+            var jobTag = new CompoundTag();
+            workGoal.save(jobTag);
+            if (!jobTag.isEmpty()) {
+                output.store("WorkGoal", CompoundTag.CODEC, jobTag);
+            }
+        }
     }
 
     @Override
@@ -232,5 +312,8 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
         setNeed(NeedType.SHELTER, input.getFloatOr("NeedShelter", 1.0f));
         setNeed(NeedType.FOOD, input.getFloatOr("NeedFood", 1.0f));
         setNeed(NeedType.REST, input.getFloatOr("NeedRest", 1.0f));
+        if (workGoal != null) {
+            input.read("WorkGoal", CompoundTag.CODEC).ifPresent(workGoal::load);
+        }
     }
 }

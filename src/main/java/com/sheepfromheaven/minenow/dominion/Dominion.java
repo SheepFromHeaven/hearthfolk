@@ -71,6 +71,7 @@ public class Dominion {
         var structure = structures.get(structureId);
         if (structure != null) {
             unassignInhabitant(structure, level);
+            unassignWorker(structure, level);
             structures.remove(structureId);
         }
     }
@@ -87,6 +88,20 @@ public class Dominion {
             }
         }
         structure.setAssignedInhabitantId(null);
+    }
+
+    public void unassignWorker(DominionStructure structure, ServerLevel level) {
+        UUID workerId = structure.getAssignedWorkerId();
+        if (workerId == null) return;
+        var inhabitant = inhabitants.get(workerId);
+        if (inhabitant != null) {
+            inhabitant.setWorkStructureId(null);
+            var entity = level.getEntity(inhabitant.getEntityUuid());
+            if (entity instanceof InhabitantEntity ie) {
+                ie.setWorkStructureId(null);
+            }
+        }
+        structure.setAssignedWorkerId(null);
     }
 
     public DominionStructure getStructureById(UUID structureId) {
@@ -121,10 +136,17 @@ public class Dominion {
 
     public void removeInhabitant(UUID inhabitantId) {
         var inhabitant = inhabitants.remove(inhabitantId);
-        if (inhabitant != null && inhabitant.getHomeStructureId() != null) {
+        if (inhabitant == null) return;
+        if (inhabitant.getHomeStructureId() != null) {
             var structure = structures.get(inhabitant.getHomeStructureId());
             if (structure != null) {
                 structure.setAssignedInhabitantId(null);
+            }
+        }
+        if (inhabitant.getWorkStructureId() != null) {
+            var structure = structures.get(inhabitant.getWorkStructureId());
+            if (structure != null) {
+                structure.setAssignedWorkerId(null);
             }
         }
     }

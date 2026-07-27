@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.dominion;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.Container;
 import net.minecraft.world.level.Level;
 
 import java.util.*;
@@ -14,6 +15,7 @@ public class DominionStructure {
     private final BlockPos markerPos;
     private Set<BlockPos> roomBlocks;
     private UUID assignedInhabitantId;
+    private UUID assignedWorkerId;
     private BlockPos cachedBedPos;
 
     public DominionStructure(String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks) {
@@ -24,13 +26,15 @@ public class DominionStructure {
         this.roomBlocks = roomBlocks;
     }
 
-    public DominionStructure(UUID id, String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks, UUID assignedInhabitantId) {
+    public DominionStructure(UUID id, String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks,
+                              UUID assignedInhabitantId, UUID assignedWorkerId) {
         this.id = id;
         this.name = name;
         this.type = type;
         this.markerPos = markerPos;
         this.roomBlocks = roomBlocks;
         this.assignedInhabitantId = assignedInhabitantId;
+        this.assignedWorkerId = assignedWorkerId;
     }
 
     public UUID getId() {
@@ -72,6 +76,14 @@ public class DominionStructure {
 
     public void setAssignedInhabitantId(UUID assignedInhabitantId) {
         this.assignedInhabitantId = assignedInhabitantId;
+    }
+
+    public UUID getAssignedWorkerId() {
+        return assignedWorkerId;
+    }
+
+    public void setAssignedWorkerId(UUID assignedWorkerId) {
+        this.assignedWorkerId = assignedWorkerId;
     }
 
     public boolean containsBlock(BlockPos pos) {
@@ -139,6 +151,37 @@ public class DominionStructure {
             results.add(new RequirementStatus(rangeReqs.get(i).displayName(), rangeReqs.get(i).count(), counts[i]));
         }
         return results;
+    }
+
+    public List<BlockPos> findContainers(Level level) {
+        var results = new ArrayList<BlockPos>();
+        for (var bp : collectInteriorAndWalls()) {
+            if (level.getBlockEntity(bp) instanceof Container) {
+                results.add(bp);
+            }
+        }
+        return results;
+    }
+
+    public Optional<BlockPos> findRangeRequirementPosition(Level level, StructureType.Requirement requirement) {
+        int radius = type.getRangeRadius();
+        int height = type.getRangeHeight();
+        if (radius <= 0) {
+            return Optional.empty();
+        }
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx * dx + dz * dz > radius * radius) continue;
+                for (int dy = -height; dy <= height; dy++) {
+                    var pos = markerPos.offset(dx, dy, dz);
+                    var state = level.getBlockState(pos);
+                    if (requirement.matcher().test(state) && hasOpenAirAbove(level, pos, requirement.airAbove())) {
+                        return Optional.of(pos);
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private boolean hasOpenAirAbove(Level level, BlockPos pos, int required) {

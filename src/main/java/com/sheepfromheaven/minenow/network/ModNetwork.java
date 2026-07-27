@@ -16,6 +16,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.MenuType;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -142,6 +145,20 @@ public class ModNetwork {
                                 inhabitant.goHome();
                             }
                         })
+                        .addMain(ViewInventoryPacket.class, ViewInventoryPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
+                            if (inhabitant.getDominionId() == null) return;
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.getDominionById(inhabitant.getDominionId());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            player.openMenu(new SimpleMenuProvider(
+                                    (containerId, playerInv, p) ->
+                                            new ChestMenu(MenuType.GENERIC_9x1, containerId, playerInv, inhabitant.getInventory(), 1),
+                                    inhabitant.getName()));
+                        })
                         .addMain(AssignHousePacket.class, AssignHousePacket.CODEC, (msg, ctx) -> {
                             var player = ctx.getSender();
                             if (player == null) return;
@@ -173,6 +190,37 @@ public class ModNetwork {
                             }
                             data.setDirty();
                         })
+                        .addMain(AssignWorkerPacket.class, AssignWorkerPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.findDominionContaining(msg.markerPos());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            var structure = dominion.getStructureAt(msg.markerPos());
+                            if (structure == null || structure.getType().getJobType().isEmpty()) return;
+
+                            dominion.unassignWorker(structure, level);
+
+                            if (!msg.inhabitantId().isEmpty()) {
+                                UUID newId = UUID.fromString(msg.inhabitantId());
+                                var newInhabitant = dominion.getInhabitant(newId);
+                                if (newInhabitant != null) {
+                                    for (var s : dominion.getStructures()) {
+                                        if (newId.equals(s.getAssignedWorkerId())) {
+                                            dominion.unassignWorker(s, level);
+                                        }
+                                    }
+                                    structure.setAssignedWorkerId(newId);
+                                    newInhabitant.setWorkStructureId(structure.getId());
+                                    var entity = level.getEntity(newInhabitant.getEntityUuid());
+                                    if (entity instanceof InhabitantEntity ie) {
+                                        ie.setWorkStructureId(structure.getId());
+                                    }
+                                }
+                            }
+                            data.setDirty();
+                        })
                 )
                 .clientbound(flow -> flow
                         .addMain(OpenDominionScreenPacket.class, OpenDominionScreenPacket.CODEC, (msg, ctx) -> {
@@ -190,14 +238,16 @@ public class ModNetwork {
                             net.minecraft.client.Minecraft.getInstance().execute(() ->
                                     net.minecraft.client.Minecraft.getInstance().setScreen(
                                             new com.sheepfromheaven.minenow.client.InhabitantScreen(
-                                                    msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest())));
+                                                    msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest(),
+                                                    msg.jobStatus())));
                         })
                         .addMain(OpenStructureScreenPacket.class, OpenStructureScreenPacket.CODEC, (msg, ctx) -> {
                             net.minecraft.client.Minecraft.getInstance().execute(() ->
                                     net.minecraft.client.Minecraft.getInstance().setScreen(
                                             new com.sheepfromheaven.minenow.client.StructureMarkerScreen(
                                                     msg.structureName(), StructureType.valueOf(msg.structureType()),
-                                                    msg.markerPos(), msg.inhabitantData(), msg.assignedInhabitantId())));
+                                                    msg.markerPos(), msg.inhabitantData(), msg.assignedInhabitantId(),
+                                                    msg.assignedWorkerId())));
                         })
                 );
     }
@@ -228,14 +278,21 @@ public class ModNetwork {
     }
 
     public static void sendOpenInhabitantScreen(ServerPlayer player, InhabitantEntity entity, Dominion dominion) {
+        var inhabitant = dominion.getInhabitantByEntityUuid(entity.getUUID());
+        var name = inhabitant != null ? inhabitant.getName() : entity.getName().getString();
         CHANNEL.send(new OpenInhabitantScreenPacket(
-                entity.getId(), entity.getName().getString(), dominion.getName(),
-                entity.getNeed(NeedType.SHELTER), entity.getNeed(NeedType.FOOD), entity.getNeed(NeedType.REST)
+                entity.getId(), name, dominion.getName(),
+                entity.getNeed(NeedType.SHELTER), entity.getNeed(NeedType.FOOD), entity.getNeed(NeedType.REST),
+                entity.getJobStatus()
         ), PacketDistributor.PLAYER.with(player));
     }
 
     public static void sendGoHome(int entityId) {
         CHANNEL.send(new GoHomePacket(entityId), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendViewInventory(int entityId) {
+        CHANNEL.send(new ViewInventoryPacket(entityId), PacketDistributor.SERVER.noArg());
     }
 
     public static void sendOpenStructureScreen(ServerPlayer player, Dominion dominion,
@@ -244,14 +301,20 @@ public class ModNetwork {
                 .map(i -> i.getId().toString() + ":" + i.getName())
                 .collect(Collectors.joining(","));
         var assignedId = structure.getAssignedInhabitantId();
+        var assignedWorkerId = structure.getAssignedWorkerId();
         CHANNEL.send(new OpenStructureScreenPacket(
                 structure.getName(), structure.getType().name(), structure.getMarkerPos(),
-                inhabitants, assignedId != null ? assignedId.toString() : ""
+                inhabitants, assignedId != null ? assignedId.toString() : "",
+                assignedWorkerId != null ? assignedWorkerId.toString() : ""
         ), PacketDistributor.PLAYER.with(player));
     }
 
     public static void sendAssignHouse(BlockPos markerPos, String inhabitantId) {
         CHANNEL.send(new AssignHousePacket(markerPos, inhabitantId), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendAssignWorker(BlockPos markerPos, String inhabitantId) {
+        CHANNEL.send(new AssignWorkerPacket(markerPos, inhabitantId), PacketDistributor.SERVER.noArg());
     }
 
     public record RenameDominionPacket(BlockPos bannerPos, String newName) {
@@ -295,7 +358,8 @@ public class ModNetwork {
         );
     }
 
-    public record OpenInhabitantScreenPacket(int entityId, String name, String dominionName, float shelter, float food, float rest) {
+    public record OpenInhabitantScreenPacket(int entityId, String name, String dominionName, float shelter, float food, float rest,
+                                              String jobStatus) {
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenInhabitantScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, OpenInhabitantScreenPacket::entityId,
                 ByteBufCodecs.STRING_UTF8, OpenInhabitantScreenPacket::name,
@@ -303,6 +367,7 @@ public class ModNetwork {
                 ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::shelter,
                 ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::food,
                 ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::rest,
+                ByteBufCodecs.STRING_UTF8, OpenInhabitantScreenPacket::jobStatus,
                 OpenInhabitantScreenPacket::new
         );
     }
@@ -314,6 +379,13 @@ public class ModNetwork {
         );
     }
 
+    public record ViewInventoryPacket(int entityId) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, ViewInventoryPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, ViewInventoryPacket::entityId,
+                ViewInventoryPacket::new
+        );
+    }
+
     public record AssignHousePacket(BlockPos markerPos, String inhabitantId) {
         public static final StreamCodec<RegistryFriendlyByteBuf, AssignHousePacket> CODEC = StreamCodec.composite(
                 BlockPos.STREAM_CODEC, AssignHousePacket::markerPos,
@@ -322,14 +394,23 @@ public class ModNetwork {
         );
     }
 
+    public record AssignWorkerPacket(BlockPos markerPos, String inhabitantId) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, AssignWorkerPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, AssignWorkerPacket::markerPos,
+                ByteBufCodecs.STRING_UTF8, AssignWorkerPacket::inhabitantId,
+                AssignWorkerPacket::new
+        );
+    }
+
     public record OpenStructureScreenPacket(String structureName, String structureType, BlockPos markerPos,
-                                            String inhabitantData, String assignedInhabitantId) {
+                                            String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenStructureScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureName,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureType,
                 BlockPos.STREAM_CODEC, OpenStructureScreenPacket::markerPos,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::inhabitantData,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedInhabitantId,
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedWorkerId,
                 OpenStructureScreenPacket::new
         );
     }

@@ -11,6 +11,7 @@ public class GoHomeGoal extends Goal {
     private static final int REPATH_INTERVAL = 60;
     private static final double ARRIVE_DISTANCE_SQ = 4.0;
     private static final double BED_ARRIVE_DISTANCE_SQ = 1.5 * 1.5;
+    private static final double WALK_SPEED = 0.6;
     private static final long NIGHT_START = 12542;
     private static final long NIGHT_END = 23460;
 
@@ -60,7 +61,7 @@ public class GoHomeGoal extends Goal {
     }
 
     private void moveToTarget() {
-        inhabitant.getNavigation().moveTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5, 1.0);
+        inhabitant.getNavigation().moveTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5, WALK_SPEED);
         repathCooldown = REPATH_INTERVAL;
     }
 

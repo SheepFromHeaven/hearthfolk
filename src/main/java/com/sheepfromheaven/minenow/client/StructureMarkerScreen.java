@@ -40,17 +40,18 @@ public class StructureMarkerScreen extends Screen {
     private final BlockPos markerPos;
     private final List<InhabitantEntry> inhabitants;
     private int selectedInhabitantIndex;
+    private int selectedWorkerIndex;
 
     private Tab currentTab = Tab.GENERAL;
     private EditBox nameField;
 
     public record InhabitantEntry(String id, String name) {}
 
-    private record GeneralLayout(int residentY, int rangeToggleY, int totalExtra) {}
+    private record GeneralLayout(int residentY, int workerY, int rangeToggleY, int totalExtra) {}
     private record RequirementsLayout(int spaceY, int reqY, int rangeReqY, int totalExtra) {}
 
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
-                                 String inhabitantData, String assignedInhabitantId) {
+                                 String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
         super(Component.literal("Structure"));
         this.structureName = structureName;
         this.structureType = structureType;
@@ -60,6 +61,13 @@ public class StructureMarkerScreen extends Screen {
         for (int i = 0; i < inhabitants.size(); i++) {
             if (inhabitants.get(i).id().equals(assignedInhabitantId)) {
                 selectedInhabitantIndex = i + 1;
+                break;
+            }
+        }
+        this.selectedWorkerIndex = 0;
+        for (int i = 0; i < inhabitants.size(); i++) {
+            if (inhabitants.get(i).id().equals(assignedWorkerId)) {
+                selectedWorkerIndex = i + 1;
                 break;
             }
         }
@@ -112,6 +120,10 @@ public class StructureMarkerScreen extends Screen {
         return structureType == StructureType.HOUSE;
     }
 
+    private boolean hasJob() {
+        return structureType.getJobType().isPresent();
+    }
+
     private boolean hasSpaceRequirement() {
         return structureType.getMinSize() > 0;
     }
@@ -135,17 +147,21 @@ public class StructureMarkerScreen extends Screen {
 
     private GeneralLayout computeGeneralLayout() {
         int y = CONTENT_START + BUTTON_ROW_HEIGHT * 4;
-        int residentY = -1, rangeToggleY = -1;
+        int residentY = -1, workerY = -1, rangeToggleY = -1;
 
         if (isHouse() && !inhabitants.isEmpty()) {
             residentY = y;
+            y += BUTTON_ROW_HEIGHT;
+        }
+        if (hasJob() && !inhabitants.isEmpty()) {
+            workerY = y;
             y += BUTTON_ROW_HEIGHT;
         }
         if (hasRangeRequirement()) {
             rangeToggleY = y;
             y += BUTTON_ROW_HEIGHT;
         }
-        return new GeneralLayout(residentY, rangeToggleY, y - CONTENT_START);
+        return new GeneralLayout(residentY, workerY, rangeToggleY, y - CONTENT_START);
     }
 
     private RequirementsLayout computeRequirementsLayout() {
@@ -175,6 +191,11 @@ public class StructureMarkerScreen extends Screen {
     private String getSelectedLabel() {
         if (selectedInhabitantIndex == 0) return "None";
         return inhabitants.get(selectedInhabitantIndex - 1).name();
+    }
+
+    private String getSelectedWorkerLabel() {
+        if (selectedWorkerIndex == 0) return "None";
+        return inhabitants.get(selectedWorkerIndex - 1).name();
     }
 
     private Component requirementsTabLabel() {
@@ -252,6 +273,18 @@ public class StructureMarkerScreen extends Screen {
                         ModNetwork.sendAssignHouse(markerPos, id);
                     }
             ).pos(left + 10, top + layout.residentY()).size(PANEL_WIDTH - 20, 20).build());
+        }
+
+        if (layout.workerY() >= 0) {
+            addRenderableWidget(Button.builder(
+                    Component.literal("Worker: " + getSelectedWorkerLabel()),
+                    button -> {
+                        selectedWorkerIndex = (selectedWorkerIndex + 1) % (inhabitants.size() + 1);
+                        button.setMessage(Component.literal("Worker: " + getSelectedWorkerLabel()));
+                        String id = selectedWorkerIndex == 0 ? "" : inhabitants.get(selectedWorkerIndex - 1).id();
+                        ModNetwork.sendAssignWorker(markerPos, id);
+                    }
+            ).pos(left + 10, top + layout.workerY()).size(PANEL_WIDTH - 20, 20).build());
         }
 
         if (layout.rangeToggleY() >= 0) {
