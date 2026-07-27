@@ -24,9 +24,6 @@ public final class VanillaRowBackground {
     private static final float START_BORDER_SAMPLE_U = VanillaRowMenu.GRID_X - BORDER_PATCH_WIDTH;
     private static final float END_BORDER_SAMPLE_U =
             VanillaRowMenu.GRID_X + VanillaRowMenu.GRID_CELLS * 18 - BORDER_PATCH_WIDTH;
-    // A genuine interior row-to-row boundary (far from any row we touch), reused for the tool
-    // slot's own bottom edge when the row beneath it has no slot to anchor that border either.
-    private static final float VERTICAL_END_BORDER_SAMPLE_V = CELL_TOP_Y + 4 * 18 - BORDER_PATCH_WIDTH;
 
     public static final int IMAGE_WIDTH = 176;
 
@@ -52,13 +49,15 @@ public final class VanillaRowBackground {
             int usedInRow = Math.max(0, Math.min(columns, generalCapacity - row * columns));
 
             // Leading hidden region: the tool slots' row also reserves the gap after them; every
-            // other row just reserves the same leading width for column alignment. Only the tool
-            // row's sweep needs to protect a real slot to its left (the last tool slot) - and that
-            // boundary is deliberately left open (no border), matching the player's offhand look.
+            // other row just reserves the same leading width for column alignment. The tool row's
+            // sweep steals the shared border from the last tool slot's own trailing edge, so patch
+            // a real one back onto it (mirroring the general slots' own trailing-edge treatment).
             int leadStart = row == 0 ? toolSlotCount : 0;
             for (int i = leadStart; i < generalStart; i++) {
                 if (row == 0 && toolSlotCount > 0 && i == leadStart) {
                     hideCellSweepLeft(graphics, left, rowTop, i);
+                    int x = left + VanillaRowMenu.gridX(toolSlotCount) - BORDER_PATCH_WIDTH;
+                    patchBorder(graphics, x, rowTop, END_BORDER_SAMPLE_U);
                 } else if (i == 0) {
                     // No tool slot anchoring this row's left edge, so also erase the panel's own
                     // outer frame bevel there - otherwise it keeps showing (continuing uniformly

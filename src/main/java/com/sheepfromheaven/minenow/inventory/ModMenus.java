@@ -19,8 +19,8 @@ public class ModMenus {
     // and grid shape as the real inhabitant inventory. It has to match InhabitantEntity's default
     // capacity - if that capacity ever becomes variable (backpack/pouch items), this needs to
     // become sync-aware too.
-    private static final int INHABITANT_INVENTORY_COLUMNS = 4;
-    private static final int INHABITANT_INVENTORY_ROWS = 4;
+    private static final int INHABITANT_INVENTORY_COLUMNS = 2;
+    private static final int INHABITANT_INVENTORY_ROWS = 1;
 
     public static final RegistryObject<MenuType<VanillaRowMenu>> INHABITANT_INVENTORY_TYPE =
             MENUS.register("inhabitant_inventory", () -> new MenuType<>(
