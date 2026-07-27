@@ -159,7 +159,7 @@ public class StructureRequirementsConfig {
         addBlockReq(fishReqs, "minecraft:smoker", "Smoker", 1);
         fishery.add("requirements", fishReqs);
         fishery.addProperty("rangeRadius", 8);
-        fishery.addProperty("rangeHeight", 4);
+        fishery.addProperty("rangeHeight", 8);
         var fishRangeReqs = new JsonArray();
         var water = new JsonObject();
         water.addProperty("block", "minecraft:water");
