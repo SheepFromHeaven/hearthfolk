@@ -34,3 +34,10 @@ description='''MineNow mod.'''
     versionRange="[1.21.11,1.22,)"
     ordering="NONE"
     side="BOTH"
+
+[[dependencies.minenow]]
+    modId="geckolib"
+    mandatory=true
+    versionRange="[5.4,6)"
+    ordering="AFTER"
+    side="BOTH"

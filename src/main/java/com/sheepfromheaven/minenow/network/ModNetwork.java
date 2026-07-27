@@ -4,12 +4,20 @@ import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.Config;
 import com.sheepfromheaven.minenow.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.block.TownBannerBlockEntity;
+import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
+import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
+import com.sheepfromheaven.minenow.dominion.DominionTier;
 import com.sheepfromheaven.minenow.dominion.RoomDetector;
 import com.sheepfromheaven.minenow.dominion.StructureType;
+import com.sheepfromheaven.minenow.dominion.NeedType;
+import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
+import java.util.List;
+import java.util.stream.Collectors;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -123,6 +131,37 @@ public class ModNetwork {
                                 }
                             }
                         })
+                        .addMain(GoHomePacket.class, GoHomePacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
+                            if (inhabitant.getDominionId() == null) return;
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.getDominionById(inhabitant.getDominionId());
+                            if (dominion != null && dominion.getOwnerUuid().equals(player.getUUID())) {
+                                inhabitant.goHome();
+                            }
+                        })
+                )
+                .clientbound(flow -> flow
+                        .addMain(OpenDominionScreenPacket.class, OpenDominionScreenPacket.CODEC, (msg, ctx) -> {
+                            net.minecraft.client.Minecraft.getInstance().execute(() -> {
+                                var inhabitantNames = msg.inhabitantNames().isEmpty()
+                                        ? List.<String>of()
+                                        : List.of(msg.inhabitantNames().split(","));
+                                net.minecraft.client.Minecraft.getInstance().setScreen(
+                                        new com.sheepfromheaven.minenow.client.DominionScreen(
+                                                msg.dominionName(), DominionTier.valueOf(msg.tier()),
+                                                msg.bannerPos(), inhabitantNames));
+                            });
+                        })
+                        .addMain(OpenInhabitantScreenPacket.class, OpenInhabitantScreenPacket.CODEC, (msg, ctx) -> {
+                            net.minecraft.client.Minecraft.getInstance().execute(() ->
+                                    net.minecraft.client.Minecraft.getInstance().setScreen(
+                                            new com.sheepfromheaven.minenow.client.InhabitantScreen(
+                                                    msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest())));
+                        })
                 );
     }
 
@@ -140,6 +179,26 @@ public class ModNetwork {
 
     public static void sendRecalculateStructure(BlockPos markerPos) {
         CHANNEL.send(new RecalculateStructurePacket(markerPos), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendOpenDominionScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos) {
+        var names = dominion.getInhabitants().stream()
+                .map(DominionInhabitant::getName)
+                .collect(Collectors.joining(","));
+        CHANNEL.send(new OpenDominionScreenPacket(
+                dominion.getName(), dominion.getTier().name(), bannerPos, names
+        ), PacketDistributor.PLAYER.with(player));
+    }
+
+    public static void sendOpenInhabitantScreen(ServerPlayer player, InhabitantEntity entity, Dominion dominion) {
+        CHANNEL.send(new OpenInhabitantScreenPacket(
+                entity.getId(), entity.getName().getString(), dominion.getName(),
+                entity.getNeed(NeedType.SHELTER), entity.getNeed(NeedType.FOOD), entity.getNeed(NeedType.REST)
+        ), PacketDistributor.PLAYER.with(player));
+    }
+
+    public static void sendGoHome(int entityId) {
+        CHANNEL.send(new GoHomePacket(entityId), PacketDistributor.SERVER.noArg());
     }
 
     public record RenameDominionPacket(BlockPos bannerPos, String newName) {
@@ -170,6 +229,35 @@ public class ModNetwork {
                 BlockPos.STREAM_CODEC, SetStructureTypePacket::markerPos,
                 ByteBufCodecs.STRING_UTF8, SetStructureTypePacket::typeName,
                 SetStructureTypePacket::new
+        );
+    }
+
+    public record OpenDominionScreenPacket(String dominionName, String tier, BlockPos bannerPos, String inhabitantNames) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenDominionScreenPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::dominionName,
+                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::tier,
+                BlockPos.STREAM_CODEC, OpenDominionScreenPacket::bannerPos,
+                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::inhabitantNames,
+                OpenDominionScreenPacket::new
+        );
+    }
+
+    public record OpenInhabitantScreenPacket(int entityId, String name, String dominionName, float shelter, float food, float rest) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenInhabitantScreenPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, OpenInhabitantScreenPacket::entityId,
+                ByteBufCodecs.STRING_UTF8, OpenInhabitantScreenPacket::name,
+                ByteBufCodecs.STRING_UTF8, OpenInhabitantScreenPacket::dominionName,
+                ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::shelter,
+                ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::food,
+                ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::rest,
+                OpenInhabitantScreenPacket::new
+        );
+    }
+
+    public record GoHomePacket(int entityId) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, GoHomePacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, GoHomePacket::entityId,
+                GoHomePacket::new
         );
     }
 }

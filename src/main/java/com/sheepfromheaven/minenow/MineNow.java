@@ -5,9 +5,7 @@ import com.sheepfromheaven.minenow.block.ModBlocks;
 import com.sheepfromheaven.minenow.item.ModItems;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import com.mojang.logging.LogUtils;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -27,12 +25,15 @@ public final class MineNow {
 
         ModBlocks.register(modBusGroup);
         ModItems.register(modBusGroup);
+        com.sheepfromheaven.minenow.entity.ModEntities.register(modBusGroup);
 
         FMLCommonSetupEvent.getBus(modBusGroup).addListener(this::commonSetup);
 
-        BuildCreativeModeTabContentsEvent.BUS.addListener(MineNow::addCreative);
-
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        net.minecraftforge.event.entity.EntityAttributeCreationEvent.BUS.addListener(event ->
+                event.put(com.sheepfromheaven.minenow.entity.ModEntities.INHABITANT.get(),
+                        com.sheepfromheaven.minenow.entity.InhabitantEntity.createAttributes().build()));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             registerRenderers();
@@ -49,13 +50,6 @@ public final class MineNow {
                 net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
     }
 
-    private static void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-            event.accept(ModItems.TOWN_BANNER.get());
-            event.accept(ModItems.STRUCTURE_MARKER.get());
-        }
-    }
-
     @Mod.EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
@@ -64,8 +58,11 @@ public final class MineNow {
     }
 
     public static void registerRenderers() {
-        net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers.BUS.addListener(event ->
-                event.registerBlockEntityRenderer(ModBlocks.TOWN_BANNER_BE.get(),
-                        com.sheepfromheaven.minenow.client.TownBannerRenderer::new));
+        net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers.BUS.addListener(event -> {
+            event.registerBlockEntityRenderer(ModBlocks.TOWN_BANNER_BE.get(),
+                    com.sheepfromheaven.minenow.client.TownBannerRenderer::new);
+            event.registerEntityRenderer(com.sheepfromheaven.minenow.entity.ModEntities.INHABITANT.get(),
+                    com.sheepfromheaven.minenow.client.InhabitantRenderer::new);
+        });
     }
 }

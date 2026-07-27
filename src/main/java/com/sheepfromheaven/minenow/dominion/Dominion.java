@@ -11,6 +11,7 @@ public class Dominion {
     private BlockPos bannerPos;
     private DominionTier tier;
     private final Map<UUID, DominionStructure> structures = new HashMap<>();
+    private final Map<UUID, DominionInhabitant> inhabitants = new HashMap<>();
 
     public Dominion(UUID ownerUuid, String name, BlockPos bannerPos) {
         this.id = UUID.randomUUID();
@@ -88,5 +89,30 @@ public class Dominion {
 
     public Collection<DominionStructure> getStructures() {
         return Collections.unmodifiableCollection(structures.values());
+    }
+
+    public void addInhabitant(DominionInhabitant inhabitant) {
+        inhabitants.put(inhabitant.getId(), inhabitant);
+    }
+
+    public void removeInhabitant(UUID inhabitantId) {
+        inhabitants.remove(inhabitantId);
+    }
+
+    public DominionInhabitant getInhabitant(UUID inhabitantId) {
+        return inhabitants.get(inhabitantId);
+    }
+
+    public DominionInhabitant getInhabitantByEntityUuid(UUID entityUuid) {
+        for (var v : inhabitants.values()) {
+            if (v.getEntityUuid().equals(entityUuid)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public Collection<DominionInhabitant> getInhabitants() {
+        return Collections.unmodifiableCollection(inhabitants.values());
     }
 }

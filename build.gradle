@@ -53,11 +53,31 @@ repositories {
     maven fg.forgeMaven
     maven fg.minecraftLibsMaven
     mavenCentral()
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroup 'software.bernie.geckolib'
+        }
+    }
 }
+
+// ForgeGradle 7.0.31's run-task classpath computation breaks (drops the forge jar entirely)
+// when GeckoLib is declared as a normal module dependency. Confirmed dev-tooling-only bug:
+// real Forge installs apply mod dependencies (and their access transformers) fine at runtime;
+// this only breaks ./gradlew runClient/runServer/runData in this exact ForgeGradle version.
+// Workaround: resolve GeckoLib via a detached configuration and depend on the resolved file
+// directly. This sidesteps whatever broken module-dependency handling triggers the bug, while
+// still using the real, unmodified GeckoLib jar for compiling and running.
+def geckolibResolved = configurations.detachedConfiguration(
+        dependencies.create('software.bernie.geckolib:geckolib-forge-1.21.11:5.4.5')
+)
+geckolibResolved.setTransitive(false)
 
 dependencies {
     implementation minecraft.dependency('net.minecraftforge:forge:1.21.11-61.1.0')
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.1'
+    implementation files(geckolibResolved.singleFile)
 }
 
 tasks.withType(JavaCompile).configureEach {

@@ -1,8 +1,7 @@
 package com.sheepfromheaven.minenow.block;
 
-import com.sheepfromheaven.minenow.client.DominionScreen;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
-import net.minecraft.client.Minecraft;
+import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -29,10 +28,11 @@ final class TownBannerBehavior {
     }
 
     static InteractionResult onUse(Level level, BlockPos pos, Player player) {
-        if (level.isClientSide()) {
-            if (level.getBlockEntity(pos) instanceof TownBannerBlockEntity be && !be.getDominionName().isEmpty()) {
-                Minecraft.getInstance().setScreen(new DominionScreen(be.getDominionName(), be.getDominionTier(), pos));
-                return InteractionResult.SUCCESS;
+        if (!level.isClientSide() && level instanceof ServerLevel) {
+            var data = DominionSavedData.get((ServerLevel) level);
+            var dominion = data.getDominionAt(pos);
+            if (dominion != null && dominion.getOwnerUuid().equals(player.getUUID())) {
+                ModNetwork.sendOpenDominionScreen((net.minecraft.server.level.ServerPlayer) player, dominion, pos);
             }
         }
         return InteractionResult.SUCCESS;

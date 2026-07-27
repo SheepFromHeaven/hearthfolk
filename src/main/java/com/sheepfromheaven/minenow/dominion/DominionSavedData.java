@@ -25,6 +25,30 @@ public class DominionSavedData extends SavedData {
             )
     );
 
+    private static final Codec<DominionInhabitant> INHABITANT_CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                    Codec.STRING.fieldOf("id").forGetter(v -> v.getId().toString()),
+                    Codec.STRING.fieldOf("entityUuid").forGetter(v -> v.getEntityUuid().toString()),
+                    Codec.STRING.fieldOf("name").forGetter(DominionInhabitant::getName),
+                    Codec.STRING.optionalFieldOf("homeStructureId", "").forGetter(v -> v.getHomeStructureId() != null ? v.getHomeStructureId().toString() : ""),
+                    Codec.STRING.optionalFieldOf("workStructureId", "").forGetter(v -> v.getWorkStructureId() != null ? v.getWorkStructureId().toString() : ""),
+                    Codec.FLOAT.fieldOf("shelter").forGetter(v -> v.getNeed(NeedType.SHELTER)),
+                    Codec.FLOAT.fieldOf("food").forGetter(v -> v.getNeed(NeedType.FOOD)),
+                    Codec.FLOAT.fieldOf("rest").forGetter(v -> v.getNeed(NeedType.REST))
+            ).apply(instance, (id, entityUuid, name, homeId, workId, shelter, food, rest) -> {
+                var needs = new java.util.EnumMap<NeedType, Float>(NeedType.class);
+                needs.put(NeedType.SHELTER, shelter);
+                needs.put(NeedType.FOOD, food);
+                needs.put(NeedType.REST, rest);
+                return new DominionInhabitant(
+                        UUID.fromString(id), UUID.fromString(entityUuid), name,
+                        homeId.isEmpty() ? null : UUID.fromString(homeId),
+                        workId.isEmpty() ? null : UUID.fromString(workId),
+                        needs
+                );
+            })
+    );
+
     private static final Codec<Dominion> DOMINION_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.STRING.fieldOf("id").forGetter(d -> d.getId().toString()),
@@ -32,11 +56,15 @@ public class DominionSavedData extends SavedData {
                     Codec.STRING.fieldOf("name").forGetter(Dominion::getName),
                     BlockPos.CODEC.fieldOf("bannerPos").forGetter(Dominion::getBannerPos),
                     Codec.STRING.fieldOf("tier").forGetter(d -> d.getTier().name()),
-                    STRUCTURE_CODEC.listOf().optionalFieldOf("structures", List.of()).forGetter(d -> new ArrayList<>(d.getStructures()))
-            ).apply(instance, (id, owner, name, pos, tier, structures) -> {
+                    STRUCTURE_CODEC.listOf().optionalFieldOf("structures", List.of()).forGetter(d -> new ArrayList<>(d.getStructures())),
+                    INHABITANT_CODEC.listOf().optionalFieldOf("villagers", List.of()).forGetter(d -> new ArrayList<>(d.getInhabitants()))
+            ).apply(instance, (id, owner, name, pos, tier, structures, villagers) -> {
                 var dominion = new Dominion(UUID.fromString(id), UUID.fromString(owner), name, pos, DominionTier.valueOf(tier));
                 for (var s : structures) {
                     dominion.addStructure(s);
+                }
+                for (var v : villagers) {
+                    dominion.addInhabitant(v);
                 }
                 return dominion;
             })
@@ -76,6 +104,10 @@ public class DominionSavedData extends SavedData {
     public void removeDominion(UUID dominionId) {
         dominions.remove(dominionId);
         setDirty();
+    }
+
+    public Dominion getDominionById(UUID id) {
+        return dominions.get(id);
     }
 
     public Dominion getDominionAt(BlockPos pos) {

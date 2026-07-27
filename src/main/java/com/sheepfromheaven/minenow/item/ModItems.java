@@ -37,6 +37,13 @@ public class ModItems {
                             .stacksTo(16)
             ));
 
+    public static final RegistryObject<InvitationItem> INVITATION = ITEMS.register("invitation",
+            () -> new InvitationItem(
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "invitation")))
+                            .stacksTo(16)
+            ));
+
     public static void register(BusGroup modBusGroup) {
         ITEMS.register(modBusGroup);
     }
