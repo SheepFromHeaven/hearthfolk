@@ -24,6 +24,9 @@ public final class VanillaRowBackground {
     private static final float START_BORDER_SAMPLE_U = VanillaRowMenu.GRID_X - BORDER_PATCH_WIDTH;
     private static final float END_BORDER_SAMPLE_U =
             VanillaRowMenu.GRID_X + VanillaRowMenu.GRID_CELLS * 18 - BORDER_PATCH_WIDTH;
+    // A genuine interior row-to-row boundary (far from any row we touch), reused for the tool
+    // slot's own bottom edge when the row beneath it has no slot to anchor that border either.
+    private static final float VERTICAL_END_BORDER_SAMPLE_V = CELL_TOP_Y + 4 * 18 - BORDER_PATCH_WIDTH;
 
     public static final int IMAGE_WIDTH = 176;
 
@@ -56,6 +59,12 @@ public final class VanillaRowBackground {
             for (int i = leadStart; i < generalStart; i++) {
                 if (row == 0 && toolSlotCount > 0 && i == leadStart) {
                     hideCellSweepLeft(graphics, left, rowTop, i);
+                } else if (i == 0) {
+                    // No tool slot anchoring this row's left edge, so also erase the panel's own
+                    // outer frame bevel there - otherwise it keeps showing (continuing uniformly
+                    // for the whole panel height) and looks like the tool slot's border repeating
+                    // down every row.
+                    hideOuterLeftEdge(graphics, left, rowTop);
                 } else {
                     hideCell(graphics, left, rowTop, i);
                 }
@@ -85,6 +94,13 @@ public final class VanillaRowBackground {
         int x = left + VanillaRowMenu.gridX(gridIndex);
         int y = rowTop + CELL_TOP_Y;
         graphics.fill(x, y, x + 18, y + 18, PANEL_FILL);
+    }
+
+    /** Like {@link #hideCell} for grid index 0, but also erases the outer panel frame to its left. */
+    private static void hideOuterLeftEdge(GuiGraphics graphics, int left, int rowTop) {
+        int x = left + VanillaRowMenu.gridX(0);
+        int y = rowTop + CELL_TOP_Y;
+        graphics.fill(left, y, x + 18, y + 18, PANEL_FILL);
     }
 
     /** Also sweeps into the preceding slot's side to fully catch the grid's shared border column. */
