@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.dominion;
 
+import com.sheepfromheaven.minenow.entity.job.TreeScanner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -178,6 +179,33 @@ public class DominionStructure {
             }
         }
         return results;
+    }
+
+    /**
+     * Scans the structure's range for a naturally-grown tree (see {@link TreeScanner}), skipping any
+     * log blocks that turn out to be part of a player-built structure rather than a real trunk.
+     */
+    public Optional<List<BlockPos>> findTreeInRange(Level level) {
+        int radius = type.getRangeRadius();
+        int height = type.getRangeHeight();
+        if (radius <= 0) {
+            return Optional.empty();
+        }
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx * dx + dz * dz > radius * radius) continue;
+                for (int dy = -height; dy <= height; dy++) {
+                    var pos = markerPos.offset(dx, dy, dz);
+                    if (level.getBlockState(pos).is(BlockTags.LOGS)) {
+                        var tree = TreeScanner.findTree(level, pos);
+                        if (tree.isPresent()) {
+                            return tree;
+                        }
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public Optional<BlockPos> findRangeRequirementPosition(Level level, StructureType.Requirement requirement) {

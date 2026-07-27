@@ -171,6 +171,22 @@ public class StructureRequirementsConfig {
         fishery.add("rangeRequirements", fishRangeReqs);
         root.add("FISHERY", fishery);
 
+        var lumberyard = new JsonObject();
+        var lumberReqs = new JsonArray();
+        addBlockReq(lumberReqs, "minecraft:barrel", "Barrel", 1);
+        lumberyard.add("requirements", lumberReqs);
+        lumberyard.addProperty("rangeRadius", 8);
+        lumberyard.addProperty("rangeHeight", 4);
+        var lumberRangeReqs = new JsonArray();
+        var logs = new JsonObject();
+        logs.addProperty("tag", "minecraft:logs");
+        logs.addProperty("icon", "minecraft:oak_log");
+        logs.addProperty("name", "Tree");
+        logs.addProperty("count", 1);
+        lumberRangeReqs.add(logs);
+        lumberyard.add("rangeRequirements", lumberRangeReqs);
+        root.add("LUMBERYARD", lumberyard);
+
         try {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(root));
@@ -205,18 +221,26 @@ public class StructureRequirementsConfig {
                         s -> s.is(net.minecraft.world.level.block.Blocks.SMOKER),
                         () -> new ItemStack(net.minecraft.world.item.Items.SMOKER))
         ));
+        REQUIREMENTS.put(StructureType.LUMBERYARD, List.of(
+                new StructureType.Requirement("Barrel", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
+                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
+        ));
 
         MIN_SIZES.clear();
         MIN_SIZES.put(StructureType.HOUSE, 32);
         MIN_SIZES.put(StructureType.FISHERY, 0);
+        MIN_SIZES.put(StructureType.LUMBERYARD, 0);
 
         RANGE_RADII.clear();
         RANGE_RADII.put(StructureType.HOUSE, 0);
         RANGE_RADII.put(StructureType.FISHERY, 8);
+        RANGE_RADII.put(StructureType.LUMBERYARD, 8);
 
         RANGE_HEIGHTS.clear();
         RANGE_HEIGHTS.put(StructureType.HOUSE, 0);
         RANGE_HEIGHTS.put(StructureType.FISHERY, 4);
+        RANGE_HEIGHTS.put(StructureType.LUMBERYARD, 4);
 
         RANGE_REQUIREMENTS.clear();
         RANGE_REQUIREMENTS.put(StructureType.HOUSE, List.of());
@@ -224,6 +248,11 @@ public class StructureRequirementsConfig {
                 new StructureType.Requirement("Water", 1,
                         s -> s.is(net.minecraft.world.level.block.Blocks.WATER),
                         () -> new ItemStack(net.minecraft.world.item.Items.WATER_BUCKET), 2)
+        ));
+        RANGE_REQUIREMENTS.put(StructureType.LUMBERYARD, List.of(
+                new StructureType.Requirement("Tree", 1,
+                        s -> s.is(net.minecraft.tags.BlockTags.LOGS),
+                        () -> new ItemStack(net.minecraft.world.item.Items.OAK_LOG))
         ));
     }
 }

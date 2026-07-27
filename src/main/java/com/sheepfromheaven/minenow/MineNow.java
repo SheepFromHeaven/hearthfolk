@@ -64,6 +64,30 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.FisheryStorageTests::storageContainersSkipsWorkstations);
                     helper.register("storage_containers_finds_extra_containers_not_just_required_barrel",
                             com.sheepfromheaven.minenow.gametest.FisheryStorageTests::storageContainersFindsExtraContainersNotJustRequiredBarrel);
+                    helper.register("log_on_soil_with_natural_leaf_is_recognized_as_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::logOnSoilWithNaturalLeafIsRecognizedAsTree);
+                    helper.register("log_pillar_without_leaves_is_not_a_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::logPillarWithoutLeavesIsNotATree);
+                    helper.register("log_with_only_persistent_leaf_is_not_a_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::logWithOnlyPersistentLeafIsNotATree);
+                    helper.register("log_not_on_soil_is_not_a_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::logNotOnSoilIsNotATree);
+                    helper.register("log_adjacent_to_planks_aborts_even_with_leaves_higher_up",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::logAdjacentToPlanksAbortsEvenWithLeavesHigherUp);
+                    helper.register("beehive_neighbor_allows_climbing_to_leaves_above",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::beehiveNeighborAllowsClimbingToLeavesAbove);
+                    helper.register("same_axis_log_neighbor_allows_climbing_to_leaves_above",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::sameAxisLogNeighborAllowsClimbingToLeavesAbove);
+                    helper.register("different_axis_log_neighbor_aborts_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::differentAxisLogNeighborAbortsTree);
+                    helper.register("non_log_pillar_two_blocks_away_does_not_abort_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::nonLogPillarTwoBlocksAwayDoesNotAbortTree);
+                    helper.register("find_tree_in_range_finds_valid_tree",
+                            com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeFindsValidTree);
+                    helper.register("find_tree_in_range_skips_log_pillar_without_leaves",
+                            com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeSkipsLogPillarWithoutLeaves);
+                    helper.register("find_tree_in_range_ignores_nearby_log_house_and_still_finds_real_tree",
+                            com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

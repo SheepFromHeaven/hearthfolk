@@ -4,15 +4,22 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.function.Predicate;
+
 /** Small helpers for jobs that need to move items into/out of world containers (barrels, chests, ...). */
 public final class ContainerUtil {
     private ContainerUtil() {}
 
     /** Removes and returns one whole stack of the given item from the container, or {@link ItemStack#EMPTY} if none found. */
     public static ItemStack extractStack(Container container, Item item) {
+        return extractFirst(container, stack -> stack.is(item));
+    }
+
+    /** Removes and returns the first stack matching the predicate, or {@link ItemStack#EMPTY} if none found. */
+    public static ItemStack extractFirst(Container container, Predicate<ItemStack> matcher) {
         for (int i = 0; i < container.getContainerSize(); i++) {
             var stack = container.getItem(i);
-            if (stack.is(item)) {
+            if (!stack.isEmpty() && matcher.test(stack)) {
                 return container.removeItem(i, stack.getCount());
             }
         }

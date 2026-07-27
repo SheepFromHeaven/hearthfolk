@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:log_on_soil_with_natural_leaf_is_recognized_as_tree",
+  "structure": "minenow:room_5x4x5",
+  "max_ticks": 20
+}

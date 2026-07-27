@@ -10,7 +10,8 @@ import java.util.function.Supplier;
 
 public enum StructureType {
     HOUSE("House", null),
-    FISHERY("Fishery", JobType.FISHER);
+    FISHERY("Fishery", JobType.FISHER),
+    LUMBERYARD("Lumberyard", JobType.LUMBERJACK);
 
     private final String displayName;
     private final JobType jobType;
