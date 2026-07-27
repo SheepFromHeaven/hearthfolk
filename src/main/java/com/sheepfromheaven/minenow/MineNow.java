@@ -38,6 +38,20 @@ public final class MineNow {
                 event.put(com.sheepfromheaven.minenow.entity.ModEntities.INHABITANT.get(),
                         com.sheepfromheaven.minenow.entity.InhabitantEntity.createAttributes().build()));
 
+        net.minecraftforge.registries.RegisterEvent.getBus(modBusGroup).addListener(event ->
+                event.register(net.minecraft.core.registries.Registries.TEST_FUNCTION, helper -> {
+                    helper.register("inhabitant_sleeps_in_assigned_bed_at_night",
+                            com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantSleepsInAssignedBedAtNight);
+                    helper.register("inhabitant_walks_home_when_requested",
+                            com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantWalksHomeWhenRequested);
+                    helper.register("inhabitant_walks_around_house_to_bed",
+                            com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantWalksAroundHouseToBed);
+                    helper.register("inhabitant_opens_door_to_reach_bed",
+                            com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantOpensDoorToReachBed);
+                    helper.register("inhabitant_opens_gate_to_reach_bed",
+                            com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantOpensGateToReachBed);
+                }));
+
         if (FMLEnvironment.dist == Dist.CLIENT) {
             registerRenderers();
             com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(context);

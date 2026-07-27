@@ -38,7 +38,9 @@ minecraft {
             args '--nogui'
         }
 
-        register('gameTestServer')
+        register('gameTestServer') {
+            args '--report', layout.projectDirectory.file('build/test-report.xml').asFile.absolutePath
+        }
 
         register('data') {
             workingDir = layout.projectDirectory.dir('run-data')
