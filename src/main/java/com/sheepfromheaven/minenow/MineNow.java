@@ -50,6 +50,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantOpensDoorToReachBed);
                     helper.register("inhabitant_opens_gate_to_reach_bed",
                             com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantOpensGateToReachBed);
+                    helper.register("disbanding_dominion_converts_inhabitants_and_clears_data",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::disbandingDominionConvertsInhabitantsAndClearsData);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -69,8 +71,8 @@ public final class MineNow {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             event.enqueueWork(() -> net.minecraft.client.gui.screens.MenuScreens.register(
-                    com.sheepfromheaven.minenow.inventory.ModMenus.INHABITANT_INVENTORY.get(),
-                    com.sheepfromheaven.minenow.client.InhabitantInventoryScreen::new));
+                    com.sheepfromheaven.minenow.inventory.ModMenus.INHABITANT_INVENTORY_TYPE.get(),
+                    com.sheepfromheaven.minenow.client.VanillaRowScreen::new));
         }
     }
 

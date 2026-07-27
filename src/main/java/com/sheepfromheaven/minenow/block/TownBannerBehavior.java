@@ -43,6 +43,7 @@ final class TownBannerBehavior {
             var data = DominionSavedData.get(serverLevel);
             var dominion = data.getDominionAt(pos);
             if (dominion != null) {
+                dominion.disband(serverLevel);
                 data.removeDominion(dominion.getId());
                 player.displayClientMessage(Component.literal(dominion.getName() + " has been disbanded."), false);
             }

@@ -167,4 +167,25 @@ public class Dominion {
     public Collection<DominionInhabitant> getInhabitants() {
         return Collections.unmodifiableCollection(inhabitants.values());
     }
+
+    /**
+     * Reverts every inhabitant back to a vanilla villager, clears every structure's blocks,
+     * and drops all dominion data. Called when the town banner is destroyed.
+     */
+    public void disband(ServerLevel level) {
+        for (var inhabitant : inhabitants.values()) {
+            var entity = level.getEntity(inhabitant.getEntityUuid());
+            if (entity instanceof InhabitantEntity ie) {
+                ie.convertToVillager();
+            }
+        }
+        inhabitants.clear();
+
+        for (var structure : structures.values()) {
+            for (var pos : structure.getRoomBlocks()) {
+                level.removeBlock(pos, false);
+            }
+        }
+        structures.clear();
+    }
 }

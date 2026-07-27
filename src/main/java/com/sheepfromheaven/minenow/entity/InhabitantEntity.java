@@ -14,6 +14,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
@@ -46,7 +47,7 @@ import java.util.UUID;
 
 public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier {
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
-    private final SimpleContainer inventory = new SimpleContainer(2);
+    private final SimpleContainer inventory = new SimpleContainer(16);
 
     private UUID dominionId;
     private UUID homeStructureId;
@@ -253,6 +254,21 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         if (owner != null) {
             owner.displayClientMessage(Component.literal(name + " has died!"), false);
         }
+    }
+
+    /**
+     * Reverts this inhabitant back to a vanilla villager at its current position and discards it.
+     * Used when the owning dominion is disbanded.
+     */
+    public void convertToVillager() {
+        if (level() instanceof ServerLevel serverLevel) {
+            var villager = EntityType.VILLAGER.create(serverLevel, EntitySpawnReason.CONVERSION);
+            if (villager != null) {
+                villager.snapTo(getX(), getY(), getZ(), getYRot(), getXRot());
+                serverLevel.addFreshEntity(villager);
+            }
+        }
+        discard();
     }
 
     public UUID getDominionId() {
