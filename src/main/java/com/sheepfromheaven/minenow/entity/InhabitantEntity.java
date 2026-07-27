@@ -19,6 +19,7 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
@@ -67,6 +68,13 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.5);
+    }
+
+    @Override
+    protected PathNavigation createNavigation(Level level) {
+        var navigation = super.createNavigation(level);
+        navigation.setCanOpenDoors(true);
+        return navigation;
     }
 
     @Override
