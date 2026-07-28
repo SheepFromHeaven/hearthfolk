@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.entity;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.JobType;
 import com.sheepfromheaven.minenow.dominion.NeedType;
+import com.sheepfromheaven.minenow.entity.job.FinishWorkGoal;
 import com.sheepfromheaven.minenow.entity.job.WorkGoal;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.core.BlockPos;
@@ -120,6 +121,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, new OpenDoorGoal(this, true));
         goalSelector.addGoal(1, new OpenFenceGateGoal(this));
+        goalSelector.addGoal(2, new FinishWorkGoal(this));
         goalSelector.addGoal(2, new GoHomeGoal(this));
         goalSelector.addGoal(2, new GoEatGoal(this));
         goalSelector.addGoal(3, workGoal);
