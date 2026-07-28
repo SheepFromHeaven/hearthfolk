@@ -104,7 +104,9 @@ public class DebugCommands {
 
     private static boolean buildFishery(ServerLevel level, Dominion dominion, BlockPos center) {
         buildRoom(level, center);
-        level.setBlockAndUpdate(center.offset(1, 0, -1), Blocks.BARREL.defaultBlockState());
+        var barrelPos = center.offset(1, 0, -1);
+        level.setBlockAndUpdate(barrelPos, Blocks.BARREL.defaultBlockState());
+        putInBarrel(level, barrelPos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FISHING_ROD));
         level.setBlockAndUpdate(center.offset(1, 0, 0), Blocks.CRAFTING_TABLE.defaultBlockState());
         level.setBlockAndUpdate(center.offset(1, 0, 1), Blocks.SMOKER.defaultBlockState());
 
@@ -123,21 +125,54 @@ public class DebugCommands {
 
     private static boolean buildLumberyard(ServerLevel level, Dominion dominion, BlockPos center) {
         buildRoom(level, center);
-        level.setBlockAndUpdate(center.offset(1, 0, 0), Blocks.BARREL.defaultBlockState());
+        var barrelPos = center.offset(1, 0, 0);
+        level.setBlockAndUpdate(barrelPos, Blocks.BARREL.defaultBlockState());
+        putInBarrel(level, barrelPos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_AXE));
 
-        var logPos = center.south(WALL_RING + 3);
-        level.setBlockAndUpdate(logPos, Blocks.OAK_LOG.defaultBlockState());
-        level.setBlockAndUpdate(logPos.above(), Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, false));
+        buildTree(level, center.south(WALL_RING + 3));
 
         return registerStructure(level, dominion, "Debug Lumberyard", StructureType.LUMBERYARD, center);
     }
 
     private static boolean buildTavern(ServerLevel level, Dominion dominion, BlockPos center) {
         buildRoom(level, center);
-        level.setBlockAndUpdate(center.offset(1, 0, -1), Blocks.BARREL.defaultBlockState());
+        var barrelPos = center.offset(1, 0, -1);
+        level.setBlockAndUpdate(barrelPos, Blocks.BARREL.defaultBlockState());
+        putInBarrel(level, barrelPos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BEEF, 4));
+        putInBarrel(level, barrelPos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL, 8));
         level.setBlockAndUpdate(center.offset(1, 0, 1), Blocks.SMOKER.defaultBlockState());
 
         return registerStructure(level, dominion, "Debug Tavern", StructureType.TAVERN, center);
+    }
+
+    /** Drops the required tool/ingredient stack straight into the freshly-placed barrel's inventory. */
+    private static void putInBarrel(ServerLevel level, BlockPos barrelPos, net.minecraft.world.item.ItemStack stack) {
+        if (level.getBlockEntity(barrelPos) instanceof net.minecraft.world.Container container) {
+            for (int i = 0; i < container.getContainerSize(); i++) {
+                if (container.getItem(i).isEmpty()) {
+                    container.setItem(i, stack);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds a real naturally-grown tree {@link com.sheepfromheaven.minenow.entity.job.TreeScanner}
+     * will recognize: soil below the trunk, and a non-persistent leaf horizontally adjacent to a
+     * trunk log (a leaf directly above the trunk doesn't count - {@link TreeScanner} only checks
+     * each log's horizontal neighbors).
+     */
+    private static void buildTree(ServerLevel level, BlockPos base) {
+        int trunkHeight = 3;
+        level.setBlockAndUpdate(base.below(), Blocks.GRASS_BLOCK.defaultBlockState());
+        for (int i = 0; i < trunkHeight; i++) {
+            level.setBlockAndUpdate(base.above(i), Blocks.OAK_LOG.defaultBlockState());
+        }
+        var topLog = base.above(trunkHeight - 1);
+        for (var dir : Direction.Plane.HORIZONTAL) {
+            level.setBlockAndUpdate(topLog.relative(dir), Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, false));
+        }
     }
 
     /**

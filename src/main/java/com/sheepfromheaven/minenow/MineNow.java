@@ -151,6 +151,12 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.CookJobTests::missingRawFoodReportsGenericLabelInsteadOfASpecificItem);
                     helper.register("cooking_with_burned_out_fuel_goes_back_to_fetch_more_fuel",
                             com.sheepfromheaven.minenow.gametest.CookJobTests::cookingWithBurnedOutFuelGoesBackToFetchMoreFuel);
+                    helper.register("debug_lumberyard_barrel_is_stocked_with_an_axe",
+                            com.sheepfromheaven.minenow.gametest.DebugCommandsTests::debugLumberyardBarrelIsStockedWithAnAxe);
+                    helper.register("debug_fishery_barrel_is_stocked_with_a_fishing_rod",
+                            com.sheepfromheaven.minenow.gametest.DebugCommandsTests::debugFisheryBarrelIsStockedWithAFishingRod);
+                    helper.register("debug_tavern_barrel_is_stocked_with_food_and_fuel",
+                            com.sheepfromheaven.minenow.gametest.DebugCommandsTests::debugTavernBarrelIsStockedWithFoodAndFuel);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
