@@ -57,7 +57,8 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     private final Map<NeedType, Float> needs = new EnumMap<>(NeedType.class);
     private boolean goHomeRequested;
     private WorkGoal workGoal;
-    private boolean showingWorkWarning;
+    @Nullable
+    private String activeWarning;
 
     public InhabitantEntity(EntityType<? extends InhabitantEntity> type, Level level) {
         super(type, level);
@@ -148,24 +149,47 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             syncNeedsToDominion();
         }
         if (!level().isClientSide() && tickCount % 20 == 0) {
-            updateWorkWarning();
+            updateWarnings();
         }
     }
 
-    private void updateWorkWarning() {
-        var missingItem = workGoal != null ? workGoal.getMissingItem() : null;
-        boolean shouldWarn = missingItem != null;
-        if (shouldWarn == showingWorkWarning) {
+    private void updateWarnings() {
+        var missingWorkItem = workGoal != null ? workGoal.getMissingItem() : null;
+        var missingHomeRequirement = missingWorkItem == null ? findMissingHomeRequirement() : null;
+        String warning = missingWorkItem != null
+                ? "Needs " + missingWorkItem.getDefaultInstance().getHoverName().getString()
+                : missingHomeRequirement != null
+                        ? "There is no " + missingHomeRequirement + " in my house"
+                        : null;
+        if (java.util.Objects.equals(warning, activeWarning)) {
             return;
         }
-        showingWorkWarning = shouldWarn;
+        activeWarning = warning;
         var baseName = resolveBaseName();
-        if (shouldWarn) {
-            setCustomName(Component.literal(baseName + " §c!§r Needs " + missingItem.getDefaultInstance().getHoverName().getString()));
+        if (warning != null) {
+            setCustomName(Component.literal(baseName + " §c!§r " + warning));
         } else {
             setCustomName(Component.literal(baseName));
         }
         setCustomNameVisible(true);
+    }
+
+    /** Returns the display name of the first unmet requirement of this inhabitant's assigned house, if any. */
+    @Nullable
+    private String findMissingHomeRequirement() {
+        if (homeStructureId == null || dominionId == null || !(level() instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        var dominion = DominionSavedData.get(serverLevel).getDominionById(dominionId);
+        if (dominion == null) return null;
+        var structure = dominion.getStructureById(homeStructureId);
+        if (structure == null) return null;
+        for (var status : structure.checkRequirements(serverLevel)) {
+            if (!status.satisfied()) {
+                return status.name();
+            }
+        }
+        return null;
     }
 
     private String resolveBaseName() {

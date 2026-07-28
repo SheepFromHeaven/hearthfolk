@@ -193,6 +193,10 @@ public class DominionStructure {
         return new RequirementStatus("Space", type.getMinSize(), roomBlocks.size());
     }
 
+    public boolean isFullySatisfied(Level level) {
+        return checkRequirements(level).stream().allMatch(RequirementStatus::satisfied);
+    }
+
     public List<RequirementStatus> checkRequirements(Level level) {
         var interiorAndWalls = collectInteriorAndWalls();
         var results = new ArrayList<RequirementStatus>();

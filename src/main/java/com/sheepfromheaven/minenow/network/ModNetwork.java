@@ -172,7 +172,11 @@ public class ModNetwork {
                             if (structure == null || structure.getType() != StructureType.HOUSE) return;
 
                             var inhabitantId = msg.inhabitantId().isEmpty() ? null : UUID.fromString(msg.inhabitantId());
-                            dominion.assignHouse(structure, inhabitantId, level);
+                            if (!dominion.assignHouse(structure, inhabitantId, level)) {
+                                player.displayClientMessage(Component.literal(
+                                        structure.getName() + " isn't ready to be lived in yet."), false);
+                                return;
+                            }
                             data.setDirty();
                         })
                         .addMain(AssignWorkerPacket.class, AssignWorkerPacket.CODEC, (msg, ctx) -> {

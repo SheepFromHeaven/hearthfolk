@@ -113,12 +113,20 @@ public class Dominion {
      * Assigns {@code inhabitantId} as the structure's inhabitant, clearing whoever previously
      * lived there and unassigning the inhabitant from any other structure it called home -
      * an inhabitant can only ever have one home at a time. Pass {@code null} to just vacate it.
+     * Refuses to move someone in if the structure doesn't meet its requirements (e.g. no bed);
+     * vacating is always allowed. Returns whether the assignment took effect.
      */
-    public void assignHouse(DominionStructure structure, UUID inhabitantId, ServerLevel level) {
+    public boolean assignHouse(DominionStructure structure, UUID inhabitantId, ServerLevel level) {
+        if (inhabitantId == null) {
+            unassignInhabitant(structure, level);
+            return true;
+        }
+        if (!structure.isFullySatisfied(level)) {
+            return false;
+        }
         unassignInhabitant(structure, level);
-        if (inhabitantId == null) return;
         var newInhabitant = inhabitants.get(inhabitantId);
-        if (newInhabitant == null) return;
+        if (newInhabitant == null) return false;
 
         for (var s : structures.values()) {
             if (inhabitantId.equals(s.getAssignedInhabitantId())) {
@@ -133,6 +141,7 @@ public class Dominion {
             ie.setHomeStructureId(structure.getId());
         }
         claimHomePoi(structure, level);
+        return true;
     }
 
     /**
