@@ -12,5 +12,6 @@ import software.bernie.geckolib.renderer.base.GeoRenderState;
 public class InhabitantRenderer<R extends EntityRenderState & GeoRenderState> extends GeoEntityRenderer<InhabitantEntity, R> {
     public InhabitantRenderer(EntityRendererProvider.Context context) {
         super(context, new InhabitantModel());
+        withRenderLayer(new InhabitantHeadRotationLayer<>(this, "head"));
     }
 }
