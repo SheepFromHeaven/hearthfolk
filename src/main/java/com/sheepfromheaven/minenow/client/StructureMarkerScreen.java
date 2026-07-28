@@ -35,7 +35,7 @@ public class StructureMarkerScreen extends Screen {
     private static final int SATISFIED = 0xFF3CB043;
     private static final int UNSATISFIED = 0xFFCC3333;
 
-    private enum Tab { GENERAL, REQUIREMENTS, WORK_AREA }
+    private enum Tab { GENERAL, REQUIREMENTS, WORK_AREA, DEBUG }
 
     private String structureName;
     private StructureType structureType;
@@ -51,9 +51,10 @@ public class StructureMarkerScreen extends Screen {
 
     public record InhabitantEntry(String id, UUID entityUuid, String name, String jobLabel, boolean homed) {}
 
-    private record GeneralLayout(int residentY, int workerY, int rangeToggleY, int totalExtra) {}
+    private record GeneralLayout(int residentY, int workerY, int totalExtra) {}
     private record RequirementsLayout(int spaceY, int reqY, int rangeReqY, int totalExtra) {}
     private record WorkAreaLayout(int sliderY, int buttonY, int toggleY, int totalExtra) {}
+    private record DebugLayout(int recalculateY, int rangeToggleY, int totalExtra) {}
 
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
                                  String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
@@ -146,8 +147,8 @@ public class StructureMarkerScreen extends Screen {
     }
 
     private GeneralLayout computeGeneralLayout() {
-        int y = CONTENT_START + BUTTON_ROW_HEIGHT * 4;
-        int residentY = -1, workerY = -1, rangeToggleY = -1;
+        int y = CONTENT_START + BUTTON_ROW_HEIGHT * 3;
+        int residentY = -1, workerY = -1;
 
         if (isHouse() && !inhabitants.isEmpty()) {
             residentY = y;
@@ -157,11 +158,19 @@ public class StructureMarkerScreen extends Screen {
             workerY = y;
             y += BUTTON_ROW_HEIGHT;
         }
+        return new GeneralLayout(residentY, workerY, y - CONTENT_START);
+    }
+
+    private DebugLayout computeDebugLayout() {
+        int y = CONTENT_START;
+        int recalculateY = y;
+        y += BUTTON_ROW_HEIGHT;
+        int rangeToggleY = -1;
         if (hasRangeRequirement()) {
             rangeToggleY = y;
             y += BUTTON_ROW_HEIGHT;
         }
-        return new GeneralLayout(residentY, workerY, rangeToggleY, y - CONTENT_START);
+        return new DebugLayout(recalculateY, rangeToggleY, y - CONTENT_START);
     }
 
     private RequirementsLayout computeRequirementsLayout() {
@@ -197,7 +206,8 @@ public class StructureMarkerScreen extends Screen {
     private int panelHeight() {
         int extra = Math.max(computeGeneralLayout().totalExtra(),
                 Math.max(computeRequirementsLayout().totalExtra(),
-                        hasWorkArea() ? computeWorkAreaLayout().totalExtra() : 0));
+                        Math.max(hasWorkArea() ? computeWorkAreaLayout().totalExtra() : 0,
+                                computeDebugLayout().totalExtra())));
         return BASE_HEIGHT + extra;
     }
 
@@ -219,6 +229,7 @@ public class StructureMarkerScreen extends Screen {
             case GENERAL -> Component.literal("General");
             case REQUIREMENTS -> requirementsTabLabel();
             case WORK_AREA -> Component.literal("Work Area");
+            case DEBUG -> Component.literal("Debug");
         };
     }
 
@@ -232,6 +243,7 @@ public class StructureMarkerScreen extends Screen {
         tabs.add(Tab.GENERAL);
         tabs.add(Tab.REQUIREMENTS);
         if (hasWorkArea()) tabs.add(Tab.WORK_AREA);
+        tabs.add(Tab.DEBUG);
         int tabWidth = (PANEL_WIDTH - 20) / tabs.size();
 
         for (int i = 0; i < tabs.size(); i++) {
@@ -247,6 +259,28 @@ public class StructureMarkerScreen extends Screen {
             initGeneralTab(left, top);
         } else if (currentTab == Tab.WORK_AREA) {
             initWorkAreaTab(left, top);
+        } else if (currentTab == Tab.DEBUG) {
+            initDebugTab(left, top);
+        }
+    }
+
+    private void initDebugTab(int left, int top) {
+        var layout = computeDebugLayout();
+
+        addRenderableWidget(Button.builder(Component.literal("Recalculate Area"), button -> {
+            ModNetwork.sendRecalculateStructure(markerPos);
+            onClose();
+        }).pos(left + 10, top + layout.recalculateY()).size(PANEL_WIDTH - 20, 20).build());
+
+        if (layout.rangeToggleY() >= 0) {
+            boolean showing = RangeTracker.isShowingRange(markerPos);
+            addRenderableWidget(Button.builder(
+                    Component.literal(showing ? "Hide Range" : "Show Range"),
+                    button -> {
+                        RangeTracker.toggleRange(markerPos);
+                        rebuildWidgets();
+                    }
+            ).pos(left + 10, top + layout.rangeToggleY()).size(PANEL_WIDTH - 20, 20).build());
         }
     }
 
@@ -302,11 +336,6 @@ public class StructureMarkerScreen extends Screen {
                 }
         ).pos(left + 10, top + CONTENT_START + BUTTON_ROW_HEIGHT * 2).size(PANEL_WIDTH - 20, 20).build());
 
-        addRenderableWidget(Button.builder(Component.literal("Recalculate Area"), button -> {
-            ModNetwork.sendRecalculateStructure(markerPos);
-            onClose();
-        }).pos(left + 10, top + CONTENT_START + BUTTON_ROW_HEIGHT * 3).size(PANEL_WIDTH - 20, 20).build());
-
         if (layout.residentY() >= 0) {
             addRenderableWidget(Button.builder(
                     Component.literal("Resident: " + labelFor(assignedInhabitantId)),
@@ -319,17 +348,6 @@ public class StructureMarkerScreen extends Screen {
                     Component.literal("Worker: " + labelFor(assignedWorkerId)),
                     button -> openWorkerPicker()
             ).pos(left + 10, top + layout.workerY()).size(PANEL_WIDTH - 20, 20).build());
-        }
-
-        if (layout.rangeToggleY() >= 0) {
-            boolean showing = RangeTracker.isShowingRange(markerPos);
-            addRenderableWidget(Button.builder(
-                    Component.literal(showing ? "Hide Range" : "Show Range"),
-                    button -> {
-                        RangeTracker.toggleRange(markerPos);
-                        rebuildWidgets();
-                    }
-            ).pos(left + 10, top + layout.rangeToggleY()).size(PANEL_WIDTH - 20, 20).build());
         }
     }
 
