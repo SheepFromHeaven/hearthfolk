@@ -187,6 +187,13 @@ public class StructureRequirementsConfig {
         lumberyard.add("rangeRequirements", lumberRangeReqs);
         root.add("LUMBERYARD", lumberyard);
 
+        var tavern = new JsonObject();
+        var tavernReqs = new JsonArray();
+        addBlockReq(tavernReqs, "minecraft:barrel", "Barrel", 1);
+        addBlockReq(tavernReqs, "minecraft:smoker", "Smoker", 1);
+        tavern.add("requirements", tavernReqs);
+        root.add("TAVERN", tavern);
+
         try {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(root));
@@ -226,21 +233,32 @@ public class StructureRequirementsConfig {
                         s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
                         () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
         ));
+        REQUIREMENTS.put(StructureType.TAVERN, List.of(
+                new StructureType.Requirement("Barrel", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
+                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL)),
+                new StructureType.Requirement("Smoker", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.SMOKER),
+                        () -> new ItemStack(net.minecraft.world.item.Items.SMOKER))
+        ));
 
         MIN_SIZES.clear();
         MIN_SIZES.put(StructureType.HOUSE, 32);
         MIN_SIZES.put(StructureType.FISHERY, 0);
         MIN_SIZES.put(StructureType.LUMBERYARD, 0);
+        MIN_SIZES.put(StructureType.TAVERN, 0);
 
         RANGE_RADII.clear();
         RANGE_RADII.put(StructureType.HOUSE, 0);
         RANGE_RADII.put(StructureType.FISHERY, 8);
         RANGE_RADII.put(StructureType.LUMBERYARD, 8);
+        RANGE_RADII.put(StructureType.TAVERN, 0);
 
         RANGE_HEIGHTS.clear();
         RANGE_HEIGHTS.put(StructureType.HOUSE, 0);
         RANGE_HEIGHTS.put(StructureType.FISHERY, 4);
         RANGE_HEIGHTS.put(StructureType.LUMBERYARD, 4);
+        RANGE_HEIGHTS.put(StructureType.TAVERN, 0);
 
         RANGE_REQUIREMENTS.clear();
         RANGE_REQUIREMENTS.put(StructureType.HOUSE, List.of());
@@ -254,5 +272,6 @@ public class StructureRequirementsConfig {
                         s -> s.is(net.minecraft.tags.BlockTags.LOGS),
                         () -> new ItemStack(net.minecraft.world.item.Items.OAK_LOG))
         ));
+        RANGE_REQUIREMENTS.put(StructureType.TAVERN, List.of());
     }
 }

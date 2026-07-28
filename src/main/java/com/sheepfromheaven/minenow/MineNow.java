@@ -98,6 +98,30 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.WorkAreaTests::findTreeInRangeIgnoresTreeOutsideMovedWorkArea);
                     helper.register("find_tree_in_range_finds_tree_after_moving_work_area_center",
                             com.sheepfromheaven.minenow.gametest.WorkAreaTests::findTreeInRangeFindsTreeAfterMovingWorkAreaCenter);
+                    helper.register("find_smoking_recipe_returns_cooked_result_for_raw_beef",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::findSmokingRecipeReturnsCookedResultForRawBeef);
+                    helper.register("find_smoking_recipe_is_empty_for_cooked_beef",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::findSmokingRecipeIsEmptyForCookedBeef);
+                    helper.register("is_fuel_true_for_log",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::isFuelTrueForLog);
+                    helper.register("is_fuel_false_for_stone",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::isFuelFalseForStone);
+                    helper.register("is_ready_to_eat_true_for_cooked_beef",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::isReadyToEatTrueForCookedBeef);
+                    helper.register("is_ready_to_eat_false_for_raw_beef",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::isReadyToEatFalseForRawBeef);
+                    helper.register("is_ready_to_eat_false_for_non_food_item",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::isReadyToEatFalseForNonFoodItem);
+                    helper.register("is_ready_to_eat_true_for_bread_without_any_smoking_recipe",
+                            com.sheepfromheaven.minenow.gametest.CookingRecipesTests::isReadyToEatTrueForBreadWithoutAnySmokingRecipe);
+                    helper.register("extract_one_removes_exactly_one_item",
+                            com.sheepfromheaven.minenow.gametest.ContainerUtilTests::extractOneRemovesExactlyOneItem);
+                    helper.register("extract_one_returns_empty_when_no_match",
+                            com.sheepfromheaven.minenow.gametest.ContainerUtilTests::extractOneReturnsEmptyWhenNoMatch);
+                    helper.register("find_nearest_structure_of_type_picks_closest_match",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::findNearestStructureOfTypePicksClosestMatch);
+                    helper.register("find_nearest_structure_of_type_skips_closest_when_filter_fails",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::findNearestStructureOfTypeSkipsClosestWhenFilterFails);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

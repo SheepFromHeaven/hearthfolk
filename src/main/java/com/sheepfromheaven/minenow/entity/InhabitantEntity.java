@@ -120,6 +120,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         goalSelector.addGoal(1, new OpenDoorGoal(this, true));
         goalSelector.addGoal(1, new OpenFenceGateGoal(this));
         goalSelector.addGoal(2, new GoHomeGoal(this));
+        goalSelector.addGoal(2, new GoEatGoal(this));
         goalSelector.addGoal(3, workGoal);
         goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.35));
         goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0f));
@@ -135,7 +136,8 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             } else {
                 setNeed(NeedType.SHELTER, Math.min(1.0f, getNeed(NeedType.SHELTER) + 0.05f));
             }
-            syncShelterToDominion();
+            setNeed(NeedType.FOOD, getNeed(NeedType.FOOD) - 0.01f);
+            syncNeedsToDominion();
         }
         if (!level().isClientSide() && tickCount % 20 == 0) {
             updateWorkWarning();
@@ -178,7 +180,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         return workGoal != null ? workGoal.getMissingItem() : null;
     }
 
-    private void syncShelterToDominion() {
+    private void syncNeedsToDominion() {
         if (dominionId == null || !(level() instanceof ServerLevel serverLevel)) return;
         var data = DominionSavedData.get(serverLevel);
         var dominion = data.getDominionById(dominionId);
@@ -186,6 +188,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         var inhabitant = dominion.getInhabitantByEntityUuid(getUUID());
         if (inhabitant == null) return;
         inhabitant.setNeed(NeedType.SHELTER, getNeed(NeedType.SHELTER));
+        inhabitant.setNeed(NeedType.FOOD, getNeed(NeedType.FOOD));
         data.setDirty();
     }
 

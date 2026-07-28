@@ -26,6 +26,17 @@ public final class ContainerUtil {
         return ItemStack.EMPTY;
     }
 
+    /** Removes and returns a single item from the first stack matching the predicate, or {@link ItemStack#EMPTY} if none found. */
+    public static ItemStack extractOne(Container container, Predicate<ItemStack> matcher) {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            var stack = container.getItem(i);
+            if (!stack.isEmpty() && matcher.test(stack)) {
+                return container.removeItem(i, 1);
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
     /** Inserts as much of the stack as fits, mutating it in place. Returns the leftover (possibly empty). */
     public static ItemStack insertItem(Container container, ItemStack stack) {
         for (int i = 0; i < container.getContainerSize() && !stack.isEmpty(); i++) {

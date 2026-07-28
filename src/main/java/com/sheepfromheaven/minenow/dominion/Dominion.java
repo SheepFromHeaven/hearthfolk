@@ -215,6 +215,21 @@ public class Dominion {
         return Collections.unmodifiableCollection(structures.values());
     }
 
+    /** Finds the nearest structure of the given type (by marker distance to {@code from}) satisfying {@code filter}. */
+    public Optional<DominionStructure> findNearestStructureOfType(StructureType type, BlockPos from, java.util.function.Predicate<DominionStructure> filter) {
+        DominionStructure best = null;
+        double bestDistSq = Double.MAX_VALUE;
+        for (var s : structures.values()) {
+            if (s.getType() != type || !filter.test(s)) continue;
+            double distSq = s.getMarkerPos().distSqr(from);
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
+                best = s;
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
     public void addInhabitant(DominionInhabitant inhabitant) {
         inhabitants.put(inhabitant.getId(), inhabitant);
     }

@@ -11,7 +11,8 @@ import java.util.function.Supplier;
 public enum StructureType {
     HOUSE("House", null),
     FISHERY("Fishery", JobType.FISHER),
-    LUMBERYARD("Lumberyard", JobType.LUMBERJACK);
+    LUMBERYARD("Lumberyard", JobType.LUMBERJACK),
+    TAVERN("Tavern", JobType.COOK);
 
     private final String displayName;
     private final JobType jobType;

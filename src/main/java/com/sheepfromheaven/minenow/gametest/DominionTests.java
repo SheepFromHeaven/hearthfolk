@@ -225,4 +225,50 @@ public class DominionTests {
             helper.assertTrue(freeAfterUnassign, "Bed should have a free ticket again once unassigned from the inhabitant");
         });
     }
+
+    public static void findNearestStructureOfTypePicksClosestMatch(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var level = helper.getLevel();
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+
+        var nearPos = helper.absolutePos(new BlockPos(3, 1, 3));
+        var nearTavern = new DominionStructure("Near Tavern", StructureType.TAVERN, nearPos, Set.of(nearPos));
+        dominion.addStructure(nearTavern);
+
+        var farPos = helper.absolutePos(new BlockPos(8, 1, 8));
+        var farTavern = new DominionStructure("Far Tavern", StructureType.TAVERN, farPos, Set.of(farPos));
+        dominion.addStructure(farTavern);
+
+        var from = helper.absolutePos(new BlockPos(1, 1, 1));
+        var found = dominion.findNearestStructureOfType(StructureType.TAVERN, from, s -> true);
+
+        helper.succeedWhen(() ->
+                helper.assertTrue(found.isPresent() && found.get().getId().equals(nearTavern.getId()),
+                        "The nearer tavern should be picked when both satisfy the filter"));
+    }
+
+    public static void findNearestStructureOfTypeSkipsClosestWhenFilterFails(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var level = helper.getLevel();
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+
+        var nearPos = helper.absolutePos(new BlockPos(3, 1, 3));
+        var nearTavern = new DominionStructure("Near Tavern (no food)", StructureType.TAVERN, nearPos, Set.of(nearPos));
+        dominion.addStructure(nearTavern);
+
+        var farPos = helper.absolutePos(new BlockPos(8, 1, 8));
+        var farTavern = new DominionStructure("Far Tavern (has food)", StructureType.TAVERN, farPos, Set.of(farPos));
+        dominion.addStructure(farTavern);
+
+        var from = helper.absolutePos(new BlockPos(1, 1, 1));
+        var found = dominion.findNearestStructureOfType(StructureType.TAVERN, from, s -> s.getId().equals(farTavern.getId()));
+
+        helper.succeedWhen(() ->
+                helper.assertTrue(found.isPresent() && found.get().getId().equals(farTavern.getId()),
+                        "The farther tavern should be picked when the nearer one fails the filter"));
+    }
 }
