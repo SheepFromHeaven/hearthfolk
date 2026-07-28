@@ -53,6 +53,9 @@ import java.util.stream.Collectors;
 public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier, net.minecraft.world.entity.ContainerUser {
     private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> DATA_CHOPPING =
             net.minecraft.network.syncher.SynchedEntityData.defineId(InhabitantEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+    /** 0 = none, 1 = casting/waiting, 2 = reeling */
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Byte> DATA_FISHER_STATE =
+            net.minecraft.network.syncher.SynchedEntityData.defineId(InhabitantEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BYTE);
 
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
     private final SimpleContainer inventory = new SimpleContainer(2);
@@ -80,6 +83,14 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             software.bernie.geckolib.animation.RawAnimation.begin().thenLoop("animation.inhabitant.idle");
     private static final software.bernie.geckolib.animation.RawAnimation CHOP =
             software.bernie.geckolib.animation.RawAnimation.begin().thenLoop("animation.inhabitant.chop");
+    private static final software.bernie.geckolib.animation.RawAnimation CAST_CHAIN =
+            software.bernie.geckolib.animation.RawAnimation.begin()
+                    .thenPlay("animation.inhabitant.cast")
+                    .thenLoop("animation.inhabitant.fish_wait");
+    private static final software.bernie.geckolib.animation.RawAnimation REEL =
+            software.bernie.geckolib.animation.RawAnimation.begin()
+                    .thenPlay("animation.inhabitant.reel")
+                    .thenLoop("animation.inhabitant.fish_wait");
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
@@ -87,10 +98,16 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         // Multiple controllers on the same bones leave stale poses when one returns STOP — the
         // other controller's last frame stays frozen instead of yielding back.
         controllers.add(new AnimationController<>("body", 0, this::bodyPredicate));
-        controllers.add(new AnimationController<>("cast_rod", 0, this::castRodPredicate));
     }
 
     private PlayState bodyPredicate(AnimationTest<InhabitantEntity> test) {
+        byte fisherState = getFisherState();
+        if (fisherState == 2) {
+            return test.setAndContinue(REEL);
+        }
+        if (fisherState == 1) {
+            return test.setAndContinue(CAST_CHAIN);
+        }
         if (isChopping()) {
             return test.setAndContinue(CHOP);
         }
@@ -101,14 +118,11 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         return test.setAndContinue(IDLE);
     }
 
-    private PlayState castRodPredicate(AnimationTest<InhabitantEntity> test) {
-        return PlayState.STOP;
-    }
-
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_CHOPPING, false);
+        builder.define(DATA_FISHER_STATE, (byte) 0);
     }
 
     /** Whether {@link com.sheepfromheaven.minenow.entity.job.LumberjackJob} is mid-swing on a trunk log. */
@@ -118,6 +132,15 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
 
     public void setChopping(boolean chopping) {
         entityData.set(DATA_CHOPPING, chopping);
+    }
+
+    /** 0 = not fishing, 1 = casting/waiting for a bite, 2 = reeling in. */
+    public byte getFisherState() {
+        return entityData.get(DATA_FISHER_STATE);
+    }
+
+    public void setFisherState(int state) {
+        entityData.set(DATA_FISHER_STATE, (byte) state);
     }
 
     @Override
@@ -290,8 +313,8 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
                 .map(g -> g.getGoal().getClass().getSimpleName())
                 .collect(Collectors.joining(", "));
         lines.add("Active goals: " + (runningGoals.isEmpty() ? "none" : runningGoals));
-        lines.add("Animation: isChopping=" + isChopping() + ", isMoving=" + walkAnimation.isMoving()
-                + ", xRot=" + String.format("%.1f", getXRot()));
+        lines.add("Animation: isChopping=" + isChopping() + ", fisherState=" + getFisherState()
+                + ", isMoving=" + walkAnimation.isMoving() + ", xRot=" + String.format("%.1f", getXRot()));
 
         var nav = getNavigation();
         var path = nav.getPath();
