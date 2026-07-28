@@ -32,6 +32,9 @@ public final class MineNow {
 
         FMLCommonSetupEvent.getBus(modBusGroup).addListener(this::commonSetup);
 
+        net.minecraftforge.event.RegisterCommandsEvent.BUS.addListener(event ->
+                com.sheepfromheaven.minenow.command.DebugCommands.register(event.getDispatcher()));
+
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
         net.minecraftforge.event.entity.EntityAttributeCreationEvent.BUS.addListener(event ->
