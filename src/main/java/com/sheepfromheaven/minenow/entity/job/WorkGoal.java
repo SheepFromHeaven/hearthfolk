@@ -120,9 +120,23 @@ public class WorkGoal extends Goal {
         return job != null ? job.getStatusDescription() : "Idle";
     }
 
+    public java.util.List<String> getDebugLines() {
+        if (job == null) {
+            return java.util.List.of("No job assigned");
+        }
+        var lines = new java.util.ArrayList<String>();
+        lines.add("Job: " + job.getClass().getSimpleName() + " (active=" + active + ")");
+        lines.addAll(job.getDebugLines());
+        return lines;
+    }
+
     @Nullable
     public Item getMissingItem() {
         return job != null ? job.getMissingItem() : null;
+    }
+
+    public java.util.List<String> getWarnings() {
+        return job != null ? job.getWarnings() : java.util.List.of();
     }
 
     @Nullable

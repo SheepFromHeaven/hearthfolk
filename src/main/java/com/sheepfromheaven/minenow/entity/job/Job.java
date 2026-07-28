@@ -46,9 +46,19 @@ public interface Job {
     @Nullable
     Item getMissingItem();
 
+    /** User-facing problems the job can't resolve on its own (e.g. no valid tree in range), if any. */
+    default java.util.List<String> getWarnings() {
+        return java.util.List.of();
+    }
+
     /** Serializes in-progress state (phase, targets, timers) so a save/reload can resume mid-cycle. */
     default void save(CompoundTag tag) {}
 
     /** Restores state previously written by {@link #save}. */
     default void load(CompoundTag tag) {}
+
+    /** Extra implementation-specific detail for the debug view (phase, targets, timers, ...). */
+    default java.util.List<String> getDebugLines() {
+        return java.util.List.of();
+    }
 }

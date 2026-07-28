@@ -3,7 +3,6 @@ package com.sheepfromheaven.minenow.entity.job;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -20,7 +19,9 @@ import net.minecraft.world.level.block.Blocks;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +47,8 @@ public class LumberjackJob implements Job {
     private int waitTicks;
     private int repathCooldown;
     private int noTreeCooldown;
+    /** Trunk base positions found to have no reachable standing spot, so they're skipped in future scans. */
+    private final Set<BlockPos> unreachableTreeBases = new HashSet<>();
     @Nullable
     private Item missingItem;
 
@@ -120,13 +123,25 @@ public class LumberjackJob implements Job {
             if (--noTreeCooldown > 0) {
                 return true;
             }
-            var found = workplace.findTreeInRange(level).orElse(null);
+            var found = workplace.findTreeInRange(level, unreachableTreeBases).orElse(null);
             if (found == null) {
                 noTreeCooldown = NO_TREE_RETRY_TICKS;
+                // Voice it every retry (every NO_TREE_RETRY_TICKS) rather than every tick, so the
+                // player gets an audible/text nudge that something's wrong without being spammed.
+                inhabitant.playGoalSwitchSound();
+                return true;
+            }
+            var base = found.getFirst();
+            var candidate = findStandableNeighbor(level, base);
+            if (candidate == null) {
+                // No reachable tile around this trunk - skip it on future scans instead of sending
+                // moveTo() at a solid log forever, but retry immediately in case another tree in range
+                // is reachable.
+                unreachableTreeBases.add(base);
                 return true;
             }
             trunk = new ArrayList<>(found);
-            standPos = findStandableNeighbor(level, trunk.getFirst());
+            standPos = candidate;
         }
         if (moveTowardsAndCheckArrival(inhabitant, standPos)) {
             inhabitant.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
@@ -137,19 +152,34 @@ public class LumberjackJob implements Job {
         return true;
     }
 
-    /** Finds a standable tile next to the trunk's base to chop from, rather than standing inside the tree. */
+    private static final int[][] NEIGHBOR_OFFSETS = {
+            {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    };
+
+    /**
+     * Finds a standable tile next to the trunk's base to chop from, rather than standing inside the tree.
+     * Checks all 8 surrounding tiles (not just the 4 cardinal ones) since canopy leaves often block one
+     * or more sides at head height. Returns null if none of them are reachable - the caller must not
+     * send the inhabitant to stand inside the (solid) trunk itself.
+     */
+    @Nullable
     private BlockPos findStandableNeighbor(ServerLevel level, BlockPos base) {
-        for (var dir : Direction.Plane.HORIZONTAL) {
-            var candidate = base.relative(dir);
+        for (var offset : NEIGHBOR_OFFSETS) {
+            var candidate = base.offset(offset[0], 0, offset[1]);
             if (isStandable(level, candidate)) {
                 return candidate;
             }
         }
-        return base;
+        return null;
     }
 
     private boolean isStandable(ServerLevel level, BlockPos pos) {
         if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
+            return false;
+        }
+        // Leaves commonly overhang the ground right next to a trunk - a tile can look clear at foot
+        // level yet still be unreachable because there's no headroom, silently stranding the pathfinder.
+        if (!level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty()) {
             return false;
         }
         var below = pos.below();
@@ -208,6 +238,7 @@ public class LumberjackJob implements Job {
         phase = Phase.GOTO_HUT;
         trunk = null;
         standPos = null;
+        unreachableTreeBases.clear();
         return false;
     }
 
@@ -259,6 +290,28 @@ public class LumberjackJob implements Job {
     @Nullable
     public Item getMissingItem() {
         return missingItem;
+    }
+
+    /** True while parked in {@link Phase#GOTO_TREE} with nothing found yet - see {@link #tickGotoTree}. */
+    private boolean noTreeFound() {
+        return trunk == null && noTreeCooldown > 0;
+    }
+
+    @Override
+    public List<String> getWarnings() {
+        return noTreeFound() ? List.of("I can't find any tree") : List.of();
+    }
+
+    @Override
+    public List<String> getDebugLines() {
+        var lines = new ArrayList<String>();
+        lines.add("Phase: " + phase);
+        lines.add("Trunk: " + (trunk == null ? "none" : trunk.size() + " logs left, base " + trunk.getFirst()));
+        lines.add("Stand pos: " + standPos);
+        lines.add("Wait ticks: " + waitTicks + ", repath cooldown: " + repathCooldown + ", no-tree cooldown: " + noTreeCooldown);
+        lines.add("Unreachable trees skipped: " + unreachableTreeBases.size());
+        lines.add("No tree found: " + noTreeFound());
+        return lines;
     }
 
     @Override

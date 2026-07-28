@@ -83,7 +83,14 @@ public class JobInterruptionTests {
         var leafRelPos = new BlockPos(7, 1, 6);
 
         helper.setBlock(barrelRelPos, Blocks.BARREL);
-        helper.setBlock(soilRelPos, Blocks.GRASS_BLOCK);
+        // A patch of solid ground around the trunk's base, not just directly under it - otherwise
+        // every tile adjacent to the trunk is a one-block-deep pit with nothing to stand on, and there
+        // is no reachable neighbor to chop from (see LumberjackJob.findStandableNeighbor).
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                helper.setBlock(soilRelPos.offset(dx, 0, dz), Blocks.GRASS_BLOCK);
+            }
+        }
         helper.setBlock(logRelPos, Blocks.OAK_LOG);
         helper.setBlock(leafRelPos, Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, false));
 

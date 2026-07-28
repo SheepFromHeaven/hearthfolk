@@ -17,6 +17,14 @@ public class DominionStructure {
     public static final int MAX_WORK_AREA_RADIUS = 6;
     public static final int DEFAULT_WORK_AREA_RADIUS = 6;
     private static final int APPROACH_SEARCH_RADIUS = 6;
+    /**
+     * How far above/below the work area center to look for a tree trunk base. Deliberately more
+     * generous than {@link StructureType#getRangeHeight()} (which gates the "Tree" range requirement
+     * indicator): that value is tuned tight for placement validation, but the work area center is
+     * usually left at the marker's own floor height, and real terrain/tree height routinely differs
+     * from that by more than a few blocks even for a tree the player would call "clearly in range".
+     */
+    private static final int TREE_SEARCH_HEIGHT = 12;
 
     private final UUID id;
     private String name;
@@ -272,14 +280,24 @@ public class DominionStructure {
      * log blocks that turn out to be part of a player-built structure rather than a real trunk.
      */
     public Optional<List<BlockPos>> findTreeInRange(Level level) {
+        return findTreeInRange(level, Set.of());
+    }
+
+    /**
+     * Same as {@link #findTreeInRange(Level)}, but skips any trunk whose base is in {@code excludedBases}
+     * (trees already known to have no reachable standing spot) so a bad tree doesn't permanently block
+     * discovery of other, perfectly good trees in range.
+     */
+    public Optional<List<BlockPos>> findTreeInRange(Level level, Set<BlockPos> excludedBases) {
         int radius = workAreaRadius;
-        int height = type.getRangeHeight();
+        int height = TREE_SEARCH_HEIGHT;
         var center = getWorkAreaCenter();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (dx * dx + dz * dz > radius * radius) continue;
                 for (int dy = -height; dy <= height; dy++) {
                     var pos = center.offset(dx, dy, dz);
+                    if (excludedBases.contains(pos)) continue;
                     if (level.getBlockState(pos).is(BlockTags.LOGS)) {
                         var tree = TreeScanner.findTree(level, pos);
                         if (tree.isPresent()) {
