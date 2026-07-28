@@ -36,7 +36,10 @@ public class LumberjackJob implements Job {
     private static final int ARRIVE_DISTANCE_SQ = 4;
     private static final int REPATH_INTERVAL = 60;
     private static final double WALK_SPEED = 0.6;
-    private static final int CHOP_TICKS = 30;
+    /** Total ticks for one chop cycle — must match animation.inhabitant.chop length (0.9s * 20 TPS = 18). */
+    private static final int CHOP_TICKS = 18;
+    /** Tick within the cycle at which the axe "impacts" — matches the t=0.4s downstroke keyframe (8 ticks). */
+    private static final int CHOP_IMPACT_TICK = 8;
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
     private static final int NO_TREE_RETRY_TICKS = 100;
     private static final int AXE_DAMAGE_PER_LOG = 2;
@@ -75,6 +78,7 @@ public class LumberjackJob implements Job {
     @Override
     public void stop(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         inhabitant.getNavigation().stop();
+        inhabitant.setChopping(false);
     }
 
     @Override
@@ -83,6 +87,7 @@ public class LumberjackJob implements Job {
         // from wherever this phase left off - re-approach the hut rather than resuming chopping in place.
         phase = Phase.GOTO_HUT;
         containerTarget = null;
+        inhabitant.setChopping(false);
     }
 
     @Override
@@ -188,7 +193,7 @@ public class LumberjackJob implements Job {
             inhabitant.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             phase = Phase.CHOPPING;
             waitTicks = CHOP_TICKS;
-            inhabitant.swing(InteractionHand.MAIN_HAND);
+            inhabitant.setChopping(true);
         }
         return true;
     }
@@ -265,35 +270,57 @@ public class LumberjackJob implements Job {
     private boolean tickChopping(InhabitantEntity inhabitant, ServerLevel level) {
         if (trunk == null || trunk.isEmpty()) {
             phase = Phase.RETURN_TO_HUT;
+            inhabitant.setChopping(false);
             return true;
         }
+        // Re-assert every tick so the flag survives world reload (isChopping is not persisted).
+        inhabitant.setChopping(true);
         var targetPos = trunk.getFirst();
+
+        // Turn the full body toward the target, not just the head.
+        double dx = targetPos.getX() + 0.5 - inhabitant.getX();
+        double dz = targetPos.getZ() + 0.5 - inhabitant.getZ();
+        float targetYaw = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180.0 / Math.PI)) - 90.0f;
+        inhabitant.setYRot(net.minecraft.util.Mth.approachDegrees(inhabitant.getYRot(), targetYaw, 10.0f));
+        inhabitant.yBodyRot = inhabitant.getYRot();
         inhabitant.getLookControl().setLookAt(targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5);
-        if (--waitTicks > 0) {
-            return true;
+
+        --waitTicks;
+
+        // At the impact frame (t=0.4s into the animation) break the block and play the sound.
+        if (waitTicks == CHOP_TICKS - CHOP_IMPACT_TICK) {
+            var pos = trunk.getFirst();
+            var state = level.getBlockState(pos);
+            if (state.isAir()) {
+                // Block already gone (broken by player etc.) — skip it.
+                trunk.removeFirst();
+            } else {
+                var soundType = state.getSoundType();
+                level.playSound(null, pos, soundType.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS,
+                        soundType.getVolume(), soundType.getPitch());
+                level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+                trunk.removeFirst();
+                inhabitant.getInventory().addItem(new ItemStack(state.getBlock().asItem()));
+                inhabitant.swing(InteractionHand.MAIN_HAND);
+                var axe = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
+                if (!axe.isEmpty()) {
+                    axe.hurtAndBreak(AXE_DAMAGE_PER_LOG, inhabitant, EquipmentSlot.MAINHAND);
+                }
+            }
         }
 
-        var pos = trunk.removeFirst();
-        var state = level.getBlockState(pos);
-        var soundType = state.getSoundType();
-        level.playSound(null, pos, soundType.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS,
-                soundType.getVolume(), soundType.getPitch());
-        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-        inhabitant.getInventory().addItem(new ItemStack(state.getBlock().asItem()));
-        inhabitant.swing(InteractionHand.MAIN_HAND);
-
-        var axe = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
-        if (!axe.isEmpty()) {
-            axe.hurtAndBreak(AXE_DAMAGE_PER_LOG, inhabitant, EquipmentSlot.MAINHAND);
-        }
-
-        if (trunk.isEmpty()) {
-            phase = canopyLeaves.isEmpty() ? Phase.RETURN_TO_HUT : Phase.HARVESTING_LEAVES;
-            waitTicks = LEAF_HARVEST_TICKS;
-        } else if (inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
-            phase = Phase.RETURN_TO_HUT;
-        } else {
-            waitTicks = CHOP_TICKS;
+        // End of the full animation cycle — decide what to do next.
+        if (waitTicks <= 0) {
+            if (trunk.isEmpty()) {
+                phase = canopyLeaves.isEmpty() ? Phase.RETURN_TO_HUT : Phase.HARVESTING_LEAVES;
+                waitTicks = LEAF_HARVEST_TICKS;
+                inhabitant.setChopping(false);
+            } else if (inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
+                phase = Phase.RETURN_TO_HUT;
+                inhabitant.setChopping(false);
+            } else {
+                waitTicks = CHOP_TICKS;
+            }
         }
         return true;
     }
@@ -441,12 +468,12 @@ public class LumberjackJob implements Job {
     public List<String> getDebugLines() {
         var lines = new ArrayList<String>();
         lines.add("Phase: " + phase);
-        lines.add("Trunk: " + (trunk == null ? "none" : trunk.size() + " logs left, base " + trunk.getFirst()));
+        lines.add("Trunk: " + (trunk == null ? "none" : trunk.isEmpty() ? "empty" : trunk.size() + " logs left, next " + trunk.getFirst()));
         lines.add("Canopy leaves: " + canopyLeaves.size());
         lines.add("Stand pos: " + standPos);
-        lines.add("Wait ticks: " + waitTicks + ", repath cooldown: " + repathCooldown + ", no-tree cooldown: " + noTreeCooldown);
+        lines.add("Wait ticks: " + waitTicks + " / " + CHOP_TICKS + " (impact at " + CHOP_IMPACT_TICK + ")");
+        lines.add("Repath: " + repathCooldown + ", no-tree: " + noTreeCooldown);
         lines.add("Unreachable trees skipped: " + unreachableTreeBases.size());
-        lines.add("No tree found: " + noTreeFound());
         return lines;
     }
 

@@ -51,6 +51,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier, net.minecraft.world.entity.ContainerUser {
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> DATA_CHOPPING =
+            net.minecraft.network.syncher.SynchedEntityData.defineId(InhabitantEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
     private final SimpleContainer inventory = new SimpleContainer(2);
 
@@ -71,25 +74,50 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         }
     }
 
+    private static final software.bernie.geckolib.animation.RawAnimation WALK =
+            software.bernie.geckolib.animation.RawAnimation.begin().thenLoop("animation.inhabitant.walk");
+    private static final software.bernie.geckolib.animation.RawAnimation IDLE =
+            software.bernie.geckolib.animation.RawAnimation.begin().thenLoop("animation.inhabitant.idle");
+    private static final software.bernie.geckolib.animation.RawAnimation CHOP =
+            software.bernie.geckolib.animation.RawAnimation.begin().thenLoop("animation.inhabitant.chop");
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        // Stubs for the animations still to be authored in animations/inhabitant.animation.json:
-        // idle, walk, cast_rod. Each returns STOP until its animation exists and the predicate is filled in.
-        controllers.add(new AnimationController<>("idle", 0, this::idlePredicate));
-        controllers.add(new AnimationController<>("walk", 0, this::walkPredicate));
+        // One controller owns all body bones so there is always exactly one animation driving them.
+        // Multiple controllers on the same bones leave stale poses when one returns STOP — the
+        // other controller's last frame stays frozen instead of yielding back.
+        controllers.add(new AnimationController<>("body", 0, this::bodyPredicate));
         controllers.add(new AnimationController<>("cast_rod", 0, this::castRodPredicate));
     }
 
-    private PlayState idlePredicate(AnimationTest<InhabitantEntity> test) {
-        return PlayState.STOP;
-    }
-
-    private PlayState walkPredicate(AnimationTest<InhabitantEntity> test) {
-        return PlayState.STOP;
+    private PlayState bodyPredicate(AnimationTest<InhabitantEntity> test) {
+        if (isChopping()) {
+            return test.setAndContinue(CHOP);
+        }
+        if (test.isMoving()) {
+            test.setControllerSpeed(Math.max(0.5f, walkAnimation.speed()));
+            return test.setAndContinue(WALK);
+        }
+        return test.setAndContinue(IDLE);
     }
 
     private PlayState castRodPredicate(AnimationTest<InhabitantEntity> test) {
         return PlayState.STOP;
+    }
+
+    @Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_CHOPPING, false);
+    }
+
+    /** Whether {@link com.sheepfromheaven.minenow.entity.job.LumberjackJob} is mid-swing on a trunk log. */
+    public boolean isChopping() {
+        return entityData.get(DATA_CHOPPING);
+    }
+
+    public void setChopping(boolean chopping) {
+        entityData.set(DATA_CHOPPING, chopping);
     }
 
     @Override
@@ -262,6 +290,8 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
                 .map(g -> g.getGoal().getClass().getSimpleName())
                 .collect(Collectors.joining(", "));
         lines.add("Active goals: " + (runningGoals.isEmpty() ? "none" : runningGoals));
+        lines.add("Animation: isChopping=" + isChopping() + ", isMoving=" + walkAnimation.isMoving()
+                + ", xRot=" + String.format("%.1f", getXRot()));
 
         var nav = getNavigation();
         var path = nav.getPath();
