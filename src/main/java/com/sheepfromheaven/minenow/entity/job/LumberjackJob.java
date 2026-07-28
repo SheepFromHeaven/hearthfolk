@@ -34,6 +34,7 @@ public class LumberjackJob implements Job {
     private static final double WALK_SPEED = 0.6;
     private static final int CHOP_TICKS = 30;
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
+    private static final int NO_TREE_RETRY_TICKS = 100;
     private static final int AXE_DAMAGE_PER_LOG = 2;
 
     private enum Phase { GOTO_HUT, FIND_AXE, GOTO_TREE, CHOPPING, RETURN_TO_HUT, DEPOSIT, MISSING_TOOL }
@@ -44,6 +45,7 @@ public class LumberjackJob implements Job {
     private BlockPos standPos;
     private int waitTicks;
     private int repathCooldown;
+    private int noTreeCooldown;
     @Nullable
     private Item missingItem;
 
@@ -113,9 +115,15 @@ public class LumberjackJob implements Job {
 
     private boolean tickGotoTree(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         if (trunk == null) {
+            // Returning false here would make WorkGoal stop/restart every tick (replaying the goal-switch
+            // sound in a loop) while no tree is in range - park and retry on a cooldown instead.
+            if (--noTreeCooldown > 0) {
+                return true;
+            }
             var found = workplace.findTreeInRange(level).orElse(null);
             if (found == null) {
-                return false;
+                noTreeCooldown = NO_TREE_RETRY_TICKS;
+                return true;
             }
             trunk = new ArrayList<>(found);
             standPos = findStandableNeighbor(level, trunk.getFirst());
