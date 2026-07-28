@@ -113,7 +113,7 @@ public class GoEatGoal extends Goal {
 
         for (var pos : structure.findStorageContainers(level)) {
             if (level.getBlockEntity(pos) instanceof Container container) {
-                var meal = ContainerUtil.extractOne(container, stack -> CookingRecipes.isReadyToEat(level, stack));
+                var meal = ContainerUtil.extractOne(container, inhabitant, stack -> CookingRecipes.isReadyToEat(level, stack));
                 if (!meal.isEmpty()) {
                     inhabitant.setNeed(NeedType.FOOD, 1.0f);
                     return;

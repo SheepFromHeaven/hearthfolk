@@ -137,10 +137,13 @@ public class CookJobTests {
         workGoal.canUse();
         workGoal.start();
 
-        // Drive the job through GOTO_HUT -> FIND_INGREDIENTS.
+        // Drive the job through GOTO_HUT -> FIND_INGREDIENTS -> COOKING. Each ingredient is now a
+        // pick-up-from-barrel leg and a carry-to-smoker leg, each paced ~1/second
+        // (CookJob.ACTION_COOLDOWN_TICKS), so this needs well more than a couple of ticks.
         inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
-        workGoal.tick();
-        workGoal.tick();
+        for (int i = 0; i < 150 && !"Cooking a meal".equals(workGoal.getStatusDescription()); i++) {
+            workGoal.tick();
+        }
 
         return new CookSetup(inhabitant, workGoal, smokerPos);
     }

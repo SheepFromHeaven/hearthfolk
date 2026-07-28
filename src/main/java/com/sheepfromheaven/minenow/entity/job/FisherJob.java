@@ -36,6 +36,8 @@ public class FisherJob implements Job {
     private static final int MAX_BITE_TICKS = 600;
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
     private static final int ROD_DAMAGE_PER_CATCH = 1;
+    /** Roughly one storage action per second, so grabbing/depositing items reads as deliberate rather than instant. */
+    private static final int ACTION_COOLDOWN_TICKS = 20;
 
     private enum Phase { GOTO_HUT, FIND_ROD, GOTO_WATER, CASTING, WAITING_BITE, CATCHING, RETURN_TO_HUT, DEPOSIT, MISSING_TOOL }
 
@@ -44,6 +46,9 @@ public class FisherJob implements Job {
     private BlockPos standPos;
     private int waitTicks;
     private int repathCooldown;
+    private int actionCooldown;
+    @Nullable
+    private BlockPos containerTarget;
     @Nullable
     private Item missingItem;
 
@@ -67,6 +72,7 @@ public class FisherJob implements Job {
         // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant far
         // from wherever this phase left off - re-approach the hut rather than resuming fishing in place.
         phase = Phase.GOTO_HUT;
+        containerTarget = null;
     }
 
     @Override
@@ -96,20 +102,35 @@ public class FisherJob implements Job {
             phase = Phase.GOTO_WATER;
             return true;
         }
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (level.getBlockEntity(pos) instanceof Container container) {
-                var rod = ContainerUtil.extractStack(container, Items.FISHING_ROD);
-                if (!rod.isEmpty()) {
-                    inhabitant.setItemSlot(EquipmentSlot.MAINHAND, rod);
-                    missingItem = null;
-                    phase = Phase.GOTO_WATER;
-                    return true;
-                }
+        if (containerTarget == null) {
+            containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), stack -> stack.is(Items.FISHING_ROD));
+            if (containerTarget == null) {
+                missingItem = Items.FISHING_ROD;
+                phase = Phase.MISSING_TOOL;
+                waitTicks = MISSING_TOOL_RETRY_TICKS;
+                return true;
             }
         }
-        missingItem = Items.FISHING_ROD;
-        phase = Phase.MISSING_TOOL;
-        waitTicks = MISSING_TOOL_RETRY_TICKS;
+        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+            return true;
+        }
+        if (actionCooldown > 0) {
+            actionCooldown--;
+            return true;
+        }
+        if (level.getBlockEntity(containerTarget) instanceof Container container) {
+            var rod = ContainerUtil.extractStack(container, inhabitant, Items.FISHING_ROD);
+            if (!rod.isEmpty()) {
+                inhabitant.setItemSlot(EquipmentSlot.MAINHAND, rod);
+                missingItem = null;
+                actionCooldown = ACTION_COOLDOWN_TICKS;
+                containerTarget = null;
+                phase = Phase.GOTO_WATER;
+                return true;
+            }
+        }
+        // The rod was gone by the time we arrived (race with another job/player) - rescan next tick.
+        containerTarget = null;
         return true;
     }
 
@@ -136,6 +157,8 @@ public class FisherJob implements Job {
             phase = Phase.CASTING;
             waitTicks = CAST_TICKS;
             inhabitant.swing(InteractionHand.MAIN_HAND);
+            level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_THROW,
+                    net.minecraft.sounds.SoundSource.NEUTRAL, 0.5F, 0.4F / (inhabitant.getRandom().nextFloat() * 0.4F + 0.8F));
         }
         return true;
     }
@@ -204,6 +227,12 @@ public class FisherJob implements Job {
     private boolean tickCatching(InhabitantEntity inhabitant, ServerLevel level) {
         keepOnShore(inhabitant);
         var rod = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
+        if (waterPos != null) {
+            level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_SPLASH,
+                    net.minecraft.sounds.SoundSource.NEUTRAL, 0.25F, 1.0F + (inhabitant.getRandom().nextFloat() - inhabitant.getRandom().nextFloat()) * 0.4F);
+            level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_RETRIEVE,
+                    net.minecraft.sounds.SoundSource.NEUTRAL, 1.0F, 1.0F);
+        }
         if (waterPos != null && !rod.isEmpty()) {
             var lootParams = new LootParams.Builder(level)
                     .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(waterPos))
@@ -239,15 +268,29 @@ public class FisherJob implements Job {
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         var carried = inhabitant.getInventory();
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (level.getBlockEntity(pos) instanceof Container container) {
-                for (int i = 0; i < carried.getContainerSize(); i++) {
-                    var stack = carried.getItem(i);
-                    if (!stack.isEmpty()) {
-                        carried.setItem(i, ContainerUtil.insertItem(container, stack));
-                    }
+        for (int i = 0; i < carried.getContainerSize(); i++) {
+            var stack = carried.getItem(i);
+            if (stack.isEmpty()) continue;
+            if (containerTarget == null) {
+                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
+                if (containerTarget == null) {
+                    // No room anywhere right now - stay put and retry next tick rather than getting stuck.
+                    return true;
                 }
             }
+            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+                return true;
+            }
+            if (actionCooldown > 0) {
+                actionCooldown--;
+                return true;
+            }
+            if (level.getBlockEntity(containerTarget) instanceof Container container) {
+                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
+            }
+            actionCooldown = ACTION_COOLDOWN_TICKS;
+            containerTarget = null;
+            return true;
         }
         phase = Phase.GOTO_HUT;
         waterPos = null;
@@ -311,8 +354,10 @@ public class FisherJob implements Job {
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("WaitTicks", waitTicks);
+        tag.putInt("ActionCooldown", actionCooldown);
         if (waterPos != null) tag.putLong("WaterPos", waterPos.asLong());
         if (standPos != null) tag.putLong("StandPos", standPos.asLong());
+        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
         if (missingItem != null) tag.putString("MissingItem", BuiltInRegistries.ITEM.getKey(missingItem).toString());
     }
 
@@ -324,8 +369,10 @@ public class FisherJob implements Job {
             phase = Phase.GOTO_HUT;
         }
         waitTicks = tag.getIntOr("WaitTicks", 0);
+        actionCooldown = tag.getIntOr("ActionCooldown", 0);
         waterPos = tag.contains("WaterPos") ? BlockPos.of(tag.getLongOr("WaterPos", 0)) : null;
         standPos = tag.contains("StandPos") ? BlockPos.of(tag.getLongOr("StandPos", 0)) : null;
+        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItem = tag.contains("MissingItem")
                 ? BuiltInRegistries.ITEM.getValue(Identifier.parse(tag.getStringOr("MissingItem", "")))
                 : null;

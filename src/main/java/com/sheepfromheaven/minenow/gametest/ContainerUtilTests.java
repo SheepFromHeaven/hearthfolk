@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.gametest;
 
+import com.sheepfromheaven.minenow.entity.ModEntities;
 import com.sheepfromheaven.minenow.entity.job.ContainerUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -27,7 +28,8 @@ public class ContainerUtilTests {
         }
         container.setItem(0, new ItemStack(Items.APPLE, 5));
 
-        var extracted = ContainerUtil.extractOne(container, stack -> stack.is(Items.APPLE));
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), barrelPos);
+        var extracted = ContainerUtil.extractOne(container, inhabitant, stack -> stack.is(Items.APPLE));
 
         helper.succeedWhen(() -> {
             helper.assertTrue(extracted.getCount() == 1, "Exactly one apple should be extracted");
@@ -50,7 +52,8 @@ public class ContainerUtilTests {
         }
         container.setItem(0, new ItemStack(Items.STONE, 5));
 
-        var extracted = ContainerUtil.extractOne(container, stack -> stack.is(Items.APPLE));
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), barrelPos);
+        var extracted = ContainerUtil.extractOne(container, inhabitant, stack -> stack.is(Items.APPLE));
 
         helper.succeedWhen(() -> {
             helper.assertTrue(extracted.isEmpty(), "No apple should be extracted when none is present");

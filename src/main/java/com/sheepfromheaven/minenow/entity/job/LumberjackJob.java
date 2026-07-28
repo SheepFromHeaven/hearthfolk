@@ -37,6 +37,8 @@ public class LumberjackJob implements Job {
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
     private static final int NO_TREE_RETRY_TICKS = 100;
     private static final int AXE_DAMAGE_PER_LOG = 2;
+    /** Roughly one storage action per second, so grabbing/depositing items reads as deliberate rather than instant. */
+    private static final int ACTION_COOLDOWN_TICKS = 20;
 
     private enum Phase { GOTO_HUT, FIND_AXE, GOTO_TREE, CHOPPING, RETURN_TO_HUT, DEPOSIT, MISSING_TOOL }
 
@@ -47,6 +49,9 @@ public class LumberjackJob implements Job {
     private int waitTicks;
     private int repathCooldown;
     private int noTreeCooldown;
+    private int actionCooldown;
+    @Nullable
+    private BlockPos containerTarget;
     /** Trunk base positions found to have no reachable standing spot, so they're skipped in future scans. */
     private final Set<BlockPos> unreachableTreeBases = new HashSet<>();
     @Nullable
@@ -72,6 +77,7 @@ public class LumberjackJob implements Job {
         // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant far
         // from wherever this phase left off - re-approach the hut rather than resuming chopping in place.
         phase = Phase.GOTO_HUT;
+        containerTarget = null;
     }
 
     @Override
@@ -99,20 +105,35 @@ public class LumberjackJob implements Job {
             phase = Phase.GOTO_TREE;
             return true;
         }
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (level.getBlockEntity(pos) instanceof Container container) {
-                var axe = ContainerUtil.extractFirst(container, stack -> stack.is(ItemTags.AXES));
-                if (!axe.isEmpty()) {
-                    inhabitant.setItemSlot(EquipmentSlot.MAINHAND, axe);
-                    missingItem = null;
-                    phase = Phase.GOTO_TREE;
-                    return true;
-                }
+        if (containerTarget == null) {
+            containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), stack -> stack.is(ItemTags.AXES));
+            if (containerTarget == null) {
+                missingItem = Items.WOODEN_AXE;
+                phase = Phase.MISSING_TOOL;
+                waitTicks = MISSING_TOOL_RETRY_TICKS;
+                return true;
             }
         }
-        missingItem = Items.WOODEN_AXE;
-        phase = Phase.MISSING_TOOL;
-        waitTicks = MISSING_TOOL_RETRY_TICKS;
+        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+            return true;
+        }
+        if (actionCooldown > 0) {
+            actionCooldown--;
+            return true;
+        }
+        if (level.getBlockEntity(containerTarget) instanceof Container container) {
+            var axe = ContainerUtil.extractFirst(container, inhabitant, stack -> stack.is(ItemTags.AXES));
+            if (!axe.isEmpty()) {
+                inhabitant.setItemSlot(EquipmentSlot.MAINHAND, axe);
+                missingItem = null;
+                actionCooldown = ACTION_COOLDOWN_TICKS;
+                containerTarget = null;
+                phase = Phase.GOTO_TREE;
+                return true;
+            }
+        }
+        // The axe was gone by the time we arrived (race with another job/player) - rescan next tick.
+        containerTarget = null;
         return true;
     }
 
@@ -199,6 +220,9 @@ public class LumberjackJob implements Job {
 
         var pos = trunk.removeFirst();
         var state = level.getBlockState(pos);
+        var soundType = state.getSoundType();
+        level.playSound(null, pos, soundType.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS,
+                soundType.getVolume(), soundType.getPitch());
         level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
         inhabitant.getInventory().addItem(new ItemStack(state.getBlock().asItem()));
         inhabitant.swing(InteractionHand.MAIN_HAND);
@@ -225,15 +249,29 @@ public class LumberjackJob implements Job {
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         var carried = inhabitant.getInventory();
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (level.getBlockEntity(pos) instanceof Container container) {
-                for (int i = 0; i < carried.getContainerSize(); i++) {
-                    var stack = carried.getItem(i);
-                    if (!stack.isEmpty()) {
-                        carried.setItem(i, ContainerUtil.insertItem(container, stack));
-                    }
+        for (int i = 0; i < carried.getContainerSize(); i++) {
+            var stack = carried.getItem(i);
+            if (stack.isEmpty()) continue;
+            if (containerTarget == null) {
+                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
+                if (containerTarget == null) {
+                    // No room anywhere right now - stay put and retry next tick rather than getting stuck.
+                    return true;
                 }
             }
+            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+                return true;
+            }
+            if (actionCooldown > 0) {
+                actionCooldown--;
+                return true;
+            }
+            if (level.getBlockEntity(containerTarget) instanceof Container container) {
+                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
+            }
+            actionCooldown = ACTION_COOLDOWN_TICKS;
+            containerTarget = null;
+            return true;
         }
         phase = Phase.GOTO_HUT;
         trunk = null;
@@ -318,10 +356,12 @@ public class LumberjackJob implements Job {
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("WaitTicks", waitTicks);
+        tag.putInt("ActionCooldown", actionCooldown);
         if (trunk != null) {
             tag.putLongArray("Trunk", trunk.stream().mapToLong(BlockPos::asLong).toArray());
         }
         if (standPos != null) tag.putLong("StandPos", standPos.asLong());
+        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
         if (missingItem != null) tag.putString("MissingItem", BuiltInRegistries.ITEM.getKey(missingItem).toString());
     }
 
@@ -333,10 +373,12 @@ public class LumberjackJob implements Job {
             phase = Phase.GOTO_HUT;
         }
         waitTicks = tag.getIntOr("WaitTicks", 0);
+        actionCooldown = tag.getIntOr("ActionCooldown", 0);
         trunk = tag.getLongArray("Trunk")
                 .map(arr -> Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toCollection(ArrayList::new)))
                 .orElse(null);
         standPos = tag.contains("StandPos") ? BlockPos.of(tag.getLongOr("StandPos", 0)) : null;
+        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItem = tag.contains("MissingItem")
                 ? BuiltInRegistries.ITEM.getValue(Identifier.parse(tag.getStringOr("MissingItem", "")))
                 : null;

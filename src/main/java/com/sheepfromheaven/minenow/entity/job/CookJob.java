@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.entity.job;
 
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
@@ -23,12 +24,19 @@ public class CookJob implements Job {
     private static final int REPATH_INTERVAL = 60;
     private static final double WALK_SPEED = 0.6;
     private static final int MISSING_INGREDIENTS_RETRY_TICKS = 100;
+    /** Roughly one storage action per second, so grabbing/depositing items reads as deliberate rather than instant. */
+    private static final int ACTION_COOLDOWN_TICKS = 20;
 
     private enum Phase { GOTO_HUT, FIND_INGREDIENTS, COOKING, DEPOSIT, MISSING_INGREDIENTS }
 
     private Phase phase = Phase.GOTO_HUT;
     private int waitTicks;
     private int repathCooldown;
+    private int actionCooldown;
+    @Nullable
+    private BlockPos containerTarget;
+    /** Smoker slot (0 food / 1 fuel) an ingredient already picked up is destined for, or -1 if not carrying one. */
+    private int pendingSmokerSlot = -1;
     @Nullable
     private String missingItemLabel;
 
@@ -52,8 +60,10 @@ public class CookJob implements Job {
     public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant away
         // from the hut - re-approach it rather than resuming in place. Nothing is lost: any food/fuel
-        // already loaded stays in the smoker, and the result (if any) stays in its output slot.
+        // already loaded stays in the smoker, the result (if any) stays in its output slot, and an
+        // ingredient already picked up but not yet loaded just stays in the inhabitant's own inventory.
         phase = Phase.GOTO_HUT;
+        containerTarget = null;
     }
 
     @Override
@@ -75,7 +85,8 @@ public class CookJob implements Job {
     }
 
     private boolean tickFindIngredients(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var smoker = findSmoker(level, workplace);
+        var smokerPos = workplace.findBlock(level, state -> state.is(Blocks.SMOKER)).orElse(null);
+        var smoker = smokerPos != null && level.getBlockEntity(smokerPos) instanceof Container container ? container : null;
         if (smoker == null) {
             missingItemLabel = "a Smoker";
             phase = Phase.MISSING_INGREDIENTS;
@@ -83,31 +94,70 @@ public class CookJob implements Job {
             return true;
         }
 
-        if (smoker.getItem(0).isEmpty()) {
-            var rawFood = extractFromStorage(level, workplace, stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent());
-            if (rawFood.isEmpty()) {
-                missingItemLabel = "raw food";
+        // Already carrying an ingredient picked up on a previous tick - walk it over to the smoker
+        // and load it in, rather than teleporting it straight from the barrel.
+        if (pendingSmokerSlot != -1) {
+            if (!moveTowardsAndCheckArrival(inhabitant, smokerPos)) {
+                return true;
+            }
+            if (actionCooldown > 0) {
+                actionCooldown--;
+                return true;
+            }
+            var carried = inhabitant.getInventory();
+            for (int i = 0; i < carried.getContainerSize(); i++) {
+                var stack = carried.getItem(i);
+                if (!stack.isEmpty()) {
+                    smoker.setItem(pendingSmokerSlot, stack);
+                    carried.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+                    break;
+                }
+            }
+            pendingSmokerSlot = -1;
+            actionCooldown = ACTION_COOLDOWN_TICKS;
+            return true;
+        }
+
+        int neededSlot = smoker.getItem(0).isEmpty() ? 0 : smoker.getItem(1).isEmpty() ? 1 : -1;
+        if (neededSlot == -1) {
+            missingItemLabel = null;
+            inhabitant.swing(InteractionHand.MAIN_HAND);
+            phase = Phase.COOKING;
+            return true;
+        }
+
+        java.util.function.Predicate<net.minecraft.world.item.ItemStack> matcher = neededSlot == 0
+                ? stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent()
+                : stack -> CookingRecipes.isFuel(level, stack);
+
+        if (containerTarget == null) {
+            containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), matcher);
+            if (containerTarget == null) {
+                missingItemLabel = neededSlot == 0 ? "raw food" : "fuel";
                 phase = Phase.MISSING_INGREDIENTS;
                 waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
                 return true;
             }
-            smoker.setItem(0, rawFood);
         }
-
-        if (smoker.getItem(1).isEmpty()) {
-            var fuel = extractFromStorage(level, workplace, stack -> CookingRecipes.isFuel(level, stack));
-            if (fuel.isEmpty()) {
-                missingItemLabel = "fuel";
-                phase = Phase.MISSING_INGREDIENTS;
-                waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
+        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+            return true;
+        }
+        if (actionCooldown > 0) {
+            actionCooldown--;
+            return true;
+        }
+        if (level.getBlockEntity(containerTarget) instanceof Container container) {
+            var extracted = ContainerUtil.extractOne(container, inhabitant, matcher);
+            if (!extracted.isEmpty()) {
+                inhabitant.getInventory().addItem(extracted);
+                pendingSmokerSlot = neededSlot;
+                actionCooldown = ACTION_COOLDOWN_TICKS;
+                containerTarget = null;
                 return true;
             }
-            smoker.setItem(1, fuel);
         }
-
-        missingItemLabel = null;
-        inhabitant.swing(InteractionHand.MAIN_HAND);
-        phase = Phase.COOKING;
+        // The ingredient was gone by the time we arrived (race with another job/player) - rescan next tick.
+        containerTarget = null;
         return true;
     }
 
@@ -135,15 +185,29 @@ public class CookJob implements Job {
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         var carried = inhabitant.getInventory();
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (level.getBlockEntity(pos) instanceof Container container) {
-                for (int i = 0; i < carried.getContainerSize(); i++) {
-                    var stack = carried.getItem(i);
-                    if (!stack.isEmpty()) {
-                        carried.setItem(i, ContainerUtil.insertItem(container, stack));
-                    }
+        for (int i = 0; i < carried.getContainerSize(); i++) {
+            var stack = carried.getItem(i);
+            if (stack.isEmpty()) continue;
+            if (containerTarget == null) {
+                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
+                if (containerTarget == null) {
+                    // No room anywhere right now - stay put and retry next tick rather than getting stuck.
+                    return true;
                 }
             }
+            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+                return true;
+            }
+            if (actionCooldown > 0) {
+                actionCooldown--;
+                return true;
+            }
+            if (level.getBlockEntity(containerTarget) instanceof Container container) {
+                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
+            }
+            actionCooldown = ACTION_COOLDOWN_TICKS;
+            containerTarget = null;
+            return true;
         }
         phase = Phase.GOTO_HUT;
         return false;
@@ -156,24 +220,7 @@ public class CookJob implements Job {
         return true;
     }
 
-    @Nullable
-    private Container findSmoker(ServerLevel level, DominionStructure workplace) {
-        var pos = workplace.findBlock(level, state -> state.is(Blocks.SMOKER));
-        if (pos.isEmpty()) return null;
-        return level.getBlockEntity(pos.get()) instanceof Container container ? container : null;
-    }
-
-    private net.minecraft.world.item.ItemStack extractFromStorage(ServerLevel level, DominionStructure workplace,
-                                                                    java.util.function.Predicate<net.minecraft.world.item.ItemStack> matcher) {
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (!(level.getBlockEntity(pos) instanceof Container container)) continue;
-            var stack = ContainerUtil.extractOne(container, matcher);
-            if (!stack.isEmpty()) return stack;
-        }
-        return net.minecraft.world.item.ItemStack.EMPTY;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, net.minecraft.core.BlockPos target) {
+    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
         boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
         if (arrived) {
             inhabitant.getNavigation().stop();
@@ -218,6 +265,9 @@ public class CookJob implements Job {
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("WaitTicks", waitTicks);
+        tag.putInt("ActionCooldown", actionCooldown);
+        tag.putInt("PendingSmokerSlot", pendingSmokerSlot);
+        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
         if (missingItemLabel != null) tag.putString("MissingItemLabel", missingItemLabel);
     }
 
@@ -229,6 +279,9 @@ public class CookJob implements Job {
             phase = Phase.GOTO_HUT;
         }
         waitTicks = tag.getIntOr("WaitTicks", 0);
+        actionCooldown = tag.getIntOr("ActionCooldown", 0);
+        pendingSmokerSlot = tag.getIntOr("PendingSmokerSlot", -1);
+        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItemLabel = tag.contains("MissingItemLabel") ? tag.getStringOr("MissingItemLabel", "") : null;
     }
 }

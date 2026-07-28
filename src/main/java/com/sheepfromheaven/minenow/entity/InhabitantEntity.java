@@ -50,7 +50,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier {
+public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier, net.minecraft.world.entity.ContainerUser {
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
     private final SimpleContainer inventory = new SimpleContainer(2);
 
@@ -219,6 +219,23 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         }
         var jobType = workGoal != null ? workGoal.getJobType() : null;
         return jobType != null ? name + " (" + jobType.getDisplayName() + ")" : name;
+    }
+
+    /**
+     * {@link net.minecraft.world.entity.ContainerUser} is only implemented so jobs can bracket
+     * container access with {@link net.minecraft.world.Container#startOpen}/{@code stopOpen} and
+     * get the same open/close sound and lid animation a player gets - the inhabitant never keeps a
+     * container "open" across ticks (see {@link com.sheepfromheaven.minenow.entity.job.ContainerUtil}),
+     * so this is never actually consulted.
+     */
+    @Override
+    public boolean hasContainerOpen(net.minecraft.world.level.block.entity.ContainerOpenersCounter opener, net.minecraft.core.BlockPos pos) {
+        return false;
+    }
+
+    @Override
+    public double getContainerInteractionRange() {
+        return 8.0;
     }
 
     /** Plays a short villager noise so switching to a new AI goal is audible. */

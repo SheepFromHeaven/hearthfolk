@@ -100,7 +100,7 @@ public class FinishWorkGoal extends Goal {
             if (!(level.getBlockEntity(pos) instanceof Container container)) {
                 continue;
             }
-            tool = ContainerUtil.insertItem(container, tool);
+            tool = ContainerUtil.insertItem(container, inhabitant, tool);
             if (tool.isEmpty()) {
                 break;
             }
