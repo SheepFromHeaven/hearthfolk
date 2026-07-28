@@ -111,6 +111,13 @@ public class LumberjackLeafHarvestTests {
         var logRelPos = new BlockPos(6, 1, 6);
 
         helper.setBlock(barrelRelPos, Blocks.BARREL);
+        // makeFloor() only fills relative y = -1, one below the trunk's own neighbor tiles (y = 1) - lay
+        // solid ground under the trunk and all 8 neighbors so they're standable once their leaves are cleared.
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                helper.setBlock(logRelPos.below().offset(dx, 0, dz), Blocks.GRASS_BLOCK);
+            }
+        }
         helper.setBlock(logRelPos, Blocks.OAK_LOG);
         // Box the trunk in on all 8 surrounding tiles (and their headroom) with decayable leaves - the
         // scan checks cardinal and diagonal neighbors alike, so every one of them needs to be blocked to
