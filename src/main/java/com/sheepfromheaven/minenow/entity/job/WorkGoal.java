@@ -81,10 +81,23 @@ public class WorkGoal extends Goal {
 
     @Override
     public void stop() {
+        // active still reflects the last tick()'s return value: true means the job was still mid-cycle
+        // when something else (sleep, hunger, ...) took over, rather than winding down on its own.
+        boolean interrupted = active;
         active = false;
         var workplace = resolveWorkplace();
         if (workplace != null && job != null && inhabitant.level() instanceof ServerLevel serverLevel) {
             job.stop(inhabitant, serverLevel, workplace);
+            if (interrupted) {
+                job.onInterrupted(inhabitant, serverLevel, workplace);
+            }
+        } else if (workplace == null) {
+            // Unassigned, or the workplace structure is gone - drop the stale job outright rather than
+            // leaving its last phase/position sitting there. Otherwise status text keeps showing the old
+            // job forever, and reassigning to the same structure later would resume it mid-cycle instead
+            // of starting fresh.
+            job = null;
+            cachedStructureId = null;
         }
         inhabitant.getNavigation().stop();
     }

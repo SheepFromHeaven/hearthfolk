@@ -53,6 +53,15 @@ public class CookJob implements Job {
     }
 
     @Override
+    public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant away
+        // from the hut - re-approach it rather than resuming cooking in place. Any ingredients already
+        // pulled from storage for an in-progress cook are lost, same as on a save/reload (see load()).
+        cookingResult = null;
+        phase = Phase.GOTO_HUT;
+    }
+
+    @Override
     public boolean tick(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         return switch (phase) {
             case GOTO_HUT -> tickGotoHut(inhabitant, workplace);

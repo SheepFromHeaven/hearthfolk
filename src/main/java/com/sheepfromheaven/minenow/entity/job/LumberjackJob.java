@@ -63,6 +63,13 @@ public class LumberjackJob implements Job {
     }
 
     @Override
+    public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant far
+        // from wherever this phase left off - re-approach the hut rather than resuming chopping in place.
+        phase = Phase.GOTO_HUT;
+    }
+
+    @Override
     public boolean tick(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         return switch (phase) {
             case GOTO_HUT -> tickGotoHut(inhabitant, workplace);

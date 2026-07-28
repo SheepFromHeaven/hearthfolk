@@ -31,6 +31,14 @@ public interface Job {
     /** Called when the goal loses control (job finished a cycle, was interrupted, or unassigned). */
     void stop(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace);
 
+    /**
+     * Called when the goal loses control mid-cycle - i.e. {@link #tick} last returned {@code true} - rather
+     * than because the job wound down naturally. Implementations should fall back to a "travel to workplace"
+     * phase so the next resume re-approaches the job site instead of continuing straight from wherever the
+     * interruption (e.g. being walked home to sleep) left the inhabitant standing.
+     */
+    default void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {}
+
     /** Short status text for display in the inhabitant's UI, e.g. "Fishing", "Returning home". */
     String getStatusDescription();
 
