@@ -132,6 +132,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.JobInterruptionTests::interruptedLumberjackReturnsToHutInsteadOfResumingChopping);
                     helper.register("unassigning_lumberjack_mid_chop_drops_stale_job",
                             com.sheepfromheaven.minenow.gametest.JobInterruptionTests::unassigningLumberjackMidChopDropsStaleJob);
+                    helper.register("approach_pos_is_marker_when_marker_is_on_the_floor",
+                            com.sheepfromheaven.minenow.gametest.WorkplaceApproachTests::approachPosIsMarkerWhenMarkerIsOnTheFloor);
+                    helper.register("approach_pos_finds_floor_when_marker_is_embedded_high_in_a_shaft",
+                            com.sheepfromheaven.minenow.gametest.WorkplaceApproachTests::approachPosFindsFloorWhenMarkerIsEmbeddedHighInAShaft);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

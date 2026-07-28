@@ -16,6 +16,7 @@ public class DominionStructure {
     public static final int MIN_WORK_AREA_RADIUS = 2;
     public static final int MAX_WORK_AREA_RADIUS = 6;
     public static final int DEFAULT_WORK_AREA_RADIUS = 6;
+    private static final int APPROACH_SEARCH_RADIUS = 6;
 
     private final UUID id;
     private String name;
@@ -25,6 +26,7 @@ public class DominionStructure {
     private UUID assignedInhabitantId;
     private UUID assignedWorkerId;
     private BlockPos cachedBedPos;
+    private BlockPos cachedApproachPos;
     /** Offset from {@link #markerPos}; {@link BlockPos#ZERO} means the work area is centered on the marker. */
     private BlockPos workAreaOffset = BlockPos.ZERO;
     private int workAreaRadius = DEFAULT_WORK_AREA_RADIUS;
@@ -140,6 +142,51 @@ public class DominionStructure {
             }
         }
         return markerPos;
+    }
+
+    /**
+     * The position inhabitants should walk to when heading to this workplace. Usually the marker
+     * itself, but the marker can be placed embedded in a wall or ceiling (any block face is a valid
+     * placement), in which case it's never a standable tile - so this searches outward for the
+     * nearest standable floor tile instead, letting inhabitants "arrive" next to it.
+     */
+    public BlockPos findApproachPos(Level level) {
+        if (cachedApproachPos != null && isStandable(level, cachedApproachPos)) {
+            return cachedApproachPos;
+        }
+        if (isStandable(level, markerPos)) {
+            cachedApproachPos = markerPos;
+            return markerPos;
+        }
+        BlockPos best = null;
+        long bestDistSq = Long.MAX_VALUE;
+        for (int dx = -APPROACH_SEARCH_RADIUS; dx <= APPROACH_SEARCH_RADIUS; dx++) {
+            for (int dy = -APPROACH_SEARCH_RADIUS; dy <= APPROACH_SEARCH_RADIUS; dy++) {
+                for (int dz = -APPROACH_SEARCH_RADIUS; dz <= APPROACH_SEARCH_RADIUS; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) continue;
+                    var candidate = markerPos.offset(dx, dy, dz);
+                    if (!isStandable(level, candidate)) continue;
+                    long distSq = (long) dx * dx + (long) dy * dy + (long) dz * dz;
+                    if (distSq < bestDistSq) {
+                        bestDistSq = distSq;
+                        best = candidate;
+                    }
+                }
+            }
+        }
+        cachedApproachPos = best != null ? best : markerPos;
+        return cachedApproachPos;
+    }
+
+    private static boolean isStandable(Level level, BlockPos pos) {
+        if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
+            return false;
+        }
+        if (!level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty()) {
+            return false;
+        }
+        var below = pos.below();
+        return !level.getBlockState(below).getCollisionShape(level, below).isEmpty();
     }
 
     public RequirementStatus getSpaceStatus() {

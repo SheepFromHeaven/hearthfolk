@@ -60,7 +60,7 @@ public class GoEatGoal extends Goal {
             return;
         }
         targetStructureId = structure.getId();
-        targetPos = structure.getMarkerPos();
+        targetPos = inhabitant.level() instanceof ServerLevel level ? structure.findApproachPos(level) : structure.getMarkerPos();
         moveToTarget();
     }
 

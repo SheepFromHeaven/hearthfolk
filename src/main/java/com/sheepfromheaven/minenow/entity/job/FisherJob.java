@@ -72,20 +72,20 @@ public class FisherJob implements Job {
     @Override
     public boolean tick(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         return switch (phase) {
-            case GOTO_HUT -> tickGotoHut(inhabitant, workplace);
+            case GOTO_HUT -> tickGotoHut(inhabitant, level, workplace);
             case FIND_ROD -> tickFindRod(inhabitant, level, workplace);
             case GOTO_WATER -> tickGotoWater(inhabitant, level, workplace);
             case CASTING -> tickCasting(inhabitant);
             case WAITING_BITE -> tickWaitingBite(inhabitant, level);
             case CATCHING -> tickCatching(inhabitant, level);
-            case RETURN_TO_HUT -> tickReturnToHut(inhabitant, workplace);
+            case RETURN_TO_HUT -> tickReturnToHut(inhabitant, level, workplace);
             case DEPOSIT -> tickDeposit(inhabitant, level, workplace);
             case MISSING_TOOL -> tickMissingTool(inhabitant, level, workplace);
         };
     }
 
-    private boolean tickGotoHut(InhabitantEntity inhabitant, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.getMarkerPos())) {
+    private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
             phase = hasRod(inhabitant) ? Phase.GOTO_WATER : Phase.FIND_ROD;
         }
         return true;
@@ -230,8 +230,8 @@ public class FisherJob implements Job {
         return true;
     }
 
-    private boolean tickReturnToHut(InhabitantEntity inhabitant, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.getMarkerPos())) {
+    private boolean tickReturnToHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
             phase = Phase.DEPOSIT;
         }
         return true;

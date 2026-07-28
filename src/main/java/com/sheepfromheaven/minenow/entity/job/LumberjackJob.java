@@ -72,18 +72,18 @@ public class LumberjackJob implements Job {
     @Override
     public boolean tick(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         return switch (phase) {
-            case GOTO_HUT -> tickGotoHut(inhabitant, workplace);
+            case GOTO_HUT -> tickGotoHut(inhabitant, level, workplace);
             case FIND_AXE -> tickFindAxe(inhabitant, level, workplace);
             case GOTO_TREE -> tickGotoTree(inhabitant, level, workplace);
             case CHOPPING -> tickChopping(inhabitant, level);
-            case RETURN_TO_HUT -> tickReturnToHut(inhabitant, workplace);
+            case RETURN_TO_HUT -> tickReturnToHut(inhabitant, level, workplace);
             case DEPOSIT -> tickDeposit(inhabitant, level, workplace);
             case MISSING_TOOL -> tickMissingTool();
         };
     }
 
-    private boolean tickGotoHut(InhabitantEntity inhabitant, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.getMarkerPos())) {
+    private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
             phase = hasAxe(inhabitant) ? Phase.GOTO_TREE : Phase.FIND_AXE;
         }
         return true;
@@ -178,8 +178,8 @@ public class LumberjackJob implements Job {
         return true;
     }
 
-    private boolean tickReturnToHut(InhabitantEntity inhabitant, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.getMarkerPos())) {
+    private boolean tickReturnToHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
             phase = Phase.DEPOSIT;
         }
         return true;

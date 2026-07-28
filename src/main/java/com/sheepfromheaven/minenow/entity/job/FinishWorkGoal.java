@@ -78,7 +78,7 @@ public class FinishWorkGoal extends Goal {
         if (workplace == null || !(inhabitant.level() instanceof ServerLevel serverLevel)) {
             return;
         }
-        var target = workplace.getMarkerPos();
+        var target = workplace.findApproachPos(serverLevel);
         boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
         if (!arrived) {
             if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {

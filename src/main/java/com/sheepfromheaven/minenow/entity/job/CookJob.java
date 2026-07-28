@@ -64,7 +64,7 @@ public class CookJob implements Job {
     @Override
     public boolean tick(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         return switch (phase) {
-            case GOTO_HUT -> tickGotoHut(inhabitant, workplace);
+            case GOTO_HUT -> tickGotoHut(inhabitant, level, workplace);
             case FIND_INGREDIENTS -> tickFindIngredients(inhabitant, level, workplace);
             case COOKING -> tickCooking(inhabitant);
             case DEPOSIT -> tickDeposit(inhabitant, level, workplace);
@@ -72,8 +72,8 @@ public class CookJob implements Job {
         };
     }
 
-    private boolean tickGotoHut(InhabitantEntity inhabitant, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.getMarkerPos())) {
+    private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
             phase = Phase.FIND_INGREDIENTS;
         }
         return true;
