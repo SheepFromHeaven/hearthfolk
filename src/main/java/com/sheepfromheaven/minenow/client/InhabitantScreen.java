@@ -7,18 +7,22 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class InhabitantScreen extends Screen {
     private static final int PANEL_WIDTH = 200;
-    private static final int PANEL_HEIGHT = 180;
+    private static final int PANEL_HEIGHT = 190;
     private static final int TAB_HEIGHT = 20;
     private static final int BAR_WIDTH = 160;
     private static final int BAR_HEIGHT = 10;
     private static final int NEED_BLOCK_HEIGHT = 30;
+    private static final int DEBUG_REFRESH_INTERVAL_TICKS = 10;
 
     private static final int PANEL_FILL = 0xFFC6C6C6;
     private static final int TEXT_DARK = 0xFF404040;
 
-    private enum Tab { GENERAL, NEEDS }
+    private enum Tab { GENERAL, NEEDS, DEBUG }
 
     private final int entityId;
     private final String inhabitantName;
@@ -27,11 +31,15 @@ public class InhabitantScreen extends Screen {
     private final float food;
     private final float rest;
     private final String jobStatus;
+    private final boolean debugEnabled;
+    private final List<String> issues;
 
     private Tab currentTab = Tab.GENERAL;
+    private List<String> debugLines = List.of();
+    private int debugRefreshCooldown;
 
     public InhabitantScreen(int entityId, String inhabitantName, String dominionName, float shelter, float food, float rest,
-                             String jobStatus) {
+                             String jobStatus, boolean debugEnabled, List<String> issues) {
         super(Component.literal("Inhabitant"));
         this.entityId = entityId;
         this.inhabitantName = inhabitantName;
@@ -40,6 +48,16 @@ public class InhabitantScreen extends Screen {
         this.food = food;
         this.rest = rest;
         this.jobStatus = jobStatus;
+        this.debugEnabled = debugEnabled;
+        this.issues = issues;
+    }
+
+    public boolean matchesEntity(int entityId) {
+        return this.entityId == entityId;
+    }
+
+    public void setDebugLines(List<String> debugLines) {
+        this.debugLines = debugLines;
     }
 
     @Override
@@ -47,19 +65,21 @@ public class InhabitantScreen extends Screen {
         super.init();
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
-        int tabWidth = (PANEL_WIDTH - 20) / 2;
+        var tabs = new ArrayList<Tab>();
+        tabs.add(Tab.GENERAL);
+        tabs.add(Tab.NEEDS);
+        if (debugEnabled) tabs.add(Tab.DEBUG);
+        int tabWidth = (PANEL_WIDTH - 20) / tabs.size();
 
-        addRenderableWidget(new NiceTabButton(left + 10, top + 40, tabWidth, TAB_HEIGHT,
-                Component.literal("General"), () -> currentTab == Tab.GENERAL, () -> {
-            currentTab = Tab.GENERAL;
-            rebuildWidgets();
-        }));
-
-        addRenderableWidget(new NiceTabButton(left + 10 + tabWidth, top + 40, tabWidth, TAB_HEIGHT,
-                Component.literal("Needs"), () -> currentTab == Tab.NEEDS, () -> {
-            currentTab = Tab.NEEDS;
-            rebuildWidgets();
-        }));
+        for (int i = 0; i < tabs.size(); i++) {
+            var tab = tabs.get(i);
+            addRenderableWidget(new NiceTabButton(left + 10 + tabWidth * i, top + 40, tabWidth, TAB_HEIGHT,
+                    Component.literal(tabLabel(tab)), () -> currentTab == tab, () -> {
+                currentTab = tab;
+                if (tab == Tab.DEBUG) requestDebugRefresh();
+                rebuildWidgets();
+            }));
+        }
 
         if (currentTab == Tab.GENERAL) {
             addRenderableWidget(Button.builder(Component.literal("Go Home"), button ->
@@ -69,6 +89,32 @@ public class InhabitantScreen extends Screen {
             addRenderableWidget(Button.builder(Component.literal("View Inventory"), button ->
                     ModNetwork.sendViewInventory(entityId)
             ).pos(left + 10, top + 96).size(PANEL_WIDTH - 20, 20).build());
+
+            addRenderableWidget(Button.builder(BeveledBox.withAlertMark("Issues", !issues.isEmpty()), button ->
+                    minecraft.setScreen(new IssuesListScreen(this, Component.literal(inhabitantName + "'s Issues"),
+                            issues.stream().map(IssuesListScreen.IssueEntry::new).toList()))
+            ).pos(left + 10, top + 122).size(PANEL_WIDTH - 20, 20).build());
+        }
+    }
+
+    private static String tabLabel(Tab tab) {
+        return switch (tab) {
+            case GENERAL -> "General";
+            case NEEDS -> "Needs";
+            case DEBUG -> "Debug";
+        };
+    }
+
+    private void requestDebugRefresh() {
+        ModNetwork.sendRequestInhabitantDebug(entityId);
+        debugRefreshCooldown = DEBUG_REFRESH_INTERVAL_TICKS;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (currentTab == Tab.DEBUG && --debugRefreshCooldown <= 0) {
+            requestDebugRefresh();
         }
     }
 
@@ -83,9 +129,23 @@ public class InhabitantScreen extends Screen {
         drawCentered(graphics, dominionName, top + 22, 0xFF8A6D00);
 
         if (currentTab == Tab.GENERAL) {
-            drawCentered(graphics, "Job: " + jobStatus, top + 126, TEXT_DARK);
+            drawCentered(graphics, "Job: " + jobStatus, top + 152, TEXT_DARK);
         } else if (currentTab == Tab.NEEDS) {
             renderNeedsTab(graphics, left, top);
+        } else if (currentTab == Tab.DEBUG) {
+            renderDebugTab(graphics, left, top);
+        }
+    }
+
+    private void renderDebugTab(GuiGraphics graphics, int left, int top) {
+        int y = top + 66;
+        if (debugLines.isEmpty()) {
+            graphics.drawString(font, "Loading...", left + 10, y, TEXT_DARK, false);
+            return;
+        }
+        for (var line : debugLines) {
+            graphics.drawString(font, line, left + 10, y, TEXT_DARK, false);
+            y += 10;
         }
     }
 

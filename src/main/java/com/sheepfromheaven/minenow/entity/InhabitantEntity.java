@@ -43,9 +43,12 @@ import software.bernie.geckolib.animation.state.AnimationTest;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class InhabitantEntity extends PathfinderMob implements GeoEntity, InventoryCarrier {
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
@@ -58,7 +61,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     private boolean goHomeRequested;
     private WorkGoal workGoal;
     @Nullable
-    private String activeWarning;
+    private String lastAppliedName;
 
     public InhabitantEntity(EntityType<? extends InhabitantEntity> type, Level level) {
         super(type, level);
@@ -149,28 +152,41 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             syncNeedsToDominion();
         }
         if (!level().isClientSide() && tickCount % 20 == 0) {
-            updateWarnings();
+            updateIssueIndicator();
         }
     }
 
-    private void updateWarnings() {
+    /**
+     * Every problem currently affecting this inhabitant that the player should know about (missing
+     * tools, a job that can't proceed, an unmet house requirement, ...). Used both for the name-tag
+     * "!" marker and the issues list shown from the inhabitant screen; a future message board block
+     * will pull the same list across every inhabitant in a dominion.
+     */
+    public List<String> getIssues() {
+        var issues = new ArrayList<String>();
         var missingWorkItem = workGoal != null ? workGoal.getMissingItem() : null;
-        var missingHomeRequirement = missingWorkItem == null ? findMissingHomeRequirement() : null;
-        String warning = missingWorkItem != null
-                ? "Needs " + missingWorkItem.getDefaultInstance().getHoverName().getString()
-                : missingHomeRequirement != null
-                        ? "There is no " + missingHomeRequirement + " in my house"
-                        : null;
-        if (java.util.Objects.equals(warning, activeWarning)) {
+        if (missingWorkItem != null) {
+            issues.add("Needs " + missingWorkItem.getDefaultInstance().getHoverName().getString());
+        }
+        if (workGoal != null) {
+            issues.addAll(workGoal.getWarnings());
+        }
+        var missingHomeRequirement = findMissingHomeRequirement();
+        if (missingHomeRequirement != null) {
+            issues.add("There is no " + missingHomeRequirement + " in my house");
+        }
+        return issues;
+    }
+
+    private void updateIssueIndicator() {
+        boolean hasIssues = !getIssues().isEmpty();
+        var baseName = resolveBaseName();
+        String fullName = hasIssues ? baseName + " §c!§r" : baseName;
+        if (fullName.equals(lastAppliedName)) {
             return;
         }
-        activeWarning = warning;
-        var baseName = resolveBaseName();
-        if (warning != null) {
-            setCustomName(Component.literal(baseName + " §c!§r " + warning));
-        } else {
-            setCustomName(Component.literal(baseName));
-        }
+        lastAppliedName = fullName;
+        setCustomName(Component.literal(fullName));
         setCustomNameVisible(true);
     }
 
@@ -193,14 +209,16 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     }
 
     private String resolveBaseName() {
+        String name = getName().getString();
         if (dominionId != null && level() instanceof ServerLevel serverLevel) {
             var dominion = DominionSavedData.get(serverLevel).getDominionById(dominionId);
             if (dominion != null) {
                 var inhabitant = dominion.getInhabitantByEntityUuid(getUUID());
-                if (inhabitant != null) return inhabitant.getName();
+                if (inhabitant != null) name = inhabitant.getName();
             }
         }
-        return getName().getString();
+        var jobType = workGoal != null ? workGoal.getJobType() : null;
+        return jobType != null ? name + " (" + jobType.getDisplayName() + ")" : name;
     }
 
     /** Plays a short villager noise so switching to a new AI goal is audible. */
@@ -217,6 +235,30 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     @Nullable
     public Item getMissingWorkItem() {
         return workGoal != null ? workGoal.getMissingItem() : null;
+    }
+
+    /** Snapshot of AI/pathfinding state for the debug view (gated behind {@link com.sheepfromheaven.minenow.Config#debugInhabitantView}). */
+    public List<String> getDebugLines() {
+        var lines = new ArrayList<String>();
+        var runningGoals = goalSelector.getAvailableGoals().stream()
+                .filter(net.minecraft.world.entity.ai.goal.WrappedGoal::isRunning)
+                .map(g -> g.getGoal().getClass().getSimpleName())
+                .collect(Collectors.joining(", "));
+        lines.add("Active goals: " + (runningGoals.isEmpty() ? "none" : runningGoals));
+
+        var nav = getNavigation();
+        var path = nav.getPath();
+        if (path != null) {
+            lines.add("Path: node " + path.getNextNodeIndex() + "/" + path.getNodeCount() + " -> target " + path.getTarget());
+        } else {
+            lines.add("Path: none");
+        }
+        lines.add("Nav done: " + nav.isDone() + ", stuck: " + nav.isStuck());
+
+        if (workGoal != null) {
+            lines.addAll(workGoal.getDebugLines());
+        }
+        return lines;
     }
 
     private void syncNeedsToDominion() {

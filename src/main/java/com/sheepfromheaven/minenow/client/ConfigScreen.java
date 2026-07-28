@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.client;
 import com.sheepfromheaven.minenow.Config;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.client.ConfigScreenHandler;
@@ -13,6 +14,7 @@ public class ConfigScreen extends Screen {
     private final Screen parent;
     private ForgeSlider radiusSlider;
     private ForgeSlider roomSizeSlider;
+    private Checkbox debugViewCheckbox;
 
     // Kept out of MineNow's constructor so its class file never references Screen directly;
     // referencing a client-only class there crashes mod construction on a dedicated server.
@@ -45,17 +47,25 @@ public class ConfigScreen extends Screen {
                 50, 2000, Config.maxRoomSize, 10, 0, true);
         addRenderableWidget(roomSizeSlider);
 
+        debugViewCheckbox = Checkbox.builder(Component.literal("Inhabitant Debug View"), font)
+                .pos(centerX - 150, y + 60)
+                .selected(Config.debugInhabitantView)
+                .build();
+        addRenderableWidget(debugViewCheckbox);
+
         addRenderableWidget(Button.builder(Component.literal("Save"), button -> {
             Config.DEFAULT_DOMINION_RADIUS.set(radiusSlider.getValueInt());
             Config.MAX_ROOM_SIZE.set(roomSizeSlider.getValueInt());
+            Config.DEBUG_INHABITANT_VIEW.set(debugViewCheckbox.selected());
             Config.defaultDominionRadius = radiusSlider.getValueInt();
             Config.maxRoomSize = roomSizeSlider.getValueInt();
+            Config.debugInhabitantView = debugViewCheckbox.selected();
             minecraft.setScreen(parent);
-        }).pos(centerX - 75, y + 70).size(150, 20).build());
+        }).pos(centerX - 75, y + 100).size(150, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> {
             minecraft.setScreen(parent);
-        }).pos(centerX - 75, y + 96).size(150, 20).build());
+        }).pos(centerX - 75, y + 126).size(150, 20).build());
     }
 
     @Override

@@ -161,6 +161,29 @@ public class ModNetwork {
                                     new Container[] {new EquipmentSlotContainer(inhabitant, EquipmentSlot.MAINHAND)},
                                     inhabitant.getInventory()));
                         })
+                        .addMain(RequestInhabitantDebugPacket.class, RequestInhabitantDebugPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null || !Config.debugInhabitantView) return;
+                            var level = player.level();
+                            if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
+
+                            var lines = inhabitant.getDebugLines();
+                            CHANNEL.send(new InhabitantDebugPacket(msg.entityId(), String.join(INHABITANT_FIELD_SEP, lines)),
+                                    PacketDistributor.PLAYER.with(player));
+
+                            if (level instanceof ServerLevel serverLevel) {
+                                var path = inhabitant.getNavigation().getPath();
+                                if (path != null) {
+                                    var particle = new net.minecraft.core.particles.DustParticleOptions(
+                                            (255 << 16) | (220 << 8) | 0, 1.0f);
+                                    for (int i = 0; i < path.getNodeCount(); i++) {
+                                        var pos = path.getNodePos(i);
+                                        serverLevel.sendParticles(player, particle, true, true,
+                                                pos.getX() + 0.5, pos.getY() + 0.3, pos.getZ() + 0.5, 1, 0, 0, 0, 0);
+                                    }
+                                }
+                            }
+                        })
                         .addMain(AssignHousePacket.class, AssignHousePacket.CODEC, (msg, ctx) -> {
                             var player = ctx.getSender();
                             if (player == null) return;
@@ -237,6 +260,8 @@ public class ModNetwork {
                                 (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openInhabitantScreen(msg))
                         .addMain(OpenStructureScreenPacket.class, OpenStructureScreenPacket.CODEC,
                                 (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openStructureScreen(msg))
+                        .addMain(InhabitantDebugPacket.class, InhabitantDebugPacket.CODEC,
+                                (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.updateInhabitantDebug(msg))
                 );
     }
 
@@ -271,7 +296,7 @@ public class ModNetwork {
         CHANNEL.send(new OpenInhabitantScreenPacket(
                 entity.getId(), name, dominion.getName(),
                 entity.getNeed(NeedType.SHELTER), entity.getNeed(NeedType.FOOD), entity.getNeed(NeedType.REST),
-                entity.getJobStatus()
+                entity.getJobStatus(), Config.debugInhabitantView, String.join(INHABITANT_FIELD_SEP, entity.getIssues())
         ), PacketDistributor.PLAYER.with(player));
     }
 
@@ -281,6 +306,10 @@ public class ModNetwork {
 
     public static void sendViewInventory(int entityId) {
         CHANNEL.send(new ViewInventoryPacket(entityId), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendRequestInhabitantDebug(int entityId) {
+        CHANNEL.send(new RequestInhabitantDebugPacket(entityId), PacketDistributor.SERVER.noArg());
     }
 
     public static final String INHABITANT_FIELD_SEP = "\u001F";
@@ -381,7 +410,7 @@ public class ModNetwork {
     }
 
     public record OpenInhabitantScreenPacket(int entityId, String name, String dominionName, float shelter, float food, float rest,
-                                              String jobStatus) {
+                                              String jobStatus, boolean debugEnabled, String issuesData) {
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenInhabitantScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, OpenInhabitantScreenPacket::entityId,
                 ByteBufCodecs.STRING_UTF8, OpenInhabitantScreenPacket::name,
@@ -390,6 +419,8 @@ public class ModNetwork {
                 ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::food,
                 ByteBufCodecs.FLOAT, OpenInhabitantScreenPacket::rest,
                 ByteBufCodecs.STRING_UTF8, OpenInhabitantScreenPacket::jobStatus,
+                ByteBufCodecs.BOOL, OpenInhabitantScreenPacket::debugEnabled,
+                ByteBufCodecs.STRING_UTF8, OpenInhabitantScreenPacket::issuesData,
                 OpenInhabitantScreenPacket::new
         );
     }
@@ -405,6 +436,21 @@ public class ModNetwork {
         public static final StreamCodec<RegistryFriendlyByteBuf, ViewInventoryPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, ViewInventoryPacket::entityId,
                 ViewInventoryPacket::new
+        );
+    }
+
+    public record RequestInhabitantDebugPacket(int entityId) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, RequestInhabitantDebugPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, RequestInhabitantDebugPacket::entityId,
+                RequestInhabitantDebugPacket::new
+        );
+    }
+
+    public record InhabitantDebugPacket(int entityId, String debugText) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, InhabitantDebugPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, InhabitantDebugPacket::entityId,
+                ByteBufCodecs.STRING_UTF8, InhabitantDebugPacket::debugText,
+                InhabitantDebugPacket::new
         );
     }
 

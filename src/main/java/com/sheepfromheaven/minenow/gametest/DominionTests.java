@@ -288,7 +288,7 @@ public class DominionTests {
         helper.setBlock(bedRelPos, Blocks.AIR.defaultBlockState());
 
         helper.succeedWhen(() -> helper.assertTrue(
-                inhabitant.getName().getString().contains("There is no Bed in my house"),
+                inhabitant.getIssues().contains("There is no Bed in my house"),
                 "Inhabitant should complain once its assigned home's bed is broken"));
     }
 
