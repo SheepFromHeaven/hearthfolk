@@ -51,6 +51,7 @@ public class FisherJob implements Job {
     private BlockPos containerTarget;
     @Nullable
     private Item missingItem;
+    private int bobberEntityId = -1;
 
     @Override
     public boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -65,6 +66,8 @@ public class FisherJob implements Job {
     @Override
     public void stop(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         inhabitant.getNavigation().stop();
+        inhabitant.setFisherState(0);
+        despawnBobber(level);
     }
 
     @Override
@@ -73,6 +76,11 @@ public class FisherJob implements Job {
         // from wherever this phase left off - re-approach the hut rather than resuming fishing in place.
         phase = Phase.GOTO_HUT;
         containerTarget = null;
+        waterPos = null;
+        standPos = null;
+        unreachableWater.clear();
+        inhabitant.setFisherState(0);
+        despawnBobber(level);
     }
 
     @Override
@@ -81,7 +89,7 @@ public class FisherJob implements Job {
             case GOTO_HUT -> tickGotoHut(inhabitant, level, workplace);
             case FIND_ROD -> tickFindRod(inhabitant, level, workplace);
             case GOTO_WATER -> tickGotoWater(inhabitant, level, workplace);
-            case CASTING -> tickCasting(inhabitant);
+            case CASTING -> tickCasting(inhabitant, level);
             case WAITING_BITE -> tickWaitingBite(inhabitant, level);
             case CATCHING -> tickCatching(inhabitant, level);
             case RETURN_TO_HUT -> tickReturnToHut(inhabitant, level, workplace);
@@ -164,6 +172,8 @@ public class FisherJob implements Job {
             inhabitant.setDeltaMovement(Vec3.ZERO);
             phase = Phase.CASTING;
             waitTicks = CAST_TICKS;
+            inhabitant.setFisherState(1);
+            spawnBobber(level, inhabitant);
             inhabitant.swing(InteractionHand.MAIN_HAND);
             level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_THROW,
                     net.minecraft.sounds.SoundSource.NEUTRAL, 0.5F, 0.4F / (inhabitant.getRandom().nextFloat() * 0.4F + 0.8F));
@@ -186,7 +196,11 @@ public class FisherJob implements Job {
         }
     }
 
-    private boolean tickCasting(InhabitantEntity inhabitant) {
+    private boolean tickCasting(InhabitantEntity inhabitant, ServerLevel level) {
+        if (isWaterGone(level)) {
+            abandonWaterSource(inhabitant, level);
+            return true;
+        }
         keepOnShore(inhabitant);
         if (waterPos != null) {
             inhabitant.getLookControl().setLookAt(waterPos.getX() + 0.5, waterPos.getY(), waterPos.getZ() + 0.5);
@@ -199,6 +213,10 @@ public class FisherJob implements Job {
     }
 
     private boolean tickWaitingBite(InhabitantEntity inhabitant, ServerLevel level) {
+        if (isWaterGone(level)) {
+            abandonWaterSource(inhabitant, level);
+            return true;
+        }
         keepOnShore(inhabitant);
         if (waterPos != null) {
             inhabitant.getLookControl().setLookAt(waterPos.getX() + 0.5, waterPos.getY(), waterPos.getZ() + 0.5);
@@ -210,6 +228,14 @@ public class FisherJob implements Job {
         }
         if (--waitTicks <= 0) {
             phase = Phase.CATCHING;
+            waitTicks = 10; // hold CATCHING for the reel animation (0.5 s)
+            inhabitant.setFisherState(2);
+            if (waterPos != null) {
+                level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_SPLASH,
+                        net.minecraft.sounds.SoundSource.NEUTRAL, 0.25F, 1.0F + (inhabitant.getRandom().nextFloat() - inhabitant.getRandom().nextFloat()) * 0.4F);
+                level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_RETRIEVE,
+                        net.minecraft.sounds.SoundSource.NEUTRAL, 1.0F, 1.0F);
+            }
             inhabitant.swing(InteractionHand.MAIN_HAND);
         }
         return true;
@@ -217,14 +243,14 @@ public class FisherJob implements Job {
 
     private boolean tickCatching(InhabitantEntity inhabitant, ServerLevel level) {
         keepOnShore(inhabitant);
-        var rod = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
         if (waterPos != null) {
             inhabitant.getLookControl().setLookAt(waterPos.getX() + 0.5, waterPos.getY(), waterPos.getZ() + 0.5);
-            level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_SPLASH,
-                    net.minecraft.sounds.SoundSource.NEUTRAL, 0.25F, 1.0F + (inhabitant.getRandom().nextFloat() - inhabitant.getRandom().nextFloat()) * 0.4F);
-            level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_RETRIEVE,
-                    net.minecraft.sounds.SoundSource.NEUTRAL, 1.0F, 1.0F);
         }
+        if (--waitTicks > 0) {
+            return true; // wait for reel animation to finish
+        }
+
+        var rod = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
         if (waterPos != null && !rod.isEmpty()) {
             var lootParams = new LootParams.Builder(level)
                     .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(waterPos))
@@ -240,13 +266,15 @@ public class FisherJob implements Job {
 
         boolean rodBroken = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
         boolean full = !inhabitant.getInventory().canAddItem(new ItemStack(Items.COD));
-        if (rodBroken) {
+        if (rodBroken || full || !isDaytime(level)) {
             phase = Phase.RETURN_TO_HUT;
-        } else if (full || !isDaytime(level)) {
-            phase = Phase.RETURN_TO_HUT;
+            inhabitant.setFisherState(0);
+            despawnBobber(level);
         } else {
             phase = Phase.CASTING;
             waitTicks = CAST_TICKS;
+            inhabitant.setFisherState(1);
+            spawnBobber(level, inhabitant);
         }
         return true;
     }
@@ -311,6 +339,37 @@ public class FisherJob implements Job {
             repathCooldown = REPATH_INTERVAL;
         }
         return false;
+    }
+
+    private boolean isWaterGone(ServerLevel level) {
+        return waterPos != null && !level.getFluidState(waterPos).is(net.minecraft.tags.FluidTags.WATER);
+    }
+
+    private void abandonWaterSource(InhabitantEntity inhabitant, ServerLevel level) {
+        inhabitant.setFisherState(0);
+        despawnBobber(level);
+        unreachableWater.add(waterPos);
+        waterPos = null;
+        standPos = null;
+        phase = Phase.GOTO_WATER;
+    }
+
+    private void spawnBobber(ServerLevel level, InhabitantEntity inhabitant) {
+        despawnBobber(level);
+        if (waterPos == null) return;
+        var bobber = new com.sheepfromheaven.minenow.entity.NpcFishingBobber(
+                com.sheepfromheaven.minenow.entity.ModEntities.NPC_FISHING_BOBBER.get(), level);
+        bobber.setPos(waterPos.getX() + 0.5, waterPos.getY() + 0.875, waterPos.getZ() + 0.5);
+        bobber.setOwnerEntityId(inhabitant.getId());
+        level.addFreshEntity(bobber);
+        bobberEntityId = bobber.getId();
+    }
+
+    private void despawnBobber(ServerLevel level) {
+        if (bobberEntityId == -1) return;
+        var entity = level.getEntity(bobberEntityId);
+        if (entity != null) entity.discard();
+        bobberEntityId = -1;
     }
 
     private boolean hasRod(InhabitantEntity inhabitant) {

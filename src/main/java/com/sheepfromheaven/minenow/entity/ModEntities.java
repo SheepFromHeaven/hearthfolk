@@ -22,6 +22,13 @@ public class ModEntities {
                     .build(ResourceKey.create(Registries.ENTITY_TYPE,
                             Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "inhabitant"))));
 
+    public static final RegistryObject<EntityType<NpcFishingBobber>> NPC_FISHING_BOBBER =
+            ENTITIES.register("npc_fishing_bobber", () -> EntityType.Builder.of(
+                    NpcFishingBobber::new, MobCategory.MISC
+            ).sized(0.25f, 0.25f).clientTrackingRange(10).noSave()
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE,
+                            Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "npc_fishing_bobber"))));
+
     public static void register(BusGroup modBusGroup) {
         ENTITIES.register(modBusGroup);
     }

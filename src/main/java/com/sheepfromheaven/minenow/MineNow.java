@@ -211,6 +211,8 @@ public final class MineNow {
                     com.sheepfromheaven.minenow.client.StructureMarkerRenderer::new);
             event.registerEntityRenderer(com.sheepfromheaven.minenow.entity.ModEntities.INHABITANT.get(),
                     com.sheepfromheaven.minenow.client.InhabitantRenderer::new);
+            event.registerEntityRenderer(com.sheepfromheaven.minenow.entity.ModEntities.NPC_FISHING_BOBBER.get(),
+                    com.sheepfromheaven.minenow.client.NpcFishingBobberRenderer::new);
         });
     }
 }
