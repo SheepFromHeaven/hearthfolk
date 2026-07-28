@@ -6,6 +6,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.VegetationBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
@@ -16,8 +17,10 @@ import java.util.Optional;
 /**
  * Distinguishes a naturally-grown tree trunk from a player-built log structure so the lumberjack
  * never tears down a house. A trunk only counts as a tree once a non-persistent (naturally decaying)
- * leaf is found beside it; any other adjacent block (planks, stone, a persistent decorative leaf, a
- * differently-oriented log) aborts the scan entirely rather than risking a false positive.
+ * leaf is found beside it; any other solid adjacent block (planks, stone, a persistent decorative leaf, a
+ * differently-oriented log) aborts the scan entirely rather than risking a false positive. Replaceable
+ * vegetation (grass, ferns, flowers) beside the trunk is ignored, since it commonly grows right up
+ * against naturally-generated trees and carries no structural meaning.
  */
 public final class TreeScanner {
     private static final int MAX_TRUNK_HEIGHT = 32;
@@ -56,6 +59,9 @@ public final class TreeScanner {
                 }
                 if (neighborState.is(BlockTags.LEAVES) && !neighborState.getValue(LeavesBlock.PERSISTENT)) {
                     confirmedTree = true;
+                    continue;
+                }
+                if (neighborState.getBlock() instanceof VegetationBlock) {
                     continue;
                 }
                 return Optional.empty();

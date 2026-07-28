@@ -175,6 +175,34 @@ public class TreeScannerTests {
                         "A horizontally-oriented log of a different axis is treated as a foreign structure block, not a natural branch"));
     }
 
+    public static void grassAndFlowersAdjacentToTrunkDoNotAbortTree(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var soilPos = new BlockPos(2, 0, 2);
+        var lowerLogPos = new BlockPos(2, 1, 2);
+        var grassSoilPos = new BlockPos(3, 0, 2);
+        var grassPos = new BlockPos(3, 1, 2);
+        var upperLogPos = new BlockPos(2, 2, 2);
+        var flowerSoilPos = new BlockPos(1, 0, 2);
+        var flowerPos = new BlockPos(1, 1, 2);
+        var leafPos = new BlockPos(3, 2, 2);
+
+        helper.setBlock(soilPos, Blocks.GRASS_BLOCK);
+        helper.setBlock(lowerLogPos, Blocks.OAK_LOG);
+        helper.setBlock(grassSoilPos, Blocks.GRASS_BLOCK);
+        helper.setBlock(grassPos, Blocks.SHORT_GRASS);
+        helper.setBlock(flowerSoilPos, Blocks.GRASS_BLOCK);
+        helper.setBlock(flowerPos, Blocks.DANDELION);
+        helper.setBlock(upperLogPos, Blocks.OAK_LOG);
+        helper.setBlock(leafPos, Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, false));
+
+        var level = helper.getLevel();
+        var tree = TreeScanner.findTree(level, helper.absolutePos(lowerLogPos));
+
+        helper.succeedWhen(() ->
+                helper.assertTrue(tree.isPresent(), "Grass and flowers touching the trunk should not abort tree recognition"));
+    }
+
     public static void nonLogPillarTwoBlocksAwayDoesNotAbortTree(GameTestHelper helper) {
         helper.makeFloor();
 

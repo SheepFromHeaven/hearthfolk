@@ -93,6 +93,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.TreeScannerTests::differentAxisLogNeighborAbortsTree);
                     helper.register("non_log_pillar_two_blocks_away_does_not_abort_tree",
                             com.sheepfromheaven.minenow.gametest.TreeScannerTests::nonLogPillarTwoBlocksAwayDoesNotAbortTree);
+                    helper.register("grass_and_flowers_adjacent_to_trunk_do_not_abort_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::grassAndFlowersAdjacentToTrunkDoNotAbortTree);
                     helper.register("find_tree_in_range_finds_valid_tree",
                             com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeFindsValidTree);
                     helper.register("find_tree_in_range_skips_log_pillar_without_leaves",
