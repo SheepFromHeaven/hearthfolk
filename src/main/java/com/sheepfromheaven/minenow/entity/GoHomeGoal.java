@@ -50,6 +50,7 @@ public class GoHomeGoal extends Goal {
 
     @Override
     public void start() {
+        inhabitant.playGoalSwitchSound();
         waitTicksRemaining = -1;
         targetPos = inhabitant.getHomeTargetPos();
         if (targetPos == null) {

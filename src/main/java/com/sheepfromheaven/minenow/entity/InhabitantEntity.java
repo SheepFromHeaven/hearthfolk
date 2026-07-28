@@ -10,6 +10,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
@@ -174,6 +175,13 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             }
         }
         return getName().getString();
+    }
+
+    /** Plays a short villager noise so switching to a new AI goal is audible. */
+    public void playGoalSwitchSound() {
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(null, blockPosition(), SoundEvents.VILLAGER_AMBIENT, getSoundSource(), 1.0F, getVoicePitch());
+        }
     }
 
     public String getJobStatus() {

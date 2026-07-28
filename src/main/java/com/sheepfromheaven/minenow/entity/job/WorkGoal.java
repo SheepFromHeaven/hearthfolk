@@ -71,6 +71,7 @@ public class WorkGoal extends Goal {
 
     @Override
     public void start() {
+        inhabitant.playGoalSwitchSound();
         active = true;
         var workplace = resolveWorkplace();
         if (workplace != null && job != null && inhabitant.level() instanceof ServerLevel serverLevel) {

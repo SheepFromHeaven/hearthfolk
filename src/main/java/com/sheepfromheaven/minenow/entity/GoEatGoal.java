@@ -52,6 +52,7 @@ public class GoEatGoal extends Goal {
 
     @Override
     public void start() {
+        inhabitant.playGoalSwitchSound();
         eatTicksRemaining = -1;
         var structure = findTavernWithFood();
         if (structure == null) {
