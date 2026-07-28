@@ -24,15 +24,13 @@ public class CookJob implements Job {
     private static final int REPATH_INTERVAL = 60;
     private static final double WALK_SPEED = 0.6;
     private static final int MISSING_INGREDIENTS_RETRY_TICKS = 100;
-    /** Roughly one storage action per second, so grabbing/depositing items reads as deliberate rather than instant. */
-    private static final int ACTION_COOLDOWN_TICKS = 20;
 
     private enum Phase { GOTO_HUT, FIND_INGREDIENTS, COOKING, DEPOSIT, MISSING_INGREDIENTS }
 
     private Phase phase = Phase.GOTO_HUT;
     private int waitTicks;
     private int repathCooldown;
-    private int actionCooldown;
+    private final ContainerActionPacer actionPacer = new ContainerActionPacer();
     @Nullable
     private BlockPos containerTarget;
     /** Smoker slot (0 food / 1 fuel) an ingredient already picked up is destined for, or -1 if not carrying one. */
@@ -100,8 +98,7 @@ public class CookJob implements Job {
             if (!moveTowardsAndCheckArrival(inhabitant, smokerPos)) {
                 return true;
             }
-            if (actionCooldown > 0) {
-                actionCooldown--;
+            if (!actionPacer.isReady(smokerPos)) {
                 return true;
             }
             var carried = inhabitant.getInventory();
@@ -114,7 +111,7 @@ public class CookJob implements Job {
                 }
             }
             pendingSmokerSlot = -1;
-            actionCooldown = ACTION_COOLDOWN_TICKS;
+            actionPacer.recordAction(smokerPos);
             return true;
         }
 
@@ -142,16 +139,17 @@ public class CookJob implements Job {
         if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
             return true;
         }
-        if (actionCooldown > 0) {
-            actionCooldown--;
+        if (!actionPacer.isReady(containerTarget)) {
             return true;
         }
         if (level.getBlockEntity(containerTarget) instanceof Container container) {
-            var extracted = ContainerUtil.extractOne(container, inhabitant, matcher);
+            // Grab the whole matching stack, not just one item - the smoker's slot holds a full
+            // stack and cooks through it automatically, so this avoids a barrel trip per single item.
+            var extracted = ContainerUtil.extractFirst(container, inhabitant, matcher);
             if (!extracted.isEmpty()) {
                 inhabitant.getInventory().addItem(extracted);
                 pendingSmokerSlot = neededSlot;
-                actionCooldown = ACTION_COOLDOWN_TICKS;
+                actionPacer.recordAction(containerTarget);
                 containerTarget = null;
                 return true;
             }
@@ -198,14 +196,13 @@ public class CookJob implements Job {
             if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
                 return true;
             }
-            if (actionCooldown > 0) {
-                actionCooldown--;
+            if (!actionPacer.isReady(containerTarget)) {
                 return true;
             }
             if (level.getBlockEntity(containerTarget) instanceof Container container) {
                 carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
             }
-            actionCooldown = ACTION_COOLDOWN_TICKS;
+            actionPacer.recordAction(containerTarget);
             containerTarget = null;
             return true;
         }
@@ -265,7 +262,7 @@ public class CookJob implements Job {
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("WaitTicks", waitTicks);
-        tag.putInt("ActionCooldown", actionCooldown);
+        actionPacer.save(tag, "Action");
         tag.putInt("PendingSmokerSlot", pendingSmokerSlot);
         if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
         if (missingItemLabel != null) tag.putString("MissingItemLabel", missingItemLabel);
@@ -279,7 +276,7 @@ public class CookJob implements Job {
             phase = Phase.GOTO_HUT;
         }
         waitTicks = tag.getIntOr("WaitTicks", 0);
-        actionCooldown = tag.getIntOr("ActionCooldown", 0);
+        actionPacer.load(tag, "Action");
         pendingSmokerSlot = tag.getIntOr("PendingSmokerSlot", -1);
         containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItemLabel = tag.contains("MissingItemLabel") ? tag.getStringOr("MissingItemLabel", "") : null;

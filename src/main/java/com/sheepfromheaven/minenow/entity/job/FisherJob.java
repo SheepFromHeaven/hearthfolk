@@ -36,8 +36,6 @@ public class FisherJob implements Job {
     private static final int MAX_BITE_TICKS = 600;
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
     private static final int ROD_DAMAGE_PER_CATCH = 1;
-    /** Roughly one storage action per second, so grabbing/depositing items reads as deliberate rather than instant. */
-    private static final int ACTION_COOLDOWN_TICKS = 20;
 
     private enum Phase { GOTO_HUT, FIND_ROD, GOTO_WATER, CASTING, WAITING_BITE, CATCHING, RETURN_TO_HUT, DEPOSIT, MISSING_TOOL }
 
@@ -46,7 +44,7 @@ public class FisherJob implements Job {
     private BlockPos standPos;
     private int waitTicks;
     private int repathCooldown;
-    private int actionCooldown;
+    private final ContainerActionPacer actionPacer = new ContainerActionPacer();
     @Nullable
     private BlockPos containerTarget;
     @Nullable
@@ -114,8 +112,7 @@ public class FisherJob implements Job {
         if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
             return true;
         }
-        if (actionCooldown > 0) {
-            actionCooldown--;
+        if (!actionPacer.isReady(containerTarget)) {
             return true;
         }
         if (level.getBlockEntity(containerTarget) instanceof Container container) {
@@ -123,7 +120,7 @@ public class FisherJob implements Job {
             if (!rod.isEmpty()) {
                 inhabitant.setItemSlot(EquipmentSlot.MAINHAND, rod);
                 missingItem = null;
-                actionCooldown = ACTION_COOLDOWN_TICKS;
+                actionPacer.recordAction(containerTarget);
                 containerTarget = null;
                 phase = Phase.GOTO_WATER;
                 return true;
@@ -281,14 +278,13 @@ public class FisherJob implements Job {
             if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
                 return true;
             }
-            if (actionCooldown > 0) {
-                actionCooldown--;
+            if (!actionPacer.isReady(containerTarget)) {
                 return true;
             }
             if (level.getBlockEntity(containerTarget) instanceof Container container) {
                 carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
             }
-            actionCooldown = ACTION_COOLDOWN_TICKS;
+            actionPacer.recordAction(containerTarget);
             containerTarget = null;
             return true;
         }
@@ -354,7 +350,7 @@ public class FisherJob implements Job {
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("WaitTicks", waitTicks);
-        tag.putInt("ActionCooldown", actionCooldown);
+        actionPacer.save(tag, "Action");
         if (waterPos != null) tag.putLong("WaterPos", waterPos.asLong());
         if (standPos != null) tag.putLong("StandPos", standPos.asLong());
         if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
@@ -369,7 +365,7 @@ public class FisherJob implements Job {
             phase = Phase.GOTO_HUT;
         }
         waitTicks = tag.getIntOr("WaitTicks", 0);
-        actionCooldown = tag.getIntOr("ActionCooldown", 0);
+        actionPacer.load(tag, "Action");
         waterPos = tag.contains("WaterPos") ? BlockPos.of(tag.getLongOr("WaterPos", 0)) : null;
         standPos = tag.contains("StandPos") ? BlockPos.of(tag.getLongOr("StandPos", 0)) : null;
         containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;

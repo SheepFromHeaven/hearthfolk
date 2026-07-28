@@ -37,8 +37,6 @@ public class LumberjackJob implements Job {
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
     private static final int NO_TREE_RETRY_TICKS = 100;
     private static final int AXE_DAMAGE_PER_LOG = 2;
-    /** Roughly one storage action per second, so grabbing/depositing items reads as deliberate rather than instant. */
-    private static final int ACTION_COOLDOWN_TICKS = 20;
 
     private enum Phase { GOTO_HUT, FIND_AXE, GOTO_TREE, CHOPPING, RETURN_TO_HUT, DEPOSIT, MISSING_TOOL }
 
@@ -49,7 +47,7 @@ public class LumberjackJob implements Job {
     private int waitTicks;
     private int repathCooldown;
     private int noTreeCooldown;
-    private int actionCooldown;
+    private final ContainerActionPacer actionPacer = new ContainerActionPacer();
     @Nullable
     private BlockPos containerTarget;
     /** Trunk base positions found to have no reachable standing spot, so they're skipped in future scans. */
@@ -117,8 +115,7 @@ public class LumberjackJob implements Job {
         if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
             return true;
         }
-        if (actionCooldown > 0) {
-            actionCooldown--;
+        if (!actionPacer.isReady(containerTarget)) {
             return true;
         }
         if (level.getBlockEntity(containerTarget) instanceof Container container) {
@@ -126,7 +123,7 @@ public class LumberjackJob implements Job {
             if (!axe.isEmpty()) {
                 inhabitant.setItemSlot(EquipmentSlot.MAINHAND, axe);
                 missingItem = null;
-                actionCooldown = ACTION_COOLDOWN_TICKS;
+                actionPacer.recordAction(containerTarget);
                 containerTarget = null;
                 phase = Phase.GOTO_TREE;
                 return true;
@@ -262,14 +259,13 @@ public class LumberjackJob implements Job {
             if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
                 return true;
             }
-            if (actionCooldown > 0) {
-                actionCooldown--;
+            if (!actionPacer.isReady(containerTarget)) {
                 return true;
             }
             if (level.getBlockEntity(containerTarget) instanceof Container container) {
                 carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
             }
-            actionCooldown = ACTION_COOLDOWN_TICKS;
+            actionPacer.recordAction(containerTarget);
             containerTarget = null;
             return true;
         }
@@ -356,7 +352,7 @@ public class LumberjackJob implements Job {
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("WaitTicks", waitTicks);
-        tag.putInt("ActionCooldown", actionCooldown);
+        actionPacer.save(tag, "Action");
         if (trunk != null) {
             tag.putLongArray("Trunk", trunk.stream().mapToLong(BlockPos::asLong).toArray());
         }
@@ -373,7 +369,7 @@ public class LumberjackJob implements Job {
             phase = Phase.GOTO_HUT;
         }
         waitTicks = tag.getIntOr("WaitTicks", 0);
-        actionCooldown = tag.getIntOr("ActionCooldown", 0);
+        actionPacer.load(tag, "Action");
         trunk = tag.getLongArray("Trunk")
                 .map(arr -> Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toCollection(ArrayList::new)))
                 .orElse(null);
