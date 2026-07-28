@@ -137,6 +137,11 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
                 setNeed(NeedType.SHELTER, Math.min(1.0f, getNeed(NeedType.SHELTER) + 0.05f));
             }
             setNeed(NeedType.FOOD, getNeed(NeedType.FOOD) - 0.01f);
+            if (isSleeping()) {
+                setNeed(NeedType.REST, getNeed(NeedType.REST) + 0.1f);
+            } else {
+                setNeed(NeedType.REST, getNeed(NeedType.REST) - 0.01f);
+            }
             syncNeedsToDominion();
         }
         if (!level().isClientSide() && tickCount % 20 == 0) {
@@ -189,6 +194,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         if (inhabitant == null) return;
         inhabitant.setNeed(NeedType.SHELTER, getNeed(NeedType.SHELTER));
         inhabitant.setNeed(NeedType.FOOD, getNeed(NeedType.FOOD));
+        inhabitant.setNeed(NeedType.REST, getNeed(NeedType.REST));
         data.setDirty();
     }
 

@@ -44,6 +44,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantSleepsInAssignedBedAtNight);
                     helper.register("inhabitant_walks_home_when_requested",
                             com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantWalksHomeWhenRequested);
+                    helper.register("rest_need_decays_while_inhabitant_is_awake",
+                            com.sheepfromheaven.minenow.gametest.RestNeedTests::restNeedDecaysWhileInhabitantIsAwake);
+                    helper.register("rest_need_restores_while_inhabitant_is_sleeping",
+                            com.sheepfromheaven.minenow.gametest.RestNeedTests::restNeedRestoresWhileInhabitantIsSleeping);
                     helper.register("inhabitant_walks_around_house_to_bed",
                             com.sheepfromheaven.minenow.gametest.GoHomeGoalTests::inhabitantWalksAroundHouseToBed);
                     helper.register("inhabitant_opens_door_to_reach_bed",
