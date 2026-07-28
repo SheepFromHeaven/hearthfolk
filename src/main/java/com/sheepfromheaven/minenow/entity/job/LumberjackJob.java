@@ -7,6 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
@@ -14,7 +15,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -37,12 +40,16 @@ public class LumberjackJob implements Job {
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
     private static final int NO_TREE_RETRY_TICKS = 100;
     private static final int AXE_DAMAGE_PER_LOG = 2;
+    /** ~8 leaves/second at 20 TPS - fast, but each leaf popping is still individually visible. */
+    private static final int LEAF_HARVEST_TICKS = 3;
 
-    private enum Phase { GOTO_HUT, FIND_AXE, GOTO_TREE, CHOPPING, RETURN_TO_HUT, DEPOSIT, MISSING_TOOL }
+    private enum Phase { GOTO_HUT, FIND_AXE, GOTO_TREE, CHOPPING, HARVESTING_LEAVES, RETURN_TO_HUT, DEPOSIT, MISSING_TOOL }
 
     private Phase phase = Phase.GOTO_HUT;
     @Nullable
     private List<BlockPos> trunk;
+    /** The felled tree's canopy, harvested one leaf at a time (see {@link #tickHarvestingLeaves}) once the trunk is gone. */
+    private List<BlockPos> canopyLeaves = List.of();
     private BlockPos standPos;
     private int waitTicks;
     private int repathCooldown;
@@ -85,6 +92,7 @@ public class LumberjackJob implements Job {
             case FIND_AXE -> tickFindAxe(inhabitant, level, workplace);
             case GOTO_TREE -> tickGotoTree(inhabitant, level, workplace);
             case CHOPPING -> tickChopping(inhabitant, level);
+            case HARVESTING_LEAVES -> tickHarvestingLeaves(inhabitant, level);
             case RETURN_TO_HUT -> tickReturnToHut(inhabitant, level, workplace);
             case DEPOSIT -> tickDeposit(inhabitant, level, workplace);
             case MISSING_TOOL -> tickMissingTool();
@@ -118,6 +126,7 @@ public class LumberjackJob implements Job {
         if (!actionPacer.isReady(containerTarget)) {
             return true;
         }
+        lookAtBlock(inhabitant, containerTarget);
         if (level.getBlockEntity(containerTarget) instanceof Container container) {
             var axe = ContainerUtil.extractFirst(container, inhabitant, stack -> stack.is(ItemTags.AXES));
             if (!axe.isEmpty()) {
@@ -141,15 +150,20 @@ public class LumberjackJob implements Job {
             if (--noTreeCooldown > 0) {
                 return true;
             }
-            var found = workplace.findTreeInRange(level, unreachableTreeBases).orElse(null);
+            var found = workplace.findTreeShapeInRange(level, unreachableTreeBases).orElse(null);
             if (found == null) {
+                // Nothing reachable right now - drop the exclusion set rather than let it grow stale
+                // forever (a sapling can regrow into a tree at a base that was marked unreachable long
+                // ago, e.g. because the old tree there had no standable neighbor at the time). Every
+                // future rescan will just re-add any base that's still genuinely unreachable.
+                unreachableTreeBases.clear();
                 noTreeCooldown = NO_TREE_RETRY_TICKS;
                 // Voice it every retry (every NO_TREE_RETRY_TICKS) rather than every tick, so the
                 // player gets an audible/text nudge that something's wrong without being spammed.
                 inhabitant.playGoalSwitchSound();
                 return true;
             }
-            var base = found.getFirst();
+            var base = found.trunk().getFirst();
             var candidate = findStandableNeighbor(level, base);
             if (candidate == null) {
                 // No reachable tile around this trunk - skip it on future scans instead of sending
@@ -158,8 +172,17 @@ public class LumberjackJob implements Job {
                 unreachableTreeBases.add(base);
                 return true;
             }
-            trunk = new ArrayList<>(found);
+            trunk = new ArrayList<>(found.trunk());
+            canopyLeaves = new ArrayList<>(found.leaves());
             standPos = candidate;
+            // The chosen tile (and its headroom) may only have qualified as standable because it's
+            // occupied by decayable canopy leaves rather than being genuinely clear - harvest those now
+            // so the inhabitant can actually walk there, and drop them from the canopy list so they
+            // aren't harvested a second time once the trunk is down.
+            harvestLeafIfDecayable(inhabitant, level, candidate);
+            harvestLeafIfDecayable(inhabitant, level, candidate.above());
+            canopyLeaves.remove(candidate);
+            canopyLeaves.remove(candidate.above());
         }
         if (moveTowardsAndCheckArrival(inhabitant, standPos)) {
             inhabitant.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
@@ -177,8 +200,10 @@ public class LumberjackJob implements Job {
     /**
      * Finds a standable tile next to the trunk's base to chop from, rather than standing inside the tree.
      * Checks all 8 surrounding tiles (not just the 4 cardinal ones) since canopy leaves often block one
-     * or more sides at head height. Returns null if none of them are reachable - the caller must not
-     * send the inhabitant to stand inside the (solid) trunk itself.
+     * or more sides at head height. A tile blocked only by decayable (non-persistent) leaves still
+     * counts as standable - the caller clears those leaves before walking the inhabitant there. Returns
+     * null if none of them are reachable even accounting for that - the caller must not send the
+     * inhabitant to stand inside the (solid) trunk itself.
      */
     @Nullable
     private BlockPos findStandableNeighbor(ServerLevel level, BlockPos base) {
@@ -192,16 +217,49 @@ public class LumberjackJob implements Job {
     }
 
     private boolean isStandable(ServerLevel level, BlockPos pos) {
-        if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
+        if (isBlocking(level, pos)) {
             return false;
         }
         // Leaves commonly overhang the ground right next to a trunk - a tile can look clear at foot
         // level yet still be unreachable because there's no headroom, silently stranding the pathfinder.
-        if (!level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty()) {
+        if (isBlocking(level, pos.above())) {
             return false;
         }
         var below = pos.below();
         return !level.getBlockState(below).getCollisionShape(level, below).isEmpty();
+    }
+
+    /** A collision-bearing block that isn't decayable canopy leaves - those get cleared, not avoided. */
+    private boolean isBlocking(ServerLevel level, BlockPos pos) {
+        var state = level.getBlockState(pos);
+        if (state.getCollisionShape(level, pos).isEmpty()) {
+            return false;
+        }
+        return !isDecayableLeaves(state);
+    }
+
+    private boolean isDecayableLeaves(net.minecraft.world.level.block.state.BlockState state) {
+        return state.is(BlockTags.LEAVES) && state.hasProperty(LeavesBlock.PERSISTENT) && !state.getValue(LeavesBlock.PERSISTENT);
+    }
+
+    /**
+     * Breaks a decayable leaf block blocking access to the trunk and collects its drops, mirroring
+     * {@link #tickHarvestingLeaves} - leaves the inhabitant would otherwise be unable to path through
+     * (or a player deliberately left standing, i.e. persistent) are left untouched.
+     */
+    private void harvestLeafIfDecayable(InhabitantEntity inhabitant, ServerLevel level, BlockPos pos) {
+        var state = level.getBlockState(pos);
+        if (!isDecayableLeaves(state)) {
+            return;
+        }
+        var soundType = state.getSoundType();
+        level.playSound(null, pos, soundType.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS,
+                soundType.getVolume(), soundType.getPitch());
+        var axe = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
+        for (var drop : Block.getDrops(state, level, pos, level.getBlockEntity(pos), inhabitant, axe)) {
+            inhabitant.getInventory().addItem(drop);
+        }
+        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
     }
 
     private boolean tickChopping(InhabitantEntity inhabitant, ServerLevel level) {
@@ -229,11 +287,51 @@ public class LumberjackJob implements Job {
             axe.hurtAndBreak(AXE_DAMAGE_PER_LOG, inhabitant, EquipmentSlot.MAINHAND);
         }
 
-        if (trunk.isEmpty() || inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
+        if (trunk.isEmpty()) {
+            phase = canopyLeaves.isEmpty() ? Phase.RETURN_TO_HUT : Phase.HARVESTING_LEAVES;
+            waitTicks = LEAF_HARVEST_TICKS;
+        } else if (inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
             phase = Phase.RETURN_TO_HUT;
         } else {
             waitTicks = CHOP_TICKS;
         }
+        return true;
+    }
+
+    /**
+     * Once the trunk is down, harvests the canopy's leaf drops (saplings, apples, ...) one leaf at a
+     * time via each leaf's loot table, instead of breaking every block and waiting for vanilla decay -
+     * this scopes pickup to exactly the tree just felled instead of turning the lumberjack into a
+     * general item magnet that would also vacuum up anything a player happens to drop on the ground
+     * nearby. Paced by {@link #LEAF_HARVEST_TICKS} rather than done all at once so the decay reads as a
+     * fast but visible sweep through the canopy instead of the whole tree vanishing instantly.
+     */
+    private boolean tickHarvestingLeaves(InhabitantEntity inhabitant, ServerLevel level) {
+        if (canopyLeaves.isEmpty()) {
+            phase = Phase.RETURN_TO_HUT;
+            return true;
+        }
+        lookAtBlock(inhabitant, canopyLeaves.getFirst());
+        if (--waitTicks > 0) {
+            return true;
+        }
+
+        var pos = canopyLeaves.removeFirst();
+        var state = level.getBlockState(pos);
+        if (state.is(BlockTags.LEAVES)) {
+            // Still there (not already decayed naturally, or removed by a player) since the scan.
+            var soundType = state.getSoundType();
+            level.playSound(null, pos, soundType.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS,
+                    soundType.getVolume(), soundType.getPitch());
+            var axe = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
+            for (var drop : Block.getDrops(state, level, pos, level.getBlockEntity(pos), inhabitant, axe)) {
+                inhabitant.getInventory().addItem(drop);
+            }
+            level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        }
+
+        phase = canopyLeaves.isEmpty() ? Phase.RETURN_TO_HUT : Phase.HARVESTING_LEAVES;
+        waitTicks = LEAF_HARVEST_TICKS;
         return true;
     }
 
@@ -262,6 +360,7 @@ public class LumberjackJob implements Job {
             if (!actionPacer.isReady(containerTarget)) {
                 return true;
             }
+            lookAtBlock(inhabitant, containerTarget);
             if (level.getBlockEntity(containerTarget) instanceof Container container) {
                 carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
             }
@@ -271,6 +370,7 @@ public class LumberjackJob implements Job {
         }
         phase = Phase.GOTO_HUT;
         trunk = null;
+        canopyLeaves = List.of();
         standPos = null;
         unreachableTreeBases.clear();
         return false;
@@ -314,6 +414,7 @@ public class LumberjackJob implements Job {
             case FIND_AXE -> "Getting equipment";
             case GOTO_TREE -> "Heading to tree";
             case CHOPPING -> "Chopping wood";
+            case HARVESTING_LEAVES -> "Harvesting leaves";
             case RETURN_TO_HUT -> "Returning to hut";
             case DEPOSIT -> "Storing logs";
             case MISSING_TOOL -> "Needs an Axe";
@@ -341,6 +442,7 @@ public class LumberjackJob implements Job {
         var lines = new ArrayList<String>();
         lines.add("Phase: " + phase);
         lines.add("Trunk: " + (trunk == null ? "none" : trunk.size() + " logs left, base " + trunk.getFirst()));
+        lines.add("Canopy leaves: " + canopyLeaves.size());
         lines.add("Stand pos: " + standPos);
         lines.add("Wait ticks: " + waitTicks + ", repath cooldown: " + repathCooldown + ", no-tree cooldown: " + noTreeCooldown);
         lines.add("Unreachable trees skipped: " + unreachableTreeBases.size());
@@ -356,6 +458,7 @@ public class LumberjackJob implements Job {
         if (trunk != null) {
             tag.putLongArray("Trunk", trunk.stream().mapToLong(BlockPos::asLong).toArray());
         }
+        tag.putLongArray("CanopyLeaves", canopyLeaves.stream().mapToLong(BlockPos::asLong).toArray());
         if (standPos != null) tag.putLong("StandPos", standPos.asLong());
         if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
         if (missingItem != null) tag.putString("MissingItem", BuiltInRegistries.ITEM.getKey(missingItem).toString());
@@ -373,6 +476,9 @@ public class LumberjackJob implements Job {
         trunk = tag.getLongArray("Trunk")
                 .map(arr -> Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toCollection(ArrayList::new)))
                 .orElse(null);
+        canopyLeaves = tag.getLongArray("CanopyLeaves")
+                .<List<BlockPos>>map(arr -> Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toCollection(ArrayList::new)))
+                .orElse(List.of());
         standPos = tag.contains("StandPos") ? BlockPos.of(tag.getLongOr("StandPos", 0)) : null;
         containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItem = tag.contains("MissingItem")

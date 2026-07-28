@@ -112,10 +112,16 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeSkipsLogPillarWithoutLeaves);
                     helper.register("find_tree_in_range_ignores_nearby_log_house_and_still_finds_real_tree",
                             com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree);
+                    helper.register("felling_trunk_harvests_canopy_leaves_directly",
+                            com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
                     helper.register("find_shore_position_uses_rim_of_sunken_well_instead_of_the_water_itself",
                             com.sheepfromheaven.minenow.gametest.FisherJobShoreTests::findShorePositionUsesRimOfSunkenWellInsteadOfTheWaterItself);
                     helper.register("find_shore_position_prefers_same_level_ring_over_rim",
                             com.sheepfromheaven.minenow.gametest.FisherJobShoreTests::findShorePositionPrefersSameLevelRingOverRim);
+                    helper.register("felling_trunk_harvests_canopy_leaves_directly",
+                            com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
+                    helper.register("lumberjack_clears_decayable_leaves_blocking_trunk_access",
+                            com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::lumberjackClearsDecayableLeavesBlockingTrunkAccess);
                     helper.register("default_work_area_is_centered_on_marker_with_default_radius",
                             com.sheepfromheaven.minenow.gametest.WorkAreaTests::defaultWorkAreaIsCenteredOnMarkerWithDefaultRadius);
                     helper.register("setting_work_area_center_and_radius_is_respected",

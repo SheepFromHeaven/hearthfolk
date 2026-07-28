@@ -319,6 +319,15 @@ public class DominionStructure {
      * discovery of other, perfectly good trees in range.
      */
     public Optional<List<BlockPos>> findTreeInRange(Level level, Set<BlockPos> excludedBases) {
+        return findTreeShapeInRange(level, excludedBases).map(TreeScanner.TreeShape::trunk);
+    }
+
+    /**
+     * Same scan as {@link #findTreeInRange(Level, Set)}, but returns the full {@link TreeScanner.TreeShape}
+     * (trunk and canopy leaves) instead of just the trunk - callers that need to harvest the canopy's
+     * leaf drops (saplings, apples, sticks) alongside the logs use this instead.
+     */
+    public Optional<TreeScanner.TreeShape> findTreeShapeInRange(Level level, Set<BlockPos> excludedBases) {
         int radius = workAreaRadius;
         int height = TREE_SEARCH_HEIGHT;
         var center = getWorkAreaCenter();
@@ -329,7 +338,7 @@ public class DominionStructure {
                     var pos = center.offset(dx, dy, dz);
                     if (excludedBases.contains(pos)) continue;
                     if (level.getBlockState(pos).is(BlockTags.LOGS)) {
-                        var tree = TreeScanner.findTree(level, pos);
+                        var tree = TreeScanner.findTreeShape(level, pos);
                         if (tree.isPresent()) {
                             return tree;
                         }
