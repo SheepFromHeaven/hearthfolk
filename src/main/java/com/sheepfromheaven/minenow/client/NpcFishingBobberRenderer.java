@@ -54,10 +54,13 @@ public class NpcFishingBobberRenderer extends EntityRenderer<NpcFishingBobber, N
         float scale = inhabitant.getScale();
 
         Vec3 ownerPos = inhabitant.getPosition(partialTick);
+        // Approximate the tip of the rod (not the hand): during fish_wait the right arm is raised
+        // forward, so the rod tip sits ~1.5 blocks up and further forward than the shoulder. Tune the
+        // forward (1.05) / height (1.5) factors if the line does not meet the rod tip in-game.
         Vec3 handPos = ownerPos.add(
-                -cosYaw * 0.35 * scale - sinYaw * 0.8 * scale,
-                -0.45 * scale,
-                -sinYaw * 0.35 * scale + cosYaw * 0.8 * scale
+                -cosYaw * 0.35 * scale - sinYaw * 1.05 * scale,
+                1.5 * scale,
+                -sinYaw * 0.35 * scale + cosYaw * 1.05 * scale
         );
 
         Vec3 bobberPos = entity.getPosition(partialTick).add(0, 0.25, 0);
@@ -69,6 +72,7 @@ public class NpcFishingBobberRenderer extends EntityRenderer<NpcFishingBobber, N
                        CameraRenderState cameraRenderState) {
         poseStack.pushPose();
         poseStack.mulPose(cameraRenderState.orientation);
+        poseStack.scale(0.5f, 0.5f, 0.5f); // half-size bobber
         nodeCollector.submitCustomGeometry(poseStack, HOOK_RENDER_TYPE, (pose, vc) -> {
             hookVertex(vc, pose, renderState.lightCoords, 1.0f, 0, 1, 1);
             hookVertex(vc, pose, renderState.lightCoords, 1.0f, 1, 1, 0);
