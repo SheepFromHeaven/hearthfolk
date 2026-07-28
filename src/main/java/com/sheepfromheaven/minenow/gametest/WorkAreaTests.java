@@ -92,9 +92,9 @@ public class WorkAreaTests {
         helper.makeFloor();
 
         var markerRelPos = new BlockPos(4, 1, 4);
-        var soilRelPos = new BlockPos(4, 0, 20);
-        var logRelPos = new BlockPos(4, 1, 20);
-        var leafRelPos = new BlockPos(5, 1, 20);
+        var soilRelPos = new BlockPos(4, 0, 7);
+        var logRelPos = new BlockPos(4, 1, 7);
+        var leafRelPos = new BlockPos(5, 1, 7);
 
         helper.setBlock(soilRelPos, Blocks.GRASS_BLOCK);
         helper.setBlock(logRelPos, Blocks.OAK_LOG);
@@ -103,8 +103,8 @@ public class WorkAreaTests {
         var markerPos = helper.absolutePos(markerRelPos);
         var logPos = helper.absolutePos(logRelPos);
         var structure = new DominionStructure("Lumberyard", StructureType.LUMBERYARD, markerPos, Set.of(markerPos));
-        // The tree sits 16 blocks from the marker, well outside the structure type's configured range
-        // radius (8) - only moving the work area center closer should make it discoverable.
+        // The default work area radius (MIN_WORK_AREA_RADIUS) is too small to reach the tree from the
+        // marker's original center - only moving the work area center onto the tree makes it discoverable.
         structure.setWorkAreaCenter(logPos);
         structure.setWorkAreaRadius(DominionStructure.MIN_WORK_AREA_RADIUS);
 
