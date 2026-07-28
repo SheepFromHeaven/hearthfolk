@@ -132,7 +132,7 @@ public class InhabitantSelectionScreen extends Screen {
                 int x1 = x0 + HEAD_SIZE;
                 int y1 = y0 + HEAD_SIZE;
                 InventoryScreen.renderEntityInInventoryFollowsMouse(graphics,
-                        x0, y0, x1, y1, HEAD_SIZE / 2, (x0 + x1) / 2f, (y0 + y1) / 2f, partialTick, live);
+                        x0, y0, x1, y1, HEAD_SIZE / 2, 0.0F, (x0 + x1) / 2f, (y0 + y1) / 2f, live);
             } else {
                 graphics.fill(x + 2, y + (getContentHeight() - HEAD_SIZE) / 2,
                         x + 2 + HEAD_SIZE, y + (getContentHeight() - HEAD_SIZE) / 2 + HEAD_SIZE, 0xFF555555);
