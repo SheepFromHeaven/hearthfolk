@@ -56,6 +56,9 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     /** 0 = none, 1 = casting/waiting, 2 = reeling */
     private static final net.minecraft.network.syncher.EntityDataAccessor<Byte> DATA_FISHER_STATE =
             net.minecraft.network.syncher.SynchedEntityData.defineId(InhabitantEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BYTE);
+    /** {@link JobType} ordinal driving the client texture variant, or -1 when unemployed. */
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Byte> DATA_JOB_TYPE =
+            net.minecraft.network.syncher.SynchedEntityData.defineId(InhabitantEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BYTE);
 
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
     private final SimpleContainer inventory = new SimpleContainer(2);
@@ -123,6 +126,12 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         super.defineSynchedData(builder);
         builder.define(DATA_CHOPPING, false);
         builder.define(DATA_FISHER_STATE, (byte) 0);
+        builder.define(DATA_JOB_TYPE, (byte) -1);
+    }
+
+    /** {@link JobType} ordinal of the inhabitant's current job for client rendering, or -1 when unemployed. */
+    public byte getJobTypeId() {
+        return entityData.get(DATA_JOB_TYPE);
     }
 
     /** Whether {@link com.sheepfromheaven.minenow.entity.job.LumberjackJob} is mid-swing on a trunk log. */
@@ -204,6 +213,11 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         }
         if (!level().isClientSide() && tickCount % 20 == 0) {
             updateIssueIndicator();
+            var jobType = workGoal != null ? workGoal.getJobType() : null;
+            byte jobId = jobType != null ? (byte) jobType.ordinal() : (byte) -1;
+            if (getJobTypeId() != jobId) {
+                entityData.set(DATA_JOB_TYPE, jobId);
+            }
         }
     }
 

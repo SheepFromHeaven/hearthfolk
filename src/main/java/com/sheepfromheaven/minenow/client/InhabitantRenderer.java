@@ -16,4 +16,10 @@ public class InhabitantRenderer<R extends EntityRenderState & GeoRenderState> ex
         withRenderLayer(new InhabitantChopBodyLayer<>(this, "body"));
         withRenderLayer(new FisherRodInHandLayer<>(this, "RightHandItem", "LeftHandItem"));
     }
+
+    @Override
+    public void addRenderData(InhabitantEntity animatable, Void relatedObject, R renderState, float partialTick) {
+        super.addRenderData(animatable, relatedObject, renderState, partialTick);
+        renderState.addGeckolibData(InhabitantModel.JOB_TYPE, (int) animatable.getJobTypeId());
+    }
 }
