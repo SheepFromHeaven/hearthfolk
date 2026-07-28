@@ -18,6 +18,8 @@ public class InhabitantModel extends GeoModel<InhabitantEntity> {
     private static final Identifier MODEL = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "inhabitant");
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant.png");
     private static final Identifier TEXTURE_FISHER = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant_fisherman.png");
+    private static final Identifier TEXTURE_COOK = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant_cook.png");
+    private static final Identifier TEXTURE_LUMBERJACK = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant_lumberjack.png");
     private static final Identifier ANIMATIONS = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "inhabitant");
 
     @Override
@@ -28,8 +30,12 @@ public class InhabitantModel extends GeoModel<InhabitantEntity> {
     @Override
     public Identifier getTextureResource(GeoRenderState renderState) {
         int jobId = renderState.getOrDefaultGeckolibData(JOB_TYPE, -1);
-        if (jobId >= 0 && jobId < JobType.values().length && JobType.values()[jobId] == JobType.FISHER) {
-            return TEXTURE_FISHER;
+        if (jobId >= 0 && jobId < JobType.values().length) {
+            return switch (JobType.values()[jobId]) {
+                case FISHER -> TEXTURE_FISHER;
+                case COOK -> TEXTURE_COOK;
+                case LUMBERJACK -> TEXTURE_LUMBERJACK;
+            };
         }
         return TEXTURE;
     }
