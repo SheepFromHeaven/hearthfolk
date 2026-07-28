@@ -149,6 +149,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.CookJobTests::cookLoadsRawFoodAndFuelIntoTheSmoker);
                     helper.register("missing_raw_food_reports_generic_label_instead_of_a_specific_item",
                             com.sheepfromheaven.minenow.gametest.CookJobTests::missingRawFoodReportsGenericLabelInsteadOfASpecificItem);
+                    helper.register("cooking_with_burned_out_fuel_goes_back_to_fetch_more_fuel",
+                            com.sheepfromheaven.minenow.gametest.CookJobTests::cookingWithBurnedOutFuelGoesBackToFetchMoreFuel);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

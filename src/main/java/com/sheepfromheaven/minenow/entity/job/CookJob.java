@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Blocks;
 
 import javax.annotation.Nullable;
@@ -111,7 +112,8 @@ public class CookJob implements Job {
     }
 
     private boolean tickCooking(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var smoker = findSmoker(level, workplace);
+        var smokerPos = workplace.findBlock(level, state -> state.is(Blocks.SMOKER));
+        var smoker = smokerPos.isPresent() && level.getBlockEntity(smokerPos.get()) instanceof Container container ? container : null;
         if (smoker == null) {
             // Smoker was destroyed mid-cook; give up on this cycle and re-check requirements.
             phase = Phase.FIND_INGREDIENTS;
@@ -119,6 +121,11 @@ public class CookJob implements Job {
         }
         var result = smoker.getItem(2);
         if (result.isEmpty()) {
+            boolean lit = level.getBlockState(smokerPos.get()).getValue(AbstractFurnaceBlock.LIT);
+            if (!lit && smoker.getItem(1).isEmpty()) {
+                // Ran out of fuel before the food finished cooking; go fetch more instead of waiting forever.
+                phase = Phase.FIND_INGREDIENTS;
+            }
             return true;
         }
         inhabitant.getInventory().addItem(smoker.removeItem(2, result.getCount()));

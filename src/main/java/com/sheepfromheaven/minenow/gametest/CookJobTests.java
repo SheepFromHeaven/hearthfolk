@@ -83,6 +83,27 @@ public class CookJobTests {
         });
     }
 
+    /**
+     * Reproduces the "stuck at 'Cooking a meal' forever" bug: if the fuel that was loaded burns out
+     * before the food finishes smoking, the smoker just sits unlit with no result, and the job should
+     * notice and go fetch more fuel instead of waiting on a result that will never appear.
+     */
+    public static void cookingWithBurnedOutFuelGoesBackToFetchMoreFuel(GameTestHelper helper) {
+        var setup = setUpCookWithIngredients(helper);
+
+        // Simulate the loaded fuel having burned out completely before the food finished cooking:
+        // no result yet, no fuel left, and the smoker isn't actively lit.
+        if (helper.getLevel().getBlockEntity(setup.smokerPos) instanceof Container smoker) {
+            smoker.setItem(1, ItemStack.EMPTY);
+            smoker.setItem(2, ItemStack.EMPTY);
+        }
+        setup.workGoal.tick();
+
+        helper.succeedWhen(() ->
+                helper.assertTrue(!"Cooking a meal".equals(setup.workGoal.getStatusDescription()),
+                        "Job should stop waiting on a smoker that ran out of fuel and go fetch more instead"));
+    }
+
     private record CookSetup(InhabitantEntity inhabitant, WorkGoal workGoal, BlockPos smokerPos) {}
 
     private static CookSetup setUpCookWithIngredients(GameTestHelper helper) {
