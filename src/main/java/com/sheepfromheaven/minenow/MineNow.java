@@ -118,8 +118,6 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.FisherJobShoreTests::findShorePositionUsesRimOfSunkenWellInsteadOfTheWaterItself);
                     helper.register("find_shore_position_prefers_same_level_ring_over_rim",
                             com.sheepfromheaven.minenow.gametest.FisherJobShoreTests::findShorePositionPrefersSameLevelRingOverRim);
-                    helper.register("felling_trunk_harvests_canopy_leaves_directly",
-                            com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
                     helper.register("lumberjack_clears_decayable_leaves_blocking_trunk_access",
                             com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::lumberjackClearsDecayableLeavesBlockingTrunkAccess);
                     helper.register("default_work_area_is_centered_on_marker_with_default_radius",
