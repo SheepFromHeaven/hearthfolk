@@ -1,13 +1,24 @@
 package com.sheepfromheaven.minenow.client;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 public final class BeveledBox {
     public static final int BORDER_DARK = 0xFF000000;
     public static final int HIGHLIGHT = 0xFFFFFFFF;
     public static final int SHADOW = 0xFF555555;
+    public static final int ALERT_RED = 0xFFFF5555;
 
     private BeveledBox() {}
+
+    /** A plain label, or the same label with a red " !" appended when {@code hasAlert} is true. */
+    public static Component withAlertMark(String label, boolean hasAlert) {
+        var component = Component.literal(label);
+        if (hasAlert) {
+            component.append(Component.literal(" !").withStyle(style -> style.withColor(ALERT_RED)));
+        }
+        return component;
+    }
 
     /**
      * Draws a vanilla-style 3D panel: a black outer border with a 2px diagonal

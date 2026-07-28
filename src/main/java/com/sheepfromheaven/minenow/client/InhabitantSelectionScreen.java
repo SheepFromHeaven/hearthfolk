@@ -107,6 +107,7 @@ public class InhabitantSelectionScreen extends Screen {
     private class Row extends ObjectSelectionList.Entry<Row> {
         private final Candidate candidate;
         private final boolean current;
+        private LivingEntity cachedEntity;
 
         Row(Candidate candidate, boolean current) {
             this.candidate = candidate;
@@ -124,7 +125,10 @@ public class InhabitantSelectionScreen extends Screen {
                 graphics.fill(x, y, getContentRight(), getContentBottom(), 0x33FFFFFF);
             }
 
-            LivingEntity live = candidate.entityUuid() != null ? findLiveEntity(candidate.entityUuid()) : null;
+            if (cachedEntity == null && candidate.entityUuid() != null) {
+                cachedEntity = findLiveEntity(candidate.entityUuid());
+            }
+            LivingEntity live = cachedEntity;
             if (live != null) {
                 int headTop = y + (getContentHeight() - HEAD_SIZE) / 2;
                 int x0 = x + 2;

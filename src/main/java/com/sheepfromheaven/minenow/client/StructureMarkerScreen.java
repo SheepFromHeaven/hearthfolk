@@ -211,11 +211,7 @@ public class StructureMarkerScreen extends Screen {
     }
 
     private Component requirementsTabLabel() {
-        var label = Component.literal("Requirements");
-        if (hasUnmetRequirement()) {
-            label.append(Component.literal(" !").withStyle(style -> style.withColor(0xFFFF5555)));
-        }
-        return label;
+        return BeveledBox.withAlertMark("Requirements", hasUnmetRequirement());
     }
 
     private Component tabLabel(Tab tab) {
