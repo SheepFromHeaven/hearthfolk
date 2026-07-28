@@ -101,6 +101,7 @@ public class CookJob implements Job {
             if (!actionPacer.isReady(smokerPos)) {
                 return true;
             }
+            lookAtBlock(inhabitant, smokerPos);
             var carried = inhabitant.getInventory();
             for (int i = 0; i < carried.getContainerSize(); i++) {
                 var stack = carried.getItem(i);
@@ -118,6 +119,7 @@ public class CookJob implements Job {
         int neededSlot = smoker.getItem(0).isEmpty() ? 0 : smoker.getItem(1).isEmpty() ? 1 : -1;
         if (neededSlot == -1) {
             missingItemLabel = null;
+            lookAtBlock(inhabitant, smokerPos);
             inhabitant.swing(InteractionHand.MAIN_HAND);
             phase = Phase.COOKING;
             return true;
@@ -142,6 +144,7 @@ public class CookJob implements Job {
         if (!actionPacer.isReady(containerTarget)) {
             return true;
         }
+        lookAtBlock(inhabitant, containerTarget);
         if (level.getBlockEntity(containerTarget) instanceof Container container) {
             // Grab the whole matching stack, not just one item - the smoker's slot holds a full
             // stack and cooks through it automatically, so this avoids a barrel trip per single item.
@@ -167,6 +170,7 @@ public class CookJob implements Job {
             phase = Phase.FIND_INGREDIENTS;
             return true;
         }
+        lookAtBlock(inhabitant, smokerPos.get());
         var result = smoker.getItem(2);
         if (result.isEmpty()) {
             boolean lit = level.getBlockState(smokerPos.get()).getValue(AbstractFurnaceBlock.LIT);
@@ -199,6 +203,7 @@ public class CookJob implements Job {
             if (!actionPacer.isReady(containerTarget)) {
                 return true;
             }
+            lookAtBlock(inhabitant, containerTarget);
             if (level.getBlockEntity(containerTarget) instanceof Container container) {
                 carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
             }

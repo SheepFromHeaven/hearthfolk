@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.entity.job;
 
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
@@ -72,5 +73,14 @@ public interface Job {
     /** Extra implementation-specific detail for the debug view (phase, targets, timers, ...). */
     default java.util.List<String> getDebugLines() {
         return java.util.List.of();
+    }
+
+    /**
+     * Turns the inhabitant to face the block it's currently harvesting or interacting with (a log
+     * being chopped, a water tile being fished, a smoker, a storage container, ...), so work reads as
+     * directed at something rather than the inhabitant staring off into space.
+     */
+    default void lookAtBlock(InhabitantEntity inhabitant, BlockPos pos) {
+        inhabitant.getLookControl().setLookAt(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
     }
 }
