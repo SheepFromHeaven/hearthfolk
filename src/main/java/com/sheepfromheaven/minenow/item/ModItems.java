@@ -44,6 +44,13 @@ public class ModItems {
                             .stacksTo(16)
             ));
 
+    public static final RegistryObject<TreeScannerWandItem> TREE_SCANNER_WAND = ITEMS.register("tree_scanner_wand",
+            () -> new TreeScannerWandItem(
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "tree_scanner_wand")))
+                            .stacksTo(1)
+            ));
+
     public static void register(BusGroup modBusGroup) {
         ITEMS.register(modBusGroup);
     }

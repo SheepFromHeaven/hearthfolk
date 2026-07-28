@@ -37,6 +37,14 @@ public class ClientNetworkHandlers {
         });
     }
 
+    public static void clearTreeScanOutline() {
+        Minecraft.getInstance().execute(TreeScanOutlineTracker::clear);
+    }
+
+    public static void addTreeScanHighlight(ModNetwork.TreeScanHighlightPacket msg) {
+        Minecraft.getInstance().execute(() -> TreeScanOutlineTracker.add(msg.category(), msg.positions()));
+    }
+
     public static void openStructureScreen(ModNetwork.OpenStructureScreenPacket msg) {
         Minecraft.getInstance().execute(() -> Minecraft.getInstance().setScreen(new StructureMarkerScreen(
                 msg.structureName(), StructureType.valueOf(msg.structureType()), msg.markerPos(),

@@ -262,6 +262,10 @@ public class ModNetwork {
                                 (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openStructureScreen(msg))
                         .addMain(InhabitantDebugPacket.class, InhabitantDebugPacket.CODEC,
                                 (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.updateInhabitantDebug(msg))
+                        .addMain(TreeScanClearPacket.class, TreeScanClearPacket.CODEC,
+                                (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.clearTreeScanOutline())
+                        .addMain(TreeScanHighlightPacket.class, TreeScanHighlightPacket.CODEC,
+                                (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.addTreeScanHighlight(msg))
                 );
     }
 
@@ -310,6 +314,14 @@ public class ModNetwork {
 
     public static void sendRequestInhabitantDebug(int entityId) {
         CHANNEL.send(new RequestInhabitantDebugPacket(entityId), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendTreeScanClear(ServerPlayer player) {
+        CHANNEL.send(new TreeScanClearPacket(), PacketDistributor.PLAYER.with(player));
+    }
+
+    public static void sendTreeScanHighlight(ServerPlayer player, int category, List<BlockPos> positions) {
+        CHANNEL.send(new TreeScanHighlightPacket(category, positions), PacketDistributor.PLAYER.with(player));
     }
 
     public static final String INHABITANT_FIELD_SEP = "\u001F";
@@ -483,6 +495,20 @@ public class ModNetwork {
                 BlockPos.STREAM_CODEC, SetWorkAreaRadiusPacket::markerPos,
                 ByteBufCodecs.VAR_INT, SetWorkAreaRadiusPacket::radius,
                 SetWorkAreaRadiusPacket::new
+        );
+    }
+
+    public record TreeScanClearPacket() {
+        public static final StreamCodec<RegistryFriendlyByteBuf, TreeScanClearPacket> CODEC =
+                StreamCodec.unit(new TreeScanClearPacket());
+    }
+
+    /** {@code category}: 0 = trunk log, 1 = confirming/canopy leaf, 2 = blocking neighbor. */
+    public record TreeScanHighlightPacket(int category, List<BlockPos> positions) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, TreeScanHighlightPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, TreeScanHighlightPacket::category,
+                BlockPos.STREAM_CODEC.apply(ByteBufCodecs.list()), TreeScanHighlightPacket::positions,
+                TreeScanHighlightPacket::new
         );
     }
 

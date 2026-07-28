@@ -35,6 +35,9 @@ public final class MineNow {
         net.minecraftforge.event.RegisterCommandsEvent.BUS.addListener(event ->
                 com.sheepfromheaven.minenow.command.DebugCommands.register(event.getDispatcher()));
 
+        net.minecraftforge.event.TickEvent.ServerTickEvent.Post.BUS.addListener(event ->
+                com.sheepfromheaven.minenow.entity.job.TreeScannerDebugger.serverTick(event.server()));
+
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
         net.minecraftforge.event.entity.EntityAttributeCreationEvent.BUS.addListener(event ->
@@ -171,6 +174,8 @@ public final class MineNow {
             registerRenderers();
             com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(context);
             com.sheepfromheaven.minenow.client.WorldPickMode.register();
+            net.minecraftforge.event.TickEvent.ClientTickEvent.Post.BUS.addListener(event ->
+                    com.sheepfromheaven.minenow.client.TreeScanGizmoRenderer.onClientTick());
         }
     }
 
