@@ -14,6 +14,7 @@ public class ConfigScreen extends Screen {
     private final Screen parent;
     private ForgeSlider radiusSlider;
     private ForgeSlider roomSizeSlider;
+    private ForgeSlider maxTrunkSizeSlider;
     private Checkbox debugViewCheckbox;
 
     // Kept out of MineNow's constructor so its class file never references Screen directly;
@@ -47,8 +48,14 @@ public class ConfigScreen extends Screen {
                 50, 2000, Config.maxRoomSize, 10, 0, true);
         addRenderableWidget(roomSizeSlider);
 
+        maxTrunkSizeSlider = new ForgeSlider(
+                centerX - 150, y + 60, 300, 20,
+                Component.literal("Max Trunk Size: "), Component.empty(),
+                32, 2000, Config.maxTrunkSize, 10, 0, true);
+        addRenderableWidget(maxTrunkSizeSlider);
+
         debugViewCheckbox = Checkbox.builder(Component.literal("Inhabitant Debug View"), font)
-                .pos(centerX - 150, y + 60)
+                .pos(centerX - 150, y + 90)
                 .selected(Config.debugInhabitantView)
                 .build();
         addRenderableWidget(debugViewCheckbox);
@@ -56,16 +63,18 @@ public class ConfigScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Save"), button -> {
             Config.DEFAULT_DOMINION_RADIUS.set(radiusSlider.getValueInt());
             Config.MAX_ROOM_SIZE.set(roomSizeSlider.getValueInt());
+            Config.MAX_TRUNK_SIZE.set(maxTrunkSizeSlider.getValueInt());
             Config.DEBUG_INHABITANT_VIEW.set(debugViewCheckbox.selected());
             Config.defaultDominionRadius = radiusSlider.getValueInt();
             Config.maxRoomSize = roomSizeSlider.getValueInt();
+            Config.maxTrunkSize = maxTrunkSizeSlider.getValueInt();
             Config.debugInhabitantView = debugViewCheckbox.selected();
             minecraft.setScreen(parent);
-        }).pos(centerX - 75, y + 100).size(150, 20).build());
+        }).pos(centerX - 75, y + 130).size(150, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> {
             minecraft.setScreen(parent);
-        }).pos(centerX - 75, y + 126).size(150, 20).build());
+        }).pos(centerX - 75, y + 156).size(150, 20).build());
     }
 
     @Override

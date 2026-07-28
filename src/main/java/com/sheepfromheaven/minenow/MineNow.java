@@ -89,8 +89,16 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.TreeScannerTests::beehiveNeighborAllowsClimbingToLeavesAbove);
                     helper.register("same_axis_log_neighbor_allows_climbing_to_leaves_above",
                             com.sheepfromheaven.minenow.gametest.TreeScannerTests::sameAxisLogNeighborAllowsClimbingToLeavesAbove);
-                    helper.register("different_axis_log_neighbor_aborts_tree",
-                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::differentAxisLogNeighborAbortsTree);
+                    helper.register("different_axis_log_of_same_species_is_included_in_trunk",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::differentAxisLogOfSameSpeciesIsIncludedInTrunk);
+                    helper.register("diagonally_offset_trunk_is_still_recognized_as_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::diagonallyOffsetTrunkIsStillRecognizedAsTree);
+                    helper.register("find_tree_shape_flood_fills_the_whole_canopy_from_every_trunk_touch_point",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::findTreeShapeFloodFillsTheWholeCanopyFromEveryTrunkTouchPoint);
+                    helper.register("trunk_forking_into_two_diagonal_branches_recognizes_both_branches",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::trunkForkingIntoTwoDiagonalBranchesRecognizesBothBranches);
+                    helper.register("vines_adjacent_to_trunk_do_not_abort_tree",
+                            com.sheepfromheaven.minenow.gametest.TreeScannerTests::vinesAdjacentToTrunkDoNotAbortTree);
                     helper.register("non_log_pillar_two_blocks_away_does_not_abort_tree",
                             com.sheepfromheaven.minenow.gametest.TreeScannerTests::nonLogPillarTwoBlocksAwayDoesNotAbortTree);
                     helper.register("grass_and_flowers_adjacent_to_trunk_do_not_abort_tree",
