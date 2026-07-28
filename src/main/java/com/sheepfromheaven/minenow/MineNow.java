@@ -64,6 +64,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.DominionTests::assigningNewJobUnassignsInhabitantFromPreviousJob);
                     helper.register("assigning_house_reserves_bed_from_vanilla_villagers",
                             com.sheepfromheaven.minenow.gametest.DominionTests::assigningHouseReservesBedFromVanillaVillagers);
+                    helper.register("assigning_inhabitant_to_house_without_bed_is_refused",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::assigningInhabitantToHouseWithoutBedIsRefused);
+                    helper.register("inhabitant_complains_when_assigned_bed_is_broken",
+                            com.sheepfromheaven.minenow.gametest.DominionTests::inhabitantComplainsWhenAssignedBedIsBroken);
                     helper.register("storage_containers_skips_workstations",
                             com.sheepfromheaven.minenow.gametest.FisheryStorageTests::storageContainersSkipsWorkstations);
                     helper.register("storage_containers_finds_extra_containers_not_just_required_barrel",

@@ -126,11 +126,19 @@ public class DominionTests {
         var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
 
-        var houseAPos = helper.absolutePos(new BlockPos(3, 1, 3));
+        var houseARelPos = new BlockPos(3, 1, 3);
+        helper.setBlock(houseARelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.NORTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+        var houseAPos = helper.absolutePos(houseARelPos);
         var houseA = new DominionStructure("House A", StructureType.HOUSE, houseAPos, Set.of(houseAPos));
         dominion.addStructure(houseA);
 
-        var houseBPos = helper.absolutePos(new BlockPos(5, 1, 3));
+        var houseBRelPos = new BlockPos(5, 1, 3);
+        helper.setBlock(houseBRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.NORTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+        var houseBPos = helper.absolutePos(houseBRelPos);
         var houseB = new DominionStructure("House B", StructureType.HOUSE, houseBPos, Set.of(houseBPos));
         dominion.addStructure(houseB);
 
@@ -224,6 +232,64 @@ public class DominionTests {
             helper.assertTrue(!freeAfterAssign, "Bed should have no free tickets left for a vanilla villager once assigned to an inhabitant");
             helper.assertTrue(freeAfterUnassign, "Bed should have a free ticket again once unassigned from the inhabitant");
         });
+    }
+
+    public static void assigningInhabitantToHouseWithoutBedIsRefused(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var level = helper.getLevel();
+        var housePos = helper.absolutePos(new BlockPos(3, 1, 3));
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+        var structure = new DominionStructure("Home", StructureType.HOUSE, housePos, Set.of(housePos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(1, 1, 1));
+        inhabitant.setDominionId(dominion.getId());
+        var dominionInhabitant = new DominionInhabitant(inhabitant.getUUID(), "Test Inhabitant");
+        dominion.addInhabitant(dominionInhabitant);
+
+        boolean assigned = dominion.assignHouse(structure, dominionInhabitant.getId(), level);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(!assigned, "Assigning a house with no bed should be refused");
+            helper.assertTrue(structure.getAssignedInhabitantId() == null,
+                    "House without a bed should have no assigned inhabitant");
+            helper.assertTrue(dominionInhabitant.getHomeStructureId() == null,
+                    "Inhabitant should not be homed when the assignment was refused");
+        });
+    }
+
+    public static void inhabitantComplainsWhenAssignedBedIsBroken(GameTestHelper helper) {
+        helper.makeFloor();
+
+        var bedRelPos = new BlockPos(3, 1, 3);
+        helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.NORTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+
+        var level = helper.getLevel();
+        var bedPos = helper.absolutePos(bedRelPos);
+        var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+        var structure = new DominionStructure("Home", StructureType.HOUSE, bedPos, Set.of(bedPos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(1, 1, 1));
+        inhabitant.setDominionId(dominion.getId());
+        var dominionInhabitant = new DominionInhabitant(inhabitant.getUUID(), "Test Inhabitant");
+        dominion.addInhabitant(dominionInhabitant);
+
+        helper.assertTrue(dominion.assignHouse(structure, dominionInhabitant.getId(), level),
+                "Assigning a house with a bed should succeed");
+
+        helper.setBlock(bedRelPos, Blocks.AIR.defaultBlockState());
+
+        helper.succeedWhen(() -> helper.assertTrue(
+                inhabitant.getName().getString().contains("There is no Bed in my house"),
+                "Inhabitant should complain once its assigned home's bed is broken"));
     }
 
     public static void findNearestStructureOfTypePicksClosestMatch(GameTestHelper helper) {
