@@ -119,6 +119,13 @@ public class DebugCommands {
         level.setBlockAndUpdate(waterPos, Blocks.WATER.defaultBlockState());
         level.setBlockAndUpdate(waterPos.above(), Blocks.AIR.defaultBlockState());
         level.setBlockAndUpdate(waterPos.above(2), Blocks.AIR.defaultBlockState());
+        // Clear the rim above each dirt wall so ShoreScanner has a standable tile to fish from -
+        // otherwise the surrounding (unexcavated) terrain may leave every rim tile blocked too.
+        for (var dir : Direction.Plane.HORIZONTAL) {
+            var rimPos = waterPos.above().relative(dir);
+            level.setBlockAndUpdate(rimPos, Blocks.AIR.defaultBlockState());
+            level.setBlockAndUpdate(rimPos.above(), Blocks.AIR.defaultBlockState());
+        }
 
         return registerStructure(level, dominion, "Debug Fishery", StructureType.FISHERY, center);
     }

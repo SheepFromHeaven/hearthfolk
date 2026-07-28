@@ -3,7 +3,6 @@ package com.sheepfromheaven.minenow.entity.job;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -21,6 +20,8 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Goes to the fishery, equips a fishing rod from a nearby container, fishes at a water block
@@ -42,6 +43,7 @@ public class FisherJob implements Job {
     private Phase phase = Phase.GOTO_HUT;
     private BlockPos waterPos;
     private BlockPos standPos;
+    private final Set<BlockPos> unreachableWater = new HashSet<>();
     private int waitTicks;
     private int repathCooldown;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
@@ -115,6 +117,7 @@ public class FisherJob implements Job {
         if (!actionPacer.isReady(containerTarget)) {
             return true;
         }
+        lookAtBlock(inhabitant, containerTarget);
         if (level.getBlockEntity(containerTarget) instanceof Container container) {
             var rod = ContainerUtil.extractStack(container, inhabitant, Items.FISHING_ROD);
             if (!rod.isEmpty()) {
@@ -137,11 +140,19 @@ public class FisherJob implements Job {
             if (rangeReqs.isEmpty()) {
                 return false;
             }
-            waterPos = workplace.findRangeRequirementPosition(level, rangeReqs.getFirst()).orElse(null);
+            waterPos = workplace.findRangeRequirementPosition(level, rangeReqs.getFirst(), unreachableWater).orElse(null);
             if (waterPos == null) {
                 return false;
             }
-            standPos = findShorePosition(level, waterPos);
+            var shorePos = ShoreScanner.findShorePosition(level, waterPos);
+            if (shorePos.isEmpty()) {
+                // This water tile has no dry tile beside it (e.g. the interior of a larger pond/lake) -
+                // don't walk the inhabitant onto it; blacklist it and try the next candidate next tick.
+                unreachableWater.add(waterPos);
+                waterPos = null;
+                return true;
+            }
+            standPos = shorePos.get();
         }
         if (moveTowardsAndCheckArrival(inhabitant, standPos)) {
             if (inhabitant.isInWater()) {
@@ -175,26 +186,6 @@ public class FisherJob implements Job {
         }
     }
 
-    /** Finds a dry tile next to the water block to fish from, rather than standing in the water itself. */
-    private BlockPos findShorePosition(ServerLevel level, BlockPos water) {
-        for (var dir : Direction.Plane.HORIZONTAL) {
-            var candidate = water.relative(dir);
-            if (isStandableShore(level, candidate)) {
-                return candidate;
-            }
-        }
-        return water;
-    }
-
-    private boolean isStandableShore(ServerLevel level, BlockPos pos) {
-        var state = level.getBlockState(pos);
-        if (!state.getFluidState().isEmpty() || !state.getCollisionShape(level, pos).isEmpty()) {
-            return false;
-        }
-        var belowPos = pos.below();
-        return !level.getBlockState(belowPos).getCollisionShape(level, belowPos).isEmpty();
-    }
-
     private boolean tickCasting(InhabitantEntity inhabitant) {
         keepOnShore(inhabitant);
         if (waterPos != null) {
@@ -209,6 +200,9 @@ public class FisherJob implements Job {
 
     private boolean tickWaitingBite(InhabitantEntity inhabitant, ServerLevel level) {
         keepOnShore(inhabitant);
+        if (waterPos != null) {
+            inhabitant.getLookControl().setLookAt(waterPos.getX() + 0.5, waterPos.getY(), waterPos.getZ() + 0.5);
+        }
         if (!isDaytime(level) && inhabitant.getInventory().isEmpty()) {
             // Nothing caught yet and night has fallen - head back rather than fish forever.
             phase = Phase.RETURN_TO_HUT;
@@ -225,6 +219,7 @@ public class FisherJob implements Job {
         keepOnShore(inhabitant);
         var rod = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
         if (waterPos != null) {
+            inhabitant.getLookControl().setLookAt(waterPos.getX() + 0.5, waterPos.getY(), waterPos.getZ() + 0.5);
             level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_SPLASH,
                     net.minecraft.sounds.SoundSource.NEUTRAL, 0.25F, 1.0F + (inhabitant.getRandom().nextFloat() - inhabitant.getRandom().nextFloat()) * 0.4F);
             level.playSound(null, waterPos, net.minecraft.sounds.SoundEvents.FISHING_BOBBER_RETRIEVE,
@@ -281,6 +276,7 @@ public class FisherJob implements Job {
             if (!actionPacer.isReady(containerTarget)) {
                 return true;
             }
+            lookAtBlock(inhabitant, containerTarget);
             if (level.getBlockEntity(containerTarget) instanceof Container container) {
                 carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
             }
@@ -291,6 +287,7 @@ public class FisherJob implements Job {
         phase = Phase.GOTO_HUT;
         waterPos = null;
         standPos = null;
+        unreachableWater.clear();
         return false;
     }
 

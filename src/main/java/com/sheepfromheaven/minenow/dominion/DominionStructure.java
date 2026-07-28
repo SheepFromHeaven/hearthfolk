@@ -341,6 +341,16 @@ public class DominionStructure {
     }
 
     public Optional<BlockPos> findRangeRequirementPosition(Level level, StructureType.Requirement requirement) {
+        return findRangeRequirementPosition(level, requirement, Set.of());
+    }
+
+    /**
+     * Same scan as {@link #findRangeRequirementPosition(Level, StructureType.Requirement)}, but skips
+     * positions in {@code excluded} - lets a caller that already tried a position and found it otherwise
+     * unusable (e.g. a water tile with no reachable shore) ask for the next-best match instead of getting
+     * the same one back forever.
+     */
+    public Optional<BlockPos> findRangeRequirementPosition(Level level, StructureType.Requirement requirement, Set<BlockPos> excluded) {
         int radius = type.getRangeRadius();
         int height = type.getRangeHeight();
         if (radius <= 0) {
@@ -351,6 +361,7 @@ public class DominionStructure {
                 if (dx * dx + dz * dz > radius * radius) continue;
                 for (int dy = -height; dy <= height; dy++) {
                     var pos = markerPos.offset(dx, dy, dz);
+                    if (excluded.contains(pos)) continue;
                     var state = level.getBlockState(pos);
                     if (requirement.matcher().test(state) && hasOpenAirAbove(level, pos, requirement.airAbove())) {
                         return Optional.of(pos);
