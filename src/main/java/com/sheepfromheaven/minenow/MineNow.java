@@ -126,6 +126,12 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.DominionTests::findNearestStructureOfTypePicksClosestMatch);
                     helper.register("find_nearest_structure_of_type_skips_closest_when_filter_fails",
                             com.sheepfromheaven.minenow.gametest.DominionTests::findNearestStructureOfTypeSkipsClosestWhenFilterFails);
+                    helper.register("inhabitant_stores_tool_in_storage_at_night",
+                            com.sheepfromheaven.minenow.gametest.FinishWorkGoalTests::inhabitantStoresToolInStorageAtNight);
+                    helper.register("interrupted_lumberjack_returns_to_hut_instead_of_resuming_chopping",
+                            com.sheepfromheaven.minenow.gametest.JobInterruptionTests::interruptedLumberjackReturnsToHutInsteadOfResumingChopping);
+                    helper.register("unassigning_lumberjack_mid_chop_drops_stale_job",
+                            com.sheepfromheaven.minenow.gametest.JobInterruptionTests::unassigningLumberjackMidChopDropsStaleJob);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
