@@ -135,6 +135,11 @@ public class WorkGoal extends Goal {
         return job != null ? job.getMissingItem() : null;
     }
 
+    @Nullable
+    public String getMissingItemLabel() {
+        return job != null ? job.getMissingItemLabel() : null;
+    }
+
     public java.util.List<String> getWarnings() {
         return job != null ? job.getWarnings() : java.util.List.of();
     }

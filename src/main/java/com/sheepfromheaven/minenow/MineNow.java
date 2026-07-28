@@ -143,6 +143,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.WorkplaceApproachTests::approachPosIsMarkerWhenMarkerIsOnTheFloor);
                     helper.register("approach_pos_finds_floor_when_marker_is_embedded_high_in_a_shaft",
                             com.sheepfromheaven.minenow.gametest.WorkplaceApproachTests::approachPosFindsFloorWhenMarkerIsEmbeddedHighInAShaft);
+                    helper.register("cook_loads_raw_food_and_fuel_into_the_smoker",
+                            com.sheepfromheaven.minenow.gametest.CookJobTests::cookLoadsRawFoodAndFuelIntoTheSmoker);
+                    helper.register("missing_raw_food_reports_generic_label_instead_of_a_specific_item",
+                            com.sheepfromheaven.minenow.gametest.CookJobTests::missingRawFoodReportsGenericLabelInsteadOfASpecificItem);
                 }));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

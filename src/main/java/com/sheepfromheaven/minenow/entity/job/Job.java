@@ -46,6 +46,18 @@ public interface Job {
     @Nullable
     Item getMissingItem();
 
+    /**
+     * User-facing name for whatever {@link #getMissingItem()} represents. Defaults to that item's
+     * display name, but jobs blocked on a category rather than one specific item (e.g. "raw food",
+     * any fuel) should override this instead of pointing {@link #getMissingItem()} at an arbitrary
+     * example item.
+     */
+    @Nullable
+    default String getMissingItemLabel() {
+        var item = getMissingItem();
+        return item != null ? item.getDefaultInstance().getHoverName().getString() : null;
+    }
+
     /** User-facing problems the job can't resolve on its own (e.g. no valid tree in range), if any. */
     default java.util.List<String> getWarnings() {
         return java.util.List.of();

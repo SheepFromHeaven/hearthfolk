@@ -164,9 +164,9 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
      */
     public List<String> getIssues() {
         var issues = new ArrayList<String>();
-        var missingWorkItem = workGoal != null ? workGoal.getMissingItem() : null;
-        if (missingWorkItem != null) {
-            issues.add("Needs " + missingWorkItem.getDefaultInstance().getHoverName().getString());
+        var missingWorkItemLabel = workGoal != null ? workGoal.getMissingItemLabel() : null;
+        if (missingWorkItemLabel != null) {
+            issues.add("Needs " + missingWorkItemLabel);
         }
         if (workGoal != null) {
             issues.addAll(workGoal.getWarnings());

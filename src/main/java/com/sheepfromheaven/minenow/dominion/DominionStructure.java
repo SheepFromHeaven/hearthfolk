@@ -11,6 +11,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.level.Level;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class DominionStructure {
     public static final int MIN_WORK_AREA_RADIUS = 2;
@@ -263,6 +264,16 @@ public class DominionStructure {
             }
         }
         return results;
+    }
+
+    /** First interior/wall block matching {@code matcher} (e.g. the tavern's smoker), if any. */
+    public Optional<BlockPos> findBlock(Level level, Predicate<net.minecraft.world.level.block.state.BlockState> matcher) {
+        for (var bp : collectInteriorAndWalls()) {
+            if (matcher.test(level.getBlockState(bp))) {
+                return Optional.of(bp);
+            }
+        }
+        return Optional.empty();
     }
 
     public List<BlockPos> findContainers(Level level) {

@@ -2,24 +2,20 @@ package com.sheepfromheaven.minenow.entity.job;
 
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.level.block.Blocks;
 
 import javax.annotation.Nullable;
 
 /**
- * Goes to the tavern, finds raw food and fuel in storage, cooks the food into a meal using
- * recipe-manager-driven smoking recipes (see {@link CookingRecipes} - so modded food/fuel work
- * without any changes here), and deposits the cooked result back into storage for hungry
- * inhabitants to eat.
+ * Goes to the tavern, finds raw food and fuel in storage, loads them into the tavern's actual
+ * Smoker block (so vanilla furnace mechanics do the real cooking - see {@link CookingRecipes} for
+ * the recipe-manager-driven checks that make modded food/fuel work without any changes here), and
+ * deposits the cooked result back into storage once the smoker produces it.
  */
 public class CookJob implements Job {
     private static final int ARRIVE_DISTANCE_SQ = 4;
@@ -33,9 +29,7 @@ public class CookJob implements Job {
     private int waitTicks;
     private int repathCooldown;
     @Nullable
-    private ItemStack cookingResult;
-    @Nullable
-    private Item missingItem;
+    private String missingItemLabel;
 
     @Override
     public boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -44,7 +38,8 @@ public class CookJob implements Job {
 
     @Override
     public void start(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        // Resume wherever the last cycle left off; state persists across interruptions.
+        // Resume wherever the last cycle left off; state persists across interruptions. Any food/fuel
+        // already loaded into the smoker keeps cooking there regardless, since it's a real block entity.
     }
 
     @Override
@@ -55,9 +50,8 @@ public class CookJob implements Job {
     @Override
     public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant away
-        // from the hut - re-approach it rather than resuming cooking in place. Any ingredients already
-        // pulled from storage for an in-progress cook are lost, same as on a save/reload (see load()).
-        cookingResult = null;
+        // from the hut - re-approach it rather than resuming in place. Nothing is lost: any food/fuel
+        // already loaded stays in the smoker, and the result (if any) stays in its output slot.
         phase = Phase.GOTO_HUT;
     }
 
@@ -66,7 +60,7 @@ public class CookJob implements Job {
         return switch (phase) {
             case GOTO_HUT -> tickGotoHut(inhabitant, level, workplace);
             case FIND_INGREDIENTS -> tickFindIngredients(inhabitant, level, workplace);
-            case COOKING -> tickCooking(inhabitant);
+            case COOKING -> tickCooking(inhabitant, level, workplace);
             case DEPOSIT -> tickDeposit(inhabitant, level, workplace);
             case MISSING_INGREDIENTS -> tickMissingIngredients();
         };
@@ -80,63 +74,54 @@ public class CookJob implements Job {
     }
 
     private boolean tickFindIngredients(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        boolean hasFood = false;
-        boolean hasFuel = false;
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (!(level.getBlockEntity(pos) instanceof Container container)) continue;
-            for (int i = 0; i < container.getContainerSize(); i++) {
-                var stack = container.getItem(i);
-                if (stack.isEmpty()) continue;
-                if (!hasFood && CookingRecipes.findSmokingRecipe(level, stack).isPresent()) hasFood = true;
-                if (!hasFuel && CookingRecipes.isFuel(level, stack)) hasFuel = true;
-            }
-            if (hasFood && hasFuel) break;
-        }
-
-        if (!hasFood || !hasFuel) {
-            missingItem = !hasFood ? Items.BEEF : Items.OAK_LOG;
+        var smoker = findSmoker(level, workplace);
+        if (smoker == null) {
+            missingItemLabel = "a Smoker";
             phase = Phase.MISSING_INGREDIENTS;
             waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
             return true;
         }
 
-        var rawFood = ItemStack.EMPTY;
-        var fuel = ItemStack.EMPTY;
-        for (var pos : workplace.findStorageContainers(level)) {
-            if (!(level.getBlockEntity(pos) instanceof Container container)) continue;
+        if (smoker.getItem(0).isEmpty()) {
+            var rawFood = extractFromStorage(level, workplace, stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent());
             if (rawFood.isEmpty()) {
-                rawFood = ContainerUtil.extractOne(container, stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent());
+                missingItemLabel = "raw food";
+                phase = Phase.MISSING_INGREDIENTS;
+                waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
+                return true;
             }
+            smoker.setItem(0, rawFood);
+        }
+
+        if (smoker.getItem(1).isEmpty()) {
+            var fuel = extractFromStorage(level, workplace, stack -> CookingRecipes.isFuel(level, stack));
             if (fuel.isEmpty()) {
-                fuel = ContainerUtil.extractOne(container, stack -> CookingRecipes.isFuel(level, stack));
+                missingItemLabel = "fuel";
+                phase = Phase.MISSING_INGREDIENTS;
+                waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
+                return true;
             }
-            if (!rawFood.isEmpty() && !fuel.isEmpty()) break;
+            smoker.setItem(1, fuel);
         }
 
-        var recipe = CookingRecipes.findSmokingRecipe(level, rawFood);
-        if (rawFood.isEmpty() || fuel.isEmpty() || recipe.isEmpty()) {
-            // Storage changed between the peek above and this extraction pass - retry next cycle.
-            phase = Phase.MISSING_INGREDIENTS;
-            waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
-            return true;
-        }
-
-        cookingResult = recipe.get().value().assemble(new SingleRecipeInput(rawFood), level.registryAccess());
-        missingItem = null;
-        waitTicks = Math.max(1, recipe.get().value().cookingTime());
+        missingItemLabel = null;
         inhabitant.swing(InteractionHand.MAIN_HAND);
         phase = Phase.COOKING;
         return true;
     }
 
-    private boolean tickCooking(InhabitantEntity inhabitant) {
-        if (--waitTicks > 0) {
+    private boolean tickCooking(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        var smoker = findSmoker(level, workplace);
+        if (smoker == null) {
+            // Smoker was destroyed mid-cook; give up on this cycle and re-check requirements.
+            phase = Phase.FIND_INGREDIENTS;
             return true;
         }
-        if (cookingResult != null) {
-            inhabitant.getInventory().addItem(cookingResult.copy());
+        var result = smoker.getItem(2);
+        if (result.isEmpty()) {
+            return true;
         }
-        cookingResult = null;
+        inhabitant.getInventory().addItem(smoker.removeItem(2, result.getCount()));
         phase = Phase.DEPOSIT;
         return true;
     }
@@ -162,6 +147,23 @@ public class CookJob implements Job {
             phase = Phase.FIND_INGREDIENTS;
         }
         return true;
+    }
+
+    @Nullable
+    private Container findSmoker(ServerLevel level, DominionStructure workplace) {
+        var pos = workplace.findBlock(level, state -> state.is(Blocks.SMOKER));
+        if (pos.isEmpty()) return null;
+        return level.getBlockEntity(pos.get()) instanceof Container container ? container : null;
+    }
+
+    private net.minecraft.world.item.ItemStack extractFromStorage(ServerLevel level, DominionStructure workplace,
+                                                                    java.util.function.Predicate<net.minecraft.world.item.ItemStack> matcher) {
+        for (var pos : workplace.findStorageContainers(level)) {
+            if (!(level.getBlockEntity(pos) instanceof Container container)) continue;
+            var stack = ContainerUtil.extractOne(container, matcher);
+            if (!stack.isEmpty()) return stack;
+        }
+        return net.minecraft.world.item.ItemStack.EMPTY;
     }
 
     private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, net.minecraft.core.BlockPos target) {
@@ -196,14 +198,20 @@ public class CookJob implements Job {
     @Override
     @Nullable
     public Item getMissingItem() {
-        return missingItem;
+        return null;
+    }
+
+    @Override
+    @Nullable
+    public String getMissingItemLabel() {
+        return missingItemLabel;
     }
 
     @Override
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("WaitTicks", waitTicks);
-        if (missingItem != null) tag.putString("MissingItem", BuiltInRegistries.ITEM.getKey(missingItem).toString());
+        if (missingItemLabel != null) tag.putString("MissingItemLabel", missingItemLabel);
     }
 
     @Override
@@ -213,13 +221,7 @@ public class CookJob implements Job {
         } catch (IllegalArgumentException e) {
             phase = Phase.GOTO_HUT;
         }
-        if (phase == Phase.COOKING) {
-            // The in-progress cooking result can't be persisted across a reload; restart the cycle.
-            phase = Phase.FIND_INGREDIENTS;
-        }
         waitTicks = tag.getIntOr("WaitTicks", 0);
-        missingItem = tag.contains("MissingItem")
-                ? BuiltInRegistries.ITEM.getValue(Identifier.parse(tag.getStringOr("MissingItem", "")))
-                : null;
+        missingItemLabel = tag.contains("MissingItemLabel") ? tag.getStringOr("MissingItemLabel", "") : null;
     }
 }
