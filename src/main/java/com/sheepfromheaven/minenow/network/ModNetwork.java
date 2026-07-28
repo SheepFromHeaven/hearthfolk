@@ -8,6 +8,7 @@ import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
 import com.sheepfromheaven.minenow.dominion.DominionTier;
+import com.sheepfromheaven.minenow.dominion.JobType;
 import com.sheepfromheaven.minenow.dominion.RoomDetector;
 import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.dominion.NeedType;
@@ -278,10 +279,23 @@ public class ModNetwork {
         CHANNEL.send(new ViewInventoryPacket(entityId), PacketDistributor.SERVER.noArg());
     }
 
+    public static final String INHABITANT_FIELD_SEP = "\u001F";
+
     public static void sendOpenStructureScreen(ServerPlayer player, Dominion dominion,
                                                 com.sheepfromheaven.minenow.dominion.DominionStructure structure) {
         var inhabitants = dominion.getInhabitants().stream()
-                .map(i -> i.getId().toString() + ":" + i.getName())
+                .map(i -> {
+                    String jobLabel = "";
+                    if (i.getWorkStructureId() != null) {
+                        var workStructure = dominion.getStructureById(i.getWorkStructureId());
+                        if (workStructure != null) {
+                            jobLabel = workStructure.getType().getJobType().map(JobType::getDisplayName).orElse("");
+                        }
+                    }
+                    boolean homed = i.getHomeStructureId() != null;
+                    return String.join(INHABITANT_FIELD_SEP, i.getId().toString(), i.getEntityUuid().toString(),
+                            i.getName(), jobLabel, homed ? "1" : "0");
+                })
                 .collect(Collectors.joining(","));
         var assignedId = structure.getAssignedInhabitantId();
         var assignedWorkerId = structure.getAssignedWorkerId();

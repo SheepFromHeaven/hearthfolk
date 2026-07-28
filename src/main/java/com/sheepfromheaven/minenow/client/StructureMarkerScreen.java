@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class StructureMarkerScreen extends Screen {
     private static final int PANEL_WIDTH = 220;
@@ -40,15 +41,15 @@ public class StructureMarkerScreen extends Screen {
     private StructureType structureType;
     private final BlockPos markerPos;
     private final List<InhabitantEntry> inhabitants;
-    private int selectedInhabitantIndex;
-    private int selectedWorkerIndex;
+    private String assignedInhabitantId;
+    private String assignedWorkerId;
     private BlockPos workAreaCenter;
     private int workAreaRadius;
 
     private Tab currentTab = Tab.GENERAL;
     private EditBox nameField;
 
-    public record InhabitantEntry(String id, String name) {}
+    public record InhabitantEntry(String id, UUID entityUuid, String name, String jobLabel, boolean homed) {}
 
     private record GeneralLayout(int residentY, int workerY, int rangeToggleY, int totalExtra) {}
     private record RequirementsLayout(int spaceY, int reqY, int rangeReqY, int totalExtra) {}
@@ -64,30 +65,18 @@ public class StructureMarkerScreen extends Screen {
         this.inhabitants = parseInhabitants(inhabitantData);
         this.workAreaCenter = workAreaCenter;
         this.workAreaRadius = workAreaRadius;
-        this.selectedInhabitantIndex = 0;
-        for (int i = 0; i < inhabitants.size(); i++) {
-            if (inhabitants.get(i).id().equals(assignedInhabitantId)) {
-                selectedInhabitantIndex = i + 1;
-                break;
-            }
-        }
-        this.selectedWorkerIndex = 0;
-        for (int i = 0; i < inhabitants.size(); i++) {
-            if (inhabitants.get(i).id().equals(assignedWorkerId)) {
-                selectedWorkerIndex = i + 1;
-                break;
-            }
-        }
+        this.assignedInhabitantId = assignedInhabitantId;
+        this.assignedWorkerId = assignedWorkerId;
     }
 
     private static List<InhabitantEntry> parseInhabitants(String data) {
         var list = new ArrayList<InhabitantEntry>();
         if (data == null || data.isEmpty()) return list;
         for (var entry : data.split(",")) {
-            int colon = entry.indexOf(':');
-            if (colon > 0) {
-                list.add(new InhabitantEntry(entry.substring(0, colon), entry.substring(colon + 1)));
-            }
+            var fields = entry.split(ModNetwork.INHABITANT_FIELD_SEP, -1);
+            if (fields.length < 5) continue;
+            list.add(new InhabitantEntry(fields[0], UUID.fromString(fields[1]), fields[2], fields[3],
+                    "1".equals(fields[4])));
         }
         return list;
     }
@@ -212,14 +201,13 @@ public class StructureMarkerScreen extends Screen {
         return BASE_HEIGHT + extra;
     }
 
-    private String getSelectedLabel() {
-        if (selectedInhabitantIndex == 0) return "None";
-        return inhabitants.get(selectedInhabitantIndex - 1).name();
-    }
-
-    private String getSelectedWorkerLabel() {
-        if (selectedWorkerIndex == 0) return "None";
-        return inhabitants.get(selectedWorkerIndex - 1).name();
+    private String labelFor(String assignedId) {
+        if (assignedId == null || assignedId.isEmpty()) return "None";
+        return inhabitants.stream()
+                .filter(i -> i.id().equals(assignedId))
+                .map(InhabitantEntry::name)
+                .findFirst()
+                .orElse("None");
     }
 
     private Component requirementsTabLabel() {
@@ -325,25 +313,15 @@ public class StructureMarkerScreen extends Screen {
 
         if (layout.residentY() >= 0) {
             addRenderableWidget(Button.builder(
-                    Component.literal("Resident: " + getSelectedLabel()),
-                    button -> {
-                        selectedInhabitantIndex = (selectedInhabitantIndex + 1) % (inhabitants.size() + 1);
-                        button.setMessage(Component.literal("Resident: " + getSelectedLabel()));
-                        String id = selectedInhabitantIndex == 0 ? "" : inhabitants.get(selectedInhabitantIndex - 1).id();
-                        ModNetwork.sendAssignHouse(markerPos, id);
-                    }
+                    Component.literal("Resident: " + labelFor(assignedInhabitantId)),
+                    button -> openResidentPicker()
             ).pos(left + 10, top + layout.residentY()).size(PANEL_WIDTH - 20, 20).build());
         }
 
         if (layout.workerY() >= 0) {
             addRenderableWidget(Button.builder(
-                    Component.literal("Worker: " + getSelectedWorkerLabel()),
-                    button -> {
-                        selectedWorkerIndex = (selectedWorkerIndex + 1) % (inhabitants.size() + 1);
-                        button.setMessage(Component.literal("Worker: " + getSelectedWorkerLabel()));
-                        String id = selectedWorkerIndex == 0 ? "" : inhabitants.get(selectedWorkerIndex - 1).id();
-                        ModNetwork.sendAssignWorker(markerPos, id);
-                    }
+                    Component.literal("Worker: " + labelFor(assignedWorkerId)),
+                    button -> openWorkerPicker()
             ).pos(left + 10, top + layout.workerY()).size(PANEL_WIDTH - 20, 20).build());
         }
 
@@ -357,6 +335,30 @@ public class StructureMarkerScreen extends Screen {
                     }
             ).pos(left + 10, top + layout.rangeToggleY()).size(PANEL_WIDTH - 20, 20).build());
         }
+    }
+
+    private void openResidentPicker() {
+        var candidates = inhabitants.stream()
+                .map(i -> new InhabitantSelectionScreen.Candidate(i.id(), i.entityUuid(), i.name(),
+                        i.homed() ? "Housed" : "", i.homed() && !i.id().equals(assignedInhabitantId)))
+                .toList();
+        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this, Component.literal("Assign Resident"),
+                candidates, assignedInhabitantId, id -> {
+            assignedInhabitantId = id;
+            ModNetwork.sendAssignHouse(markerPos, id);
+        }));
+    }
+
+    private void openWorkerPicker() {
+        var candidates = inhabitants.stream()
+                .map(i -> new InhabitantSelectionScreen.Candidate(i.id(), i.entityUuid(), i.name(),
+                        i.jobLabel(), !i.jobLabel().isEmpty() && !i.id().equals(assignedWorkerId)))
+                .toList();
+        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this, Component.literal("Assign Worker"),
+                candidates, assignedWorkerId, id -> {
+            assignedWorkerId = id;
+            ModNetwork.sendAssignWorker(markerPos, id);
+        }));
     }
 
     private void drawCentered(GuiGraphics graphics, String text, int y, int color) {
