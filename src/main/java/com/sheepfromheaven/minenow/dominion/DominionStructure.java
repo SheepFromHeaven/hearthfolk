@@ -145,12 +145,31 @@ public class DominionStructure {
             return cachedBedPos;
         }
         for (var bp : collectInteriorAndWalls()) {
-            if (level.getBlockState(bp).is(BlockTags.BEDS)) {
-                cachedBedPos = bp;
-                return bp;
+            var state = level.getBlockState(bp);
+            if (state.is(BlockTags.BEDS)) {
+                cachedBedPos = normalizeToBedFoot(level, bp, state);
+                return cachedBedPos;
             }
         }
         return markerPos;
+    }
+
+    /**
+     * The sleeping-position render offset (both vanilla and geckolib) assumes the anchor block is the
+     * bed's foot half, with the head extending toward the pillow in the block's facing direction. Both
+     * bed halves carry the {@code BEDS} tag, so a scan can land on the head half first; move to the foot
+     * half in that case rather than anchoring the sleeper on the wrong end of the bed.
+     */
+    private static BlockPos normalizeToBedFoot(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        if (!(state.getBlock() instanceof net.minecraft.world.level.block.BedBlock)
+                || state.getValue(net.minecraft.world.level.block.BedBlock.PART) != net.minecraft.world.level.block.state.properties.BedPart.HEAD) {
+            return pos;
+        }
+        var footPos = pos.relative(state.getValue(net.minecraft.world.level.block.BedBlock.FACING).getOpposite());
+        var footState = level.getBlockState(footPos);
+        boolean isMatchingFoot = footState.getBlock() instanceof net.minecraft.world.level.block.BedBlock
+                && footState.getValue(net.minecraft.world.level.block.BedBlock.PART) == net.minecraft.world.level.block.state.properties.BedPart.FOOT;
+        return isMatchingFoot ? footPos : pos;
     }
 
     /**
