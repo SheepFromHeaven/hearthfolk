@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.3.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.2.0...v0.3.0) (2026-07-28)
+
+
+### Features
+
+* **client:** add debug tab to structure menu ([d3ce92d](https://github.com/SheepFromHeaven/mine-now/commit/d3ce92d4882e0f49b987e0c227c947cb62d21537))
+* **client:** add head rotation layer for inhabitants ([e8a72fc](https://github.com/SheepFromHeaven/mine-now/commit/e8a72fcc6515502bd04d83634d912952d95bcf03))
+* **client:** add inhabitant debug view and per-inhabitant issues screen ([1fb279c](https://github.com/SheepFromHeaven/mine-now/commit/1fb279c6507d98af9a96499799bad6a8d55e17ca))
+* **client:** add searchable inhabitant selection screen for assignments ([6df0de7](https://github.com/SheepFromHeaven/mine-now/commit/6df0de71a22f41cd03aae65e96be88199e7d9670))
+* **command:** add /minenow debugvillage dev command ([8fdbb13](https://github.com/SheepFromHeaven/mine-now/commit/8fdbb135bdbb63c3fcceefde5598627e1a5a6972))
+* **command:** stock debug village barrels with required tools ([ddb3adb](https://github.com/SheepFromHeaven/mine-now/commit/ddb3adb45d28964def33b3c38ea6de132150293b))
+* **dominion:** require a bed before assigning an inhabitant to a house ([2831321](https://github.com/SheepFromHeaven/mine-now/commit/283132197cac9f7819ed81efe11109fe5a153ff2))
+* **entity:** add FinishWorkGoal to stow job tools at nightfall ([cb25b7c](https://github.com/SheepFromHeaven/mine-now/commit/cb25b7c5d67160228784c46f1786972c94ff7dac))
+* **entity:** decay and restore the rest need with sleep ([11792e3](https://github.com/SheepFromHeaven/mine-now/commit/11792e3bc428d7a96256ee51a329f196ea1d5e4e))
+* **entity:** play villager sound when inhabitants switch goals ([e8d0884](https://github.com/SheepFromHeaven/mine-now/commit/e8d0884c4b1ebb1d1f96d156f4fa44c13962dc98))
+* **item:** add Tree Scanner Wand debug tool ([b8cf0c1](https://github.com/SheepFromHeaven/mine-now/commit/b8cf0c1912686265e21578182452213253ede038))
+* **job:** cook using the tavern's real smoker block ([18965bd](https://github.com/SheepFromHeaven/mine-now/commit/18965bd76aca04ca2979c087a5f36d421f754d13))
+* **job:** flood-fill tree trunks by log species with configurable max size ([86c07d7](https://github.com/SheepFromHeaven/mine-now/commit/86c07d770c2e1e3a50b4534d3d25b153345a484d))
+* **job:** lumberjack harvests canopy leaves after felling a tree ([4f6cae9](https://github.com/SheepFromHeaven/mine-now/commit/4f6cae929456d3e79dce4c4b280e3e60e86d9ca3))
+* **job:** scan for a better fishing shore and avoid unreachable water ([9200ec5](https://github.com/SheepFromHeaven/mine-now/commit/9200ec505af3b15cef296c5fcfda7353c23483fe))
+* **job:** turn inhabitants to face the block they're working on ([6bcfdcb](https://github.com/SheepFromHeaven/mine-now/commit/6bcfdcbcad2b1ed1185ce21ca6a5f3f9c3aafb8b))
+* **job:** walk to storage containers instead of teleporting items ([e5e0047](https://github.com/SheepFromHeaven/mine-now/commit/e5e00470f3b14e61ba17a9c927dacaf1e1c215ae))
+* **lumberyard:** add configurable work area with world-pick UI ([c381f88](https://github.com/SheepFromHeaven/mine-now/commit/c381f88730c5a40963f6627077c9919dfff3f44c))
+* **tavern:** add cook job that prepares and serves food ([9ff6f4f](https://github.com/SheepFromHeaven/mine-now/commit/9ff6f4fdf5aaba59c0125d3868f887b2f9534c0b))
+
+
+### Bug Fixes
+
+* **client:** correct renderEntityInInventoryFollowsMouse argument order ([69e6c82](https://github.com/SheepFromHeaven/mine-now/commit/69e6c82b7e8c4eaccfa9fd17507129af383b8df2))
+* **dominion:** anchor sleeping position on bed foot half ([8058cc6](https://github.com/SheepFromHeaven/mine-now/commit/8058cc6368d931ec0ab7407b22c5f0d4b56e2fb1))
+* **gametest:** place work-area test tree within structure bounds ([f571350](https://github.com/SheepFromHeaven/mine-now/commit/f5713508620bb31b56ae1f602c79edf745b875f3))
+* **job:** approach nearest standable tile when marker isn't on floor ([43fae11](https://github.com/SheepFromHeaven/mine-now/commit/43fae118e25d06ccc008f7ffe90bdf29f642303f))
+* **job:** ignore grass and flowers touching a tree trunk ([a69ed17](https://github.com/SheepFromHeaven/mine-now/commit/a69ed175ccf83ab848bfe36f0c99b62a710fe7f9))
+* **job:** re-approach workplace after a job is interrupted or unassigned ([5a3ad13](https://github.com/SheepFromHeaven/mine-now/commit/5a3ad1391872c6221a1cebd574b5da73d4572846))
+* **job:** re-fetch fuel when the smoker burns out mid-cook ([af14d0a](https://github.com/SheepFromHeaven/mine-now/commit/af14d0a635e8ab9e914842e0ca63d88c5e48fce4))
+* **job:** retry finding a tree on a cooldown instead of every tick ([af4fb90](https://github.com/SheepFromHeaven/mine-now/commit/af4fb906388f87c27aff56eb293e8d6033444e52))
+* **job:** stop lumberjack from getting stuck at an unreachable tree ([2f6ead1](https://github.com/SheepFromHeaven/mine-now/commit/2f6ead1d9f005a079cfc15738745a9e6a157f919))
+
 ## [0.2.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.1.0...v0.2.0) (2026-07-27)
 
 
