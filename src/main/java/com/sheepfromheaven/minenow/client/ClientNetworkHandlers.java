@@ -22,10 +22,16 @@ public class ClientNetworkHandlers {
 
     public static void openInhabitantScreen(ModNetwork.OpenInhabitantScreenPacket msg) {
         Minecraft.getInstance().execute(() -> {
-            var issues = msg.issuesData().isEmpty() ? List.<String>of() : List.of(msg.issuesData().split(ModNetwork.INHABITANT_FIELD_SEP));
-            Minecraft.getInstance().setScreen(new InhabitantScreen(
-                    msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest(), msg.jobStatus(),
-                    msg.debugEnabled(), issues));
+            var issues = msg.issuesData().isEmpty() ? List.<String>of()
+                    : List.of(msg.issuesData().split(java.util.regex.Pattern.quote(ModNetwork.INHABITANT_FIELD_SEP), -1));
+            var mc = Minecraft.getInstance();
+            if (mc.screen instanceof InhabitantScreen screen && screen.matchesEntity(msg.entityId())) {
+                screen.update(msg.shelter(), msg.food(), msg.rest(), msg.jobStatus(), issues);
+            } else {
+                mc.setScreen(new InhabitantScreen(
+                        msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest(),
+                        msg.jobStatus(), msg.debugEnabled(), issues));
+            }
         });
     }
 
@@ -46,9 +52,28 @@ public class ClientNetworkHandlers {
     }
 
     public static void openStructureScreen(ModNetwork.OpenStructureScreenPacket msg) {
-        Minecraft.getInstance().execute(() -> Minecraft.getInstance().setScreen(new StructureMarkerScreen(
-                msg.structureName(), StructureType.valueOf(msg.structureType()), msg.markerPos(),
-                msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId(),
-                msg.workAreaCenter(), msg.workAreaRadius())));
+        Minecraft.getInstance().execute(() -> {
+            var mc = Minecraft.getInstance();
+            if (mc.screen instanceof StructureMarkerScreen screen && screen.matchesMarker(msg.markerPos())) {
+                screen.update(msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId());
+            } else {
+                mc.setScreen(new StructureMarkerScreen(
+                        msg.structureName(), StructureType.valueOf(msg.structureType()), msg.markerPos(),
+                        msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId(),
+                        msg.workAreaCenter(), msg.workAreaRadius()));
+            }
+        });
+    }
+
+    public static void openRequestsScreen(ModNetwork.OpenRequestsScreenPacket msg) {
+        Minecraft.getInstance().execute(() -> {
+            var entries = RequestsScreen.decode(msg.requestsData());
+            var mc = Minecraft.getInstance();
+            if (mc.screen instanceof RequestsScreen screen) {
+                screen.update(entries);
+            } else {
+                mc.setScreen(new RequestsScreen(mc.screen, msg.dominionName(), entries, msg.bannerPos()));
+            }
+        });
     }
 }

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class DominionScreen extends Screen {
     private static final int PANEL_WIDTH = 220;
-    private static final int BASE_HEIGHT = 130;
+    private static final int BASE_HEIGHT = 156;
     private static final int INHABITANT_LINE_HEIGHT = 12;
 
     private static final int PANEL_FILL = 0xFFC6C6C6;
@@ -68,6 +68,10 @@ public class DominionScreen extends Screen {
                     rebuildWidgets();
                 }
         ).pos(left + 10, top + 88).size(PANEL_WIDTH - 20, 20).build());
+
+        addRenderableWidget(Button.builder(Component.literal("Requests"),
+                button -> com.sheepfromheaven.minenow.network.ModNetwork.sendRequestRequestsScreen(bannerPos)
+        ).pos(left + 10, top + 114).size(PANEL_WIDTH - 20, 20).build());
     }
 
     @Override
@@ -81,7 +85,7 @@ public class DominionScreen extends Screen {
         drawCentered(graphics, tier.getDisplayName(), top + 22, 0xFF8A6D00);
 
         if (!inhabitantNames.isEmpty()) {
-            int secY = top + 114;
+            int secY = top + 140;
             graphics.drawString(font, "Inhabitants (" + inhabitantNames.size() + "):", left + 10, secY, TEXT_LABEL, false);
             secY += 14;
 

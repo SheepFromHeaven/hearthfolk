@@ -7,9 +7,11 @@ import com.sheepfromheaven.minenow.block.TownBannerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
+import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.dominion.DominionTier;
 import com.sheepfromheaven.minenow.dominion.JobType;
 import com.sheepfromheaven.minenow.dominion.RoomDetector;
+import com.sheepfromheaven.minenow.dominion.StructureRequest;
 import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.dominion.NeedType;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
@@ -252,6 +254,36 @@ public class ModNetwork {
                                 be.setWorkArea(structure.getWorkAreaCenter(), structure.getWorkAreaRadius());
                             }
                         })
+                        .addMain(RefreshInhabitantScreenPacket.class, RefreshInhabitantScreenPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
+                            if (inhabitant.getDominionId() == null) return;
+                            var dominion = DominionSavedData.get(level).getDominionById(inhabitant.getDominionId());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            sendOpenInhabitantScreen(player, inhabitant, dominion);
+                        })
+                        .addMain(RefreshStructureScreenPacket.class, RefreshStructureScreenPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.findDominionContaining(msg.markerPos());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            var structure = dominion.getStructureAt(msg.markerPos());
+                            if (structure == null) return;
+                            sendOpenStructureScreen(player, dominion, structure);
+                        })
+                        .addMain(RequestRequestsScreenPacket.class, RequestRequestsScreenPacket.CODEC, (msg, ctx) -> {
+                            var player = ctx.getSender();
+                            if (player == null) return;
+                            var level = player.level();
+                            var data = DominionSavedData.get(level);
+                            var dominion = data.getDominionAt(msg.bannerPos());
+                            if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+                            sendOpenRequestsScreen(player, dominion, msg.bannerPos());
+                        })
                 )
                 .clientbound(flow -> flow
                         .addMain(OpenDominionScreenPacket.class, OpenDominionScreenPacket.CODEC,
@@ -260,6 +292,8 @@ public class ModNetwork {
                                 (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openInhabitantScreen(msg))
                         .addMain(OpenStructureScreenPacket.class, OpenStructureScreenPacket.CODEC,
                                 (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openStructureScreen(msg))
+                        .addMain(OpenRequestsScreenPacket.class, OpenRequestsScreenPacket.CODEC,
+                                (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openRequestsScreen(msg))
                         .addMain(InhabitantDebugPacket.class, InhabitantDebugPacket.CODEC,
                                 (msg, ctx) -> com.sheepfromheaven.minenow.client.ClientNetworkHandlers.updateInhabitantDebug(msg))
                         .addMain(TreeScanClearPacket.class, TreeScanClearPacket.CODEC,
@@ -512,6 +546,50 @@ public class ModNetwork {
         );
     }
 
+    public static void sendRefreshInhabitantScreen(int entityId) {
+        CHANNEL.send(new RefreshInhabitantScreenPacket(entityId), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendRefreshStructureScreen(BlockPos markerPos) {
+        CHANNEL.send(new RefreshStructureScreenPacket(markerPos), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendRequestRequestsScreen(BlockPos bannerPos) {
+        CHANNEL.send(new RequestRequestsScreenPacket(bannerPos), PacketDistributor.SERVER.noArg());
+    }
+
+    public static void sendOpenRequestsScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos) {
+        CHANNEL.send(new OpenRequestsScreenPacket(dominion.getName(), encodeRequests(dominion), bannerPos),
+                PacketDistributor.PLAYER.with(player));
+    }
+
+    /**
+     * Encodes all pending requests across a dominion as a flat string.
+     * Format: rows separated by {@code ,}, fields separated by {@link #INHABITANT_FIELD_SEP}.
+     * Fields per row: structureName, label, amount, urgent (1/0).
+     */
+    static String encodeRequests(Dominion dominion) {
+        var sb = new StringBuilder();
+        for (var structure : dominion.getStructures()) {
+            var reqs = structure.getRequests();
+            if (reqs.isEmpty()) continue;
+            // Sort: urgent first, then by label
+            var sorted = reqs.values().stream()
+                    .sorted(java.util.Comparator
+                            .comparing(StructureRequest::priority).reversed()
+                            .thenComparing(StructureRequest::label))
+                    .toList();
+            for (var req : sorted) {
+                if (sb.length() > 0) sb.append(',');
+                sb.append(structure.getName()).append(INHABITANT_FIELD_SEP)
+                  .append(req.label()).append(INHABITANT_FIELD_SEP)
+                  .append(req.amount()).append(INHABITANT_FIELD_SEP)
+                  .append(req.priority() == StructureRequest.Priority.URGENT ? "1" : "0");
+            }
+        }
+        return sb.toString();
+    }
+
     public record OpenStructureScreenPacket(String structureName, String structureType, BlockPos markerPos,
                                             String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
                                             BlockPos workAreaCenter, int workAreaRadius) {
@@ -525,6 +603,36 @@ public class ModNetwork {
                 BlockPos.STREAM_CODEC, OpenStructureScreenPacket::workAreaCenter,
                 ByteBufCodecs.VAR_INT, OpenStructureScreenPacket::workAreaRadius,
                 OpenStructureScreenPacket::new
+        );
+    }
+
+    public record RefreshInhabitantScreenPacket(int entityId) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, RefreshInhabitantScreenPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, RefreshInhabitantScreenPacket::entityId,
+                RefreshInhabitantScreenPacket::new
+        );
+    }
+
+    public record RefreshStructureScreenPacket(BlockPos markerPos) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, RefreshStructureScreenPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, RefreshStructureScreenPacket::markerPos,
+                RefreshStructureScreenPacket::new
+        );
+    }
+
+    public record RequestRequestsScreenPacket(BlockPos bannerPos) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, RequestRequestsScreenPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, RequestRequestsScreenPacket::bannerPos,
+                RequestRequestsScreenPacket::new
+        );
+    }
+
+    public record OpenRequestsScreenPacket(String dominionName, String requestsData, BlockPos bannerPos) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenRequestsScreenPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, OpenRequestsScreenPacket::dominionName,
+                ByteBufCodecs.STRING_UTF8, OpenRequestsScreenPacket::requestsData,
+                BlockPos.STREAM_CODEC, OpenRequestsScreenPacket::bannerPos,
+                OpenRequestsScreenPacket::new
         );
     }
 }

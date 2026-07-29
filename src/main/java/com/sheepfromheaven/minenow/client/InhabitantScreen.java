@@ -27,12 +27,15 @@ public class InhabitantScreen extends Screen {
     private final int entityId;
     private final String inhabitantName;
     private final String dominionName;
-    private final float shelter;
-    private final float food;
-    private final float rest;
-    private final String jobStatus;
+    private float shelter;
+    private float food;
+    private float rest;
+    private String jobStatus;
     private final boolean debugEnabled;
-    private final List<String> issues;
+    private List<String> issues;
+
+    private static final int REFRESH_INTERVAL_TICKS = 20;
+    private int refreshCooldown = REFRESH_INTERVAL_TICKS;
 
     private Tab currentTab = Tab.GENERAL;
     private List<String> debugLines = List.of();
@@ -58,6 +61,16 @@ public class InhabitantScreen extends Screen {
 
     public void setDebugLines(List<String> debugLines) {
         this.debugLines = debugLines;
+    }
+
+    public void update(float shelter, float food, float rest, String jobStatus, List<String> issues) {
+        this.shelter = shelter;
+        this.food = food;
+        this.rest = rest;
+        this.jobStatus = jobStatus;
+        boolean issuesChanged = !this.issues.equals(issues);
+        this.issues = issues;
+        if (issuesChanged) rebuildWidgets();
     }
 
     @Override
@@ -113,6 +126,10 @@ public class InhabitantScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        if (--refreshCooldown <= 0) {
+            ModNetwork.sendRefreshInhabitantScreen(entityId);
+            refreshCooldown = REFRESH_INTERVAL_TICKS;
+        }
         if (currentTab == Tab.DEBUG && --debugRefreshCooldown <= 0) {
             requestDebugRefresh();
         }

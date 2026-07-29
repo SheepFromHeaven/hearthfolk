@@ -70,6 +70,32 @@ public class StructureMarkerScreen extends Screen {
         this.assignedWorkerId = assignedWorkerId;
     }
 
+    public boolean matchesMarker(BlockPos pos) { return markerPos.equals(pos); }
+
+    private static final int REFRESH_INTERVAL_TICKS = 20;
+    private int refreshCooldown = REFRESH_INTERVAL_TICKS;
+
+    public void update(String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
+        boolean changed = !this.assignedInhabitantId.equals(assignedInhabitantId)
+                || !this.assignedWorkerId.equals(assignedWorkerId);
+        var newInhabitants = parseInhabitants(inhabitantData);
+        changed = changed || !this.inhabitants.equals(newInhabitants);
+        this.inhabitants.clear();
+        this.inhabitants.addAll(newInhabitants);
+        this.assignedInhabitantId = assignedInhabitantId;
+        this.assignedWorkerId = assignedWorkerId;
+        if (changed) rebuildWidgets();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (--refreshCooldown <= 0) {
+            ModNetwork.sendRefreshStructureScreen(markerPos);
+            refreshCooldown = REFRESH_INTERVAL_TICKS;
+        }
+    }
+
     private static List<InhabitantEntry> parseInhabitants(String data) {
         var list = new ArrayList<InhabitantEntry>();
         if (data == null || data.isEmpty()) return list;
