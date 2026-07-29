@@ -35,8 +35,14 @@ public final class MineNow {
         net.minecraftforge.event.RegisterCommandsEvent.BUS.addListener(event ->
                 com.sheepfromheaven.minenow.command.DebugCommands.register(event.getDispatcher()));
 
-        net.minecraftforge.event.TickEvent.ServerTickEvent.Post.BUS.addListener(event ->
-                com.sheepfromheaven.minenow.entity.job.TreeScannerDebugger.serverTick(event.server()));
+        net.minecraftforge.event.TickEvent.ServerTickEvent.Post.BUS.addListener(event -> {
+            com.sheepfromheaven.minenow.entity.job.TreeScannerDebugger.serverTick(event.server());
+            var server = event.server();
+            if (server.getTickCount() % 200 == 0) {
+                var overworld = server.overworld();
+                com.sheepfromheaven.minenow.dominion.DominionSavedData.get(overworld).tickStructureStock(overworld);
+            }
+        });
 
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 

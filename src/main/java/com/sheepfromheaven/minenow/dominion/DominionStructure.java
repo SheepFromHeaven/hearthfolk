@@ -5,11 +5,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -39,6 +42,41 @@ public class DominionStructure {
     /** Offset from {@link #markerPos}; {@link BlockPos#ZERO} means the work area is centered on the marker. */
     private BlockPos workAreaOffset = BlockPos.ZERO;
     private int workAreaRadius = DEFAULT_WORK_AREA_RADIUS;
+    /**
+     * Issues reported by individual workers, keyed by worker UUID then by issue label.
+     * Multiple workers reporting the same label → amounts are summed when producing requests.
+     * Not persisted: jobs re-report their issues on the first tick after a reload.
+     */
+    private final Map<UUID, Map<String, WorkerIssue>> workerIssues = new HashMap<>();
+    /**
+     * Desired stock levels configured for this structure (item → target count). The structure
+     * periodically compares its actual inventory against these and posts SOFT requests for shortfalls.
+     * Starts from type defaults; the player can override per-structure.
+     */
+    private final Map<Item, Integer> desiredStock = new HashMap<>();
+    /** Computed requests (URGENT from worker issues + SOFT from stock shortfalls), keyed by label. */
+    private final Map<String, StructureRequest> requests = new HashMap<>();
+
+    /** What a single worker reports it is blocked on or wants proactively restocked. */
+    public record WorkerIssue(
+            @Nullable Item item,
+            String label,
+            int amountPerWorker,
+            StructureRequest.Priority priority
+    ) {
+        public static WorkerIssue urgent(String label) {
+            return new WorkerIssue(null, label, 64, StructureRequest.Priority.URGENT);
+        }
+
+        public static WorkerIssue urgent(String label, int amount) {
+            return new WorkerIssue(null, label, amount, StructureRequest.Priority.URGENT);
+        }
+
+        public static WorkerIssue urgentItem(Item item, int amount) {
+            var name = item.getDefaultInstance().getHoverName().getString();
+            return new WorkerIssue(item, name, amount, StructureRequest.Priority.URGENT);
+        }
+    }
 
     public DominionStructure(String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks) {
         this.id = UUID.randomUUID();
@@ -138,6 +176,135 @@ public class DominionStructure {
 
     public boolean containsBlock(BlockPos pos) {
         return roomBlocks.contains(pos);
+    }
+
+    /**
+     * Returns a snapshot of every item currently held across all containers in the structure.
+     *
+     * @param level            the server level (needed to read block entities)
+     * @param includeNonStorage if true, includes all {@link Container} block entities in the room
+     *                          (e.g. smoker input/output slots); if false, only storage-tagged
+     *                          containers (barrels, chests) are counted
+     */
+    public Map<Item, Integer> getInventory(Level level, boolean includeNonStorage) {
+        var containers = includeNonStorage ? findContainers(level) : findStorageContainers(level);
+        var totals = new HashMap<Item, Integer>();
+        for (var pos : containers) {
+            if (level.getBlockEntity(pos) instanceof Container container) {
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    var stack = container.getItem(i);
+                    if (!stack.isEmpty()) {
+                        totals.merge(stack.getItem(), stack.getCount(), Integer::sum);
+                    }
+                }
+            }
+        }
+        return totals;
+    }
+
+    /**
+     * Called by a worker to report it is blocked on or proactively wants a resource.
+     * The structure aggregates across all workers and recomputes URGENT requests immediately.
+     *
+     * @param workerId the UUID of the reporting worker
+     * @param issue    what it needs
+     * @param gameTick current game tick (for request timestamps)
+     */
+    public void reportWorkerIssue(UUID workerId, WorkerIssue issue, long gameTick) {
+        workerIssues.computeIfAbsent(workerId, k -> new HashMap<>()).put(issue.label(), issue);
+        recomputeUrgentRequests(gameTick);
+    }
+
+    /**
+     * Called by a worker when it is no longer blocked on a resource it previously reported.
+     * Removes the issue and recomputes URGENT requests.
+     */
+    public void clearWorkerIssue(UUID workerId, String label, long gameTick) {
+        var workerMap = workerIssues.get(workerId);
+        if (workerMap != null) {
+            workerMap.remove(label);
+            if (workerMap.isEmpty()) workerIssues.remove(workerId);
+        }
+        recomputeUrgentRequests(gameTick);
+    }
+
+    /** Removes all issues for a worker (e.g. when they are unassigned). */
+    public void clearAllWorkerIssues(UUID workerId, long gameTick) {
+        workerIssues.remove(workerId);
+        recomputeUrgentRequests(gameTick);
+    }
+
+    private void recomputeUrgentRequests(long gameTick) {
+        // Drop all URGENT entries and rebuild from current worker issues
+        requests.values().removeIf(r -> r.priority() == StructureRequest.Priority.URGENT);
+        // Aggregate: sum amountPerWorker across all workers reporting the same label
+        var aggregated = new LinkedHashMap<String, int[]>(); // label → [totalAmount, item (nullable)]
+        var itemByLabel = new HashMap<String, Item>();
+        for (var workerMap : workerIssues.values()) {
+            for (var issue : workerMap.values()) {
+                if (issue.priority() != StructureRequest.Priority.URGENT) continue;
+                aggregated.computeIfAbsent(issue.label(), k -> new int[]{0})[0] += issue.amountPerWorker();
+                if (issue.item() != null) itemByLabel.putIfAbsent(issue.label(), issue.item());
+            }
+        }
+        for (var entry : aggregated.entrySet()) {
+            var label = entry.getKey();
+            var amount = entry.getValue()[0];
+            var item = itemByLabel.get(label);
+            requests.put(label, item != null
+                    ? StructureRequest.forItem(id, item, amount, StructureRequest.Priority.URGENT, gameTick)
+                    : StructureRequest.forCategory(id, label, amount, StructureRequest.Priority.URGENT, gameTick));
+        }
+    }
+
+    /**
+     * Sets the desired stock level for an item. The structure will post SOFT requests when the
+     * actual inventory falls below this amount. Pass 0 to remove a desired-stock entry.
+     */
+    public void setDesiredStock(Item item, int amount) {
+        if (amount <= 0) {
+            desiredStock.remove(item);
+        } else {
+            desiredStock.put(item, amount);
+        }
+    }
+
+    public Map<Item, Integer> getDesiredStock() {
+        return Collections.unmodifiableMap(desiredStock);
+    }
+
+    /**
+     * Compares actual storage inventory against {@link #desiredStock} and posts or clears SOFT
+     * requests accordingly. Should be called periodically from a server tick (not every tick — once
+     * every few seconds is enough).
+     */
+    public void tickStock(ServerLevel level, long gameTick) {
+        if (desiredStock.isEmpty()) return;
+        var inventory = getInventory(level, false);
+        // Drop all SOFT entries and rebuild from current shortfalls
+        requests.values().removeIf(r -> r.priority() == StructureRequest.Priority.SOFT);
+        for (var entry : desiredStock.entrySet()) {
+            var item = entry.getKey();
+            var desired = entry.getValue();
+            var actual = inventory.getOrDefault(item, 0);
+            if (actual < desired) {
+                var shortfall = desired - actual;
+                requests.put(item.getDefaultInstance().getHoverName().getString(),
+                        StructureRequest.forItem(id, item, shortfall, StructureRequest.Priority.SOFT, gameTick));
+            }
+        }
+    }
+
+    /** All active requests for this structure (URGENT + SOFT), keyed by label. Unmodifiable. */
+    public Map<String, StructureRequest> getRequests() {
+        return Collections.unmodifiableMap(requests);
+    }
+
+    // --- Codec helpers (used only by DominionSavedData to persist/restore the computed request map) ---
+
+    /** For codec use only — directly inserts a previously-persisted request. */
+    void restoreRequest(StructureRequest req) {
+        requests.put(req.label(), req);
     }
 
     public BlockPos findBedPos(Level level) {

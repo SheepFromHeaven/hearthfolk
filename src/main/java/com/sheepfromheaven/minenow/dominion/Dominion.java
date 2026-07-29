@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.properties.BedPart;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Dominion {
     private final UUID id;
@@ -222,6 +223,19 @@ public class Dominion {
 
     public Collection<DominionStructure> getStructures() {
         return Collections.unmodifiableCollection(structures.values());
+    }
+
+    /**
+     * All pending item requests across every structure in this dominion, sorted URGENT first then
+     * by creation tick (oldest first within each priority level).
+     */
+    public List<StructureRequest> getPendingRequests() {
+        return structures.values().stream()
+                .flatMap(s -> s.getRequests().values().stream())
+                .sorted(Comparator
+                        .comparing(StructureRequest::priority).reversed()
+                        .thenComparingLong(StructureRequest::createdTick))
+                .collect(Collectors.toList());
     }
 
     /** Finds the nearest structure of the given type (by marker distance to {@code from}) satisfying {@code filter}. */

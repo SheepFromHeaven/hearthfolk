@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.entity.job;
 
+import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
@@ -52,6 +53,8 @@ public class CookJob implements Job {
     @Override
     public void stop(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         inhabitant.getNavigation().stop();
+        workplace.clearAllWorkerIssues(inhabitant.getUUID(), level.getGameTime());
+        DominionSavedData.get(level).setDirty();
     }
 
     @Override
@@ -71,7 +74,7 @@ public class CookJob implements Job {
             case FIND_INGREDIENTS -> tickFindIngredients(inhabitant, level, workplace);
             case COOKING -> tickCooking(inhabitant, level, workplace);
             case DEPOSIT -> tickDeposit(inhabitant, level, workplace);
-            case MISSING_INGREDIENTS -> tickMissingIngredients();
+            case MISSING_INGREDIENTS -> tickMissingIngredients(inhabitant, level, workplace);
         };
     }
 
@@ -87,6 +90,9 @@ public class CookJob implements Job {
         var smoker = smokerPos != null && level.getBlockEntity(smokerPos) instanceof Container container ? container : null;
         if (smoker == null) {
             missingItemLabel = "a Smoker";
+            workplace.reportWorkerIssue(inhabitant.getUUID(),
+                    DominionStructure.WorkerIssue.urgent(missingItemLabel, 1), level.getGameTime());
+            DominionSavedData.get(level).setDirty();
             phase = Phase.MISSING_INGREDIENTS;
             waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
             return true;
@@ -133,6 +139,9 @@ public class CookJob implements Job {
             containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), matcher);
             if (containerTarget == null) {
                 missingItemLabel = neededSlot == 0 ? "raw food" : "fuel";
+                workplace.reportWorkerIssue(inhabitant.getUUID(),
+                        DominionStructure.WorkerIssue.urgent(missingItemLabel), level.getGameTime());
+                DominionSavedData.get(level).setDirty();
                 phase = Phase.MISSING_INGREDIENTS;
                 waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
                 return true;
@@ -215,8 +224,12 @@ public class CookJob implements Job {
         return false;
     }
 
-    private boolean tickMissingIngredients() {
+    private boolean tickMissingIngredients(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         if (--waitTicks <= 0) {
+            if (missingItemLabel != null) {
+                workplace.clearWorkerIssue(inhabitant.getUUID(), missingItemLabel, level.getGameTime());
+                DominionSavedData.get(level).setDirty();
+            }
             phase = Phase.FIND_INGREDIENTS;
         }
         return true;
