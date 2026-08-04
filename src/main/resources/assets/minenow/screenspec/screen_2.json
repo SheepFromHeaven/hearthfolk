@@ -1,0 +1,65 @@
+{
+  "id": "screen_2",
+  "modId": "minenow",
+  "width": 320,
+  "height": 180,
+  "widgets": [
+    {
+      "type": "panel",
+      "x": 72,
+      "y": 44,
+      "w": 192,
+      "h": 100,
+      "text": "",
+      "icon": null,
+      "props": {
+        "style": "default"
+      },
+      "id": "panel_1002"
+    },
+    {
+      "type": "label",
+      "x": 128,
+      "y": 52,
+      "w": 80,
+      "h": 10,
+      "text": "Hello world",
+      "icon": null,
+      "props": {
+        "color": "4210752",
+        "shadow": "false"
+      },
+      "id": "label_1003"
+    },
+    {
+      "type": "button",
+      "x": 84,
+      "y": 112,
+      "w": 72,
+      "h": 20,
+      "text": "Button",
+      "icon": null,
+      "props": {},
+      "id": "button_1004",
+      "action": "test_action"
+    },
+    {
+      "type": "input",
+      "x": 84,
+      "y": 76,
+      "w": 120,
+      "h": 20,
+      "text": "",
+      "icon": null,
+      "props": {
+        "max_length": "32",
+        "hint_text": "Placeholder"
+      },
+      "id": "input_1006",
+      "bindings": {
+        "text": "input"
+      },
+      "action": "on_input"
+    }
+  ]
+}

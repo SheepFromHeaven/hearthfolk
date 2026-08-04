@@ -7,35 +7,26 @@ import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import sheepfromheaven.screenspec.runtime.ScreenSpec;
+import sheepfromheaven.screenspec.runtime.ScreenSpecLoader;
+import sheepfromheaven.screenspec.runtime.SpecScreen;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class StructureMarkerScreen extends Screen {
-    private static final int PANEL_WIDTH = 220;
-    private static final int BASE_HEIGHT = 120;
-    private static final int TAB_Y = 40;
-    private static final int TAB_HEIGHT = 20;
-    private static final int CONTENT_START = 70;
-    private static final int TEXT_ROW_HEIGHT = 16;
-    private static final int BUTTON_ROW_HEIGHT = 26;
+public class StructureMarkerScreen extends SpecScreen {
+
     private static final int SLOT_SIZE = 20;
     private static final int SLOT_GAP = 4;
-    private static final int REQ_ROW_HEIGHT = 14 + SLOT_SIZE + 4;
-
-    private static final int PANEL_FILL = 0xFFC6C6C6;
-    private static final int TEXT_DARK = 0xFF404040;
-    private static final int TEXT_LABEL = 0xFF404040;
-    private static final int SATISFIED = 0xFF3CB043;
+    private static final int SATISFIED   = 0xFF3CB043;
     private static final int UNSATISFIED = 0xFFCC3333;
 
-    private enum Tab { GENERAL, REQUIREMENTS, WORK_AREA, DEBUG }
+    private static final int REFRESH_INTERVAL_TICKS = 20;
 
     private String structureName;
     private StructureType structureType;
@@ -46,40 +37,78 @@ public class StructureMarkerScreen extends Screen {
     private BlockPos workAreaCenter;
     private int workAreaRadius;
 
-    private Tab currentTab = Tab.GENERAL;
     private EditBox nameField;
+    private int lastMouseX, lastMouseY;
+    private Component hoveredReqTooltip;
+    private int refreshCooldown = REFRESH_INTERVAL_TICKS;
 
     public record InhabitantEntry(String id, UUID entityUuid, String name, String jobLabel, boolean homed) {}
-
-    private record GeneralLayout(int residentY, int workerY, int totalExtra) {}
-    private record RequirementsLayout(int spaceY, int reqY, int rangeReqY, int totalExtra) {}
-    private record WorkAreaLayout(int sliderY, int buttonY, int toggleY, int totalExtra) {}
-    private record DebugLayout(int recalculateY, int rangeToggleY, int totalExtra) {}
 
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
                                  String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
                                  BlockPos workAreaCenter, int workAreaRadius) {
-        super(Component.literal("Structure"));
+        super(Component.literal("Structure"), loadSpec());
         this.structureName = structureName;
         this.structureType = structureType;
         this.markerPos = markerPos;
         this.inhabitants = parseInhabitants(inhabitantData);
-        this.workAreaCenter = workAreaCenter;
-        this.workAreaRadius = workAreaRadius;
         this.assignedInhabitantId = assignedInhabitantId;
         this.assignedWorkerId = assignedWorkerId;
+        this.workAreaCenter = workAreaCenter;
+        this.workAreaRadius = workAreaRadius;
+
+        on("minenow.rename", (id, s, v) -> {
+            if (nameField == null) return;
+            String newName = nameField.getValue().trim();
+            if (!newName.isEmpty() && !newName.equals(this.structureName)) {
+                ModNetwork.sendRenameStructure(markerPos, newName);
+                this.structureName = newName;
+            }
+        });
+
+        on("minenow.cycle_type", (id, s, v) -> {
+            var types = StructureType.values();
+            this.structureType = types[(this.structureType.ordinal() + 1) % types.length];
+            ModNetwork.sendSetStructureType(markerPos, this.structureType.name());
+            rebuildWidgets();
+        });
+
+        on("minenow.assign_resident", (id, s, v) -> openResidentPicker());
+        on("minenow.assign_worker",   (id, s, v) -> openWorkerPicker());
+
+        on("minenow.set_work_center", (id, s, v) -> {
+            WorldPickMode.activate(markerPos, this.structureName, this.structureType.getRangeRadius());
+            onClose();
+        });
+
+        on("minenow.toggle_workarea", (id, s, v) -> {
+            WorkAreaTracker.toggleWorkArea(markerPos);
+            rebuildWidgets();
+        });
+
+        on("minenow.recalculate", (id, s, v) -> {
+            ModNetwork.sendRecalculateStructure(markerPos);
+            onClose();
+        });
+
+        on("minenow.toggle_range", (id, s, v) -> {
+            RangeTracker.toggleRange(markerPos);
+            rebuildWidgets();
+        });
+    }
+
+    private static ScreenSpec loadSpec() {
+        return ScreenSpecLoader.fromResource(
+                Minecraft.getInstance().getResourceManager(), "minenow", "structure_marker_screen");
     }
 
     public boolean matchesMarker(BlockPos pos) { return markerPos.equals(pos); }
 
-    private static final int REFRESH_INTERVAL_TICKS = 20;
-    private int refreshCooldown = REFRESH_INTERVAL_TICKS;
-
     public void update(String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
-        boolean changed = !this.assignedInhabitantId.equals(assignedInhabitantId)
-                || !this.assignedWorkerId.equals(assignedWorkerId);
         var newInhabitants = parseInhabitants(inhabitantData);
-        changed = changed || !this.inhabitants.equals(newInhabitants);
+        boolean changed = !this.assignedInhabitantId.equals(assignedInhabitantId)
+                || !this.assignedWorkerId.equals(assignedWorkerId)
+                || !this.inhabitants.equals(newInhabitants);
         this.inhabitants.clear();
         this.inhabitants.addAll(newInhabitants);
         this.assignedInhabitantId = assignedInhabitantId;
@@ -96,23 +125,178 @@ public class StructureMarkerScreen extends Screen {
         }
     }
 
-    private static List<InhabitantEntry> parseInhabitants(String data) {
-        var list = new ArrayList<InhabitantEntry>();
-        if (data == null || data.isEmpty()) return list;
-        for (var entry : data.split(",")) {
-            var fields = entry.split(ModNetwork.INHABITANT_FIELD_SEP, -1);
-            if (fields.length < 5) continue;
-            list.add(new InhabitantEntry(fields[0], UUID.fromString(fields[1]), fields[2], fields[3],
-                    "1".equals(fields[4])));
+    @Override
+    protected void init() {
+        super.init();
+
+        int ox = (width  - spec().width)  / 2;
+        int oy = (height - spec().height) / 2;
+        int contentY = oy + 60; // tabs.y=40 + tab_height=20
+
+        // --- general tab ---
+        if ("tab_general".equals(activeTab("tabs_main"))) {
+            nameField = new EditBox(font, ox + 10, contentY, spec().width - 20, 20, Component.literal("Name"));
+            nameField.setMaxLength(32);
+            nameField.setValue(structureName);
+            nameField.setHint(Component.literal("Structure name..."));
+            addRenderableWidget(nameField);
         }
-        return list;
+
+        AbstractWidget typeBtn = getWidget("btn_type");
+        if (typeBtn != null) typeBtn.setMessage(Component.literal("Type: " + structureType.getDisplayName()));
+
+        AbstractWidget residentBtn = getWidget("btn_resident");
+        if (residentBtn != null) {
+            residentBtn.visible = isHouse() && !inhabitants.isEmpty();
+            residentBtn.setMessage(Component.literal("Resident: " + labelFor(assignedInhabitantId)));
+        }
+
+        AbstractWidget workerBtn = getWidget("btn_worker");
+        if (workerBtn != null) {
+            workerBtn.visible = hasJob() && !inhabitants.isEmpty();
+            workerBtn.setMessage(Component.literal("Worker: " + labelFor(assignedWorkerId)));
+        }
+
+        // --- requirements tab label (alert mark if unmet) ---
+        AbstractWidget reqTab = getWidget("tab_requirements");
+        if (reqTab != null) reqTab.setMessage(BeveledBox.withAlertMark("Requirements", hasUnmetRequirement()));
+
+        // --- work area tab ---
+        AbstractWidget workAreaTab = getWidget("tab_work_area");
+        if (workAreaTab != null) workAreaTab.visible = hasWorkArea();
+
+        if ("tab_work_area".equals(activeTab("tabs_main"))) {
+            addRenderableWidget(new WorkAreaRadiusSlider(ox + 10, contentY + 18, spec().width - 20, 20,
+                    workAreaRadius, radius -> {
+                workAreaRadius = radius;
+                ModNetwork.sendSetWorkAreaRadius(markerPos, radius);
+            }));
+        }
+
+        AbstractWidget toggleWorkarea = getWidget("btn_toggle_workarea");
+        if (toggleWorkarea != null) toggleWorkarea.setMessage(
+                Component.literal(WorkAreaTracker.isShowingWorkArea(markerPos) ? "Hide Workarea" : "Show Workarea"));
+
+        // --- debug tab ---
+        AbstractWidget toggleRange = getWidget("btn_toggle_range");
+        if (toggleRange != null) {
+            toggleRange.visible = hasRangeRequirement();
+            toggleRange.setMessage(
+                    Component.literal(RangeTracker.isShowingRange(markerPos) ? "Hide Range" : "Show Range"));
+        }
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+        hoveredReqTooltip = null;
+
+        bindText("label_name", structureName);
+        bindText("label_type", structureType.getDisplayName());
+        bindText("label_center", "Center: " + workAreaCenter.getX() + ", "
+                + workAreaCenter.getY() + ", " + workAreaCenter.getZ());
+
+        super.render(graphics, mouseX, mouseY, partialTick);
+
+        if ("tab_requirements".equals(activeTab("tabs_main"))) {
+            renderRequirementsTab(graphics);
+        }
+
+        if (hoveredReqTooltip != null) {
+            graphics.setComponentTooltipForNextFrame(font, List.of(hoveredReqTooltip), mouseX, mouseY);
+        }
+    }
+
+    private void renderRequirementsTab(GuiGraphics graphics) {
+        int ox = (width  - spec().width)  / 2;
+        int oy = (height - spec().height) / 2;
+        int y  = oy + 64; // tab content top + small padding
+
+        if (hasSpaceRequirement()) {
+            var status = getSpaceStatus();
+            int color = status.satisfied() ? SATISFIED : UNSATISFIED;
+            graphics.drawCenteredString(font, "Space: " + status.found() + "/" + status.required(),
+                    width / 2, y, color);
+            y += 16;
+        }
+
+        var reqs = structureType.getRequirements();
+        if (!reqs.isEmpty()) {
+            graphics.drawString(font, "Requirements:", ox + 10, y, 0xFF404040, false);
+            y += 14;
+            hoveredReqTooltip = drawSlots(graphics, reqs, getRequirementStatuses(), y);
+            y += SLOT_SIZE + 10;
+        }
+
+        if (hasRangeRequirement() && !structureType.getRangeRequirements().isEmpty()) {
+            var rangeReqs = structureType.getRangeRequirements();
+            graphics.drawString(font, "Nearby (r=" + structureType.getRangeRadius() + "):", ox + 10, y, 0xFF404040, false);
+            y += 14;
+            var tooltip = drawSlots(graphics, rangeReqs, getRangeRequirementStatuses(), y);
+            if (tooltip != null) hoveredReqTooltip = tooltip;
+        }
+    }
+
+    private Component drawSlots(GuiGraphics graphics,
+                                 List<StructureType.Requirement> reqs,
+                                 List<DominionStructure.RequirementStatus> statuses,
+                                 int slotY) {
+        int totalWidth = reqs.size() * SLOT_SIZE + (reqs.size() - 1) * SLOT_GAP;
+        int startX = (width - totalWidth) / 2;
+        Component tooltip = null;
+
+        for (int i = 0; i < reqs.size(); i++) {
+            var req = reqs.get(i);
+            boolean satisfied = i < statuses.size() && statuses.get(i).satisfied();
+            int slotX = startX + i * (SLOT_SIZE + SLOT_GAP);
+
+            graphics.fill(slotX,     slotY,     slotX + SLOT_SIZE,     slotY + SLOT_SIZE,     satisfied ? 0xFF22CC22 : 0xFFCC2222);
+            graphics.fill(slotX + 1, slotY + 1, slotX + SLOT_SIZE - 1, slotY + SLOT_SIZE - 1, satisfied ? 0xFF1A3A1A : 0xFF3A1A1A);
+            graphics.renderItem(req.icon().get(), slotX + 2, slotY + 2);
+
+            if (lastMouseX >= slotX && lastMouseX < slotX + SLOT_SIZE
+                    && lastMouseY >= slotY && lastMouseY < slotY + SLOT_SIZE) {
+                int found = i < statuses.size() ? statuses.get(i).found() : 0;
+                String status = satisfied ? "OK" : found + "/" + req.count();
+                tooltip = Component.literal(req.displayName() + " (" + status + ")");
+            }
+        }
+        return tooltip;
+    }
+
+    @Override
+    public boolean isPauseScreen() { return false; }
+
+    // --- helpers ---
+
+    private boolean isHouse()       { return structureType == StructureType.HOUSE; }
+    private boolean hasJob()        { return structureType.getJobType().isPresent(); }
+    private boolean hasWorkArea()   { return structureType.getJobType().map(JobType::hasWorkArea).orElse(false); }
+    private boolean hasSpaceRequirement()  { return structureType.getMinSize() > 0; }
+    private boolean hasRangeRequirement()  { return structureType.getRangeRadius() > 0; }
+
+    private boolean hasUnmetRequirement() {
+        if (hasSpaceRequirement() && !getSpaceStatus().satisfied()) return true;
+        for (var s : getRequirementStatuses()) if (!s.satisfied()) return true;
+        if (hasRangeRequirement()) for (var s : getRangeRequirementStatuses()) if (!s.satisfied()) return true;
+        return false;
+    }
+
+    private String labelFor(String assignedId) {
+        if (assignedId == null || assignedId.isEmpty()) return "None";
+        return inhabitants.stream()
+                .filter(i -> i.id().equals(assignedId))
+                .map(InhabitantEntry::name)
+                .findFirst()
+                .orElse("None");
     }
 
     private List<DominionStructure.RequirementStatus> getRequirementStatuses() {
         var mc = Minecraft.getInstance();
         if (mc.level != null && mc.level.getBlockEntity(markerPos) instanceof StructureMarkerBlockEntity be) {
-            var statuses = be.getRequirementStatuses();
-            if (!statuses.isEmpty()) return statuses;
+            var s = be.getRequirementStatuses();
+            if (!s.isEmpty()) return s;
         }
         return structureType.getRequirements().stream()
                 .map(r -> new DominionStructure.RequirementStatus(r.displayName(), r.count(), 0))
@@ -122,8 +306,8 @@ public class StructureMarkerScreen extends Screen {
     private List<DominionStructure.RequirementStatus> getRangeRequirementStatuses() {
         var mc = Minecraft.getInstance();
         if (mc.level != null && mc.level.getBlockEntity(markerPos) instanceof StructureMarkerBlockEntity be) {
-            var statuses = be.getRangeRequirementStatuses();
-            if (!statuses.isEmpty()) return statuses;
+            var s = be.getRangeRequirementStatuses();
+            if (!s.isEmpty()) return s;
         }
         return structureType.getRangeRequirements().stream()
                 .map(r -> new DominionStructure.RequirementStatus(r.displayName(), r.count(), 0))
@@ -139,251 +323,13 @@ public class StructureMarkerScreen extends Screen {
         return new DominionStructure.RequirementStatus("Space", structureType.getMinSize(), 0);
     }
 
-    private boolean isHouse() {
-        return structureType == StructureType.HOUSE;
-    }
-
-    private boolean hasJob() {
-        return structureType.getJobType().isPresent();
-    }
-
-    private boolean hasWorkArea() {
-        return structureType.getJobType().map(JobType::hasWorkArea).orElse(false);
-    }
-
-    private boolean hasSpaceRequirement() {
-        return structureType.getMinSize() > 0;
-    }
-
-    private boolean hasRangeRequirement() {
-        return structureType.getRangeRadius() > 0;
-    }
-
-    private boolean hasUnmetRequirement() {
-        if (hasSpaceRequirement() && !getSpaceStatus().satisfied()) return true;
-        for (var status : getRequirementStatuses()) {
-            if (!status.satisfied()) return true;
-        }
-        if (hasRangeRequirement()) {
-            for (var status : getRangeRequirementStatuses()) {
-                if (!status.satisfied()) return true;
-            }
-        }
-        return false;
-    }
-
-    private GeneralLayout computeGeneralLayout() {
-        int y = CONTENT_START + BUTTON_ROW_HEIGHT * 3;
-        int residentY = -1, workerY = -1;
-
-        if (isHouse() && !inhabitants.isEmpty()) {
-            residentY = y;
-            y += BUTTON_ROW_HEIGHT;
-        }
-        if (hasJob() && !inhabitants.isEmpty()) {
-            workerY = y;
-            y += BUTTON_ROW_HEIGHT;
-        }
-        return new GeneralLayout(residentY, workerY, y - CONTENT_START);
-    }
-
-    private DebugLayout computeDebugLayout() {
-        int y = CONTENT_START;
-        int recalculateY = y;
-        y += BUTTON_ROW_HEIGHT;
-        int rangeToggleY = -1;
-        if (hasRangeRequirement()) {
-            rangeToggleY = y;
-            y += BUTTON_ROW_HEIGHT;
-        }
-        return new DebugLayout(recalculateY, rangeToggleY, y - CONTENT_START);
-    }
-
-    private RequirementsLayout computeRequirementsLayout() {
-        int y = CONTENT_START;
-        int spaceY = -1, reqY = -1, rangeReqY = -1;
-
-        if (hasSpaceRequirement()) {
-            spaceY = y;
-            y += TEXT_ROW_HEIGHT;
-        }
-        if (!structureType.getRequirements().isEmpty()) {
-            reqY = y;
-            y += REQ_ROW_HEIGHT;
-        }
-        if (hasRangeRequirement() && !structureType.getRangeRequirements().isEmpty()) {
-            rangeReqY = y;
-            y += REQ_ROW_HEIGHT;
-        }
-        return new RequirementsLayout(spaceY, reqY, rangeReqY, y - CONTENT_START);
-    }
-
-    private WorkAreaLayout computeWorkAreaLayout() {
-        int y = CONTENT_START + TEXT_ROW_HEIGHT;
-        int sliderY = y;
-        y += BUTTON_ROW_HEIGHT;
-        int buttonY = y;
-        y += BUTTON_ROW_HEIGHT;
-        int toggleY = y;
-        y += BUTTON_ROW_HEIGHT;
-        return new WorkAreaLayout(sliderY, buttonY, toggleY, y - CONTENT_START);
-    }
-
-    private int panelHeight() {
-        int extra = Math.max(computeGeneralLayout().totalExtra(),
-                Math.max(computeRequirementsLayout().totalExtra(),
-                        Math.max(hasWorkArea() ? computeWorkAreaLayout().totalExtra() : 0,
-                                computeDebugLayout().totalExtra())));
-        return BASE_HEIGHT + extra;
-    }
-
-    private String labelFor(String assignedId) {
-        if (assignedId == null || assignedId.isEmpty()) return "None";
-        return inhabitants.stream()
-                .filter(i -> i.id().equals(assignedId))
-                .map(InhabitantEntry::name)
-                .findFirst()
-                .orElse("None");
-    }
-
-    private Component requirementsTabLabel() {
-        return BeveledBox.withAlertMark("Requirements", hasUnmetRequirement());
-    }
-
-    private Component tabLabel(Tab tab) {
-        return switch (tab) {
-            case GENERAL -> Component.literal("General");
-            case REQUIREMENTS -> requirementsTabLabel();
-            case WORK_AREA -> Component.literal("Work Area");
-            case DEBUG -> Component.literal("Debug");
-        };
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-        int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - panelHeight()) / 2;
-
-        var tabs = new ArrayList<Tab>();
-        tabs.add(Tab.GENERAL);
-        tabs.add(Tab.REQUIREMENTS);
-        if (hasWorkArea()) tabs.add(Tab.WORK_AREA);
-        tabs.add(Tab.DEBUG);
-        int tabWidth = (PANEL_WIDTH - 20) / tabs.size();
-
-        for (int i = 0; i < tabs.size(); i++) {
-            var tab = tabs.get(i);
-            addRenderableWidget(new NiceTabButton(left + 10 + tabWidth * i, top + TAB_Y, tabWidth, TAB_HEIGHT,
-                    tabLabel(tab), () -> currentTab == tab, () -> {
-                currentTab = tab;
-                rebuildWidgets();
-            }));
-        }
-
-        if (currentTab == Tab.GENERAL) {
-            initGeneralTab(left, top);
-        } else if (currentTab == Tab.WORK_AREA) {
-            initWorkAreaTab(left, top);
-        } else if (currentTab == Tab.DEBUG) {
-            initDebugTab(left, top);
-        }
-    }
-
-    private void initDebugTab(int left, int top) {
-        var layout = computeDebugLayout();
-
-        addRenderableWidget(Button.builder(Component.literal("Recalculate Area"), button -> {
-            ModNetwork.sendRecalculateStructure(markerPos);
-            onClose();
-        }).pos(left + 10, top + layout.recalculateY()).size(PANEL_WIDTH - 20, 20).build());
-
-        if (layout.rangeToggleY() >= 0) {
-            boolean showing = RangeTracker.isShowingRange(markerPos);
-            addRenderableWidget(Button.builder(
-                    Component.literal(showing ? "Hide Range" : "Show Range"),
-                    button -> {
-                        RangeTracker.toggleRange(markerPos);
-                        rebuildWidgets();
-                    }
-            ).pos(left + 10, top + layout.rangeToggleY()).size(PANEL_WIDTH - 20, 20).build());
-        }
-    }
-
-    private void initWorkAreaTab(int left, int top) {
-        var layout = computeWorkAreaLayout();
-
-        addRenderableWidget(new WorkAreaRadiusSlider(left + 10, top + layout.sliderY(), PANEL_WIDTH - 20, 20,
-                workAreaRadius, radius -> {
-            workAreaRadius = radius;
-            ModNetwork.sendSetWorkAreaRadius(markerPos, radius);
-        }));
-
-        addRenderableWidget(Button.builder(Component.literal("Set Center of Workarea"), button -> {
-            WorldPickMode.activate(markerPos, structureName, structureType.getRangeRadius());
-            onClose();
-        }).pos(left + 10, top + layout.buttonY()).size(PANEL_WIDTH - 20, 20).build());
-
-        boolean showing = WorkAreaTracker.isShowingWorkArea(markerPos);
-        addRenderableWidget(Button.builder(
-                Component.literal(showing ? "Hide Workarea" : "Show Workarea"),
-                button -> {
-                    WorkAreaTracker.toggleWorkArea(markerPos);
-                    rebuildWidgets();
-                }
-        ).pos(left + 10, top + layout.toggleY()).size(PANEL_WIDTH - 20, 20).build());
-    }
-
-    private void initGeneralTab(int left, int top) {
-        var layout = computeGeneralLayout();
-
-        nameField = new EditBox(font, left + 10, top + CONTENT_START, PANEL_WIDTH - 20, 20, Component.literal("Name"));
-        nameField.setMaxLength(32);
-        nameField.setValue(structureName);
-        nameField.setHint(Component.literal("Structure name..."));
-        addRenderableWidget(nameField);
-
-        addRenderableWidget(Button.builder(Component.literal("Rename"), button -> {
-            String newName = nameField.getValue().trim();
-            if (!newName.isEmpty() && !newName.equals(structureName)) {
-                ModNetwork.sendRenameStructure(markerPos, newName);
-                structureName = newName;
-            }
-        }).pos(left + 10, top + CONTENT_START + BUTTON_ROW_HEIGHT).size(PANEL_WIDTH - 20, 20).build());
-
-        addRenderableWidget(Button.builder(
-                Component.literal("Type: " + structureType.getDisplayName()),
-                button -> {
-                    var types = StructureType.values();
-                    int next = (structureType.ordinal() + 1) % types.length;
-                    structureType = types[next];
-                    ModNetwork.sendSetStructureType(markerPos, structureType.name());
-                    rebuildWidgets();
-                }
-        ).pos(left + 10, top + CONTENT_START + BUTTON_ROW_HEIGHT * 2).size(PANEL_WIDTH - 20, 20).build());
-
-        if (layout.residentY() >= 0) {
-            addRenderableWidget(Button.builder(
-                    Component.literal("Resident: " + labelFor(assignedInhabitantId)),
-                    button -> openResidentPicker()
-            ).pos(left + 10, top + layout.residentY()).size(PANEL_WIDTH - 20, 20).build());
-        }
-
-        if (layout.workerY() >= 0) {
-            addRenderableWidget(Button.builder(
-                    Component.literal("Worker: " + labelFor(assignedWorkerId)),
-                    button -> openWorkerPicker()
-            ).pos(left + 10, top + layout.workerY()).size(PANEL_WIDTH - 20, 20).build());
-        }
-    }
-
     private void openResidentPicker() {
         var candidates = inhabitants.stream()
                 .map(i -> new InhabitantSelectionScreen.Candidate(i.id(), i.entityUuid(), i.name(),
                         i.homed() ? "Housed" : "", i.homed() && !i.id().equals(assignedInhabitantId)))
                 .toList();
-        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this, Component.literal("Assign Resident"),
-                candidates, assignedInhabitantId, id -> {
+        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this,
+                Component.literal("Assign Resident"), candidates, assignedInhabitantId, id -> {
             assignedInhabitantId = id;
             ModNetwork.sendAssignHouse(markerPos, id);
         }));
@@ -394,109 +340,22 @@ public class StructureMarkerScreen extends Screen {
                 .map(i -> new InhabitantSelectionScreen.Candidate(i.id(), i.entityUuid(), i.name(),
                         i.jobLabel(), !i.jobLabel().isEmpty() && !i.id().equals(assignedWorkerId)))
                 .toList();
-        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this, Component.literal("Assign Worker"),
-                candidates, assignedWorkerId, id -> {
+        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this,
+                Component.literal("Assign Worker"), candidates, assignedWorkerId, id -> {
             assignedWorkerId = id;
             ModNetwork.sendAssignWorker(markerPos, id);
         }));
     }
 
-    private void drawCentered(GuiGraphics graphics, String text, int y, int color) {
-        graphics.drawString(font, text, width / 2 - font.width(text) / 2, y, color, false);
-    }
-
-    @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
-
-        int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - panelHeight()) / 2;
-
-        drawCentered(graphics, structureName, top + 8, TEXT_DARK);
-        drawCentered(graphics, structureType.getDisplayName(), top + 22, 0xFF8A6D00);
-
-        if (currentTab == Tab.REQUIREMENTS) {
-            renderRequirementsTab(graphics, mouseX, mouseY, left, top);
-        } else if (currentTab == Tab.WORK_AREA) {
-            drawCentered(graphics, "Center: " + workAreaCenter.getX() + ", " + workAreaCenter.getY() + ", " + workAreaCenter.getZ(),
-                    top + CONTENT_START, TEXT_LABEL);
+    private static List<InhabitantEntry> parseInhabitants(String data) {
+        var list = new ArrayList<InhabitantEntry>();
+        if (data == null || data.isEmpty()) return list;
+        for (var entry : data.split(",")) {
+            var fields = entry.split(ModNetwork.INHABITANT_FIELD_SEP, -1);
+            if (fields.length < 5) continue;
+            list.add(new InhabitantEntry(fields[0], UUID.fromString(fields[1]), fields[2], fields[3],
+                    "1".equals(fields[4])));
         }
-    }
-
-    private void renderRequirementsTab(GuiGraphics graphics, int mouseX, int mouseY, int left, int top) {
-        var layout = computeRequirementsLayout();
-        Component hoveredTooltip = null;
-
-        if (layout.spaceY() >= 0) {
-            var spaceStatus = getSpaceStatus();
-            int color = spaceStatus.satisfied() ? SATISFIED : UNSATISFIED;
-            drawCentered(graphics, "Space: " + spaceStatus.found() + "/" + spaceStatus.required(),
-                    top + layout.spaceY(), color);
-        }
-
-        if (layout.reqY() >= 0) {
-            hoveredTooltip = drawRequirementRow(graphics, mouseX, mouseY, left, top + layout.reqY(),
-                    "Requirements:", structureType.getRequirements(), getRequirementStatuses());
-        }
-
-        if (layout.rangeReqY() >= 0) {
-            var tooltip = drawRequirementRow(graphics, mouseX, mouseY, left, top + layout.rangeReqY(),
-                    "Nearby (r=" + structureType.getRangeRadius() + "):", structureType.getRangeRequirements(), getRangeRequirementStatuses());
-            if (tooltip != null) hoveredTooltip = tooltip;
-        }
-
-        if (hoveredTooltip != null) {
-            graphics.renderComponentTooltip(font, List.of(hoveredTooltip), mouseX, mouseY, net.minecraft.world.item.ItemStack.EMPTY);
-        }
-    }
-
-    private Component drawRequirementRow(GuiGraphics graphics, int mouseX, int mouseY, int left, int rowTop,
-                                          String label, List<StructureType.Requirement> reqs,
-                                          List<DominionStructure.RequirementStatus> statuses) {
-        graphics.drawString(font, label, left + 10, rowTop, TEXT_LABEL, false);
-        int iconY = rowTop + 14;
-
-        int totalWidth = reqs.size() * SLOT_SIZE + (reqs.size() - 1) * SLOT_GAP;
-        int startX = (width - totalWidth) / 2;
-
-        Component hoveredTooltip = null;
-
-        for (int i = 0; i < reqs.size(); i++) {
-            var req = reqs.get(i);
-            boolean satisfied = i < statuses.size() && statuses.get(i).satisfied();
-            int borderColor = satisfied ? 0xFF22CC22 : 0xFFCC2222;
-            int bgColor = satisfied ? 0xFF1A3A1A : 0xFF3A1A1A;
-
-            int slotX = startX + i * (SLOT_SIZE + SLOT_GAP);
-
-            graphics.fill(slotX, iconY, slotX + SLOT_SIZE, iconY + SLOT_SIZE, borderColor);
-            graphics.fill(slotX + 1, iconY + 1, slotX + SLOT_SIZE - 1, iconY + SLOT_SIZE - 1, bgColor);
-
-            graphics.renderItem(req.icon().get(), slotX + 2, iconY + 2);
-
-            if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE && mouseY >= iconY && mouseY < iconY + SLOT_SIZE) {
-                int found = i < statuses.size() ? statuses.get(i).found() : 0;
-                String status = satisfied ? "OK" : found + "/" + req.count();
-                hoveredTooltip = Component.literal(req.displayName() + " (" + status + ")");
-            }
-        }
-
-        return hoveredTooltip;
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
-
-        int ph = panelHeight();
-        int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - ph) / 2;
-
-        BeveledBox.draw(graphics, left, top, PANEL_WIDTH, ph, PANEL_FILL, false);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
+        return list;
     }
 }

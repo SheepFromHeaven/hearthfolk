@@ -1,0 +1,78 @@
+{
+  "id": "dominion_screen",
+  "modId": "minenow",
+  "width": 220,
+  "height": 175,
+  "actions": ["on_input", "rename", "toggle_range", "requests"],
+  "bindingsSchema": {
+    "name":               { "type": "string",  "previewValue": "My Dominion" },
+    "tier":               { "type": "string",  "previewValue": "Village" },
+    "inhabitants_header": { "type": "string",  "previewValue": "3 inhabitants" },
+    "range_btn_label":    { "type": "string",  "previewValue": "Show Range" }
+  },
+  "widgets": [
+    {
+      "id": "panel_main", "type": "panel",
+      "x": 0, "y": 0, "w": 220, "h": 175,
+      "text": "", "icon": null,
+      "props": { "style": "default" }
+    },
+    {
+      "id": "label_name", "type": "label",
+      "x": 0, "y": 8, "w": 220, "h": 10,
+      "text": "Dominion", "icon": null,
+      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "parentId": "panel_main",
+      "bindings": { "text": "name" }
+    },
+    {
+      "id": "label_tier", "type": "label",
+      "x": 0, "y": 22, "w": 220, "h": 10,
+      "text": "Village", "icon": null,
+      "props": { "color": "-8163072", "shadow": "false", "align": "center" },
+      "parentId": "panel_main",
+      "bindings": { "text": "tier" }
+    },
+    {
+      "id": "input_name", "type": "input",
+      "x": 10, "y": 35, "w": 200, "h": 20,
+      "text": "", "icon": null,
+      "props": { "max_length": "32", "hint_text": "Dominion name..." },
+      "parentId": "panel_main",
+      "action": "on_input"
+    },
+    {
+      "id": "btn_rename", "type": "button",
+      "x": 10, "y": 62, "w": 200, "h": 20,
+      "text": "Rename", "icon": null,
+      "props": {},
+      "parentId": "panel_main",
+      "action": "rename"
+    },
+    {
+      "id": "btn_range", "type": "button",
+      "x": 10, "y": 88, "w": 200, "h": 20,
+      "text": "Show Range", "icon": null,
+      "props": {},
+      "parentId": "panel_main",
+      "action": "toggle_range",
+      "bindings": { "text": "range_btn_label" }
+    },
+    {
+      "id": "btn_requests", "type": "button",
+      "x": 10, "y": 114, "w": 200, "h": 20,
+      "text": "Requests", "icon": null,
+      "props": {},
+      "parentId": "panel_main",
+      "action": "requests"
+    },
+    {
+      "id": "label_inhabitants_header", "type": "label",
+      "x": 10, "y": 140, "w": 200, "h": 10,
+      "text": "0 inhabitants", "icon": null,
+      "props": { "color": "4210752", "shadow": "false" },
+      "parentId": "panel_main",
+      "bindings": { "text": "inhabitants_header" }
+    }
+  ]
+}

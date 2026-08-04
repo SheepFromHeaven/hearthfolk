@@ -1,0 +1,34 @@
+{
+  "id": "requests_screen",
+  "modId": "minenow",
+  "width": 280,
+  "height": 220,
+  "actions": ["close"],
+  "bindingsSchema": {
+    "title": { "type": "string", "previewValue": "Requests — My Dominion" }
+  },
+  "widgets": [
+    {
+      "id": "panel_main", "type": "panel",
+      "x": 0, "y": 0, "w": 280, "h": 220,
+      "text": "", "icon": null,
+      "props": { "style": "default" }
+    },
+    {
+      "id": "label_title", "type": "label",
+      "x": 0, "y": 8, "w": 280, "h": 10,
+      "text": "Requests", "icon": null,
+      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "parentId": "panel_main",
+      "bindings": { "text": "title" }
+    },
+    {
+      "id": "btn_close", "type": "button",
+      "x": 90, "y": 194, "w": 100, "h": 20,
+      "text": "Close", "icon": null,
+      "props": {},
+      "parentId": "panel_main",
+      "action": "close"
+    }
+  ]
+}
