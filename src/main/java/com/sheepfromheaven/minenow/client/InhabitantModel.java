@@ -4,13 +4,11 @@ import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.dominion.JobType;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.resources.Identifier;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
 import software.bernie.geckolib.constant.dataticket.DataTicket;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.base.GeoRenderState;
 
-@OnlyIn(Dist.CLIENT)
 public class InhabitantModel extends GeoModel<InhabitantEntity> {
     /** {@link JobType} ordinal captured per-frame by {@link InhabitantRenderer}, or -1 when unemployed. */
     public static final DataTicket<Integer> JOB_TYPE = DataTicket.create("minenow_job_type", Integer.class);

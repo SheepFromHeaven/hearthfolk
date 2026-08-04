@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -115,7 +115,7 @@ public class StructureRequirementsConfig {
                     LOGGER.warn("Invalid block '{}' in {} requirements, skipping", blockStr, typeName);
                     continue;
                 }
-                matcher = state -> ForgeRegistries.BLOCKS.getKey(state.getBlock()).equals(blockId);
+                matcher = state -> blockId.equals(BuiltInRegistries.BLOCK.getKey(state.getBlock()));
                 String iconBlock = obj.has("icon") ? obj.get("icon").getAsString() : blockStr;
                 icon = iconSupplier(iconBlock);
             } else {
@@ -132,8 +132,8 @@ public class StructureRequirementsConfig {
         return () -> {
             var id = Identifier.tryParse(itemId);
             if (id == null) return ItemStack.EMPTY;
-            var item = ForgeRegistries.ITEMS.getValue(id);
-            return item != null && item != net.minecraft.world.item.Items.AIR ? new ItemStack(item) : ItemStack.EMPTY;
+            var itemOpt = BuiltInRegistries.ITEM.getOptional(id);
+            return itemOpt.isPresent() && itemOpt.get() != net.minecraft.world.item.Items.AIR ? new ItemStack(itemOpt.get()) : ItemStack.EMPTY;
         };
     }
 

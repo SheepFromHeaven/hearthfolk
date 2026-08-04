@@ -6,23 +6,23 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.client.gui.widget.ForgeSlider;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
 
 public class ConfigScreen extends Screen {
     private final Screen parent;
-    private ForgeSlider radiusSlider;
-    private ForgeSlider roomSizeSlider;
-    private ForgeSlider maxTrunkSizeSlider;
+    private ExtendedSlider radiusSlider;
+    private ExtendedSlider roomSizeSlider;
+    private ExtendedSlider maxTrunkSizeSlider;
     private Checkbox debugViewCheckbox;
 
     // Kept out of MineNow's constructor so its class file never references Screen directly;
     // referencing a client-only class there crashes mod construction on a dedicated server.
-    public static void registerExtensionPoint(FMLJavaModLoadingContext context) {
-        context.registerExtensionPoint(
-                ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new ConfigScreenHandler.ConfigScreenFactory(ConfigScreen::new));
+    public static void registerExtensionPoint(ModContainer modContainer) {
+        modContainer.registerExtensionPoint(
+                IConfigScreenFactory.class,
+                (mc, parent) -> new ConfigScreen(parent));
     }
 
     public ConfigScreen(Screen parent) {
@@ -36,19 +36,19 @@ public class ConfigScreen extends Screen {
         int centerX = width / 2;
         int y = height / 4;
 
-        radiusSlider = new ForgeSlider(
+        radiusSlider = new ExtendedSlider(
                 centerX - 150, y, 300, 20,
                 Component.literal("Dominion Radius: "), Component.empty(),
                 16, 256, Config.defaultDominionRadius, 1, 0, true);
         addRenderableWidget(radiusSlider);
 
-        roomSizeSlider = new ForgeSlider(
+        roomSizeSlider = new ExtendedSlider(
                 centerX - 150, y + 30, 300, 20,
                 Component.literal("Max Room Size: "), Component.empty(),
                 50, 2000, Config.maxRoomSize, 10, 0, true);
         addRenderableWidget(roomSizeSlider);
 
-        maxTrunkSizeSlider = new ForgeSlider(
+        maxTrunkSizeSlider = new ExtendedSlider(
                 centerX - 150, y + 60, 300, 20,
                 Component.literal("Max Trunk Size: "), Component.empty(),
                 32, 2000, Config.maxTrunkSize, 10, 0, true);

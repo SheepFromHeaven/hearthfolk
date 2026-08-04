@@ -7,8 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.renderer.base.GeoRenderState;
 import software.bernie.geckolib.renderer.base.GeoRenderer;
@@ -22,7 +21,6 @@ import java.util.EnumMap;
  * whose {@code fishing} hook is out, so for an NPC we force it via the {@code minecraft:item_model}
  * component pointing at {@link #CAST_ROD_MODEL}.
  */
-@OnlyIn(Dist.CLIENT)
 public class FisherRodInHandLayer<O, R extends GeoRenderState> extends ItemInHandGeoLayer<InhabitantEntity, O, R> {
     private static final Identifier CAST_ROD_MODEL = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "fishing_rod_cast");
 

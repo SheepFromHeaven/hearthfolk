@@ -23,7 +23,7 @@ import java.util.UUID;
 public class GoHomeGoalTests {
 
     public static void inhabitantSleepsInAssignedBedAtNight(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var bedRelPos = new BlockPos(3, 1, 3);
         helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
@@ -49,7 +49,7 @@ public class GoHomeGoalTests {
     }
 
     public static void inhabitantWalksHomeWhenRequested(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
@@ -183,6 +183,6 @@ public class GoHomeGoalTests {
                 }
             }
         }
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
     }
 }

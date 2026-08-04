@@ -20,7 +20,7 @@ import java.util.UUID;
 public class FinishWorkGoalTests {
 
     public static void inhabitantStoresToolInStorageAtNight(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var barrelRelPos = new BlockPos(1, 1, 1);
         helper.setBlock(barrelRelPos, Blocks.BARREL);

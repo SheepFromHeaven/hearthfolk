@@ -14,7 +14,7 @@ import java.util.UUID;
 public class FisheryStorageTests {
 
     public static void storageContainersSkipsWorkstations(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var barrelRelPos = new BlockPos(1, 1, 1);
         var smokerRelPos = new BlockPos(3, 1, 1);
@@ -39,7 +39,7 @@ public class FisheryStorageTests {
     }
 
     public static void storageContainersFindsExtraContainersNotJustRequiredBarrel(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var barrelRelPos = new BlockPos(1, 1, 1);
         var chestRelPos = new BlockPos(3, 1, 1);

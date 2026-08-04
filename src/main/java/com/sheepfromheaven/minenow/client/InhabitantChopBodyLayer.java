@@ -4,8 +4,7 @@ import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.constant.dataticket.DataTicket;
 import software.bernie.geckolib.renderer.base.GeoRenderState;
@@ -21,7 +20,6 @@ import javax.annotation.Nullable;
  * entity's look pitch on top, so the torso leans back when swinging at a log above head height and
  * forward when swinging below.
  */
-@OnlyIn(Dist.CLIENT)
 public class InhabitantChopBodyLayer<T extends GeoAnimatable, O, R extends GeoRenderState> extends GeoRenderLayer<T, O, R> {
     private static final DataTicket<Float> CHOP_BODY_PITCH = DataTicket.create("minenow_chop_body_pitch", Float.class);
     private static final float BODY_PITCH_SCALE = 0.35f;

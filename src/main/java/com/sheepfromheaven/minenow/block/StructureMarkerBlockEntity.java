@@ -183,7 +183,6 @@ public class StructureMarkerBlockEntity extends BlockEntity {
         workAreaRadius = input.getIntOr("WorkAreaRadius", 0);
     }
 
-    @Override
     public AABB getRenderBoundingBox() {
         var box = new AABB(getBlockPos());
 

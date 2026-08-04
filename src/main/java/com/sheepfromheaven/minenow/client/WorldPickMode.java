@@ -9,10 +9,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.client.gui.overlay.ForgeLayeredDraw;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Client-only "pick a block in the world" mode used by the structure marker GUI's work-area
@@ -90,28 +91,26 @@ public class WorldPickMode {
         deactivate();
     }
 
-    public static void register() {
-        InputEvent.MouseButton.Pre.BUS.addListener(event -> {
+    public static void register(IEventBus modBus) {
+        NeoForge.EVENT_BUS.addListener(InputEvent.MouseButton.Pre.class, event -> {
             if (!isActive() || event.getButton() != InputConstants.MOUSE_BUTTON_RIGHT) {
-                return false;
+                return;
             }
             if (event.getAction() == InputConstants.RELEASE) {
                 onRightClickReleased();
             }
             // Suppress vanilla's normal use-item/attack handling for the right button entirely
             // while picking, on both press and release, so a held click can't sneak through.
-            return true;
+            event.setCanceled(true);
         });
 
-        ScreenEvent.Opening.BUS.addListener(event -> {
+        NeoForge.EVENT_BUS.addListener(ScreenEvent.Opening.class, event -> {
             if (isActive()) {
                 deactivate();
             }
-            return false;
         });
 
-        AddGuiOverlayLayersEvent.BUS.addListener(event -> event.getLayeredDraw().add(
-                ForgeLayeredDraw.VANILLA_ROOT,
+        modBus.addListener(RegisterGuiLayersEvent.class, event -> event.registerAboveAll(
                 Identifier.fromNamespaceAndPath("minenow", "world_pick_overlay"),
                 (guiGraphics, deltaTracker) -> {
                     if (!isActive()) {

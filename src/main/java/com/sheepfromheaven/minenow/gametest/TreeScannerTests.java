@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 public class TreeScannerTests {
 
     public static void logOnSoilWithNaturalLeafIsRecognizedAsTree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var logPos = new BlockPos(2, 1, 2);
@@ -33,7 +33,7 @@ public class TreeScannerTests {
     }
 
     public static void logPillarWithoutLeavesIsNotATree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var logPos = new BlockPos(2, 1, 2);
@@ -49,7 +49,7 @@ public class TreeScannerTests {
     }
 
     public static void logWithOnlyPersistentLeafIsNotATree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var logPos = new BlockPos(2, 1, 2);
@@ -67,7 +67,7 @@ public class TreeScannerTests {
     }
 
     public static void logNotOnSoilIsNotATree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var stonePos = new BlockPos(2, 0, 2);
         var logPos = new BlockPos(2, 1, 2);
@@ -85,7 +85,7 @@ public class TreeScannerTests {
     }
 
     public static void logAdjacentToPlanksAbortsEvenWithLeavesHigherUp(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var lowerLogPos = new BlockPos(2, 1, 2);
@@ -108,7 +108,7 @@ public class TreeScannerTests {
     }
 
     public static void beehiveNeighborAllowsClimbingToLeavesAbove(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var lowerLogPos = new BlockPos(2, 1, 2);
@@ -130,7 +130,7 @@ public class TreeScannerTests {
     }
 
     public static void sameAxisLogNeighborAllowsClimbingToLeavesAbove(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var lowerLogPos = new BlockPos(2, 1, 2);
@@ -158,7 +158,7 @@ public class TreeScannerTests {
      * (e.g. a branch growing sideways) is part of the trunk, not a foreign structure block.
      */
     public static void differentAxisLogOfSameSpeciesIsIncludedInTrunk(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var lowerLogPos = new BlockPos(2, 1, 2);
@@ -183,7 +183,7 @@ public class TreeScannerTests {
     }
 
     public static void grassAndFlowersAdjacentToTrunkDoNotAbortTree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var lowerLogPos = new BlockPos(2, 1, 2);
@@ -217,7 +217,7 @@ public class TreeScannerTests {
      * leaves confirming it as a tree.
      */
     public static void diagonallyOffsetTrunkIsStillRecognizedAsTree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var baseLogPos = new BlockPos(2, 1, 2);
@@ -247,7 +247,7 @@ public class TreeScannerTests {
      * touching leaf block per point.
      */
     public static void findTreeShapeFloodFillsTheWholeCanopyFromEveryTrunkTouchPoint(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var baseLogPos = new BlockPos(2, 1, 2);
@@ -291,7 +291,7 @@ public class TreeScannerTests {
      * logs and canopy.
      */
     public static void trunkForkingIntoTwoDiagonalBranchesRecognizesBothBranches(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var baseLogPos = new BlockPos(2, 1, 2);
@@ -328,7 +328,7 @@ public class TreeScannerTests {
      * trunks, and shouldn't be treated as a foreign structure block that aborts recognition.
      */
     public static void vinesAdjacentToTrunkDoNotAbortTree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var lowerLogPos = new BlockPos(2, 1, 2);
@@ -350,7 +350,7 @@ public class TreeScannerTests {
     }
 
     public static void nonLogPillarTwoBlocksAwayDoesNotAbortTree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var soilPos = new BlockPos(2, 0, 2);
         var logPos = new BlockPos(2, 1, 2);

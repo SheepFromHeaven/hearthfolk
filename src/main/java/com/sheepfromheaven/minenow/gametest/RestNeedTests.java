@@ -20,7 +20,7 @@ import java.util.UUID;
 public class RestNeedTests {
 
     public static void restNeedDecaysWhileInhabitantIsAwake(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(1, 1, 1));
 
@@ -29,7 +29,7 @@ public class RestNeedTests {
     }
 
     public static void restNeedRestoresWhileInhabitantIsSleeping(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var bedRelPos = new BlockPos(3, 1, 3);
         helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()

@@ -18,7 +18,7 @@ public class FisherJobShoreTests {
      * should instead find a dry tile on the rim one block up.
      */
     public static void findShorePositionUsesRimOfSunkenWellInsteadOfTheWaterItself(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var waterRelPos = new BlockPos(4, 1, 4);
         // A well: water sunk into a ring of solid walls at its own level, with the rim (one block up,
@@ -46,7 +46,7 @@ public class FisherJobShoreTests {
      * same-level ring, not the rim - the rim fallback must not take priority over an ordinary shore.
      */
     public static void findShorePositionPrefersSameLevelRingOverRim(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         // makeFloor() fills the layer one below the test area (relative y = -1), so y = 0 is standing
         // height - the water and its neighbors need to sit there to be flush with the ground.

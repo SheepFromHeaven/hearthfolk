@@ -14,6 +14,7 @@ import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.Gizmos;
 import net.minecraft.gizmos.RectGizmo;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -26,6 +27,11 @@ public class StructureMarkerRenderer implements BlockEntityRenderer<StructureMar
     );
 
     public StructureMarkerRenderer(BlockEntityRendererProvider.Context context) {
+    }
+
+    @Override
+    public AABB getRenderBoundingBox(StructureMarkerBlockEntity blockEntity) {
+        return blockEntity.getRenderBoundingBox();
     }
 
     @Override

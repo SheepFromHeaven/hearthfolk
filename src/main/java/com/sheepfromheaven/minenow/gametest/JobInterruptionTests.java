@@ -74,7 +74,7 @@ public class JobInterruptionTests {
 
     /** Spawns a lumberjack, equips an axe, and drives the job to the chopping phase via teleport-driven ticks. */
     private static ChoppingLumberjackSetup setUpChoppingLumberjack(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(2, 1, 2);
         var barrelRelPos = new BlockPos(1, 1, 1);

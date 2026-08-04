@@ -22,7 +22,7 @@ public class DebugCommandsTests {
      * and the whole point of /minenow debugvillage is a village that's immediately playable.
      */
     public static void debugLumberyardBarrelIsStockedWithAnAxe(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
         var level = helper.getLevel();
         var center = helper.absolutePos(new BlockPos(4, 1, 4));
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", center);
@@ -39,7 +39,7 @@ public class DebugCommandsTests {
      * Same gap as the lumberyard, but for the fishery's fishing rod.
      */
     public static void debugFisheryBarrelIsStockedWithAFishingRod(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
         var level = helper.getLevel();
         var center = helper.absolutePos(new BlockPos(4, 1, 4));
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", center);
@@ -56,7 +56,7 @@ public class DebugCommandsTests {
      * Same gap, but for the tavern's cook, who needs both raw food and fuel to start working.
      */
     public static void debugTavernBarrelIsStockedWithFoodAndFuel(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
         var level = helper.getLevel();
         var center = helper.absolutePos(new BlockPos(4, 1, 4));
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", center);

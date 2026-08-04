@@ -46,7 +46,7 @@ public class CookJobTests {
      * say so generically instead of naming an arbitrary example item.
      */
     public static void missingRawFoodReportsGenericLabelInsteadOfASpecificItem(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(2, 1, 2);
         var barrelRelPos = new BlockPos(1, 1, 1);
@@ -107,7 +107,7 @@ public class CookJobTests {
     private record CookSetup(InhabitantEntity inhabitant, WorkGoal workGoal, BlockPos smokerPos) {}
 
     private static CookSetup setUpCookWithIngredients(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(2, 1, 2);
         var barrelRelPos = new BlockPos(1, 1, 1);

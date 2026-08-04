@@ -30,7 +30,7 @@ public class LumberjackLeafHarvestTests {
      * a player drops on the ground nearby.
      */
     public static void fellingTrunkHarvestsCanopyLeavesDirectly(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(2, 1, 2);
         var barrelRelPos = new BlockPos(1, 1, 1);
@@ -104,7 +104,7 @@ public class LumberjackLeafHarvestTests {
      * out of its way to get a foothold, exactly like a player would just walk through leaves.
      */
     public static void lumberjackClearsDecayableLeavesBlockingTrunkAccess(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(2, 1, 2);
         var barrelRelPos = new BlockPos(1, 1, 1);

@@ -14,7 +14,7 @@ import java.util.Set;
 public class WorkAreaTests {
 
     public static void defaultWorkAreaIsCenteredOnMarkerWithDefaultRadius(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerPos = helper.absolutePos(new BlockPos(4, 1, 4));
         var structure = new DominionStructure("Lumberyard", StructureType.LUMBERYARD, markerPos, Set.of(markerPos));
@@ -28,7 +28,7 @@ public class WorkAreaTests {
     }
 
     public static void settingWorkAreaCenterAndRadiusIsRespected(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerPos = helper.absolutePos(new BlockPos(4, 1, 4));
         var newCenter = helper.absolutePos(new BlockPos(4, 1, 8));
@@ -46,7 +46,7 @@ public class WorkAreaTests {
     }
 
     public static void workAreaRadiusIsClampedToValidRange(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerPos = helper.absolutePos(new BlockPos(4, 1, 4));
         var structure = new DominionStructure("Lumberyard", StructureType.LUMBERYARD, markerPos, Set.of(markerPos));
@@ -64,7 +64,7 @@ public class WorkAreaTests {
     }
 
     public static void findTreeInRangeIgnoresTreeOutsideMovedWorkArea(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(4, 1, 4);
         var soilRelPos = new BlockPos(4, 0, 6);
@@ -89,7 +89,7 @@ public class WorkAreaTests {
     }
 
     public static void findTreeInRangeFindsTreeAfterMovingWorkAreaCenter(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(4, 1, 4);
         var soilRelPos = new BlockPos(4, 0, 7);

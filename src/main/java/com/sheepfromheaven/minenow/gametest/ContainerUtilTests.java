@@ -14,7 +14,7 @@ import net.minecraft.world.level.block.Blocks;
 public class ContainerUtilTests {
 
     public static void extractOneRemovesExactlyOneItem(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var barrelRelPos = new BlockPos(2, 1, 2);
         helper.setBlock(barrelRelPos, Blocks.BARREL);
@@ -38,7 +38,7 @@ public class ContainerUtilTests {
     }
 
     public static void extractOneReturnsEmptyWhenNoMatch(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var barrelRelPos = new BlockPos(2, 1, 2);
         helper.setBlock(barrelRelPos, Blocks.BARREL);

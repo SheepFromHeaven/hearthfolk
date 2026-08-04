@@ -14,10 +14,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
 
-@OnlyIn(Dist.CLIENT)
 public class NpcFishingBobberRenderer extends EntityRenderer<NpcFishingBobber, NpcFishingBobberRenderState> {
     private static final Identifier TEXTURE = Identifier.withDefaultNamespace("textures/entity/fishing_hook.png");
     private static final net.minecraft.client.renderer.rendertype.RenderType HOOK_RENDER_TYPE =

@@ -9,16 +9,15 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.StandingAndWallBlockItem;
-import net.minecraftforge.eventbus.api.bus.BusGroup;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ModItems {
     public static final DeferredRegister<Item> ITEMS =
-            DeferredRegister.create(ForgeRegistries.ITEMS, MineNow.MOD_ID);
+            DeferredRegister.create(net.minecraft.core.registries.Registries.ITEM, MineNow.MOD_ID);
 
-    public static final RegistryObject<Item> TOWN_BANNER = ITEMS.register("town_banner",
+    public static final DeferredHolder<Item, Item> TOWN_BANNER = ITEMS.register("town_banner",
             () -> new StandingAndWallBlockItem(
                     ModBlocks.TOWN_BANNER.get(),
                     ModBlocks.TOWN_WALL_BANNER.get(),
@@ -29,7 +28,7 @@ public class ModItems {
                             .rarity(Rarity.UNCOMMON)
             ));
 
-    public static final RegistryObject<Item> STRUCTURE_MARKER = ITEMS.register("structure_marker",
+    public static final DeferredHolder<Item, Item> STRUCTURE_MARKER = ITEMS.register("structure_marker",
             () -> new net.minecraft.world.item.BlockItem(
                     ModBlocks.STRUCTURE_MARKER.get(),
                     new Item.Properties()
@@ -37,21 +36,21 @@ public class ModItems {
                             .stacksTo(16)
             ));
 
-    public static final RegistryObject<InvitationItem> INVITATION = ITEMS.register("invitation",
+    public static final DeferredHolder<Item, InvitationItem> INVITATION = ITEMS.register("invitation",
             () -> new InvitationItem(
                     new Item.Properties()
                             .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "invitation")))
                             .stacksTo(16)
             ));
 
-    public static final RegistryObject<TreeScannerWandItem> TREE_SCANNER_WAND = ITEMS.register("tree_scanner_wand",
+    public static final DeferredHolder<Item, TreeScannerWandItem> TREE_SCANNER_WAND = ITEMS.register("tree_scanner_wand",
             () -> new TreeScannerWandItem(
                     new Item.Properties()
                             .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "tree_scanner_wand")))
                             .stacksTo(1)
             ));
 
-    public static void register(BusGroup modBusGroup) {
-        ITEMS.register(modBusGroup);
+    public static void register(IEventBus modBus) {
+        ITEMS.register(modBus);
     }
 }

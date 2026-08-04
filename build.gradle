@@ -1,89 +1,76 @@
-// This is a minimal setup of a Forge mod workspace.
-// For complex examples (including AccessTransformers, Jar-in-Jar, and Mixin), see our examples repository.
-// https://github.com/MinecraftForge/MDKExamples
-
 plugins {
     id 'java'
     id 'idea'
-    id 'eclipse'
-    id 'net.minecraftforge.gradle' version '[7.0.3,8)'
+    id 'net.neoforged.moddev' version '2.0.143'
 }
 
 version = '0.3.0' // x-release-please-version
 group = 'com.sheepfromheaven.minenow'
 
-// Mojang ships Java 21 to end users in 1.20.5+, so your mod should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-// Include generated resources
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-minecraft {
-    mappings channel: 'parchment', version: '2025.12.20-1.21.11'
+neoForge {
+    version = '21.11.45'
 
     runs {
         configureEach {
-            workingDir = layout.projectDirectory.dir('run')
-
-            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
             systemProperty 'forge.enabledGameTestNamespaces', 'minenow'
         }
 
-        register('client') {
+        client {
+            client()
             if (org.gradle.internal.os.OperatingSystem.current().isMacOsX())
-                jvmArgs '-XstartOnFirstThread'
+                jvmArguments.add('-XstartOnFirstThread')
         }
 
-        register('server') {
-            args '--nogui'
+        server {
+            server()
+            programArguments.add('--nogui')
         }
 
-        register('gameTestServer') {
-            args '--report', layout.projectDirectory.file('build/test-report.xml').asFile.absolutePath
+        gameTestServer {
+            type = 'gameTestServer'
+            programArguments.addAll([
+                '--report',
+                layout.projectDirectory.file('build/test-report.xml').asFile.absolutePath
+            ])
         }
 
-        register('data') {
-            workingDir = layout.projectDirectory.dir('run-data')
+        data {
+            clientData()
+            programArguments.addAll([
+                '--mod', 'minenow',
+                '--all',
+                '--output', file('src/generated/resources/').absolutePath,
+                '--existing', file('src/main/resources/').absolutePath
+            ])
+        }
+    }
 
-            args '--mod', 'minenow', '--all', '--output', layout.projectDirectory.dir('src/generated/resources'), '--existing', layout.projectDirectory.dir('src/main/resources')
+    mods {
+        minenow {
+            sourceSet sourceSets.main
         }
     }
 }
 
 repositories {
-    minecraft.mavenizer(it) // In Kotlin, it = this
-    maven fg.forgeMaven
-    maven fg.minecraftLibsMaven
     mavenCentral()
     maven {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content {
-            includeGroup 'software.bernie.geckolib'
-        }
+        content { includeGroup 'software.bernie.geckolib' }
     }
+    flatDir { dirs 'libs' }
 }
 
-// ForgeGradle 7.0.31's run-task classpath computation breaks (drops the forge jar entirely)
-// when GeckoLib is declared as a normal module dependency. Confirmed dev-tooling-only bug:
-// real Forge installs apply mod dependencies (and their access transformers) fine at runtime;
-// this only breaks ./gradlew runClient/runServer/runData in this exact ForgeGradle version.
-// Workaround: resolve GeckoLib via a detached configuration and depend on the resolved file
-// directly. This sidesteps whatever broken module-dependency handling triggers the bug, while
-// still using the real, unmodified GeckoLib jar for compiling and running.
-def geckolibResolved = configurations.detachedConfiguration(
-        dependencies.create('software.bernie.geckolib:geckolib-forge-1.21.11:5.4.5')
-)
-geckolibResolved.setTransitive(false)
-
 dependencies {
-    implementation minecraft.dependency('net.minecraftforge:forge:1.21.11-61.1.0')
-    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.1'
-    implementation files(geckolibResolved.singleFile)
+    implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.11:5.4.5'
+    implementation 'sheepfromheaven.screenspec:screenspec-neoforge:0.12.0'
 }
 
 tasks.withType(JavaCompile).configureEach {
-    // Use the UTF-8 charset for Java compilation
-    // This is done by default in Java 18+, but this ensures it no matter the Java or Gradle version
     options.encoding = 'UTF-8'
 }

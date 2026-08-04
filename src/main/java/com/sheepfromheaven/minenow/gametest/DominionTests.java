@@ -29,7 +29,7 @@ import java.util.UUID;
 public class DominionTests {
 
     public static void disbandingDominionConvertsInhabitantsAndClearsData(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var bannerRelPos = new BlockPos(1, 1, 1);
@@ -72,7 +72,7 @@ public class DominionTests {
     }
 
     public static void destroyingStructureRemovesInhabitantHomeAndJob(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
@@ -120,7 +120,7 @@ public class DominionTests {
     }
 
     public static void assigningNewHomeUnassignsInhabitantFromPreviousHome(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
@@ -163,7 +163,7 @@ public class DominionTests {
     }
 
     public static void assigningNewJobUnassignsInhabitantFromPreviousJob(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
@@ -198,7 +198,7 @@ public class DominionTests {
     }
 
     public static void assigningHouseReservesBedFromVanillaVillagers(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var bedRelPos = new BlockPos(3, 1, 3);
         helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
@@ -235,7 +235,7 @@ public class DominionTests {
     }
 
     public static void assigningInhabitantToHouseWithoutBedIsRefused(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var housePos = helper.absolutePos(new BlockPos(3, 1, 3));
@@ -262,7 +262,7 @@ public class DominionTests {
     }
 
     public static void inhabitantComplainsWhenAssignedBedIsBroken(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var bedRelPos = new BlockPos(3, 1, 3);
         helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
@@ -293,7 +293,7 @@ public class DominionTests {
     }
 
     public static void findNearestStructureOfTypePicksClosestMatch(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
@@ -316,7 +316,7 @@ public class DominionTests {
     }
 
     public static void findNearestStructureOfTypeSkipsClosestWhenFilterFails(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var level = helper.getLevel();
         var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));

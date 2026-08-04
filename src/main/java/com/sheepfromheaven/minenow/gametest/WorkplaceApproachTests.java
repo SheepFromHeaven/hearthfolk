@@ -12,7 +12,7 @@ import java.util.Set;
 public class WorkplaceApproachTests {
 
     public static void approachPosIsMarkerWhenMarkerIsOnTheFloor(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         // makeFloor() fills the layer one below the test area (relative y = -1), so y = 0 is standing height.
         var markerRelPos = new BlockPos(4, 0, 4);
@@ -27,7 +27,7 @@ public class WorkplaceApproachTests {
     }
 
     public static void approachPosFindsFloorWhenMarkerIsEmbeddedHighInAShaft(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         // No floor directly under the marker - as if it were placed against a wall or ceiling several
         // blocks above the real floor, with nothing but open air in the column below it.

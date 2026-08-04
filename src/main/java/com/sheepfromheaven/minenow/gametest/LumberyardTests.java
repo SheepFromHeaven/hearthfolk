@@ -14,7 +14,7 @@ import java.util.Set;
 public class LumberyardTests {
 
     public static void findTreeInRangeFindsValidTree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(4, 1, 4);
         var soilRelPos = new BlockPos(4, 0, 6);
@@ -38,7 +38,7 @@ public class LumberyardTests {
     }
 
     public static void findTreeInRangeSkipsLogPillarWithoutLeaves(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(4, 1, 4);
         var soilRelPos = new BlockPos(4, 0, 6);
@@ -57,7 +57,7 @@ public class LumberyardTests {
     }
 
     public static void findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree(GameTestHelper helper) {
-        helper.makeFloor();
+        GameTestHelpers.makeFloor(helper);
 
         var markerRelPos = new BlockPos(4, 1, 4);
 

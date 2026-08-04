@@ -5,7 +5,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
  * One reusable "vanilla row" inventory shape (tool slot count, general grid size), bound to a single
@@ -21,11 +21,11 @@ import net.minecraftforge.registries.RegistryObject;
  * }</pre>
  */
 public final class VanillaRowInventoryKind {
-    private final RegistryObject<MenuType<VanillaRowMenu>> menuType;
+    private final DeferredHolder<MenuType<?>, MenuType<VanillaRowMenu>> menuType;
     private final int columns;
     private final int rows;
 
-    public VanillaRowInventoryKind(RegistryObject<MenuType<VanillaRowMenu>> menuType, int columns, int rows) {
+    public VanillaRowInventoryKind(DeferredHolder<MenuType<?>, MenuType<VanillaRowMenu>> menuType, int columns, int rows) {
         this.menuType = menuType;
         this.columns = columns;
         this.rows = rows;
