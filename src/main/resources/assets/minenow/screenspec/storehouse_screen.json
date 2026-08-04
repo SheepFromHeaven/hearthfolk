@@ -1,0 +1,64 @@
+{
+  "id": "storehouse_screen",
+  "modId": "minenow",
+  "width": 220,
+  "height": 200,
+  "actions": ["assign_worker"],
+  "bindingsSchema": {
+    "storehouse_name":  { "type": "string", "previewValue": "Storehouse" },
+    "worker_btn_label": { "type": "string", "previewValue": "Worker: Alice" },
+    "request_count":    { "type": "string", "previewValue": "Pending: 3 requests" }
+  },
+  "widgets": [
+    {
+      "id": "panel_main", "type": "panel",
+      "x": 0, "y": 0, "w": 220, "h": 200,
+      "text": "", "icon": null,
+      "props": { "style": "default" }
+    },
+    {
+      "id": "label_name", "type": "label",
+      "x": 0, "y": 8, "w": 220, "h": 10,
+      "text": "Storehouse", "icon": null,
+      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "parentId": "panel_main",
+      "bindings": { "text": "storehouse_name" }
+    },
+    {
+      "id": "label_request_count", "type": "label",
+      "x": 0, "y": 22, "w": 220, "h": 10,
+      "text": "Pending: 0 requests", "icon": null,
+      "props": { "color": "-7705344", "shadow": "false", "align": "center" },
+      "parentId": "panel_main",
+      "bindings": { "text": "request_count" }
+    },
+    {
+      "id": "tabs_main", "type": "tabs",
+      "x": 0, "y": 40, "w": 220, "h": 160,
+      "text": "", "icon": null,
+      "props": {},
+      "parentId": "panel_main"
+    },
+    { "id": "tab_general", "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "General", "icon": null, "props": {}, "parentId": "tabs_main" },
+    { "id": "tab_requests", "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "Requests", "icon": null, "props": {}, "parentId": "tabs_main" },
+    {
+      "id": "btn_worker", "type": "button",
+      "x": 10, "y": 10, "w": 200, "h": 20,
+      "text": "Worker: None", "icon": null, "props": {},
+      "parentId": "tab_general", "action": "assign_worker",
+      "bindings": { "text": "worker_btn_label" }
+    },
+    {
+      "id": "list_requests", "type": "list",
+      "x": 0, "y": 4, "w": 220, "h": 148,
+      "text": "", "icon": null,
+      "props": { "item_height": "18" },
+      "parentId": "tab_requests",
+      "item_template": [
+        { "type": "label", "id": "label_priority", "x": 4, "y": 2, "w": 40, "h": 8, "text": "", "icon": null, "props": { "color": "16711680" } },
+        { "type": "label", "id": "label_item",     "x": 46, "y": 2, "w": 170, "h": 8, "text": "", "icon": null, "props": { "color": "4210752" } },
+        { "type": "label", "id": "label_amount",   "x": 4, "y": 10, "w": 212, "h": 8, "text": "", "icon": null, "props": { "color": "8421504", "shadow": "false" } }
+      ]
+    }
+  ]
+}
