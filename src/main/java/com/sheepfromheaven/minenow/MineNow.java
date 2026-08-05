@@ -84,6 +84,14 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.FisheryStorageTests::storageContainersSkipsWorkstations);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "storage_containers_finds_extra_containers_not_just_required_barrel"),
                             com.sheepfromheaven.minenow.gametest.FisheryStorageTests::storageContainersFindsExtraContainersNotJustRequiredBarrel);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "storehouse_with_filter_rejects_disallowed_item"),
+                            com.sheepfromheaven.minenow.gametest.CourierJobTests::storehouseWithFilterRejectsDisallowedItem);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "storehouse_without_filter_accepts_any_item"),
+                            com.sheepfromheaven.minenow.gametest.CourierJobTests::storehouseWithoutFilterAcceptsAnyItem);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "courier_prefers_nearest_storehouse_over_farther_one"),
+                            com.sheepfromheaven.minenow.gametest.CourierJobTests::courierPrefersNearestStorehouseOverFartherOne);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "courier_skips_storehouse_that_filters_out_the_item"),
+                            com.sheepfromheaven.minenow.gametest.CourierJobTests::courierSkipsStorehouseThatFiltersOutTheItem);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "log_on_soil_with_natural_leaf_is_recognized_as_tree"),
                             com.sheepfromheaven.minenow.gametest.TreeScannerTests::logOnSoilWithNaturalLeafIsRecognizedAsTree);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "log_pillar_without_leaves_is_not_a_tree"),

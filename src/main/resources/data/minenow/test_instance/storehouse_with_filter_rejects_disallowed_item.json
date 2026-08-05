@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:storehouse_with_filter_rejects_disallowed_item",
+  "structure": "minenow:room_5x4x5",
+  "max_ticks": 20
+}
