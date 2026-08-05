@@ -35,6 +35,9 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.RegisterCommandsEvent.class, event ->
                 com.sheepfromheaven.minenow.command.DebugCommands.register(event.getDispatcher()));
 
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.class,
+                com.sheepfromheaven.minenow.dev.DevStarterKit::onPlayerLoggedIn);
+
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.ServerTickEvent.Post.class, event -> {
             com.sheepfromheaven.minenow.entity.job.TreeScannerDebugger.serverTick(event.getServer());
             var server = event.getServer();
@@ -196,6 +199,7 @@ public final class MineNow {
             registerRenderers(modBus);
             com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(modContainer);
             com.sheepfromheaven.minenow.client.WorldPickMode.register(modBus);
+            com.sheepfromheaven.minenow.client.DevWorldBootstrap.register();
             NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.ClientTickEvent.Post.class, event ->
                     com.sheepfromheaven.minenow.client.TreeScanGizmoRenderer.onClientTick());
         }

@@ -25,6 +25,13 @@ neoForge {
                 jvmArguments.add('-XstartOnFirstThread')
         }
 
+        playtest {
+            client()
+            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX())
+                jvmArguments.add('-XstartOnFirstThread')
+            systemProperty 'minenow.devWorld', 'true'
+        }
+
         server {
             server()
             programArguments.add('--nogui')
@@ -52,6 +59,22 @@ neoForge {
     mods {
         minenow {
             sourceSet sourceSets.main
+        }
+    }
+}
+
+// Skip the "Accessibility Onboarding" (narrator) screen that Minecraft shows before the title
+// screen on a totally fresh run directory - it would otherwise block the auto-join in
+// DevWorldBootstrap on first launch. Only ever adds the line; never overwrites an existing
+// options.txt the user has customized.
+tasks.named('runPlaytest') {
+    doFirst {
+        def optionsFile = layout.projectDirectory.file('run/options.txt').asFile
+        if (!optionsFile.exists()) {
+            optionsFile.parentFile.mkdirs()
+            optionsFile.text = "onboardAccessibility:false\n"
+        } else if (!optionsFile.text.contains('onboardAccessibility:')) {
+            optionsFile.text += "\nonboardAccessibility:false\n"
         }
     }
 }
