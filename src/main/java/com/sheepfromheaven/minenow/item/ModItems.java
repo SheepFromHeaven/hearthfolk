@@ -2,12 +2,14 @@ package com.sheepfromheaven.minenow.item;
 
 import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.block.ModBlocks;
+import com.sheepfromheaven.minenow.entity.ModEntities;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -48,6 +50,20 @@ public class ModItems {
                     new Item.Properties()
                             .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "tree_scanner_wand")))
                             .stacksTo(1)
+            ));
+
+    public static final DeferredHolder<Item, StructureWandItem> STRUCTURE_WAND = ITEMS.register("structure_wand",
+            () -> new StructureWandItem(
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "structure_wand")))
+                            .stacksTo(1)
+            ));
+
+    public static final DeferredHolder<Item, SpawnEggItem> INHABITANT_SPAWN_EGG = ITEMS.register("inhabitant_spawn_egg",
+            () -> new SpawnEggItem(
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "inhabitant_spawn_egg")))
+                            .spawnEgg(ModEntities.INHABITANT.get())
             ));
 
     public static void register(IEventBus modBus) {
