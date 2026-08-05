@@ -76,7 +76,7 @@ public class GoHomeGoalTests {
         // Spawn directly in front of the door rather than behind the house.
         // The walk-around-house path is tested by inhabitantWalksAroundHouseToBed;
         // this test only needs to verify that the door is opened to pass through.
-        var bedRelPos = new BlockPos(4, 1, 4);
+        var bedRelPos = new BlockPos(4, 0, 4);
         var level = helper.getLevel();
         var bedPos = helper.absolutePos(bedRelPos);
         var bannerPos = helper.absolutePos(bedRelPos);
@@ -139,33 +139,35 @@ public class GoHomeGoalTests {
     private static void buildHouseObstacle(GameTestHelper helper, HouseOpening opening) {
         clearVolumeAndFloor(helper);
 
+        // Walls at y=0..2 so the entity (walking at y=0) is fully blocked. y=3 is open sky.
         for (int x = 2; x <= 6; x++) {
-            for (int y = 1; y <= 3; y++) {
+            for (int y = 0; y <= 2; y++) {
                 helper.setBlock(new BlockPos(x, y, 2), x == 4 ? Blocks.AIR : Blocks.STONE);
                 helper.setBlock(new BlockPos(x, y, 6), Blocks.STONE);
             }
         }
         for (int z = 2; z <= 6; z++) {
-            for (int y = 1; y <= 3; y++) {
+            for (int y = 0; y <= 2; y++) {
                 helper.setBlock(new BlockPos(2, y, z), Blocks.STONE);
                 helper.setBlock(new BlockPos(6, y, z), Blocks.STONE);
             }
         }
 
         if (opening == HouseOpening.DOOR) {
-            // y=3 stays stone as the lintel above the door.
-            helper.setBlock(new BlockPos(4, 3, 2), Blocks.STONE);
-            helper.setBlock(new BlockPos(4, 1, 2), Blocks.OAK_DOOR.defaultBlockState()
+            // Lintel above the door at y=2 (stone); door occupies y=0 (lower) and y=1 (upper).
+            helper.setBlock(new BlockPos(4, 2, 2), Blocks.STONE);
+            helper.setBlock(new BlockPos(4, 0, 2), Blocks.OAK_DOOR.defaultBlockState()
                     .setValue(DoorBlock.FACING, Direction.NORTH)
                     .setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER)
                     .setValue(DoorBlock.HINGE, DoorHingeSide.LEFT));
-            helper.setBlock(new BlockPos(4, 2, 2), Blocks.OAK_DOOR.defaultBlockState()
+            helper.setBlock(new BlockPos(4, 1, 2), Blocks.OAK_DOOR.defaultBlockState()
                     .setValue(DoorBlock.FACING, Direction.NORTH)
                     .setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER)
                     .setValue(DoorBlock.HINGE, DoorHingeSide.LEFT));
         }
 
-        helper.setBlock(new BlockPos(4, 1, 4), Blocks.RED_BED.defaultBlockState()
+        // Bed at y=0 (entity walking level) so the distance check's Y component is zero.
+        helper.setBlock(new BlockPos(4, 0, 4), Blocks.RED_BED.defaultBlockState()
                 .setValue(BedBlock.FACING, Direction.NORTH)
                 .setValue(BedBlock.PART, BedPart.HEAD));
     }
