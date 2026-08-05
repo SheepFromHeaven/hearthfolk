@@ -29,7 +29,7 @@
       "id": "label_name", "type": "label",
       "x": 0, "y": 8, "w": 220, "h": 10,
       "text": "Structure", "icon": null,
-      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
       "parentId": "panel_main",
       "bindings": { "text": "structure_name" }
     },
@@ -88,7 +88,7 @@
       "id": "label_center", "type": "label",
       "x": 0, "y": 4, "w": 220, "h": 10,
       "text": "Center: 0, 64, 0", "icon": null,
-      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
       "parentId": "tab_work_area",
       "bindings": { "text": "work_area_center" }
     },
