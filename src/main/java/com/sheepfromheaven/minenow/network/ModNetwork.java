@@ -52,6 +52,7 @@ public class ModNetwork {
         registrar.playToServer(RenameStructurePacket.TYPE, RenameStructurePacket.CODEC, ModNetwork::handleRenameStructure);
         registrar.playToServer(RecalculateStructurePacket.TYPE, RecalculateStructurePacket.CODEC, ModNetwork::handleRecalculateStructure);
         registrar.playToServer(SetStructureTypePacket.TYPE, SetStructureTypePacket.CODEC, ModNetwork::handleSetStructureType);
+        registrar.playToServer(SetItemFilterPacket.TYPE, SetItemFilterPacket.CODEC, ModNetwork::handleSetItemFilter);
         registrar.playToServer(GoHomePacket.TYPE, GoHomePacket.CODEC, ModNetwork::handleGoHome);
         registrar.playToServer(ViewInventoryPacket.TYPE, ViewInventoryPacket.CODEC, ModNetwork::handleViewInventory);
         registrar.playToServer(RequestInhabitantDebugPacket.TYPE, RequestInhabitantDebugPacket.CODEC, ModNetwork::handleRequestInhabitantDebug);
@@ -168,6 +169,19 @@ public class ModNetwork {
                 } catch (IllegalArgumentException ignored) {}
             }
         }
+    }
+
+    private static void handleSetItemFilter(SetItemFilterPacket msg, IPayloadContext ctx) {
+        var player = (ServerPlayer) ctx.player();
+        var level = player.level();
+        var data = DominionSavedData.get(level);
+        var dominion = data.findDominionContaining(msg.markerPos());
+        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+        var structure = dominion.getStructureAt(msg.markerPos());
+        if (structure == null) return;
+
+        structure.setItemFilter(decodeItemFilter(msg.itemFilterData()));
+        data.setDirty();
     }
 
     private static void handleGoHome(GoHomePacket msg, IPayloadContext ctx) {
@@ -365,6 +379,30 @@ public class ModNetwork {
         ClientPacketDistributor.sendToServer(new SetStructureTypePacket(markerPos, typeName));
     }
 
+    public static void sendSetItemFilter(BlockPos markerPos, String itemFilterData) {
+        ClientPacketDistributor.sendToServer(new SetItemFilterPacket(markerPos, itemFilterData));
+    }
+
+    /** Parses the comma-separated wire encoding of item ids produced by {@link #encodeItemFilter}, skipping unknown ids. */
+    private static java.util.Set<net.minecraft.world.item.Item> decodeItemFilter(String data) {
+        var items = new java.util.HashSet<net.minecraft.world.item.Item>();
+        if (data == null || data.isEmpty()) return items;
+        for (var key : data.split(",")) {
+            var id = net.minecraft.resources.Identifier.tryParse(key.trim());
+            if (id == null) continue;
+            var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+            if (item != null) items.add(item);
+        }
+        return items;
+    }
+
+    /** Wire encoding for a structure's item filter: comma-separated item ids. */
+    private static String encodeItemFilter(DominionStructure structure) {
+        return structure.getItemFilter().stream()
+                .map(item -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).toString())
+                .collect(Collectors.joining(","));
+    }
+
     public static void sendRecalculateStructure(BlockPos markerPos) {
         ClientPacketDistributor.sendToServer(new RecalculateStructurePacket(markerPos));
     }
@@ -432,7 +470,8 @@ public class ModNetwork {
                 structure.getName(), structure.getType().name(), structure.getMarkerPos(),
                 inhabitants, assignedId != null ? assignedId.toString() : "",
                 assignedWorkerId != null ? assignedWorkerId.toString() : "",
-                structure.getWorkAreaCenter(), structure.getWorkAreaRadius()
+                structure.getWorkAreaCenter(), structure.getWorkAreaRadius(),
+                encodeItemFilter(structure)
         ));
     }
 
@@ -546,6 +585,17 @@ public class ModNetwork {
                 BlockPos.STREAM_CODEC, SetStructureTypePacket::markerPos,
                 ByteBufCodecs.STRING_UTF8, SetStructureTypePacket::typeName,
                 SetStructureTypePacket::new
+        );
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    /** {@code itemFilterData} is a comma-separated list of item ids (e.g. "minecraft:coal,minecraft:iron_ingot"); empty means no filter. */
+    public record SetItemFilterPacket(BlockPos markerPos, String itemFilterData) implements CustomPacketPayload {
+        public static final Type<SetItemFilterPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "set_item_filter"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, SetItemFilterPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, SetItemFilterPacket::markerPos,
+                ByteBufCodecs.STRING_UTF8, SetItemFilterPacket::itemFilterData,
+                SetItemFilterPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
@@ -677,7 +727,7 @@ public class ModNetwork {
 
     public record OpenStructureScreenPacket(String structureName, String structureType, BlockPos markerPos,
                                             String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
-                                            BlockPos workAreaCenter, int workAreaRadius) implements CustomPacketPayload {
+                                            BlockPos workAreaCenter, int workAreaRadius, String itemFilterData) implements CustomPacketPayload {
         public static final Type<OpenStructureScreenPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_structure_screen"));
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenStructureScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureName,
@@ -688,6 +738,7 @@ public class ModNetwork {
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedWorkerId,
                 BlockPos.STREAM_CODEC, OpenStructureScreenPacket::workAreaCenter,
                 ByteBufCodecs.VAR_INT, OpenStructureScreenPacket::workAreaRadius,
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::itemFilterData,
                 OpenStructureScreenPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

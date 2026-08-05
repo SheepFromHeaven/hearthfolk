@@ -56,6 +56,11 @@ public class DominionStructure {
     private final Map<Item, Integer> desiredStock = new HashMap<>();
     /** Computed requests (URGENT from worker issues + SOFT from stock shortfalls), keyed by label. */
     private final Map<String, StructureRequest> requests = new HashMap<>();
+    /**
+     * Items this structure is willing to store, e.g. a storehouse's optional filter for what couriers
+     * may deposit here. Empty means no restriction — everything is accepted.
+     */
+    private final Set<Item> itemFilter = new HashSet<>();
 
     /** What a single worker reports it is blocked on or wants proactively restocked. */
     public record WorkerIssue(
@@ -298,6 +303,20 @@ public class DominionStructure {
     /** All active requests for this structure (URGENT + SOFT), keyed by label. Unmodifiable. */
     public Map<String, StructureRequest> getRequests() {
         return Collections.unmodifiableMap(requests);
+    }
+
+    /** True if this structure will accept {@code item} into storage - always true when no filter is set. */
+    public boolean accepts(Item item) {
+        return itemFilter.isEmpty() || itemFilter.contains(item);
+    }
+
+    public Set<Item> getItemFilter() {
+        return Collections.unmodifiableSet(itemFilter);
+    }
+
+    public void setItemFilter(Set<Item> items) {
+        itemFilter.clear();
+        itemFilter.addAll(items);
     }
 
     // --- Codec helpers (used only by DominionSavedData to persist/restore the computed request map) ---

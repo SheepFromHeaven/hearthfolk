@@ -55,8 +55,12 @@ public class DominionSavedData extends SavedData {
                     DESIRED_STOCK_ENTRY_CODEC.listOf().optionalFieldOf("desiredStock", List.of())
                             .forGetter(s -> s.getDesiredStock().entrySet().stream()
                                     .map(e -> Map.entry(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(e.getKey()).toString(), e.getValue()))
+                                    .collect(java.util.stream.Collectors.toList())),
+                    Codec.STRING.listOf().optionalFieldOf("itemFilter", List.of())
+                            .forGetter(s -> s.getItemFilter().stream()
+                                    .map(item -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).toString())
                                     .collect(java.util.stream.Collectors.toList()))
-            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius, requests, desiredStock) -> {
+            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius, requests, desiredStock, itemFilter) -> {
                 var structure = new DominionStructure(UUID.fromString(id), name, StructureType.valueOf(type),
                         markerPos, new HashSet<>(roomBlocks),
                         assignedId.isEmpty() ? null : UUID.fromString(assignedId),
@@ -70,6 +74,10 @@ public class DominionSavedData extends SavedData {
                             .getValue(net.minecraft.resources.Identifier.parse(entry.getKey()));
                     structure.setDesiredStock(item, entry.getValue());
                 }
+                structure.setItemFilter(itemFilter.stream()
+                        .map(key -> net.minecraft.core.registries.BuiltInRegistries.ITEM
+                                .getValue(net.minecraft.resources.Identifier.parse(key)))
+                        .collect(java.util.stream.Collectors.toSet()));
                 return structure;
             })
     );

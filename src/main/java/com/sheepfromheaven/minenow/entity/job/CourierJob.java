@@ -4,6 +4,7 @@ import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.dominion.StructureRequest;
+import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -95,16 +96,12 @@ public class CourierJob implements Job {
             if (req.item() == null) continue; // skip open-ended category requests
             Item item = req.item();
 
-            BlockPos src = null;
-            for (DominionStructure structure : dominion.getStructures()) {
-                if (structure.getId().equals(req.structureId())) continue; // don't pull from the requester itself
-                src = ContainerUtil.findContainerWith(level, structure.findStorageContainers(level), s -> s.is(item));
-                if (src != null) break;
-            }
-            if (src == null) continue;
-
             DominionStructure dest = dominion.getStructureById(req.structureId());
             if (dest == null) continue;
+
+            BlockPos src = findSource(dominion, level, dest, item);
+            if (src == null) continue;
+
             BlockPos dp = ContainerUtil.findContainerAccepting(level, dest.findStorageContainers(level), item.getDefaultInstance());
             if (dp == null) continue;
 
@@ -120,6 +117,27 @@ public class CourierJob implements Job {
         phase = Phase.IDLE;
         idleTicks = IDLE_WAIT_TICKS;
         return true;
+    }
+
+    /**
+     * Picks the container to fetch {@code item} from for a delivery to {@code dest}: prefers the
+     * nearest storehouse (by marker distance to {@code dest}) that both stocks the item and accepts it
+     * per its item filter, falling back to any other structure currently holding the item.
+     */
+    public static BlockPos findSource(Dominion dominion, ServerLevel level, DominionStructure dest, Item item) {
+        var storehouse = dominion.findNearestStructureOfType(StructureType.STOREHOUSE, dest.getMarkerPos(),
+                s -> !s.getId().equals(dest.getId()) && s.accepts(item)
+                        && ContainerUtil.findContainerWith(level, s.findStorageContainers(level), st -> st.is(item)) != null);
+        if (storehouse.isPresent()) {
+            return ContainerUtil.findContainerWith(level, storehouse.get().findStorageContainers(level), st -> st.is(item));
+        }
+
+        for (DominionStructure structure : dominion.getStructures()) {
+            if (structure.getId().equals(dest.getId())) continue; // don't pull from the requester itself
+            BlockPos src = ContainerUtil.findContainerWith(level, structure.findStorageContainers(level), st -> st.is(item));
+            if (src != null) return src;
+        }
+        return null;
     }
 
     private boolean tickGotoSource(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
