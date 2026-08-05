@@ -24,7 +24,7 @@
       "id": "label_name", "type": "label",
       "x": 0, "y": 8, "w": 200, "h": 10,
       "text": "Inhabitant", "icon": null,
-      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
       "parentId": "panel_main",
       "bindings": { "text": "inhabitant_name" }
     },
@@ -71,7 +71,7 @@
       "id": "label_job_status", "type": "label",
       "x": 10, "y": 92, "w": 180, "h": 10,
       "text": "Job: Idle", "icon": null,
-      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
       "parentId": "tab_general",
       "bindings": { "text": "job_status" }
     },
@@ -80,14 +80,14 @@
       "id": "label_needs_title", "type": "label",
       "x": 10, "y": 10, "w": 180, "h": 8,
       "text": "Needs", "icon": null,
-      "props": { "color": "4210752", "shadow": "false" },
+      "props": { "color": "-12566464", "shadow": "false" },
       "parentId": "tab_needs"
     },
     {
       "id": "label_shelter", "type": "label",
       "x": 20, "y": 28, "w": 160, "h": 8,
       "text": "Shelter", "icon": null,
-      "props": { "color": "4210752", "shadow": "false" },
+      "props": { "color": "-12566464", "shadow": "false" },
       "parentId": "tab_needs"
     },
     {
@@ -101,7 +101,7 @@
       "id": "label_food", "type": "label",
       "x": 20, "y": 58, "w": 160, "h": 8,
       "text": "Food", "icon": null,
-      "props": { "color": "4210752", "shadow": "false" },
+      "props": { "color": "-12566464", "shadow": "false" },
       "parentId": "tab_needs"
     },
     {
@@ -115,7 +115,7 @@
       "id": "label_rest", "type": "label",
       "x": 20, "y": 88, "w": 160, "h": 8,
       "text": "Rest", "icon": null,
-      "props": { "color": "4210752", "shadow": "false" },
+      "props": { "color": "-12566464", "shadow": "false" },
       "parentId": "tab_needs"
     },
     {
@@ -128,12 +128,12 @@
 
     {
       "id": "list_debug", "type": "list",
-      "x": 0, "y": 6, "w": 200, "h": 116,
+      "x": 3, "y": 6, "w": 194, "h": 116,
       "text": "", "icon": null,
       "props": { "item_height": "10" },
       "parentId": "tab_debug",
       "item_template": [
-        { "type": "label", "id": "text", "x": 4, "y": 1, "w": 192, "h": 8, "text": "", "icon": null, "props": { "color": "4210752" } }
+        { "type": "label", "id": "text", "x": 4, "y": 1, "w": 192, "h": 8, "text": "", "icon": null, "props": { "color": "-12566464" } }
       ]
     }
   ]

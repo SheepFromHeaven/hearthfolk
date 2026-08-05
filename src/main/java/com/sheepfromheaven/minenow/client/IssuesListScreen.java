@@ -42,6 +42,7 @@ public class IssuesListScreen extends SpecScreen {
     @Override
     protected void init() {
         super.init();
+        on("minenow.close", (id, s, v) -> onClose());
         SpecListWidget list = (SpecListWidget) getWidget("list_issues");
         if (list != null) {
             list.setItems(issues.stream()

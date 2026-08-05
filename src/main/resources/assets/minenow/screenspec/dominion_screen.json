@@ -21,7 +21,7 @@
       "id": "label_name", "type": "label",
       "x": 0, "y": 8, "w": 220, "h": 10,
       "text": "Dominion", "icon": null,
-      "props": { "color": "4210752", "shadow": "false", "align": "center" },
+      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
       "parentId": "panel_main",
       "bindings": { "text": "name" }
     },
@@ -70,7 +70,7 @@
       "id": "label_inhabitants_header", "type": "label",
       "x": 10, "y": 140, "w": 200, "h": 10,
       "text": "0 inhabitants", "icon": null,
-      "props": { "color": "4210752", "shadow": "false" },
+      "props": { "color": "-12566464", "shadow": "false" },
       "parentId": "panel_main",
       "bindings": { "text": "inhabitants_header" }
     }

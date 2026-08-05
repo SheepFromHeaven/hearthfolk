@@ -55,7 +55,7 @@
           "text": "Dominion",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -151,7 +151,7 @@
           "text": "0 inhabitants",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false"
           },
           "parentId": "panel_main",
@@ -225,7 +225,7 @@
           "text": "Inhabitant",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -353,7 +353,7 @@
           "text": "Job: Idle",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -372,7 +372,7 @@
           "text": "Needs",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false"
           },
           "parentId": "tab_needs"
@@ -387,7 +387,7 @@
           "text": "Shelter",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false"
           },
           "parentId": "tab_needs"
@@ -418,7 +418,7 @@
           "text": "Food",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false"
           },
           "parentId": "tab_needs"
@@ -449,7 +449,7 @@
           "text": "Rest",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false"
           },
           "parentId": "tab_needs"
@@ -494,7 +494,7 @@
               "text": "",
               "icon": null,
               "props": {
-                "color": "4210752"
+                "color": "-12566464"
               }
             }
           ]
@@ -539,7 +539,7 @@
           "text": "Issues",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -572,7 +572,7 @@
               "text": "",
               "icon": null,
               "props": {
-                "color": "4210752"
+                "color": "-12566464"
               }
             }
           ]
@@ -630,7 +630,7 @@
           "text": "Requests",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -690,7 +690,7 @@
           "text": "Select Inhabitant",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -790,7 +790,7 @@
           "text": "Structure",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -954,7 +954,7 @@
           "text": "Center: 0, 64, 0",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -1070,7 +1070,7 @@
           "text": "Storehouse",
           "icon": null,
           "props": {
-            "color": "4210752",
+            "color": "-12566464",
             "shadow": "false",
             "align": "center"
           },
@@ -1187,7 +1187,7 @@
               "text": "",
               "icon": null,
               "props": {
-                "color": "4210752"
+                "color": "-12566464"
               }
             },
             {
