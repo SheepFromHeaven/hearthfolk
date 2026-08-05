@@ -6,5 +6,7 @@
   "item.minenow.town_banner": "Town Banner",
   "item.minenow.structure_marker": "Structure Marker",
   "item.minenow.invitation": "Invitation",
-  "item.minenow.tree_scanner_wand": "Tree Scanner Wand"
+  "item.minenow.tree_scanner_wand": "Tree Scanner Wand",
+  "item.minenow.structure_wand": "Structure Wand",
+  "item.minenow.inhabitant_spawn_egg": "Inhabitant Spawn Egg"
 }
