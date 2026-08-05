@@ -73,8 +73,26 @@ public class GoHomeGoalTests {
 
     public static void inhabitantOpensDoorToReachBed(GameTestHelper helper) {
         buildHouseObstacle(helper, HouseOpening.DOOR);
-        assertInhabitantSpawnedBehindHouseReachesBed(helper,
-                "Inhabitant spawned behind a closed door should open it and reach its bed");
+        // Spawn directly in front of the door rather than behind the house.
+        // The walk-around-house path is tested by inhabitantWalksAroundHouseToBed;
+        // this test only needs to verify that the door is opened to pass through.
+        var bedRelPos = new BlockPos(4, 1, 4);
+        var level = helper.getLevel();
+        var bedPos = helper.absolutePos(bedRelPos);
+        var bannerPos = helper.absolutePos(bedRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+        var structure = new DominionStructure("Home", StructureType.HOUSE, bedPos, Set.of(bedPos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(4, 1, 1));
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setHomeStructureId(structure.getId());
+
+        level.setDayTime(13000L);
+
+        helper.succeedWhen(() -> helper.assertTrue(inhabitant.isSleeping(),
+                "Inhabitant spawned in front of a closed door should open it and reach its bed"));
     }
 
     public static void inhabitantOpensGateToReachBed(GameTestHelper helper) {
