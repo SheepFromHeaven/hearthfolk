@@ -2,7 +2,6 @@ package com.sheepfromheaven.minenow.item;
 
 import com.sheepfromheaven.minenow.block.ModBlocks;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -57,12 +56,14 @@ public class StructureWandItem extends Item {
             }
         }
 
-        var doorLower = new BlockPos(floorCenter.getX(), floorY + 1, floorCenter.getZ() + RING);
-        var doorUpper = new BlockPos(floorCenter.getX(), floorY + 2, floorCenter.getZ() + RING);
+        var facing = player.getDirection();
+        var doorWallPos = floorCenter.relative(facing, RING);
+        var doorLower = new BlockPos(doorWallPos.getX(), floorY + 1, doorWallPos.getZ());
+        var doorUpper = new BlockPos(doorWallPos.getX(), floorY + 2, doorWallPos.getZ());
         level.setBlockAndUpdate(doorLower, Blocks.OAK_DOOR.defaultBlockState()
-                .setValue(DoorBlock.FACING, Direction.NORTH).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                .setValue(DoorBlock.FACING, facing.getOpposite()).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
         level.setBlockAndUpdate(doorUpper, Blocks.OAK_DOOR.defaultBlockState()
-                .setValue(DoorBlock.FACING, Direction.NORTH).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+                .setValue(DoorBlock.FACING, facing.getOpposite()).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
 
         var markerPos = new BlockPos(floorCenter.getX(), floorY + 1, floorCenter.getZ());
         var markerBlock = ModBlocks.STRUCTURE_MARKER.get();
