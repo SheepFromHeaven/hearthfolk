@@ -155,8 +155,7 @@ public class StructureRequirementsConfig {
         var fishery = new JsonObject();
         var fishReqs = new JsonArray();
         addBlockReq(fishReqs, "minecraft:barrel", "Barrel", 1);
-        addBlockReq(fishReqs, "minecraft:crafting_table", "Crafting Table", 1);
-        addBlockReq(fishReqs, "minecraft:smoker", "Smoker", 1);
+        addBlockReq(fishReqs, "minecraft:cauldron", "Cauldron", 1);
         fishery.add("requirements", fishReqs);
         fishery.addProperty("rangeRadius", 8);
         fishery.addProperty("rangeHeight", 8);
@@ -227,12 +226,9 @@ public class StructureRequirementsConfig {
                 new StructureType.Requirement("Barrel", 1,
                         s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
                         () -> new ItemStack(net.minecraft.world.item.Items.BARREL)),
-                new StructureType.Requirement("Crafting Table", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.CRAFTING_TABLE),
-                        () -> new ItemStack(net.minecraft.world.item.Items.CRAFTING_TABLE)),
-                new StructureType.Requirement("Smoker", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.SMOKER),
-                        () -> new ItemStack(net.minecraft.world.item.Items.SMOKER))
+                new StructureType.Requirement("Cauldron", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.CAULDRON),
+                        () -> new ItemStack(net.minecraft.world.item.Items.CAULDRON))
         ));
         REQUIREMENTS.put(StructureType.LUMBERYARD, List.of(
                 new StructureType.Requirement("Barrel", 1,
