@@ -466,8 +466,10 @@ public class ModNetwork {
         PacketDistributor.sendToPlayer(player, new TreeScanHighlightPacket(category, positions));
     }
 
-    public static void sendPathNodeSync(ServerPlayer player, List<BlockPos> positions) {
-        PacketDistributor.sendToPlayer(player, new PathNodeSyncPacket(positions));
+    public static void sendPathNodeSync(ServerPlayer player, List<com.sheepfromheaven.minenow.dominion.DominionPathNode> nodes) {
+        var positions = nodes.stream().map(com.sheepfromheaven.minenow.dominion.DominionPathNode::getPos).toList();
+        var impacts = nodes.stream().map(n -> n.getImpact().ordinal()).toList();
+        PacketDistributor.sendToPlayer(player, new PathNodeSyncPacket(positions, impacts));
     }
 
     public static final String INHABITANT_FIELD_SEP = "";
@@ -758,10 +760,12 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record PathNodeSyncPacket(List<BlockPos> positions) implements CustomPacketPayload {
+    /** {@code impacts} is a parallel list of {@link com.sheepfromheaven.minenow.dominion.DominionPathNode.Impact} ordinals (0=LOW,1=MEDIUM,2=HIGH). */
+    public record PathNodeSyncPacket(List<BlockPos> positions, List<Integer> impacts) implements CustomPacketPayload {
         public static final Type<PathNodeSyncPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "path_node_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, PathNodeSyncPacket> CODEC = StreamCodec.composite(
                 BlockPos.STREAM_CODEC.apply(ByteBufCodecs.list()), PathNodeSyncPacket::positions,
+                ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), PathNodeSyncPacket::impacts,
                 PathNodeSyncPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

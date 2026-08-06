@@ -88,10 +88,14 @@ public class DominionSavedData extends SavedData {
             instance.group(
                     Codec.STRING.fieldOf("id").forGetter(n -> n.getId().toString()),
                     BlockPos.CODEC.fieldOf("pos").forGetter(DominionPathNode::getPos),
-                    Codec.STRING.fieldOf("kind").forGetter(n -> n.getKind().name())
-            ).apply(instance, (id, pos, kind) ->
-                    new DominionPathNode(UUID.fromString(id), pos, DominionPathNode.Kind.valueOf(kind))
-            )
+                    Codec.STRING.fieldOf("kind").forGetter(n -> n.getKind().name()),
+                    Codec.STRING.optionalFieldOf("impact", DominionPathNode.Impact.MEDIUM.name())
+                            .forGetter(n -> n.getImpact().name())
+            ).apply(instance, (id, pos, kind, impact) -> {
+                DominionPathNode.Impact imp;
+                try { imp = DominionPathNode.Impact.valueOf(impact); } catch (IllegalArgumentException e) { imp = DominionPathNode.Impact.MEDIUM; }
+                return new DominionPathNode(UUID.fromString(id), pos, DominionPathNode.Kind.valueOf(kind), imp);
+            })
     );
 
     private static final Codec<DominionInhabitant> INHABITANT_CODEC = RecordCodecBuilder.create(instance ->

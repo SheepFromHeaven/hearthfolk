@@ -258,6 +258,13 @@ public final class MineNow {
                     com.sheepfromheaven.minenow.inventory.ModMenus.INHABITANT_INVENTORY_TYPE.get(),
                     com.sheepfromheaven.minenow.client.VanillaRowScreen::new);
         }
+
+        @SubscribeEvent
+        public static void onRegisterItemTintSources(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.ItemTintSources event) {
+            event.register(
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath(MOD_ID, "path_node_wand"),
+                    com.sheepfromheaven.minenow.client.PathNodeWandTintSource.MAP_CODEC);
+        }
     }
 
     public static void registerRenderers(IEventBus modBus) {

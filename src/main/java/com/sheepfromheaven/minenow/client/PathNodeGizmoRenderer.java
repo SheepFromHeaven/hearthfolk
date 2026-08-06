@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.client;
 
+import com.sheepfromheaven.minenow.dominion.DominionPathNode;
 import com.sheepfromheaven.minenow.item.ModItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -26,7 +27,10 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class PathNodeGizmoRenderer {
     private static final float ALPHA = 0.5F;
-    private static final GizmoStyle STYLE = GizmoStyle.fill(ARGB.colorFromFloat(ALPHA, 0.95F, 0.75F, 0.15F));
+    // LOW = green, MEDIUM = yellow, HIGH = red
+    private static final GizmoStyle STYLE_LOW    = GizmoStyle.fill(ARGB.colorFromFloat(ALPHA, 0.20F, 0.85F, 0.20F));
+    private static final GizmoStyle STYLE_MEDIUM = GizmoStyle.fill(ARGB.colorFromFloat(ALPHA, 0.95F, 0.85F, 0.10F));
+    private static final GizmoStyle STYLE_HIGH   = GizmoStyle.fill(ARGB.colorFromFloat(ALPHA, 0.90F, 0.15F, 0.10F));
     private static final int SEGMENTS = 12;
 
     private static final double CONE_RADIUS = 0.22;
@@ -47,12 +51,20 @@ public final class PathNodeGizmoRenderer {
             return;
         }
         long gameTime = mc.level.getGameTime();
-        for (var pos : PathNodeTracker.get()) {
-            emitArrow(pos, gameTime);
+        for (var entry : PathNodeTracker.get().entrySet()) {
+            emitArrow(entry.getKey(), entry.getValue(), gameTime);
         }
     }
 
-    private static void emitArrow(BlockPos pos, long gameTime) {
+    private static GizmoStyle styleFor(DominionPathNode.Impact impact) {
+        return switch (impact) {
+            case LOW    -> STYLE_LOW;
+            case MEDIUM -> STYLE_MEDIUM;
+            case HIGH   -> STYLE_HIGH;
+        };
+    }
+
+    private static void emitArrow(BlockPos pos, DominionPathNode.Impact impact, long gameTime) {
         double cx = pos.getX() + 0.5;
         double cz = pos.getZ() + 0.5;
 
@@ -64,10 +76,11 @@ public final class PathNodeGizmoRenderer {
         double coneBaseY = tipY + CONE_HEIGHT;
         double shaftTopY = coneBaseY + SHAFT_HEIGHT;
 
+        var style = styleFor(impact);
         Gizmos.addGizmo(new ConeGizmo(
-                new Vec3(cx, tipY, cz), new Vec3(cx, coneBaseY, cz), CONE_RADIUS, SEGMENTS, STYLE));
+                new Vec3(cx, tipY, cz), new Vec3(cx, coneBaseY, cz), CONE_RADIUS, SEGMENTS, style));
         Gizmos.addGizmo(new CylinderGizmo(
-                new Vec3(cx, coneBaseY, cz), new Vec3(cx, shaftTopY, cz), SHAFT_RADIUS, SEGMENTS, STYLE));
+                new Vec3(cx, coneBaseY, cz), new Vec3(cx, shaftTopY, cz), SHAFT_RADIUS, SEGMENTS, style));
     }
 
     private static boolean isHoldingWand(Minecraft mc) {

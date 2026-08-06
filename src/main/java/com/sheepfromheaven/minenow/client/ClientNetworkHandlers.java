@@ -52,7 +52,7 @@ public class ClientNetworkHandlers {
     }
 
     public static void updatePathNodes(ModNetwork.PathNodeSyncPacket msg) {
-        Minecraft.getInstance().execute(() -> PathNodeTracker.set(msg.positions()));
+        Minecraft.getInstance().execute(() -> PathNodeTracker.set(msg.positions(), msg.impacts()));
     }
 
     public static void openStructureScreen(ModNetwork.OpenStructureScreenPacket msg) {
