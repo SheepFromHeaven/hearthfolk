@@ -108,7 +108,7 @@ public class InhabitantSelectionScreen extends SpecScreen {
 
             if (current) {
                 graphics.fill(x, y, getContentRight(), getContentBottom(), 0x553CB043);
-            } else if (hovered && !candidate.busy()) {
+            } else if (hovered) {
                 graphics.fill(x, y, getContentRight(), getContentBottom(), 0x33FFFFFF);
             }
 
@@ -137,7 +137,6 @@ public class InhabitantSelectionScreen extends SpecScreen {
 
         @Override
         public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-            if (candidate.busy()) return true;
             pick(candidate);
             return true;
         }
