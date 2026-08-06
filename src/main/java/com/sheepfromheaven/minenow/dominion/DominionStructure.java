@@ -400,6 +400,26 @@ public class DominionStructure {
         return cachedApproachPos;
     }
 
+    /**
+     * Returns the nearest standable floor position adjacent to {@code target} (typically a container
+     * block), so an entity can stand beside it rather than trying to path into the solid block itself.
+     * Checks the 4 horizontal neighbours first, then the block above and below. Falls back to
+     * {@code target} itself if nothing adjacent is standable (caller must handle gracefully).
+     */
+    public static BlockPos findStandableAdjacentTo(Level level, BlockPos target) {
+        BlockPos best = null;
+        int bestDist = Integer.MAX_VALUE;
+        int[][] offsets = { {1,0,0},{-1,0,0},{0,0,1},{0,0,-1},{0,1,0},{0,-1,0} };
+        for (int[] off : offsets) {
+            var candidate = target.offset(off[0], off[1], off[2]);
+            if (isStandable(level, candidate)) {
+                int dist = off[0]*off[0] + off[1]*off[1] + off[2]*off[2];
+                if (dist < bestDist) { bestDist = dist; best = candidate; }
+            }
+        }
+        return best != null ? best : target;
+    }
+
     private static boolean isStandable(Level level, BlockPos pos) {
         if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
             return false;

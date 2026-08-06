@@ -42,12 +42,14 @@ public class CourierJob implements Job {
     // Parallel lists — index i describes one delivery task.
     private final List<Item> taskItems = new ArrayList<>();
     private final List<BlockPos> taskSources = new ArrayList<>();
+    private final List<BlockPos> taskSourceNavTargets = new ArrayList<>(); // standable pos beside the source container
     private final List<UUID> taskDests = new ArrayList<>();
     // Which task we are currently walking to the source for.
     private int taskIndex = 0;
 
     // Re-resolved each delivery leg in GOTO_DEST.
     @Nullable private BlockPos destPos;
+    @Nullable private BlockPos destNavTarget; // standable pos beside the dest container
 
     @Override
     public boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -125,6 +127,7 @@ public class CourierJob implements Job {
 
             taskItems.add(item);
             taskSources.add(src);
+            taskSourceNavTargets.add(DominionStructure.findStandableAdjacentTo(level, src));
             taskDests.add(req.structureId());
         }
 
@@ -158,9 +161,10 @@ public class CourierJob implements Job {
         }
 
         BlockPos src = taskSources.get(taskIndex);
+        BlockPos srcNav = taskSourceNavTargets.get(taskIndex);
         Item item = taskItems.get(taskIndex);
 
-        if (!moveTowardsAndCheckArrival(inhabitant, src)) return true;
+        if (!moveTowardsAndCheckArrival(inhabitant, srcNav)) return true;
         if (!actionPacer.isReady(src)) return true;
 
         lookAtBlock(inhabitant, src);
@@ -176,6 +180,7 @@ public class CourierJob implements Job {
         // Item gone — drop this task, try next.
         taskItems.remove(taskIndex);
         taskSources.remove(taskIndex);
+        taskSourceNavTargets.remove(taskIndex);
         taskDests.remove(taskIndex);
         // taskIndex stays, now points to the next task.
         return true;
@@ -207,6 +212,9 @@ public class CourierJob implements Job {
                     DominionStructure dest = dominion.getStructureById(destId);
                     if (dest != null) {
                         destPos = ContainerUtil.findContainerAccepting(level, dest.findStorageContainers(level), stack);
+                        if (destPos != null) {
+                            destNavTarget = DominionStructure.findStandableAdjacentTo(level, destPos);
+                        }
                     }
                 }
             }
@@ -218,7 +226,7 @@ public class CourierJob implements Job {
             }
         }
 
-        if (!moveTowardsAndCheckArrival(inhabitant, destPos)) return true;
+        if (!moveTowardsAndCheckArrival(inhabitant, destNavTarget != null ? destNavTarget : destPos)) return true;
         if (!actionPacer.isReady(destPos)) return true;
 
         lookAtBlock(inhabitant, destPos);
@@ -228,6 +236,7 @@ public class CourierJob implements Job {
         }
 
         destPos = null; // Re-resolve next tick in case the slot filled up.
+        destNavTarget = null;
         return true;
     }
 
@@ -255,9 +264,11 @@ public class CourierJob implements Job {
     private void resetTasks() {
         taskItems.clear();
         taskSources.clear();
+        taskSourceNavTargets.clear();
         taskDests.clear();
         taskIndex = 0;
         destPos = null;
+        destNavTarget = null;
         phase = Phase.GOTO_WORKPLACE;
     }
 
@@ -366,6 +377,7 @@ public class CourierJob implements Job {
 
             var src = new CompoundTag();
             src.putLong("pos", taskSources.get(i).asLong());
+            src.putLong("navPos", taskSourceNavTargets.get(i).asLong());
             sourcesTag.add(src);
 
             var dest = new CompoundTag();
@@ -399,7 +411,11 @@ public class CourierJob implements Job {
             var key = net.minecraft.resources.Identifier.parse(((CompoundTag) itemsTag.get(i)).getStringOr("item", ""));
             var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(key);
             taskItems.add(item);
-            taskSources.add(BlockPos.of(((CompoundTag) sourcesTag.get(i)).getLongOr("pos", 0)));
+            var srcTag = (CompoundTag) sourcesTag.get(i);
+            var srcPos = BlockPos.of(srcTag.getLongOr("pos", 0));
+            taskSources.add(srcPos);
+            // navPos may be absent in saves from before this field was added; fall back to srcPos.
+            taskSourceNavTargets.add(srcTag.contains("navPos") ? BlockPos.of(srcTag.getLongOr("navPos", 0)) : srcPos);
             taskDests.add(UUID.fromString(((CompoundTag) destsTag.get(i)).getStringOr("id", "")));
         }
     }
