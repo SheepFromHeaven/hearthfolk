@@ -82,6 +82,16 @@ public class DominionSavedData extends SavedData {
             })
     );
 
+    private static final Codec<DominionPathNode> PATH_NODE_CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                    Codec.STRING.fieldOf("id").forGetter(n -> n.getId().toString()),
+                    BlockPos.CODEC.fieldOf("pos").forGetter(DominionPathNode::getPos),
+                    Codec.STRING.fieldOf("kind").forGetter(n -> n.getKind().name())
+            ).apply(instance, (id, pos, kind) ->
+                    new DominionPathNode(UUID.fromString(id), pos, DominionPathNode.Kind.valueOf(kind))
+            )
+    );
+
     private static final Codec<DominionInhabitant> INHABITANT_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.STRING.fieldOf("id").forGetter(v -> v.getId().toString()),
@@ -114,14 +124,18 @@ public class DominionSavedData extends SavedData {
                     BlockPos.CODEC.fieldOf("bannerPos").forGetter(Dominion::getBannerPos),
                     Codec.STRING.fieldOf("tier").forGetter(d -> d.getTier().name()),
                     STRUCTURE_CODEC.listOf().optionalFieldOf("structures", List.of()).forGetter(d -> new ArrayList<>(d.getStructures())),
-                    INHABITANT_CODEC.listOf().optionalFieldOf("villagers", List.of()).forGetter(d -> new ArrayList<>(d.getInhabitants()))
-            ).apply(instance, (id, owner, name, pos, tier, structures, villagers) -> {
+                    INHABITANT_CODEC.listOf().optionalFieldOf("villagers", List.of()).forGetter(d -> new ArrayList<>(d.getInhabitants())),
+                    PATH_NODE_CODEC.listOf().optionalFieldOf("pathNodes", List.of()).forGetter(d -> new ArrayList<>(d.getPathNodes()))
+            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes) -> {
                 var dominion = new Dominion(UUID.fromString(id), UUID.fromString(owner), name, pos, DominionTier.valueOf(tier));
                 for (var s : structures) {
                     dominion.addStructure(s);
                 }
                 for (var v : villagers) {
                     dominion.addInhabitant(v);
+                }
+                for (var n : pathNodes) {
+                    dominion.addPathNode(n);
                 }
                 return dominion;
             })

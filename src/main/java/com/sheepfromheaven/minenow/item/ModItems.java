@@ -66,6 +66,14 @@ public class ModItems {
                             .spawnEgg(ModEntities.INHABITANT.get())
             ));
 
+    public static final DeferredHolder<Item, PathNodeWandItem> PATH_NODE_WAND = ITEMS.register("path_node_wand",
+            () -> new PathNodeWandItem(
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "path_node_wand")))
+                            .stacksTo(1)
+            ));
+
+
     public static void register(IEventBus modBus) {
         ITEMS.register(modBus);
     }

@@ -193,6 +193,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.DebugCommandsTests::debugFisheryBarrelIsStockedWithAFishingRod);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_tavern_barrel_is_stocked_with_food_and_fuel"),
                             com.sheepfromheaven.minenow.gametest.DebugCommandsTests::debugTavernBarrelIsStockedWithFoodAndFuel);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "path_node_wand_toggles_node_at_clicked_position"),
+                            com.sheepfromheaven.minenow.gametest.PathNodeTests::pathNodeWandTogglesNodeAtClickedPosition);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "inhabitant_wanders_toward_nearby_street_node"),
+                            com.sheepfromheaven.minenow.gametest.PathNodeTests::inhabitantWandersTowardNearbyStreetNode);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
@@ -200,8 +204,10 @@ public final class MineNow {
             com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(modContainer);
             com.sheepfromheaven.minenow.client.WorldPickMode.register(modBus);
             com.sheepfromheaven.minenow.client.DevWorldBootstrap.register();
-            NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.ClientTickEvent.Post.class, event ->
-                    com.sheepfromheaven.minenow.client.TreeScanGizmoRenderer.onClientTick());
+            NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.ClientTickEvent.Post.class, event -> {
+                com.sheepfromheaven.minenow.client.TreeScanGizmoRenderer.onClientTick();
+                com.sheepfromheaven.minenow.client.PathNodeGizmoRenderer.onClientTick();
+            });
         }
     }
 

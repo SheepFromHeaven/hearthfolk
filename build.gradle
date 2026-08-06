@@ -67,14 +67,14 @@ neoForge {
 // screen on a totally fresh run directory - it would otherwise block the auto-join in
 // DevWorldBootstrap on first launch. Only ever adds the line; never overwrites an existing
 // options.txt the user has customized.
+def playtestOptionsFile = layout.projectDirectory.file('run/options.txt').asFile
 tasks.named('runPlaytest') {
     doFirst {
-        def optionsFile = layout.projectDirectory.file('run/options.txt').asFile
-        if (!optionsFile.exists()) {
-            optionsFile.parentFile.mkdirs()
-            optionsFile.text = "onboardAccessibility:false\n"
-        } else if (!optionsFile.text.contains('onboardAccessibility:')) {
-            optionsFile.text += "\nonboardAccessibility:false\n"
+        if (!playtestOptionsFile.exists()) {
+            playtestOptionsFile.parentFile.mkdirs()
+            playtestOptionsFile.text = "onboardAccessibility:false\n"
+        } else if (!playtestOptionsFile.text.contains('onboardAccessibility:')) {
+            playtestOptionsFile.text += "\nonboardAccessibility:false\n"
         }
     }
 }

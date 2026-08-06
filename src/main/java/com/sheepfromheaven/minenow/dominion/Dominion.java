@@ -19,6 +19,7 @@ public class Dominion {
     private DominionTier tier;
     private final Map<UUID, DominionStructure> structures = new HashMap<>();
     private final Map<UUID, DominionInhabitant> inhabitants = new HashMap<>();
+    private final Map<UUID, DominionPathNode> pathNodes = new HashMap<>();
 
     public Dominion(UUID ownerUuid, String name, BlockPos bannerPos) {
         this.id = UUID.randomUUID();
@@ -292,6 +293,43 @@ public class Dominion {
         return Collections.unmodifiableCollection(inhabitants.values());
     }
 
+    public void addPathNode(DominionPathNode node) {
+        pathNodes.put(node.getId(), node);
+    }
+
+    public void removePathNode(UUID nodeId) {
+        pathNodes.remove(nodeId);
+    }
+
+    /** The node (of any kind) at the exact given position, if any. */
+    public DominionPathNode getPathNodeAt(BlockPos pos) {
+        for (var node : pathNodes.values()) {
+            if (node.getPos().equals(pos)) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    public Collection<DominionPathNode> getPathNodes() {
+        return Collections.unmodifiableCollection(pathNodes.values());
+    }
+
+    /** The nearest node of the given kind to {@code from}, if any exist. */
+    public Optional<DominionPathNode> findNearestPathNode(DominionPathNode.Kind kind, BlockPos from) {
+        DominionPathNode best = null;
+        double bestDistSq = Double.MAX_VALUE;
+        for (var node : pathNodes.values()) {
+            if (node.getKind() != kind) continue;
+            double distSq = node.getPos().distSqr(from);
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
+                best = node;
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
     /**
      * Reverts every inhabitant back to a vanilla villager, clears every structure's blocks,
      * and drops all dominion data. Called when the town banner is destroyed.
@@ -311,5 +349,6 @@ public class Dominion {
             }
         }
         structures.clear();
+        pathNodes.clear();
     }
 }
