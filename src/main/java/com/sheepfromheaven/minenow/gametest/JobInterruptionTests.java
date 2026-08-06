@@ -5,6 +5,7 @@ import com.sheepfromheaven.minenow.dominion.DominionStructure;
 import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import com.sheepfromheaven.minenow.entity.ModEntities;
+import com.sheepfromheaven.minenow.entity.job.LumberjackJob;
 import com.sheepfromheaven.minenow.entity.job.WorkGoal;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -68,6 +69,63 @@ public class JobInterruptionTests {
             helper.assertTrue(workGoal.getJobType() == null,
                     "Unassigning mid-job should leave no job type behind once the goal has stopped");
         });
+    }
+
+    /**
+     * Reproduces the "structure requirements are ignored" bug: a lumberyard whose only requirement
+     * (a barrel) is missing should not let its assigned worker (re-)start the job, even once the job
+     * is mid-cycle and would otherwise always report itself startable (phase != GOTO_HUT skips the
+     * day/night gate in {@link LumberjackJob#canStart}). The inhabitant is given an axe directly so
+     * phase progression doesn't depend on a barrel existing at all - only the requirement check does.
+     */
+    public static void jobDoesNotStartWhenStructureRequirementsAreUnmet(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        var markerRelPos = new BlockPos(2, 1, 2);
+        var soilRelPos = new BlockPos(6, 0, 6);
+        var logRelPos = new BlockPos(6, 1, 6);
+        var leafRelPos = new BlockPos(7, 1, 6);
+        // Deliberately no barrel placed - the lumberyard's only requirement is left unmet.
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                helper.setBlock(soilRelPos.offset(dx, 0, dz), Blocks.GRASS_BLOCK);
+            }
+        }
+        helper.setBlock(logRelPos, Blocks.OAK_LOG);
+        helper.setBlock(leafRelPos, Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, false));
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var logPos = helper.absolutePos(logRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Lumberyard", StructureType.LUMBERYARD, markerPos, Set.of(markerPos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+        inhabitant.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+
+        // Drive past GOTO_HUT (skipped straight to GOTO_TREE since the axe is already held) into
+        // CHOPPING, at which point LumberjackJob.canStart always returns true regardless of day/night -
+        // isolating the assertion below to the structure-requirements gate this test is about.
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+        workGoal.tick();
+        workGoal.tick();
+        inhabitant.snapTo(logPos.getX() + 0.5, logPos.getY(), logPos.getZ() + 0.5);
+        workGoal.tick();
+
+        helper.assertTrue("Chopping wood".equals(workGoal.getStatusDescription()),
+                "Job should have reached the chopping phase before the requirements check is exercised");
+        helper.assertTrue(!workGoal.canUse(),
+                "Job should refuse to (re-)start while the structure's requirements (a barrel) are unmet");
+        helper.succeed();
     }
 
     private record ChoppingLumberjackSetup(InhabitantEntity inhabitant, WorkGoal workGoal, BlockPos markerPos) {}
