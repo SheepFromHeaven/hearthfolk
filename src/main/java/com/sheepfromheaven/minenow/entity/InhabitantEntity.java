@@ -4,6 +4,7 @@ import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.JobType;
 import com.sheepfromheaven.minenow.dominion.NeedType;
 import com.sheepfromheaven.minenow.entity.job.FinishWorkGoal;
+import com.sheepfromheaven.minenow.entity.job.ImmigrationJob;
 import com.sheepfromheaven.minenow.entity.job.WorkGoal;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.core.BlockPos;
@@ -71,6 +72,9 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     private WorkGoal workGoal;
     @Nullable
     private String lastAppliedName;
+    /** Non-null only for an immigration candidate that has not yet joined {@link #dominionId}'s dominion. */
+    @Nullable
+    private ImmigrationJob immigrationJob;
 
     public InhabitantEntity(EntityType<? extends InhabitantEntity> type, Level level) {
         super(type, level);
@@ -188,6 +192,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         goalSelector.addGoal(2, new FinishWorkGoal(this));
         goalSelector.addGoal(2, new GoHomeGoal(this));
         goalSelector.addGoal(2, new GoEatGoal(this));
+        goalSelector.addGoal(2, new WalkToBannerGoal(this));
         goalSelector.addGoal(3, workGoal);
         goalSelector.addGoal(4, new StrollTowardPathNodeGoal(this));
         goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35));
@@ -198,6 +203,14 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     @Override
     public void aiStep() {
         super.aiStep();
+        if (!level().isClientSide() && immigrationJob != null && immigrationJob.tickWanderOff()) {
+            discard();
+            return;
+        }
+        if (!level().isClientSide() && immigrationJob != null) {
+            // Immigration candidates aren't dominion members yet - skip need decay/job bookkeeping below.
+            return;
+        }
         if (!level().isClientSide() && tickCount % 200 == 0) {
             if (homeStructureId == null) {
                 setNeed(NeedType.SHELTER, getNeed(NeedType.SHELTER) - 0.02f);
@@ -362,6 +375,9 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!level().isClientSide() && level() instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
+            if (immigrationJob != null) {
+                return openImmigrantRequestScreen(serverPlayer);
+            }
             var dominion = dominionId != null ? DominionSavedData.get(serverLevel).getDominionById(dominionId) : null;
             if (dominion != null) {
                 ModNetwork.sendOpenInhabitantScreen(serverPlayer, this, dominion);
@@ -369,6 +385,61 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             }
         }
         return super.mobInteract(player, hand);
+    }
+
+    /**
+     * Opens the ImmigrantRequestScreen for the dominion owner right-clicking this immigration
+     * candidate while it awaits a decision. The actual approve/reject logic runs in
+     * {@link #applyImmigrationDecision} once the owner picks a button in that screen.
+     */
+    private InteractionResult openImmigrantRequestScreen(ServerPlayer player) {
+        var job = immigrationJob;
+        if (job == null || job.getPhase() != ImmigrationJob.Phase.AWAITING_DECISION) {
+            return InteractionResult.PASS;
+        }
+        var dominion = DominionSavedData.get((ServerLevel) player.level()).getDominionById(job.getDominionId());
+        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) {
+            return InteractionResult.PASS;
+        }
+        ModNetwork.sendOpenImmigrantRequestScreen(player, this);
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Applies the dominion owner's approve/reject decision for this immigration candidate, gated to
+     * the same rules as before (owner only, only while awaiting a decision): approving joins the
+     * dominion (subject to capacity), rejecting sends the candidate wandering off. Invoked from the
+     * ImmigrantRequestScreen's buttons via {@link ModNetwork}.
+     */
+    public void applyImmigrationDecision(ServerLevel serverLevel, ServerPlayer player, boolean approve) {
+        var job = immigrationJob;
+        if (job == null || job.getPhase() != ImmigrationJob.Phase.AWAITING_DECISION) {
+            return;
+        }
+        var data = DominionSavedData.get(serverLevel);
+        var dominion = data.getDominionById(job.getDominionId());
+        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) {
+            return;
+        }
+        if (!approve) {
+            dominion.setPendingImmigrantId(null);
+            dominion.setNextImmigrationAttemptTick(serverLevel.getGameTime() + 2400);
+            job.setPhase(ImmigrationJob.Phase.REJECTED_WANDER_OFF);
+            data.setDirty();
+            player.displayClientMessage(Component.literal(getName().getString() + " wanders off, rejected."), false);
+            return;
+        }
+        var inhabitant = new com.sheepfromheaven.minenow.dominion.DominionInhabitant(getUUID(), getName().getString());
+        if (!dominion.addInhabitant(inhabitant)) {
+            player.displayClientMessage(Component.literal("Your dominion is full - increase its tier to accept more inhabitants!"), false);
+            return;
+        }
+        dominion.setPendingImmigrantId(null);
+        dominion.setNextImmigrationAttemptTick(serverLevel.getGameTime() + 2400);
+        setDominionId(dominion.getId());
+        setImmigrationJob(null);
+        data.setDirty();
+        player.displayClientMessage(Component.literal(getName().getString() + " has joined your dominion!"), false);
     }
 
     public void goHome() {
@@ -441,6 +512,15 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         discard();
     }
 
+    @Nullable
+    public ImmigrationJob getImmigrationJob() {
+        return immigrationJob;
+    }
+
+    public void setImmigrationJob(@Nullable ImmigrationJob immigrationJob) {
+        this.immigrationJob = immigrationJob;
+    }
+
     public UUID getDominionId() {
         return dominionId;
     }
@@ -489,6 +569,11 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
                 output.store("WorkGoal", CompoundTag.CODEC, jobTag);
             }
         }
+        if (immigrationJob != null) {
+            var immigrationTag = new CompoundTag();
+            immigrationJob.save(immigrationTag);
+            output.store("ImmigrationJob", CompoundTag.CODEC, immigrationTag);
+        }
     }
 
     @Override
@@ -506,5 +591,6 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         if (workGoal != null) {
             input.read("WorkGoal", CompoundTag.CODEC).ifPresent(workGoal::load);
         }
+        input.read("ImmigrationJob", CompoundTag.CODEC).ifPresent(tag -> immigrationJob = ImmigrationJob.load(tag));
     }
 }

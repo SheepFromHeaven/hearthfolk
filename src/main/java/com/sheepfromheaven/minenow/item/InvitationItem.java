@@ -67,7 +67,13 @@ public class InvitationItem extends Item {
         villager.discard();
 
         var inhabitant = new DominionInhabitant(inhabitantEntity.getUUID(), name);
-        dominion.addInhabitant(inhabitant);
+        if (!dominion.addInhabitant(inhabitant)) {
+            // Capacity was checked above but re-check the return value in case it changed concurrently;
+            // undo the entity spawn/conversion rather than leaving an inhabitant with no dominion record.
+            inhabitantEntity.discard();
+            player.displayClientMessage(Component.literal("Your dominion filled up just now - try again."), false);
+            return InteractionResult.FAIL;
+        }
         data.setDirty();
 
         if (!player.isCreative()) {

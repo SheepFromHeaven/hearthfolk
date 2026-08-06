@@ -8,6 +8,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.properties.BedPart;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,16 @@ public class Dominion {
     private final Map<UUID, DominionStructure> structures = new HashMap<>();
     private final Map<UUID, DominionInhabitant> inhabitants = new HashMap<>();
     private final Map<UUID, DominionPathNode> pathNodes = new HashMap<>();
+    /** The single immigrant candidate currently walking to (or awaiting a decision at) the banner, if any. */
+    @Nullable
+    private UUID pendingImmigrantId;
+    /** Game tick before which another immigration roll should not be attempted (rate limit after approve/reject). */
+    private long nextImmigrationAttemptTick;
+
+    /** Structure types that make a dominion "attractive" enough for immigrants to wander in on their own. */
+    private static final Set<StructureType> ATTRACTION_TYPES = Set.of(StructureType.TAVERN);
+    /** Ticks (~2 minutes) a dominion must wait after an immigrant is approved or rejected before rolling again. */
+    private static final long IMMIGRATION_COOLDOWN_TICKS = 2400;
 
     public Dominion(UUID ownerUuid, String name, BlockPos bannerPos) {
         this.id = UUID.randomUUID();
@@ -254,8 +265,125 @@ public class Dominion {
         return Optional.ofNullable(best);
     }
 
-    public void addInhabitant(DominionInhabitant inhabitant) {
+    /**
+     * Adds {@code inhabitant} to this dominion, refusing if the dominion is already at its tier's
+     * inhabitant cap.
+     *
+     * @return true if added, false if rejected because the dominion is at capacity
+     */
+    public boolean addInhabitant(DominionInhabitant inhabitant) {
+        if (inhabitants.size() >= tier.getMaxInhabitants()) {
+            return false;
+        }
         inhabitants.put(inhabitant.getId(), inhabitant);
+        return true;
+    }
+
+    /** True if this dominion has room for at least one more inhabitant at its current tier. */
+    public boolean hasRoomForInhabitant() {
+        return inhabitants.size() < tier.getMaxInhabitants();
+    }
+
+    @Nullable
+    public UUID getPendingImmigrantId() {
+        return pendingImmigrantId;
+    }
+
+    public void setPendingImmigrantId(@Nullable UUID pendingImmigrantId) {
+        this.pendingImmigrantId = pendingImmigrantId;
+    }
+
+    public long getNextImmigrationAttemptTick() {
+        return nextImmigrationAttemptTick;
+    }
+
+    public void setNextImmigrationAttemptTick(long nextImmigrationAttemptTick) {
+        this.nextImmigrationAttemptTick = nextImmigrationAttemptTick;
+    }
+
+    /** Vertical range (blocks above/below bannerPos) scanned when looking for a bell anywhere in the dominion's area. */
+    private static final int BELL_SCAN_VERTICAL_RANGE = 16;
+
+    /**
+     * True if this dominion contains at least one structure that draws immigrants on its own: either a
+     * logical attraction structure (currently just a tavern) or a real vanilla bell block placed
+     * anywhere within the dominion's overall claimed area (centered on {@code bannerPos}, out to its
+     * radius), regardless of whether it sits inside a registered structure's footprint.
+     */
+    public boolean isAttractive(ServerLevel level) {
+        return structures.values().stream().anyMatch(s -> ATTRACTION_TYPES.contains(s.getType()))
+                || hasBellInArea(level);
+    }
+
+    /**
+     * This dominion's effective claimed radius in blocks: the configured base
+     * {@code Config.defaultDominionRadius} scaled by its current tier's {@link DominionTier#getRadiusMultiplier()}.
+     * Higher-tier dominions claim a proportionally larger area. Used for containment/claim checks, the
+     * bell-attraction area scan, and the immigrant spawn-ring distance calc.
+     */
+    public int getEffectiveRadius() {
+        return (int) Math.round(com.sheepfromheaven.minenow.Config.defaultDominionRadius * tier.getRadiusMultiplier());
+    }
+
+    private boolean hasBellInArea(ServerLevel level) {
+        int radius = getEffectiveRadius();
+        var min = bannerPos.offset(-radius, -BELL_SCAN_VERTICAL_RANGE, -radius);
+        var max = bannerPos.offset(radius, BELL_SCAN_VERTICAL_RANGE, radius);
+        for (var pos : BlockPos.betweenClosed(min, max)) {
+            if (level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.BELL)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Pure gating check for whether this dominion may roll for a new immigration attempt right now:
+     * attractive, not at capacity, no immigrant currently pending, and not on cooldown. Extracted as its
+     * own method (rather than inlined in the periodic tick) so it can be tested deterministically without
+     * relying on RNG.
+     */
+    public boolean canAttemptImmigration(long currentTick, ServerLevel level) {
+        return isAttractive(level)
+                && hasRoomForInhabitant()
+                && pendingImmigrantId == null
+                && currentTick >= nextImmigrationAttemptTick;
+    }
+
+    /** Total items currently stored across every STOREHOUSE-type structure's containers. */
+    public int getTotalStoredResources(ServerLevel level) {
+        int total = 0;
+        for (var structure : structures.values()) {
+            if (structure.getType() != StructureType.STOREHOUSE) continue;
+            for (var count : structure.getInventory(level, false).values()) {
+                total += count;
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Recomputes population/structures/stored-resources against the current tier's level-up milestone
+     * and advances exactly one tier if met. Safe to call repeatedly/periodically - a live recomputation,
+     * no persisted progress counters. Returns the new tier if it leveled up, or {@code null} otherwise.
+     */
+    @Nullable
+    public DominionTier checkAndApplyLevelUp(ServerLevel level) {
+        var milestone = tier.getLevelUpMilestone();
+        var nextTier = tier.next();
+        if (milestone == null || nextTier == null) {
+            return null;
+        }
+        int population = inhabitants.size();
+        int structureCount = structures.size();
+        int storedResources = getTotalStoredResources(level);
+        if (population >= milestone.minPopulation()
+                && structureCount >= milestone.minStructures()
+                && storedResources >= milestone.minStoredResources()) {
+            this.tier = nextTier;
+            return nextTier;
+        }
+        return null;
     }
 
     public void removeInhabitant(UUID inhabitantId, ServerLevel level) {

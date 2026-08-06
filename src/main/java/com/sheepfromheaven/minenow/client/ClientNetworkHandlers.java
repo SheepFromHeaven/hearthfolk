@@ -69,6 +69,11 @@ public class ClientNetworkHandlers {
         });
     }
 
+    public static void openImmigrantRequestScreen(ModNetwork.OpenImmigrantRequestScreenPacket msg) {
+        Minecraft.getInstance().execute(() ->
+                Minecraft.getInstance().setScreen(ImmigrantRequestScreen.create(msg.entityId(), msg.candidateName())));
+    }
+
     public static void openRequestsScreen(ModNetwork.OpenRequestsScreenPacket msg) {
         Minecraft.getInstance().execute(() -> {
             var entries = RequestsScreen.decode(msg.requestsData());

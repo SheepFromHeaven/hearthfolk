@@ -125,8 +125,10 @@ public class DominionSavedData extends SavedData {
                     Codec.STRING.fieldOf("tier").forGetter(d -> d.getTier().name()),
                     STRUCTURE_CODEC.listOf().optionalFieldOf("structures", List.of()).forGetter(d -> new ArrayList<>(d.getStructures())),
                     INHABITANT_CODEC.listOf().optionalFieldOf("villagers", List.of()).forGetter(d -> new ArrayList<>(d.getInhabitants())),
-                    PATH_NODE_CODEC.listOf().optionalFieldOf("pathNodes", List.of()).forGetter(d -> new ArrayList<>(d.getPathNodes()))
-            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes) -> {
+                    PATH_NODE_CODEC.listOf().optionalFieldOf("pathNodes", List.of()).forGetter(d -> new ArrayList<>(d.getPathNodes())),
+                    Codec.STRING.optionalFieldOf("pendingImmigrantId", "").forGetter(d -> d.getPendingImmigrantId() != null ? d.getPendingImmigrantId().toString() : ""),
+                    Codec.LONG.optionalFieldOf("nextImmigrationAttemptTick", 0L).forGetter(Dominion::getNextImmigrationAttemptTick)
+            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes, pendingImmigrantId, nextImmigrationAttemptTick) -> {
                 var dominion = new Dominion(UUID.fromString(id), UUID.fromString(owner), name, pos, DominionTier.valueOf(tier));
                 for (var s : structures) {
                     dominion.addStructure(s);
@@ -137,6 +139,8 @@ public class DominionSavedData extends SavedData {
                 for (var n : pathNodes) {
                     dominion.addPathNode(n);
                 }
+                dominion.setPendingImmigrantId(pendingImmigrantId.isEmpty() ? null : UUID.fromString(pendingImmigrantId));
+                dominion.setNextImmigrationAttemptTick(nextImmigrationAttemptTick);
                 return dominion;
             })
     );
@@ -193,7 +197,7 @@ public class DominionSavedData extends SavedData {
     public Dominion findDominionContaining(BlockPos pos) {
         for (var dominion : dominions.values()) {
             var banner = dominion.getBannerPos();
-            int radius = com.sheepfromheaven.minenow.Config.defaultDominionRadius;
+            int radius = dominion.getEffectiveRadius();
             if (Math.abs(pos.getX() - banner.getX()) <= radius &&
                     Math.abs(pos.getZ() - banner.getZ()) <= radius) {
                 return dominion;
@@ -226,6 +230,48 @@ public class DominionSavedData extends SavedData {
                 }
             }
         }
+    }
+
+    /**
+     * Periodic (every ~100 ticks) growth pass for every dominion: recomputes tier level-up and, for
+     * attractive dominions off cooldown with room, rolls a 10% chance to spawn an immigration candidate.
+     * Shares one tick hook with level-up rather than adding a second redundant loop.
+     */
+    public void tickGrowth(ServerLevel level) {
+        long currentTick = level.getGameTime();
+        for (var dominion : dominions.values()) {
+            if (dominion.checkAndApplyLevelUp(level) != null) {
+                setDirty();
+            }
+            if (dominion.canAttemptImmigration(currentTick, level) && level.getRandom().nextFloat() < 0.10f) {
+                spawnImmigrationCandidate(level, dominion);
+                setDirty();
+            }
+        }
+    }
+
+    private void spawnImmigrationCandidate(ServerLevel level, Dominion dominion) {
+        var random = level.getRandom();
+        var bannerPos = dominion.getBannerPos();
+        double angle = random.nextDouble() * Math.PI * 2.0;
+        double radius = dominion.getEffectiveRadius()
+                + 16 + random.nextDouble() * 16.0;
+        int x = (int) Math.round(bannerPos.getX() + Math.cos(angle) * radius);
+        int z = (int) Math.round(bannerPos.getZ() + Math.sin(angle) * radius);
+        int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
+
+        var entity = com.sheepfromheaven.minenow.entity.ModEntities.INHABITANT.get()
+                .create(level, net.minecraft.world.entity.EntitySpawnReason.NATURAL);
+        if (entity == null) {
+            return;
+        }
+        entity.snapTo(x + 0.5, y, z + 0.5, 0, 0);
+        var name = "Newcomer";
+        entity.setCustomName(net.minecraft.network.chat.Component.literal(name));
+        entity.setCustomNameVisible(true);
+        entity.setImmigrationJob(new com.sheepfromheaven.minenow.entity.job.ImmigrationJob(dominion.getId()));
+        level.addFreshEntity(entity);
+        dominion.setPendingImmigrantId(entity.getUUID());
     }
 
     public static DominionSavedData get(ServerLevel level) {
