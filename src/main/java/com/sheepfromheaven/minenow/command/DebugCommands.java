@@ -242,6 +242,10 @@ public class DebugCommands {
         entity.setCustomNameVisible(true);
         entity.setDominionId(dominion.getId());
         level.addFreshEntity(entity);
-        dominion.addInhabitant(new DominionInhabitant(entity.getUUID(), name));
+        if (!dominion.addInhabitant(new DominionInhabitant(entity.getUUID(), name))) {
+            // Debug-only spawn helper; if the dominion is already at capacity just discard the extra
+            // entity rather than leaving it in the world with no dominion record.
+            entity.discard();
+        }
     }
 }

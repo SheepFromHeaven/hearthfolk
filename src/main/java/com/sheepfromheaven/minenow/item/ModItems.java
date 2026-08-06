@@ -9,7 +9,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -59,8 +58,8 @@ public class ModItems {
                             .stacksTo(1)
             ));
 
-    public static final DeferredHolder<Item, SpawnEggItem> INHABITANT_SPAWN_EGG = ITEMS.register("inhabitant_spawn_egg",
-            () -> new SpawnEggItem(
+    public static final DeferredHolder<Item, InhabitantSpawnEggItem> INHABITANT_SPAWN_EGG = ITEMS.register("inhabitant_spawn_egg",
+            () -> new InhabitantSpawnEggItem(
                     new Item.Properties()
                             .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "inhabitant_spawn_egg")))
                             .spawnEgg(ModEntities.INHABITANT.get())

@@ -45,6 +45,10 @@ public final class MineNow {
                 var overworld = server.overworld();
                 com.sheepfromheaven.minenow.dominion.DominionSavedData.get(overworld).tickStructureStock(overworld);
             }
+            if (server.getTickCount() % 100 == 0) {
+                var overworld = server.overworld();
+                com.sheepfromheaven.minenow.dominion.DominionSavedData.get(overworld).tickGrowth(overworld);
+            }
         });
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -209,6 +213,24 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.PathNodeTests::pathNodeWandTogglesNodeAtClickedPosition);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "inhabitant_wanders_toward_nearby_street_node"),
                             com.sheepfromheaven.minenow.gametest.PathNodeTests::inhabitantWandersTowardNearbyStreetNode);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "add_inhabitant_rejects_when_at_capacity"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::addInhabitantRejectsWhenAtCapacity);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "can_attempt_immigration_requires_attraction_room_and_cooldown"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::canAttemptImmigrationRequiresAttractionRoomAndCooldown);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "check_and_apply_level_up_advances_only_when_all_thresholds_met"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::checkAndApplyLevelUpAdvancesOnlyWhenAllThresholdsMet);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "walk_to_banner_goal_reaches_awaiting_decision_phase"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::walkToBannerGoalReachesAwaitingDecisionPhase);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "higher_tier_dominion_has_larger_effective_radius_for_bell_attraction"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::higherTierDominionHasLargerEffectiveRadiusForBellAttraction);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "spawn_egg_spawns_inhabitant_inside_dominion"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::spawnEggSpawnsInhabitantInsideDominion);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "spawn_egg_fails_outside_any_dominion"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::spawnEggFailsOutsideAnyDominion);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "spawn_egg_fails_when_dominion_at_capacity"),
+                            com.sheepfromheaven.minenow.gametest.DominionGrowthTests::spawnEggFailsWhenDominionAtCapacity);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "structure_wand_builds_building_with_fixed_8x10x6_dimensions"),
+                            com.sheepfromheaven.minenow.gametest.StructureWandTests::structureWandBuildsBuildingWithFixed8x10x6Dimensions);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
