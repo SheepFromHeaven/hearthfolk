@@ -3,24 +3,28 @@ package com.sheepfromheaven.minenow.entity.job;
 import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
+import com.sheepfromheaven.minenow.dominion.ItemCategory;
 import com.sheepfromheaven.minenow.dominion.StructureRequest;
 import com.sheepfromheaven.minenow.dominion.StructureType;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Courier job: checks the dominion's pending item requests, picks up a matching item from any
- * structure that has it, and delivers it to the requesting structure's storage.
+ * Courier job: checks the dominion's pending item requests, loads up to one stack per inventory
+ * slot from their source containers, then delivers each stack to the requesting structure's storage.
  *
- * Phases: GOTO_WORKPLACE → FIND_REQUEST → GOTO_SOURCE → GOTO_DEST → IDLE (brief pause when nothing to do)
+ * Phases: GOTO_WORKPLACE → FIND_REQUEST → GOTO_SOURCE (repeated per task) → GOTO_DEST → IDLE
  */
 public class CourierJob implements Job {
     private static final int ARRIVE_DISTANCE_SQ = 4;
@@ -35,11 +39,15 @@ public class CourierJob implements Job {
     private int idleTicks;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
 
-    @Nullable private BlockPos sourcePos;
+    // Parallel lists — index i describes one delivery task.
+    private final List<Item> taskItems = new ArrayList<>();
+    private final List<BlockPos> taskSources = new ArrayList<>();
+    private final List<UUID> taskDests = new ArrayList<>();
+    // Which task we are currently walking to the source for.
+    private int taskIndex = 0;
+
+    // Re-resolved each delivery leg in GOTO_DEST.
     @Nullable private BlockPos destPos;
-    @Nullable private UUID destStructureId;
-    @Nullable private Item requestedItem;
-    @Nullable private String requestLabel;
 
     @Override
     public boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -58,22 +66,17 @@ public class CourierJob implements Job {
     @Override
     public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         depositCarriedItems(inhabitant, level, workplace);
-        phase = Phase.GOTO_WORKPLACE;
-        sourcePos = null;
-        destPos = null;
-        destStructureId = null;
-        requestedItem = null;
-        requestLabel = null;
+        resetTasks();
     }
 
     @Override
     public boolean tick(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         return switch (phase) {
             case GOTO_WORKPLACE -> tickGotoWorkplace(inhabitant, level, workplace);
-            case FIND_REQUEST  -> tickFindRequest(inhabitant, level, workplace);
-            case GOTO_SOURCE   -> tickGotoSource(inhabitant, level, workplace);
-            case GOTO_DEST     -> tickGotoDest(inhabitant, level, workplace);
-            case IDLE          -> tickIdle();
+            case FIND_REQUEST   -> tickFindRequest(inhabitant, level, workplace);
+            case GOTO_SOURCE    -> tickGotoSource(inhabitant, level, workplace);
+            case GOTO_DEST      -> tickGotoDest(inhabitant, level, workplace);
+            case IDLE           -> tickIdle();
         };
     }
 
@@ -87,17 +90,32 @@ public class CourierJob implements Job {
     private boolean tickFindRequest(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         Dominion dominion = DominionSavedData.get(level).findDominionContaining(workplace.getMarkerPos());
         if (dominion == null) {
-            phase = Phase.IDLE;
-            idleTicks = IDLE_WAIT_TICKS;
+            goIdle();
             return true;
         }
 
+        taskItems.clear();
+        taskSources.clear();
+        taskDests.clear();
+
+        int slots = inhabitant.getInventory().getContainerSize();
+
         for (StructureRequest req : dominion.getPendingRequests()) {
-            if (req.item() == null) continue; // skip open-ended category requests
-            Item item = req.item();
+            if (taskItems.size() >= slots) break;
 
             DominionStructure dest = dominion.getStructureById(req.structureId());
             if (dest == null) continue;
+
+            Item item = req.item();
+            if (item == null) {
+                if (req.category() == null) continue;
+                item = findItemForCategory(dominion, level, dest, req.category());
+                if (item == null) continue;
+            }
+
+            // Skip if we already planned a pickup of this item (one task per item type per trip).
+            final Item finalItem = item;
+            if (taskItems.stream().anyMatch(t -> t == finalItem)) continue;
 
             BlockPos src = findSource(dominion, level, dest, item);
             if (src == null) continue;
@@ -105,18 +123,176 @@ public class CourierJob implements Job {
             BlockPos dp = ContainerUtil.findContainerAccepting(level, dest.findStorageContainers(level), item.getDefaultInstance());
             if (dp == null) continue;
 
-            sourcePos = src;
-            destPos = dp;
-            destStructureId = req.structureId();
-            requestedItem = item;
-            requestLabel = req.label();
-            phase = Phase.GOTO_SOURCE;
+            taskItems.add(item);
+            taskSources.add(src);
+            taskDests.add(req.structureId());
+        }
+
+        if (taskItems.isEmpty()) {
+            goIdle();
             return true;
         }
 
+        taskIndex = 0;
+        phase = Phase.GOTO_SOURCE;
+        return true;
+    }
+
+    private boolean tickGotoSource(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        // Advance past tasks already picked up (item already in inventory).
+        while (taskIndex < taskItems.size()) {
+            Item needed = taskItems.get(taskIndex);
+            boolean alreadyCarrying = false;
+            var inv = inhabitant.getInventory();
+            for (int i = 0; i < inv.getContainerSize(); i++) {
+                if (inv.getItem(i).is(needed)) { alreadyCarrying = true; break; }
+            }
+            if (!alreadyCarrying) break;
+            taskIndex++;
+        }
+
+        if (taskIndex >= taskItems.size()) {
+            destPos = null;
+            phase = Phase.GOTO_DEST;
+            return true;
+        }
+
+        BlockPos src = taskSources.get(taskIndex);
+        Item item = taskItems.get(taskIndex);
+
+        if (!moveTowardsAndCheckArrival(inhabitant, src)) return true;
+        if (!actionPacer.isReady(src)) return true;
+
+        lookAtBlock(inhabitant, src);
+        if (level.getBlockEntity(src) instanceof Container container) {
+            ItemStack extracted = ContainerUtil.extractStack(container, inhabitant, item);
+            if (!extracted.isEmpty()) {
+                inhabitant.getInventory().addItem(extracted);
+                actionPacer.recordAction(src);
+                taskIndex++;
+                return true;
+            }
+        }
+        // Item gone — drop this task, try next.
+        taskItems.remove(taskIndex);
+        taskSources.remove(taskIndex);
+        taskDests.remove(taskIndex);
+        // taskIndex stays, now points to the next task.
+        return true;
+    }
+
+    private boolean tickGotoDest(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        var carried = inhabitant.getInventory();
+
+        // Find the first non-empty slot.
+        int slotToDeliver = -1;
+        for (int i = 0; i < carried.getContainerSize(); i++) {
+            if (!carried.getItem(i).isEmpty()) { slotToDeliver = i; break; }
+        }
+
+        if (slotToDeliver == -1) {
+            // All delivered.
+            resetTasks();
+            return false;
+        }
+
+        ItemStack stack = carried.getItem(slotToDeliver);
+
+        // Resolve dest container if not already done.
+        if (destPos == null) {
+            UUID destId = findDestForItem(stack.getItem());
+            if (destId != null) {
+                Dominion dominion = DominionSavedData.get(level).findDominionContaining(workplace.getMarkerPos());
+                if (dominion != null) {
+                    DominionStructure dest = dominion.getStructureById(destId);
+                    if (dest != null) {
+                        destPos = ContainerUtil.findContainerAccepting(level, dest.findStorageContainers(level), stack);
+                    }
+                }
+            }
+            if (destPos == null) {
+                // Nowhere to deliver — dump back at workplace.
+                depositCarriedItems(inhabitant, level, workplace);
+                resetTasks();
+                return true;
+            }
+        }
+
+        if (!moveTowardsAndCheckArrival(inhabitant, destPos)) return true;
+        if (!actionPacer.isReady(destPos)) return true;
+
+        lookAtBlock(inhabitant, destPos);
+        if (level.getBlockEntity(destPos) instanceof Container container) {
+            carried.setItem(slotToDeliver, ContainerUtil.insertItem(container, inhabitant, stack));
+            actionPacer.recordAction(destPos);
+        }
+
+        destPos = null; // Re-resolve next tick in case the slot filled up.
+        return true;
+    }
+
+    /** Returns the planned dest structure id for the given item, or null if unrecognised. */
+    @Nullable
+    private UUID findDestForItem(Item item) {
+        for (int i = 0; i < taskItems.size(); i++) {
+            if (taskItems.get(i) == item) return taskDests.get(i);
+        }
+        return null;
+    }
+
+    private boolean tickIdle() {
+        if (--idleTicks <= 0) {
+            phase = Phase.GOTO_WORKPLACE;
+        }
+        return true;
+    }
+
+    private void goIdle() {
         phase = Phase.IDLE;
         idleTicks = IDLE_WAIT_TICKS;
-        return true;
+    }
+
+    private void resetTasks() {
+        taskItems.clear();
+        taskSources.clear();
+        taskDests.clear();
+        taskIndex = 0;
+        destPos = null;
+        phase = Phase.GOTO_WORKPLACE;
+    }
+
+    /** Dump anything the courier is carrying back into the workplace storage. */
+    private void depositCarriedItems(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        var carried = inhabitant.getInventory();
+        for (int i = 0; i < carried.getContainerSize(); i++) {
+            var stack = carried.getItem(i);
+            if (stack.isEmpty()) continue;
+            BlockPos pos = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
+            if (pos != null && level.getBlockEntity(pos) instanceof Container container) {
+                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
+            }
+        }
+    }
+
+    /**
+     * Scans all storehouses in the dominion for any item matching {@code category} that could be
+     * delivered to {@code dest}, and returns the first concrete item found. Returns null if nothing
+     * matching is in stock.
+     */
+    @Nullable
+    public static Item findItemForCategory(Dominion dominion, ServerLevel level, DominionStructure dest, ItemCategory category) {
+        for (DominionStructure structure : dominion.getStructures()) {
+            if (structure.getId().equals(dest.getId())) continue;
+            for (BlockPos pos : structure.findStorageContainers(level)) {
+                if (level.getBlockEntity(pos) instanceof Container container) {
+                    for (int i = 0; i < container.getContainerSize(); i++) {
+                        var stack = container.getItem(i);
+                        if (category.matches(stack, level)) return stack.getItem();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -133,117 +309,11 @@ public class CourierJob implements Job {
         }
 
         for (DominionStructure structure : dominion.getStructures()) {
-            if (structure.getId().equals(dest.getId())) continue; // don't pull from the requester itself
+            if (structure.getId().equals(dest.getId())) continue;
             BlockPos src = ContainerUtil.findContainerWith(level, structure.findStorageContainers(level), st -> st.is(item));
             if (src != null) return src;
         }
         return null;
-    }
-
-    private boolean tickGotoSource(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (sourcePos == null) {
-            resetRequest();
-            return true;
-        }
-        if (!moveTowardsAndCheckArrival(inhabitant, sourcePos)) return true;
-        if (!actionPacer.isReady(sourcePos)) return true;
-
-        lookAtBlock(inhabitant, sourcePos);
-        if (level.getBlockEntity(sourcePos) instanceof Container container && requestedItem != null) {
-            ItemStack extracted = ContainerUtil.extractOne(container, inhabitant, s -> s.is(requestedItem));
-            if (!extracted.isEmpty()) {
-                inhabitant.getInventory().addItem(extracted);
-                actionPacer.recordAction(sourcePos);
-                phase = Phase.GOTO_DEST;
-                return true;
-            }
-        }
-        // item was gone by the time we arrived; start over
-        resetRequest();
-        return true;
-    }
-
-    private boolean tickGotoDest(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        // Re-locate dest pos in case the container moved or request changed
-        if (destStructureId != null && destPos == null) {
-            Dominion dominion = DominionSavedData.get(level).findDominionContaining(workplace.getMarkerPos());
-            if (dominion != null) {
-                DominionStructure dest = dominion.getStructureById(destStructureId);
-                if (dest != null) {
-                    var carried = inhabitant.getInventory();
-                    for (int i = 0; i < carried.getContainerSize(); i++) {
-                        var stack = carried.getItem(i);
-                        if (!stack.isEmpty()) {
-                            destPos = ContainerUtil.findContainerAccepting(level, dest.findStorageContainers(level), stack);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (destPos == null) {
-            depositCarriedItems(inhabitant, level, workplace);
-            resetRequest();
-            return true;
-        }
-
-        if (!moveTowardsAndCheckArrival(inhabitant, destPos)) return true;
-        if (!actionPacer.isReady(destPos)) return true;
-
-        lookAtBlock(inhabitant, destPos);
-        if (level.getBlockEntity(destPos) instanceof Container container) {
-            var carried = inhabitant.getInventory();
-            for (int i = 0; i < carried.getContainerSize(); i++) {
-                var stack = carried.getItem(i);
-                if (stack.isEmpty()) continue;
-                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
-                actionPacer.recordAction(destPos);
-                break;
-            }
-        }
-
-        boolean stillCarrying = false;
-        var carried = inhabitant.getInventory();
-        for (int i = 0; i < carried.getContainerSize(); i++) {
-            if (!carried.getItem(i).isEmpty()) { stillCarrying = true; break; }
-        }
-
-        if (!stillCarrying) {
-            resetRequest();
-            return false; // cycle complete
-        }
-        destPos = null; // find a new slot next tick
-        return true;
-    }
-
-    private boolean tickIdle() {
-        if (--idleTicks <= 0) {
-            phase = Phase.GOTO_WORKPLACE;
-        }
-        return true;
-    }
-
-    /** Dump anything the courier is carrying back into the workplace storage. */
-    private void depositCarriedItems(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var carried = inhabitant.getInventory();
-        for (int i = 0; i < carried.getContainerSize(); i++) {
-            var stack = carried.getItem(i);
-            if (stack.isEmpty()) continue;
-            BlockPos pos = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
-            if (pos != null && level.getBlockEntity(pos) instanceof Container container) {
-                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
-            }
-        }
-    }
-
-    private void resetRequest() {
-        sourcePos = null;
-        destPos = null;
-        destStructureId = null;
-        requestedItem = null;
-        requestLabel = null;
-        phase = Phase.GOTO_WORKPLACE;
     }
 
     private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
@@ -264,8 +334,10 @@ public class CourierJob implements Job {
         return switch (phase) {
             case GOTO_WORKPLACE -> "Heading to storehouse";
             case FIND_REQUEST   -> "Looking for deliveries";
-            case GOTO_SOURCE    -> requestLabel != null ? "Picking up " + requestLabel : "Picking up item";
-            case GOTO_DEST      -> requestLabel != null ? "Delivering " + requestLabel : "Delivering item";
+            case GOTO_SOURCE    -> taskIndex < taskItems.size()
+                    ? "Picking up " + taskItems.get(taskIndex).getDefaultInstance().getHoverName().getString()
+                    : "Picking up items";
+            case GOTO_DEST      -> "Delivering items";
             case IDLE           -> "Waiting for requests";
         };
     }
@@ -280,13 +352,29 @@ public class CourierJob implements Job {
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
         tag.putInt("IdleTicks", idleTicks);
+        tag.putInt("TaskIndex", taskIndex);
         actionPacer.save(tag, "Action");
-        if (sourcePos != null) tag.putLong("SourcePos", sourcePos.asLong());
         if (destPos != null) tag.putLong("DestPos", destPos.asLong());
-        if (destStructureId != null) tag.putString("DestStructureId", destStructureId.toString());
-        if (requestedItem != null)
-            tag.putString("RequestedItem", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(requestedItem).toString());
-        if (requestLabel != null) tag.putString("RequestLabel", requestLabel);
+
+        var itemsTag = new ListTag();
+        var sourcesTag = new ListTag();
+        var destsTag = new ListTag();
+        for (int i = 0; i < taskItems.size(); i++) {
+            var entry = new CompoundTag();
+            entry.putString("item", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(taskItems.get(i)).toString());
+            itemsTag.add(entry);
+
+            var src = new CompoundTag();
+            src.putLong("pos", taskSources.get(i).asLong());
+            sourcesTag.add(src);
+
+            var dest = new CompoundTag();
+            dest.putString("id", taskDests.get(i).toString());
+            destsTag.add(dest);
+        }
+        tag.put("TaskItems", itemsTag);
+        tag.put("TaskSources", sourcesTag);
+        tag.put("TaskDests", destsTag);
     }
 
     @Override
@@ -297,14 +385,22 @@ public class CourierJob implements Job {
             phase = Phase.GOTO_WORKPLACE;
         }
         idleTicks = tag.getIntOr("IdleTicks", 0);
+        taskIndex = tag.getIntOr("TaskIndex", 0);
         actionPacer.load(tag, "Action");
-        sourcePos = tag.contains("SourcePos") ? BlockPos.of(tag.getLongOr("SourcePos", 0)) : null;
         destPos = tag.contains("DestPos") ? BlockPos.of(tag.getLongOr("DestPos", 0)) : null;
-        destStructureId = tag.contains("DestStructureId") ? UUID.fromString(tag.getStringOr("DestStructureId", "")) : null;
-        if (tag.contains("RequestedItem")) {
-            var key = net.minecraft.resources.Identifier.parse(tag.getStringOr("RequestedItem", ""));
-            requestedItem = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(key);
+
+        taskItems.clear();
+        taskSources.clear();
+        taskDests.clear();
+        var itemsTag = tag.getListOrEmpty("TaskItems");
+        var sourcesTag = tag.getListOrEmpty("TaskSources");
+        var destsTag = tag.getListOrEmpty("TaskDests");
+        for (int i = 0; i < itemsTag.size(); i++) {
+            var key = net.minecraft.resources.Identifier.parse(((CompoundTag) itemsTag.get(i)).getStringOr("item", ""));
+            var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(key);
+            taskItems.add(item);
+            taskSources.add(BlockPos.of(((CompoundTag) sourcesTag.get(i)).getLongOr("pos", 0)));
+            taskDests.add(UUID.fromString(((CompoundTag) destsTag.get(i)).getStringOr("id", "")));
         }
-        requestLabel = tag.contains("RequestLabel") ? tag.getStringOr("RequestLabel", "") : null;
     }
 }
