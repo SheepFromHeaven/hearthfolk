@@ -179,6 +179,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.JobInterruptionTests::unassigningLumberjackMidChopDropsStaleJob);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "job_does_not_start_when_structure_requirements_are_unmet"),
                             com.sheepfromheaven.minenow.gametest.JobInterruptionTests::jobDoesNotStartWhenStructureRequirementsAreUnmet);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "issues_list_survives_network_round_trip"),
+                            com.sheepfromheaven.minenow.gametest.InhabitantIssuesNetworkTests::issuesListSurvivesNetworkRoundTrip);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "bed_in_real_detected_room_satisfies_house_requirement"),
+                            com.sheepfromheaven.minenow.gametest.DominionTests::bedInRealDetectedRoomSatisfiesHouseRequirement);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "handing_lumberjack_an_axe_clears_the_missing_axe_issue"),
                             com.sheepfromheaven.minenow.gametest.LumberjackToolIssueTests::handingLumberjackAnAxeClearsTheMissingAxeIssue);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "fishery_requires_barrel_and_cauldron_not_smoker_or_crafting_table"),

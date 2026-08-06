@@ -337,4 +337,70 @@ public class DominionTests {
                 helper.assertTrue(found.isPresent() && found.get().getId().equals(farTavern.getId()),
                         "The farther tavern should be picked when the nearer one fails the filter"));
     }
+
+    /**
+     * Reproduces the "issues button always shows red !" bug with a real, fully-built house (walls,
+     * floor, ceiling, and a bed) instead of a hand-crafted room set - the room's interior is detected
+     * the same way {@link StructureMarkerBlock} does it in-game, via a real
+     * {@link com.sheepfromheaven.minenow.dominion.RoomDetector} flood fill, to check whether that
+     * detection correctly recognizes the bed as satisfying the house's requirement.
+     */
+    public static void bedInRealDetectedRoomSatisfiesHouseRequirement(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        // A 5x5 footprint (x:1-5, z:1-5) enclosing a 3x3 interior (x:2-4, z:2-4), two blocks tall,
+        // with solid floor/walls/ceiling - built the way a player would build a house.
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 1; z <= 5; z++) {
+                helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+                helper.setBlock(new BlockPos(x, 3, z), Blocks.STONE);
+            }
+        }
+        for (int x = 1; x <= 5; x++) {
+            for (int y = 1; y <= 2; y++) {
+                helper.setBlock(new BlockPos(x, y, 1), Blocks.STONE);
+                helper.setBlock(new BlockPos(x, y, 5), Blocks.STONE);
+            }
+        }
+        for (int z = 1; z <= 5; z++) {
+            for (int y = 1; y <= 2; y++) {
+                helper.setBlock(new BlockPos(1, y, z), Blocks.STONE);
+                helper.setBlock(new BlockPos(5, y, z), Blocks.STONE);
+            }
+        }
+
+        var bedHeadRelPos = new BlockPos(3, 1, 2);
+        var bedFootRelPos = new BlockPos(3, 1, 3);
+        helper.setBlock(bedHeadRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.SOUTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+        helper.setBlock(bedFootRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.SOUTH)
+                .setValue(BedBlock.PART, BedPart.FOOT));
+
+        var level = helper.getLevel();
+        var markerRelPos = new BlockPos(3, 1, 4);
+        var markerPos = helper.absolutePos(markerRelPos);
+        var bannerPos = helper.absolutePos(new BlockPos(3, 1, 4));
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+
+        var result = com.sheepfromheaven.minenow.dominion.RoomDetector.detect(level, markerPos, 4096);
+        helper.assertTrue(result instanceof com.sheepfromheaven.minenow.dominion.RoomDetector.Result.Success,
+                "The room should be detected as a valid enclosed space");
+        var roomBlocks = ((com.sheepfromheaven.minenow.dominion.RoomDetector.Result.Success) result).blocks();
+
+        var structure = new DominionStructure("Home", StructureType.HOUSE, markerPos, roomBlocks);
+        dominion.addStructure(structure);
+
+        var statuses = structure.checkRequirements(level);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(!statuses.isEmpty(), "The house should have at least a bed requirement");
+            for (var status : statuses) {
+                helper.assertTrue(status.satisfied(),
+                        "Requirement '" + status.name() + "' should be satisfied by the bed actually in the room, but found "
+                                + status.found() + "/" + status.required());
+            }
+        });
+    }
 }
