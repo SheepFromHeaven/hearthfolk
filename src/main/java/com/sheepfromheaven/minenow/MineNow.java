@@ -26,6 +26,7 @@ public final class MineNow {
     public MineNow(IEventBus modBus, ModContainer modContainer) {
         ModBlocks.register(modBus);
         ModItems.register(modBus);
+        com.sheepfromheaven.minenow.item.ModDataComponents.register(modBus);
         ModCreativeTabs.register(modBus);
         com.sheepfromheaven.minenow.entity.ModEntities.register(modBus);
         com.sheepfromheaven.minenow.inventory.ModMenus.register(modBus);
@@ -231,6 +232,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.DominionGrowthTests::spawnEggFailsWhenDominionAtCapacity);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "structure_wand_builds_building_with_fixed_8x10x6_dimensions"),
                             com.sheepfromheaven.minenow.gametest.StructureWandTests::structureWandBuildsBuildingWithFixed8x10x6Dimensions);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "shift_right_click_cycles_mode_and_builds_matching_furnished_structure"),
+                            com.sheepfromheaven.minenow.gametest.StructureWandTests::shiftRightClickCyclesModeAndBuildsMatchingFurnishedStructure);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {

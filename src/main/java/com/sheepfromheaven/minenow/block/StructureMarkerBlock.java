@@ -24,15 +24,20 @@ import javax.annotation.Nullable;
 import java.util.Set;
 
 public class StructureMarkerBlock extends BaseEntityBlock {
-    public static final MapCodec<StructureMarkerBlock> CODEC = simpleCodec(StructureMarkerBlock::new);
+    private final StructureType type;
 
-    public StructureMarkerBlock(Properties properties) {
+    public StructureMarkerBlock(Properties properties, StructureType type) {
         super(properties);
+        this.type = type;
+    }
+
+    public StructureType getType() {
+        return type;
     }
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
+        return simpleCodec(properties -> new StructureMarkerBlock(properties, type));
     }
 
     @Override
@@ -83,7 +88,7 @@ public class StructureMarkerBlock extends BaseEntityBlock {
                         return;
                     }
 
-                    var structure = new DominionStructure("New Structure", StructureType.HOUSE, pos, blocks);
+                    var structure = new DominionStructure("New Structure", type, pos, blocks);
                     dominion.addStructure(structure);
                     data.setDirty();
 
