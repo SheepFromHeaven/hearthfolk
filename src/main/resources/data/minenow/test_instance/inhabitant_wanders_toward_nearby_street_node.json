@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:inhabitant_wanders_toward_nearby_street_node",
+  "structure": "minenow:room_9x5x9",
+  "max_ticks": 1600
+}

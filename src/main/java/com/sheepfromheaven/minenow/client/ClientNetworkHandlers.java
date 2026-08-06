@@ -51,6 +51,10 @@ public class ClientNetworkHandlers {
         Minecraft.getInstance().execute(() -> TreeScanOutlineTracker.add(msg.category(), msg.positions()));
     }
 
+    public static void updatePathNodes(ModNetwork.PathNodeSyncPacket msg) {
+        Minecraft.getInstance().execute(() -> PathNodeTracker.set(msg.positions()));
+    }
+
     public static void openStructureScreen(ModNetwork.OpenStructureScreenPacket msg) {
         Minecraft.getInstance().execute(() -> {
             var mc = Minecraft.getInstance();

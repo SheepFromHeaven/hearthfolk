@@ -189,9 +189,10 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         goalSelector.addGoal(2, new GoHomeGoal(this));
         goalSelector.addGoal(2, new GoEatGoal(this));
         goalSelector.addGoal(3, workGoal);
-        goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.35));
-        goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0f));
-        goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        goalSelector.addGoal(4, new StrollTowardPathNodeGoal(this));
+        goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35));
+        goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0f));
+        goalSelector.addGoal(7, new RandomLookAroundGoal(this));
     }
 
     @Override

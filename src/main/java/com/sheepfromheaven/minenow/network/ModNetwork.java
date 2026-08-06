@@ -72,6 +72,7 @@ public class ModNetwork {
         registrar.playToClient(InhabitantDebugPacket.TYPE, InhabitantDebugPacket.CODEC, ModNetwork::handleInhabitantDebug);
         registrar.playToClient(TreeScanClearPacket.TYPE, TreeScanClearPacket.CODEC, ModNetwork::handleTreeScanClear);
         registrar.playToClient(TreeScanHighlightPacket.TYPE, TreeScanHighlightPacket.CODEC, ModNetwork::handleTreeScanHighlight);
+        registrar.playToClient(PathNodeSyncPacket.TYPE, PathNodeSyncPacket.CODEC, ModNetwork::handlePathNodeSync);
     }
 
     // -------------------------------------------------------------------------
@@ -363,6 +364,10 @@ public class ModNetwork {
         com.sheepfromheaven.minenow.client.ClientNetworkHandlers.addTreeScanHighlight(msg);
     }
 
+    private static void handlePathNodeSync(PathNodeSyncPacket msg, IPayloadContext ctx) {
+        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.updatePathNodes(msg);
+    }
+
     // -------------------------------------------------------------------------
     // Public send helpers
     // -------------------------------------------------------------------------
@@ -444,6 +449,10 @@ public class ModNetwork {
 
     public static void sendTreeScanHighlight(ServerPlayer player, int category, List<BlockPos> positions) {
         PacketDistributor.sendToPlayer(player, new TreeScanHighlightPacket(category, positions));
+    }
+
+    public static void sendPathNodeSync(ServerPlayer player, List<BlockPos> positions) {
+        PacketDistributor.sendToPlayer(player, new PathNodeSyncPacket(positions));
     }
 
     public static final String INHABITANT_FIELD_SEP = "";
@@ -721,6 +730,15 @@ public class ModNetwork {
                 ByteBufCodecs.VAR_INT, TreeScanHighlightPacket::category,
                 BlockPos.STREAM_CODEC.apply(ByteBufCodecs.list()), TreeScanHighlightPacket::positions,
                 TreeScanHighlightPacket::new
+        );
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public record PathNodeSyncPacket(List<BlockPos> positions) implements CustomPacketPayload {
+        public static final Type<PathNodeSyncPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "path_node_sync"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, PathNodeSyncPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC.apply(ByteBufCodecs.list()), PathNodeSyncPacket::positions,
+                PathNodeSyncPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }

@@ -23,6 +23,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.TREE_SCANNER_WAND.get());
                         output.accept(ModItems.STRUCTURE_WAND.get());
                         output.accept(ModItems.INHABITANT_SPAWN_EGG.get());
+                        output.accept(ModItems.PATH_NODE_WAND.get());
                     })
                     .build());
 

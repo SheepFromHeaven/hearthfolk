@@ -8,5 +8,6 @@
   "item.minenow.invitation": "Invitation",
   "item.minenow.tree_scanner_wand": "Tree Scanner Wand",
   "item.minenow.structure_wand": "Structure Wand",
-  "item.minenow.inhabitant_spawn_egg": "Inhabitant Spawn Egg"
+  "item.minenow.inhabitant_spawn_egg": "Inhabitant Spawn Egg",
+  "item.minenow.path_node_wand": "Path Node Wand"
 }
