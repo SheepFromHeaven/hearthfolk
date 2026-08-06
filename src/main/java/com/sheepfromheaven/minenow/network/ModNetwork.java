@@ -63,6 +63,7 @@ public class ModNetwork {
         registrar.playToServer(RefreshInhabitantScreenPacket.TYPE, RefreshInhabitantScreenPacket.CODEC, ModNetwork::handleRefreshInhabitantScreen);
         registrar.playToServer(RefreshStructureScreenPacket.TYPE, RefreshStructureScreenPacket.CODEC, ModNetwork::handleRefreshStructureScreen);
         registrar.playToServer(RequestRequestsScreenPacket.TYPE, RequestRequestsScreenPacket.CODEC, ModNetwork::handleRequestRequestsScreen);
+        registrar.playToServer(ImmigrationDecisionPacket.TYPE, ImmigrationDecisionPacket.CODEC, ModNetwork::handleImmigrationDecision);
 
         // clientbound
         registrar.playToClient(OpenDominionScreenPacket.TYPE, OpenDominionScreenPacket.CODEC, ModNetwork::handleOpenDominionScreen);
@@ -73,6 +74,7 @@ public class ModNetwork {
         registrar.playToClient(TreeScanClearPacket.TYPE, TreeScanClearPacket.CODEC, ModNetwork::handleTreeScanClear);
         registrar.playToClient(TreeScanHighlightPacket.TYPE, TreeScanHighlightPacket.CODEC, ModNetwork::handleTreeScanHighlight);
         registrar.playToClient(PathNodeSyncPacket.TYPE, PathNodeSyncPacket.CODEC, ModNetwork::handlePathNodeSync);
+        registrar.playToClient(OpenImmigrantRequestScreenPacket.TYPE, OpenImmigrantRequestScreenPacket.CODEC, ModNetwork::handleOpenImmigrantRequestScreen);
     }
 
     // -------------------------------------------------------------------------
@@ -332,6 +334,15 @@ public class ModNetwork {
         sendOpenRequestsScreen(player, dominion, msg.bannerPos());
     }
 
+    private static void handleImmigrationDecision(ImmigrationDecisionPacket msg, IPayloadContext ctx) {
+        var player = (ServerPlayer) ctx.player();
+        var level = player.level();
+        if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
+        if (level instanceof ServerLevel serverLevel) {
+            inhabitant.applyImmigrationDecision(serverLevel, player, msg.approve());
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Clientbound handlers
     // -------------------------------------------------------------------------
@@ -366,6 +377,10 @@ public class ModNetwork {
 
     private static void handlePathNodeSync(PathNodeSyncPacket msg, IPayloadContext ctx) {
         com.sheepfromheaven.minenow.client.ClientNetworkHandlers.updatePathNodes(msg);
+    }
+
+    private static void handleOpenImmigrantRequestScreen(OpenImmigrantRequestScreenPacket msg, IPayloadContext ctx) {
+        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openImmigrantRequestScreen(msg);
     }
 
     // -------------------------------------------------------------------------
@@ -522,6 +537,15 @@ public class ModNetwork {
 
     public static void sendRequestRequestsScreen(BlockPos bannerPos) {
         ClientPacketDistributor.sendToServer(new RequestRequestsScreenPacket(bannerPos));
+    }
+
+    public static void sendOpenImmigrantRequestScreen(ServerPlayer player, InhabitantEntity candidate) {
+        PacketDistributor.sendToPlayer(player, new OpenImmigrantRequestScreenPacket(
+                candidate.getId(), candidate.getName().getString()));
+    }
+
+    public static void sendImmigrationDecision(int entityId, boolean approve) {
+        ClientPacketDistributor.sendToServer(new ImmigrationDecisionPacket(entityId, approve));
     }
 
     public static void sendOpenRequestsScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos) {
@@ -796,6 +820,26 @@ public class ModNetwork {
                 ByteBufCodecs.STRING_UTF8, OpenRequestsScreenPacket::requestsData,
                 BlockPos.STREAM_CODEC, OpenRequestsScreenPacket::bannerPos,
                 OpenRequestsScreenPacket::new
+        );
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public record OpenImmigrantRequestScreenPacket(int entityId, String candidateName) implements CustomPacketPayload {
+        public static final Type<OpenImmigrantRequestScreenPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_immigrant_request_screen"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenImmigrantRequestScreenPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, OpenImmigrantRequestScreenPacket::entityId,
+                ByteBufCodecs.STRING_UTF8, OpenImmigrantRequestScreenPacket::candidateName,
+                OpenImmigrantRequestScreenPacket::new
+        );
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public record ImmigrationDecisionPacket(int entityId, boolean approve) implements CustomPacketPayload {
+        public static final Type<ImmigrationDecisionPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "immigration_decision"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, ImmigrationDecisionPacket> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, ImmigrationDecisionPacket::entityId,
+                ByteBufCodecs.BOOL, ImmigrationDecisionPacket::approve,
+                ImmigrationDecisionPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }

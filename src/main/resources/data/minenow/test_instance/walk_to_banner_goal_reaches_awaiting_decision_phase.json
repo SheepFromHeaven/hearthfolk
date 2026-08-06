@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:walk_to_banner_goal_reaches_awaiting_decision_phase",
+  "structure": "minenow:room_9x5x9",
+  "max_ticks": 400
+}

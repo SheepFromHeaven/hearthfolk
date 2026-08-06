@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:higher_tier_dominion_has_larger_effective_radius_for_bell_attraction",
+  "structure": "minenow:room_9x5x9",
+  "max_ticks": 20
+}
