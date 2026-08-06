@@ -181,6 +181,18 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.JobInterruptionTests::interruptedLumberjackReturnsToHutInsteadOfResumingChopping);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "unassigning_lumberjack_mid_chop_drops_stale_job"),
                             com.sheepfromheaven.minenow.gametest.JobInterruptionTests::unassigningLumberjackMidChopDropsStaleJob);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "job_does_not_start_when_structure_requirements_are_unmet"),
+                            com.sheepfromheaven.minenow.gametest.JobInterruptionTests::jobDoesNotStartWhenStructureRequirementsAreUnmet);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "issues_list_survives_network_round_trip"),
+                            com.sheepfromheaven.minenow.gametest.InhabitantIssuesNetworkTests::issuesListSurvivesNetworkRoundTrip);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "bed_in_real_detected_room_satisfies_house_requirement"),
+                            com.sheepfromheaven.minenow.gametest.DominionTests::bedInRealDetectedRoomSatisfiesHouseRequirement);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "handing_lumberjack_an_axe_clears_the_missing_axe_issue"),
+                            com.sheepfromheaven.minenow.gametest.LumberjackToolIssueTests::handingLumberjackAnAxeClearsTheMissingAxeIssue);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "fishery_requires_barrel_and_cauldron_not_smoker_or_crafting_table"),
+                            com.sheepfromheaven.minenow.gametest.FisheryStorageTests::fisheryRequiresBarrelAndCauldronNotSmokerOrCraftingTable);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "structure_wand_orients_door_to_player_facing"),
+                            com.sheepfromheaven.minenow.gametest.StructureWandTests::structureWandOrientsDoorToPlayerFacing);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "approach_pos_is_marker_when_marker_is_on_the_floor"),
                             com.sheepfromheaven.minenow.gametest.WorkplaceApproachTests::approachPosIsMarkerWhenMarkerIsOnTheFloor);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "approach_pos_finds_floor_when_marker_is_embedded_high_in_a_shaft"),

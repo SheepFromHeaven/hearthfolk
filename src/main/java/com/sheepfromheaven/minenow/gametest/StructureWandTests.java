@@ -8,6 +8,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -17,6 +18,49 @@ import java.util.UUID;
 // the matching data/minenow/test_instance/*.json file supplies the (larger, room_12x8x14) structure
 // and tick budget - the wand's building no longer fits inside the smaller rooms used by other tests.
 public class StructureWandTests {
+
+    /**
+     * Reproduces the "structure wand ignores the player's facing direction" bug: the door should be
+     * placed on the wall the player is facing (and rotated to match), instead of always ending up on
+     * the same fixed south wall no matter which way the player was looking when they used the wand.
+     */
+    public static void structureWandOrientsDoorToPlayerFacing(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        int originalRadius = com.sheepfromheaven.minenow.Config.defaultDominionRadius;
+        com.sheepfromheaven.minenow.Config.defaultDominionRadius = 6;
+        try {
+            var level = helper.getLevel();
+            var floorCornerRelPos = new BlockPos(1, 1, 1);
+            var floorCorner = helper.absolutePos(floorCornerRelPos);
+            var bannerPos = floorCorner.offset(4, 1, 5);
+
+            var player = helper.makeMockServerPlayerInLevel();
+            DominionSavedData.get(level).createDominion(player.getUUID(), "Test Dominion", bannerPos);
+
+            // Face west instead of the wand's fixed default (south).
+            player.setYRot(90.0f);
+            var facing = player.getDirection();
+            helper.assertTrue(facing == Direction.WEST, "Test setup sanity check: yaw 90 should resolve to west");
+
+            var wand = ModItems.STRUCTURE_WAND.get().getDefaultInstance();
+            var hit = new BlockHitResult(Vec3.atCenterOf(floorCorner), Direction.UP, floorCorner, false);
+            wand.useOn(new UseOnContext(level, player, InteractionHand.MAIN_HAND, wand, hit));
+
+            // Facing west should put the door on the west wall (x = corner), at mid-depth.
+            var expectedDoorPos = floorCorner.offset(0, 1, 10 / 2);
+            var doorState = level.getBlockState(expectedDoorPos);
+
+            helper.succeedWhen(() -> {
+                helper.assertTrue(doorState.is(Blocks.OAK_DOOR),
+                        "Door should be on the wall the player was facing (west), not the fixed south wall");
+                helper.assertTrue(doorState.getValue(DoorBlock.FACING) == facing.getOpposite(),
+                        "Door should be rotated to match the player's facing direction");
+            });
+        } finally {
+            com.sheepfromheaven.minenow.Config.defaultDominionRadius = originalRadius;
+        }
+    }
 
     public static void structureWandBuildsBuildingWithFixed8x10x6Dimensions(GameTestHelper helper) {
         GameTestHelpers.makeFloor(helper);

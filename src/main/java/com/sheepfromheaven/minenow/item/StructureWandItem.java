@@ -2,7 +2,6 @@ package com.sheepfromheaven.minenow.item;
 
 import com.sheepfromheaven.minenow.block.ModBlocks;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -67,14 +66,35 @@ public class StructureWandItem extends Item {
             }
         }
 
-        int doorX = floorCorner.getX() + WIDTH / 2;
-        int doorZ = floorCorner.getZ() + DEPTH - 1;
+        // Door sits on the wall the player is facing (defaulting to the south wall, center-x, when
+        // facing south - the wand's original fixed orientation), rotated to match their direction.
+        var facing = player.getDirection();
+        int doorX;
+        int doorZ;
+        switch (facing) {
+            case NORTH -> {
+                doorX = floorCorner.getX() + WIDTH / 2;
+                doorZ = floorCorner.getZ();
+            }
+            case EAST -> {
+                doorX = floorCorner.getX() + WIDTH - 1;
+                doorZ = floorCorner.getZ() + DEPTH / 2;
+            }
+            case WEST -> {
+                doorX = floorCorner.getX();
+                doorZ = floorCorner.getZ() + DEPTH / 2;
+            }
+            default -> {
+                doorX = floorCorner.getX() + WIDTH / 2;
+                doorZ = floorCorner.getZ() + DEPTH - 1;
+            }
+        }
         var doorLower = new BlockPos(doorX, floorY + 1, doorZ);
         var doorUpper = new BlockPos(doorX, floorY + 2, doorZ);
         level.setBlockAndUpdate(doorLower, Blocks.OAK_DOOR.defaultBlockState()
-                .setValue(DoorBlock.FACING, Direction.NORTH).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                .setValue(DoorBlock.FACING, facing.getOpposite()).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
         level.setBlockAndUpdate(doorUpper, Blocks.OAK_DOOR.defaultBlockState()
-                .setValue(DoorBlock.FACING, Direction.NORTH).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+                .setValue(DoorBlock.FACING, facing.getOpposite()).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
 
         var markerPos = new BlockPos(floorCorner.getX() + WIDTH / 2, floorY + 1, floorCorner.getZ() + DEPTH / 2);
         var markerBlock = ModBlocks.STRUCTURE_MARKER.get();

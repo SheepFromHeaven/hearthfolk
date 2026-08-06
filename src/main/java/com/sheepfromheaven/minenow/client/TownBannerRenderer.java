@@ -26,6 +26,20 @@ public class TownBannerRenderer extends BannerRenderer {
     }
 
     @Override
+    public AABB getRenderBoundingBox(net.minecraft.world.level.block.entity.BannerBlockEntity blockEntity) {
+        // The default is a 1x1x1 cube around the banner itself, which the renderer uses every frame
+        // to decide whether to bother calling submit() at all - regardless of shouldRenderOffScreen().
+        // The range border drawn below is much larger than that cube, so widen it to match, or the
+        // border vanishes as soon as that tiny cube (not the border) leaves the view frustum.
+        var pos = blockEntity.getBlockPos();
+        int radius = getEffectiveRadius(pos);
+        return new AABB(
+                pos.getX() - radius, pos.getY() - 4, pos.getZ() - radius,
+                pos.getX() + radius + 1, pos.getY() + 20, pos.getZ() + radius + 1
+        );
+    }
+
+    @Override
     public void submit(BannerRenderState renderState, PoseStack poseStack, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState) {
         super.submit(renderState, poseStack, nodeCollector, cameraRenderState);
 

@@ -51,7 +51,7 @@ public class InhabitantScreen extends SpecScreen {
         on("minenow.issues",           (id, s, v) -> Minecraft.getInstance().setScreen(
                 IssuesListScreen.create(this,
                         Component.literal(inhabitantName + "'s Issues"),
-                        issues.stream().map(IssuesListScreen.IssueEntry::new).toList())));
+                        this.issues.stream().map(IssuesListScreen.IssueEntry::new).toList())));
     }
 
     private static ScreenSpec loadSpec() {

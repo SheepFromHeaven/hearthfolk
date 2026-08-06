@@ -60,7 +60,8 @@ public class WorkGoal extends Goal {
         var workplace = resolveWorkplace();
         if (workplace == null || !(inhabitant.level() instanceof ServerLevel serverLevel)) return false;
         refreshJob(workplace);
-        return job != null && job.canStart(inhabitant, serverLevel, workplace);
+        return job != null && workplace.isFullySatisfied(serverLevel)
+                && job.canStart(inhabitant, serverLevel, workplace);
     }
 
     @Override

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:fishery_requires_barrel_and_cauldron_not_smoker_or_crafting_table",
+  "structure": "minenow:room_9x5x9",
+  "max_ticks": 40
+}
