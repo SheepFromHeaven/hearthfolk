@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.entity.job;
 
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.DominionStructure;
+import com.sheepfromheaven.minenow.dominion.ItemCategory;
 import com.sheepfromheaven.minenow.entity.InhabitantEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -139,8 +140,9 @@ public class CookJob implements Job {
             containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), matcher);
             if (containerTarget == null) {
                 missingItemLabel = neededSlot == 0 ? "raw food" : "fuel";
+                var category = neededSlot == 0 ? ItemCategory.RAW_FOOD : ItemCategory.FUEL;
                 workplace.reportWorkerIssue(inhabitant.getUUID(),
-                        DominionStructure.WorkerIssue.urgent(missingItemLabel), level.getGameTime());
+                        DominionStructure.WorkerIssue.urgentCategory(missingItemLabel, category), level.getGameTime());
                 DominionSavedData.get(level).setDirty();
                 phase = Phase.MISSING_INGREDIENTS;
                 waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;

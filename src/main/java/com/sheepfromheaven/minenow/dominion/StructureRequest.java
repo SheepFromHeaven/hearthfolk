@@ -12,11 +12,13 @@ import java.util.UUID;
  * or SOFT (proactive restocking to keep the building running fluidly).
  *
  * {@code item} may be null for category requests (e.g. "any fuel", "any raw food"). In that case
- * {@code label} is the only human-readable description.
+ * {@code category} carries a typed predicate the courier can use to find a matching item, and
+ * {@code label} is the human-readable description.
  */
 public record StructureRequest(
         UUID structureId,
         @Nullable Item item,
+        @Nullable ItemCategory category,
         String label,
         int amount,
         Priority priority,
@@ -26,11 +28,11 @@ public record StructureRequest(
 
     public static StructureRequest forItem(UUID structureId, Item item, int amount, Priority priority, long createdTick) {
         var name = item.getDefaultInstance().getHoverName().getString();
-        return new StructureRequest(structureId, item, name, amount, priority, createdTick);
+        return new StructureRequest(structureId, item, null, name, amount, priority, createdTick);
     }
 
-    public static StructureRequest forCategory(UUID structureId, String label, int amount, Priority priority, long createdTick) {
-        return new StructureRequest(structureId, null, label, amount, priority, createdTick);
+    public static StructureRequest forCategory(UUID structureId, String label, @Nullable ItemCategory category, int amount, Priority priority, long createdTick) {
+        return new StructureRequest(structureId, null, category, label, amount, priority, createdTick);
     }
 
     /** Registry key of the requested item, or empty string for category requests. */
@@ -38,8 +40,19 @@ public record StructureRequest(
         return item != null ? BuiltInRegistries.ITEM.getKey(item).toString() : "";
     }
 
+    /** Name of the {@link ItemCategory}, or empty string when none. */
+    public String categoryName() {
+        return category != null ? category.name() : "";
+    }
+
     @Nullable
     public static Item itemFromKey(String key) {
         return key.isEmpty() ? null : BuiltInRegistries.ITEM.getValue(Identifier.parse(key));
+    }
+
+    @Nullable
+    public static ItemCategory categoryFromName(String name) {
+        if (name.isEmpty()) return null;
+        try { return ItemCategory.valueOf(name); } catch (IllegalArgumentException e) { return null; }
     }
 }

@@ -65,21 +65,26 @@ public class DominionStructure {
     /** What a single worker reports it is blocked on or wants proactively restocked. */
     public record WorkerIssue(
             @Nullable Item item,
+            @Nullable ItemCategory category,
             String label,
             int amountPerWorker,
             StructureRequest.Priority priority
     ) {
         public static WorkerIssue urgent(String label) {
-            return new WorkerIssue(null, label, 64, StructureRequest.Priority.URGENT);
+            return new WorkerIssue(null, null, label, 64, StructureRequest.Priority.URGENT);
         }
 
         public static WorkerIssue urgent(String label, int amount) {
-            return new WorkerIssue(null, label, amount, StructureRequest.Priority.URGENT);
+            return new WorkerIssue(null, null, label, amount, StructureRequest.Priority.URGENT);
         }
 
         public static WorkerIssue urgentItem(Item item, int amount) {
             var name = item.getDefaultInstance().getHoverName().getString();
-            return new WorkerIssue(item, name, amount, StructureRequest.Priority.URGENT);
+            return new WorkerIssue(item, null, name, amount, StructureRequest.Priority.URGENT);
+        }
+
+        public static WorkerIssue urgentCategory(String label, ItemCategory category) {
+            return new WorkerIssue(null, category, label, 64, StructureRequest.Priority.URGENT);
         }
     }
 
@@ -243,22 +248,25 @@ public class DominionStructure {
         // Drop all URGENT entries and rebuild from current worker issues
         requests.values().removeIf(r -> r.priority() == StructureRequest.Priority.URGENT);
         // Aggregate: sum amountPerWorker across all workers reporting the same label
-        var aggregated = new LinkedHashMap<String, int[]>(); // label → [totalAmount, item (nullable)]
+        var aggregated = new LinkedHashMap<String, int[]>(); // label → [totalAmount]
         var itemByLabel = new HashMap<String, Item>();
+        var categoryByLabel = new HashMap<String, ItemCategory>();
         for (var workerMap : workerIssues.values()) {
             for (var issue : workerMap.values()) {
                 if (issue.priority() != StructureRequest.Priority.URGENT) continue;
                 aggregated.computeIfAbsent(issue.label(), k -> new int[]{0})[0] += issue.amountPerWorker();
                 if (issue.item() != null) itemByLabel.putIfAbsent(issue.label(), issue.item());
+                if (issue.category() != null) categoryByLabel.putIfAbsent(issue.label(), issue.category());
             }
         }
         for (var entry : aggregated.entrySet()) {
             var label = entry.getKey();
             var amount = entry.getValue()[0];
             var item = itemByLabel.get(label);
+            var category = categoryByLabel.get(label);
             requests.put(label, item != null
                     ? StructureRequest.forItem(id, item, amount, StructureRequest.Priority.URGENT, gameTick)
-                    : StructureRequest.forCategory(id, label, amount, StructureRequest.Priority.URGENT, gameTick));
+                    : StructureRequest.forCategory(id, label, category, amount, StructureRequest.Priority.URGENT, gameTick));
         }
     }
 

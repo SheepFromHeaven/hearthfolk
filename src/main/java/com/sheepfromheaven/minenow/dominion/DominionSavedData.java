@@ -17,14 +17,16 @@ public class DominionSavedData extends SavedData {
             instance.group(
                     Codec.STRING.fieldOf("structureId").forGetter(r -> r.structureId().toString()),
                     Codec.STRING.fieldOf("item").forGetter(StructureRequest::itemKey),
+                    Codec.STRING.optionalFieldOf("category", "").forGetter(StructureRequest::categoryName),
                     Codec.STRING.fieldOf("label").forGetter(StructureRequest::label),
                     Codec.INT.fieldOf("amount").forGetter(StructureRequest::amount),
                     Codec.STRING.fieldOf("priority").forGetter(r -> r.priority().name()),
                     Codec.LONG.fieldOf("createdTick").forGetter(StructureRequest::createdTick)
-            ).apply(instance, (structureId, itemKey, label, amount, priority, createdTick) ->
+            ).apply(instance, (structureId, itemKey, categoryName, label, amount, priority, createdTick) ->
                     new StructureRequest(
                             UUID.fromString(structureId),
                             StructureRequest.itemFromKey(itemKey),
+                            StructureRequest.categoryFromName(categoryName),
                             label,
                             amount,
                             StructureRequest.Priority.valueOf(priority),
