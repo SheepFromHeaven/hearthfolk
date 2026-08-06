@@ -113,6 +113,7 @@ public class LumberjackJob implements Job {
 
     private boolean tickFindAxe(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         if (hasAxe(inhabitant)) {
+            missingItem = null;
             phase = Phase.GOTO_TREE;
             return true;
         }
