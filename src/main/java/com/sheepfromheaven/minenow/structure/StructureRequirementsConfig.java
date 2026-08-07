@@ -199,6 +199,12 @@ public class StructureRequirementsConfig {
         storehouse.add("requirements", storehouseReqs);
         root.add("STOREHOUSE", storehouse);
 
+        var mine = new JsonObject();
+        var mineReqs = new JsonArray();
+        addBlockReq(mineReqs, "minecraft:barrel", "Barrel", 1);
+        mine.add("requirements", mineReqs);
+        root.add("MINE", mine);
+
         try {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(root));
@@ -248,6 +254,11 @@ public class StructureRequirementsConfig {
                         s -> s.is(net.minecraft.world.level.block.Blocks.CHEST),
                         () -> new ItemStack(net.minecraft.world.item.Items.CHEST))
         ));
+        REQUIREMENTS.put(StructureType.MINE, List.of(
+                new StructureType.Requirement("Barrel", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
+                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
+        ));
 
         MIN_SIZES.clear();
         MIN_SIZES.put(StructureType.HOUSE, 32);
@@ -255,6 +266,7 @@ public class StructureRequirementsConfig {
         MIN_SIZES.put(StructureType.LUMBERYARD, 0);
         MIN_SIZES.put(StructureType.TAVERN, 0);
         MIN_SIZES.put(StructureType.STOREHOUSE, 0);
+        MIN_SIZES.put(StructureType.MINE, 0);
 
         RANGE_RADII.clear();
         RANGE_RADII.put(StructureType.HOUSE, 0);
@@ -262,6 +274,7 @@ public class StructureRequirementsConfig {
         RANGE_RADII.put(StructureType.LUMBERYARD, 8);
         RANGE_RADII.put(StructureType.TAVERN, 0);
         RANGE_RADII.put(StructureType.STOREHOUSE, 0);
+        RANGE_RADII.put(StructureType.MINE, 0);
 
         RANGE_HEIGHTS.clear();
         RANGE_HEIGHTS.put(StructureType.HOUSE, 0);
@@ -269,6 +282,7 @@ public class StructureRequirementsConfig {
         RANGE_HEIGHTS.put(StructureType.LUMBERYARD, 4);
         RANGE_HEIGHTS.put(StructureType.TAVERN, 0);
         RANGE_HEIGHTS.put(StructureType.STOREHOUSE, 0);
+        RANGE_HEIGHTS.put(StructureType.MINE, 0);
 
         RANGE_REQUIREMENTS.clear();
         RANGE_REQUIREMENTS.put(StructureType.HOUSE, List.of());
@@ -284,5 +298,6 @@ public class StructureRequirementsConfig {
         ));
         RANGE_REQUIREMENTS.put(StructureType.TAVERN, List.of());
         RANGE_REQUIREMENTS.put(StructureType.STOREHOUSE, List.of());
+        RANGE_REQUIREMENTS.put(StructureType.MINE, List.of());
     }
 }

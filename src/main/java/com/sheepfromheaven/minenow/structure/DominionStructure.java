@@ -65,6 +65,14 @@ public class DominionStructure {
     private List<net.minecraft.world.item.ItemStack> filterTemplates = new ArrayList<>();
     private boolean filterWhitelist = true;
     private boolean filterMatchMetadata = false;
+    /**
+     * Miner-only toggle: when true, {@link com.sheepfromheaven.minenow.jobs.miner.MinerJob} places
+     * cosmetic wood support beams along the tunnel/stairway it digs. Stored here (rather than on
+     * {@link com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity}) to match the
+     * existing convention for per-structure settings such as {@link #filterWhitelist} - that block
+     * entity only ever mirrors display data copied *from* this class, it isn't the source of truth.
+     */
+    private boolean placeSupportBeams = false;
 
     /** What a single worker reports it is blocked on or wants proactively restocked. */
     public record WorkerIssue(
@@ -351,6 +359,14 @@ public class DominionStructure {
         this.filterTemplates = new ArrayList<>(templates);
         this.filterWhitelist = whitelist;
         this.filterMatchMetadata = matchMetadata;
+    }
+
+    public boolean isPlaceSupportBeams() {
+        return placeSupportBeams;
+    }
+
+    public void setPlaceSupportBeams(boolean placeSupportBeams) {
+        this.placeSupportBeams = placeSupportBeams;
     }
 
     // --- Codec helpers (used only by DominionSavedData to persist/restore the computed request map) ---

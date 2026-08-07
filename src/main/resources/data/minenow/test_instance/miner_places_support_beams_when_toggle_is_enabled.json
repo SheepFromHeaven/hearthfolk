@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:miner_places_support_beams_when_toggle_is_enabled",
+  "structure": "minenow:room_14x20x26",
+  "max_ticks": 60
+}

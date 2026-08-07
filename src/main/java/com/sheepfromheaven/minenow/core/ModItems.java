@@ -67,6 +67,14 @@ public class ModItems {
                             .stacksTo(16)
             ));
 
+    public static final DeferredHolder<Item, Item> MINE_MARKER = ITEMS.register("mine_marker",
+            () -> new net.minecraft.world.item.BlockItem(
+                    ModBlocks.MINE_MARKER.get(),
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "mine_marker")))
+                            .stacksTo(16)
+            ));
+
     public static final DeferredHolder<Item, InvitationItem> INVITATION = ITEMS.register("invitation",
             () -> new InvitationItem(
                     new Item.Properties()
