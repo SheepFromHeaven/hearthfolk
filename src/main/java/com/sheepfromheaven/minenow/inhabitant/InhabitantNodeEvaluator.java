@@ -4,9 +4,11 @@ import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.PathNavigationRegion;
 import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.PathfindingContext;
@@ -37,7 +39,7 @@ import java.util.List;
  * typical detour lengths to actually show up rather than getting lost in the noise of a route that's
  * only marginally shorter.
  */
-public class FenceGateAwareNodeEvaluator extends WalkNodeEvaluator {
+public class InhabitantNodeEvaluator extends WalkNodeEvaluator {
     private static final float MAX_MALUS_PENALTY = 2.5F;
     private static final double NODE_INFLUENCE_RADIUS = 6.0;
 
@@ -79,6 +81,7 @@ public class FenceGateAwareNodeEvaluator extends WalkNodeEvaluator {
     @Override
     public int getNeighbors(Node[] neighbors, Node node) {
         int count = super.getNeighbors(neighbors, node);
+        count = addClimbableNeighbors(neighbors, count, node);
         if (!streetNodePositions.isEmpty()) {
             for (int i = 0; i < count; i++) {
                 var neighbor = neighbors[i];
@@ -88,6 +91,52 @@ public class FenceGateAwareNodeEvaluator extends WalkNodeEvaluator {
             }
         }
         return count;
+    }
+
+    /**
+     * Vanilla's {@link WalkNodeEvaluator#getNeighbors} only ever steps one block up (a jump) or
+     * searches straight down for a landing spot - it has no notion of climbing a multi-block
+     * climbable column (ladders, vines, ...). Climbable blocks themselves already resolve to a
+     * non-blocked {@link PathType} (they're non-solid, so {@code getPathType} falls through to
+     * {@code OPEN}), but nothing ever proposes the vertical neighbor needed to actually traverse
+     * that column. This adds that missing up/down edge whenever the current node sits on a
+     * climbable block, or one is directly above/below it.
+     */
+    private int addClimbableNeighbors(Node[] neighbors, int count, Node node) {
+        boolean onClimbable = isClimbable(node.x, node.y, node.z);
+        if (onClimbable && count < neighbors.length) {
+            Node up = climbNode(node.x, node.y + 1, node.z);
+            if (up != null) {
+                neighbors[count++] = up;
+            }
+        }
+        if ((onClimbable || isClimbable(node.x, node.y - 1, node.z)) && count < neighbors.length) {
+            Node down = climbNode(node.x, node.y - 1, node.z);
+            if (down != null) {
+                neighbors[count++] = down;
+            }
+        }
+        return count;
+    }
+
+    private boolean isClimbable(int x, int y, int z) {
+        BlockState state = currentContext.getBlockState(new BlockPos(x, y, z));
+        return state.is(BlockTags.CLIMBABLE);
+    }
+
+    private Node climbNode(int x, int y, int z) {
+        PathType pathType = getCachedPathType(x, y, z);
+        float malus = mob.getPathfindingMalus(pathType);
+        if (malus < 0.0F) {
+            return null;
+        }
+        Node climb = getNode(x, y, z);
+        if (climb.closed) {
+            return null;
+        }
+        climb.type = pathType;
+        climb.costMalus = Math.max(climb.costMalus, malus);
+        return climb;
     }
 
     /**

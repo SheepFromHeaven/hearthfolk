@@ -10,6 +10,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -70,6 +72,33 @@ public class PathNodeTests {
             var distSq = inhabitant.distanceToSqr(nodePos.getX() + 0.5, nodePos.getY(), nodePos.getZ() + 0.5);
             helper.assertTrue(distSq < startDistSq / 2,
                     "Inhabitant should have walked substantially closer to the street node");
+        });
+    }
+
+    public static void inhabitantClimbsLadderToReachElevatedTarget(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        // Backing wall for the ladder to attach to, then a 3-block ladder climbing from floor
+        // level (relative y=0, on top of makeFloor's slab) up to a platform reachable only by
+        // climbing.
+        for (int y = 0; y <= 2; y++) {
+            helper.setBlock(new BlockPos(4, y, 5), Blocks.STONE);
+            helper.setBlock(new BlockPos(4, y, 4),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.NORTH));
+        }
+        // Landing platform beside the top of the ladder.
+        helper.setBlock(new BlockPos(3, 1, 4), Blocks.STONE);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(1, 0, 4));
+        var targetRelPos = new BlockPos(3, 2, 4);
+        var targetPos = helper.absolutePos(targetRelPos);
+
+        helper.runAfterDelay(5, () ->
+                inhabitant.getNavigation().moveTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5, 1.0));
+
+        helper.succeedWhen(() -> {
+            var distSq = inhabitant.distanceToSqr(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+            helper.assertTrue(distSq < 1.5, "Inhabitant should have climbed the ladder to reach the platform");
         });
     }
 }
