@@ -18,7 +18,6 @@ public class ModCreativeTabs {
                     .icon(() -> ModItems.TOWN_BANNER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.TOWN_BANNER.get());
-                        output.accept(ModItems.STRUCTURE_MARKER.get());
                         output.accept(ModItems.FISHERY_MARKER.get());
                         output.accept(ModItems.LUMBERYARD_MARKER.get());
                         output.accept(ModItems.TAVERN_MARKER.get());
