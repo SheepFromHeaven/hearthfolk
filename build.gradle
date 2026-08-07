@@ -72,9 +72,14 @@ tasks.named('runPlaytest') {
     doFirst {
         if (!playtestOptionsFile.exists()) {
             playtestOptionsFile.parentFile.mkdirs()
-            playtestOptionsFile.text = "onboardAccessibility:false\n"
-        } else if (!playtestOptionsFile.text.contains('onboardAccessibility:')) {
-            playtestOptionsFile.text += "\nonboardAccessibility:false\n"
+            playtestOptionsFile.text = "onboardAccessibility:false\nsoundCategory_master:0.1\n"
+        } else {
+            if (!playtestOptionsFile.text.contains('onboardAccessibility:')) {
+                playtestOptionsFile.text += "\nonboardAccessibility:false\n"
+            }
+            if (!playtestOptionsFile.text.contains('soundCategory_master:')) {
+                playtestOptionsFile.text += "\nsoundCategory_master:0.1\n"
+            }
         }
     }
 }

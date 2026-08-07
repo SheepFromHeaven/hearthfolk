@@ -272,6 +272,12 @@ public final class MineNow {
             event.register(
                     com.sheepfromheaven.minenow.inventory.ModMenus.INHABITANT_INVENTORY_TYPE.get(),
                     com.sheepfromheaven.minenow.client.VanillaRowScreen::new);
+            event.register(
+                    com.sheepfromheaven.minenow.inventory.ModMenus.FILTER_TYPE.get(),
+                    com.sheepfromheaven.minenow.client.FilterScreen::new);
+            event.register(
+                    com.sheepfromheaven.minenow.inventory.ModMenus.STRUCTURE_FILTER_TYPE.get(),
+                    com.sheepfromheaven.minenow.client.StructureFilterScreen::new);
         }
 
         @SubscribeEvent

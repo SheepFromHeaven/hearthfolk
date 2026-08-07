@@ -3,7 +3,7 @@
   "modId": "minenow",
   "width": 220,
   "height": 220,
-  "actions": ["rename", "assign_resident", "assign_worker", "set_work_center", "toggle_workarea", "recalculate", "toggle_range", "save_item_filter"],
+  "actions": ["rename", "assign_resident", "assign_worker", "set_work_center", "toggle_workarea", "recalculate", "toggle_range", "open_filter"],
   "bindingsSchema": {
     "structure_name":       { "type": "string",  "previewValue": "My House" },
     "structure_type":       { "type": "string",  "previewValue": "House" },
@@ -109,15 +109,15 @@
     {
       "id": "label_filter_hint", "type": "label",
       "x": 0, "y": 4, "w": 220, "h": 10,
-      "text": "Items allowed (comma-separated ids; empty = allow all)", "icon": null,
+      "text": "Place a Filter item to restrict what this storehouse accepts", "icon": null,
       "props": { "color": "4210752", "shadow": "false", "align": "center" },
       "parentId": "tab_filter"
     },
     {
-      "id": "btn_save_filter", "type": "button",
-      "x": 10, "y": 44, "w": 200, "h": 20,
-      "text": "Save Filter", "icon": null, "props": {},
-      "parentId": "tab_filter", "action": "save_item_filter"
+      "id": "btn_open_filter", "type": "button",
+      "x": 10, "y": 22, "w": 200, "h": 20,
+      "text": "Open Filter Slot", "icon": null, "props": {},
+      "parentId": "tab_filter", "action": "open_filter"
     },
     {
       "id": "btn_recalculate", "type": "button",
