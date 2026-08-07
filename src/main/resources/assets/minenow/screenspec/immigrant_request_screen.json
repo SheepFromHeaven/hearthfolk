@@ -2,15 +2,13 @@
   "id": "immigrant_request_screen",
   "modId": "minenow",
   "width": 200,
-  "height": 110,
-  "actions": ["approve", "reject"],
-  "bindingsSchema": {
-    "candidate_name": { "type": "string", "previewValue": "Newcomer" }
-  },
+  "height": 118,
+  "actions": ["on_input", "approve", "reject"],
+  "bindingsSchema": {},
   "widgets": [
     {
       "id": "panel_main", "type": "panel",
-      "x": 0, "y": 0, "w": 200, "h": 110,
+      "x": 0, "y": 0, "w": 200, "h": 118,
       "text": "", "icon": null,
       "props": { "style": "default" }
     },
@@ -22,23 +20,23 @@
       "parentId": "panel_main"
     },
     {
-      "id": "label_name", "type": "label",
-      "x": 0, "y": 24, "w": 200, "h": 10,
-      "text": "Newcomer", "icon": null,
-      "props": { "color": "-8163072", "shadow": "false", "align": "center" },
-      "parentId": "panel_main",
-      "bindings": { "text": "candidate_name" }
-    },
-    {
       "id": "label_prompt", "type": "label",
-      "x": 0, "y": 40, "w": 200, "h": 10,
-      "text": "wants to join your dominion.", "icon": null,
+      "x": 0, "y": 24, "w": 200, "h": 10,
+      "text": "A newcomer wants to join your dominion.", "icon": null,
       "props": { "color": "-12566464", "shadow": "false", "align": "center" },
       "parentId": "panel_main"
     },
     {
+      "id": "input_name", "type": "input",
+      "x": 10, "y": 42, "w": 180, "h": 20,
+      "text": "", "icon": null,
+      "props": { "max_length": "32", "hint_text": "Name..." },
+      "parentId": "panel_main",
+      "action": "on_input"
+    },
+    {
       "id": "btn_approve", "type": "button",
-      "x": 10, "y": 60, "w": 180, "h": 20,
+      "x": 10, "y": 68, "w": 180, "h": 20,
       "text": "Approve", "icon": null,
       "props": {},
       "parentId": "panel_main",
@@ -46,7 +44,7 @@
     },
     {
       "id": "btn_reject", "type": "button",
-      "x": 10, "y": 84, "w": 180, "h": 20,
+      "x": 10, "y": 92, "w": 180, "h": 20,
       "text": "Reject", "icon": null,
       "props": {},
       "parentId": "panel_main",

@@ -79,9 +79,47 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     public InhabitantEntity(EntityType<? extends InhabitantEntity> type, Level level) {
         super(type, level);
         setPersistenceRequired();
+        setCanPickUpLoot(true);
         for (var need : NeedType.values()) {
             needs.put(need, 1.0f);
         }
+    }
+
+    /**
+     * Vanilla's own {@code Mob#pickUpItem} only equips items into gear slots (armor/weapons), so
+     * without this override enabling {@link #setCanPickUpLoot} would only ever pick up weapons and
+     * armor dropped nearby. Inhabitants should pick up anything within reach - job materials dropped
+     * by a player, a freshly felled tree's leaf drops that missed the lumberjack's own harvest pass, etc.
+     * A job tool (axe, fishing rod, ...) goes straight into the main-hand equipment slot if that's
+     * empty, exactly like one manually equipped from storage - everything else goes to the general
+     * job inventory instead.
+     */
+    @Override
+    protected void pickUpItem(ServerLevel level, net.minecraft.world.entity.item.ItemEntity itemEntity) {
+        var stack = itemEntity.getItem();
+        if (isJobTool(stack) && getItemBySlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND).isEmpty()) {
+            var toEquip = stack.split(1);
+            setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, toEquip);
+            onItemPickup(itemEntity);
+            take(itemEntity, 1);
+            if (stack.isEmpty()) {
+                itemEntity.discard();
+            }
+            return;
+        }
+        var leftover = getInventory().addItem(stack.copy());
+        int taken = stack.getCount() - leftover.getCount();
+        if (taken <= 0) return;
+        onItemPickup(itemEntity);
+        take(itemEntity, taken);
+        stack.shrink(taken);
+        if (stack.isEmpty()) {
+            itemEntity.discard();
+        }
+    }
+
+    private static boolean isJobTool(net.minecraft.world.item.ItemStack stack) {
+        return stack.is(net.minecraft.tags.ItemTags.AXES) || stack.is(net.minecraft.world.item.Items.FISHING_ROD);
     }
 
     private static final software.bernie.geckolib.animation.RawAnimation WALK =
@@ -408,10 +446,10 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     /**
      * Applies the dominion owner's approve/reject decision for this immigration candidate, gated to
      * the same rules as before (owner only, only while awaiting a decision): approving joins the
-     * dominion (subject to capacity), rejecting sends the candidate wandering off. Invoked from the
-     * ImmigrantRequestScreen's buttons via {@link ModNetwork}.
+     * dominion (subject to capacity) under the owner-chosen {@code name}, rejecting sends the
+     * candidate wandering off. Invoked from the ImmigrantRequestScreen's buttons via {@link ModNetwork}.
      */
-    public void applyImmigrationDecision(ServerLevel serverLevel, ServerPlayer player, boolean approve) {
+    public void applyImmigrationDecision(ServerLevel serverLevel, ServerPlayer player, boolean approve, String name) {
         var job = immigrationJob;
         if (job == null || job.getPhase() != ImmigrationJob.Phase.AWAITING_DECISION) {
             return;
@@ -429,17 +467,19 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             player.displayClientMessage(Component.literal(getName().getString() + " wanders off, rejected."), false);
             return;
         }
-        var inhabitant = new com.sheepfromheaven.minenow.dominion.DominionInhabitant(getUUID(), getName().getString());
+        String chosenName = name == null || name.isBlank() ? getName().getString() : name.trim();
+        var inhabitant = new com.sheepfromheaven.minenow.dominion.DominionInhabitant(getUUID(), chosenName);
         if (!dominion.addInhabitant(inhabitant)) {
             player.displayClientMessage(Component.literal("Your dominion is full - increase its tier to accept more inhabitants!"), false);
             return;
         }
+        setCustomName(Component.literal(chosenName));
         dominion.setPendingImmigrantId(null);
         dominion.setNextImmigrationAttemptTick(serverLevel.getGameTime() + 2400);
         setDominionId(dominion.getId());
         setImmigrationJob(null);
         data.setDirty();
-        player.displayClientMessage(Component.literal(getName().getString() + " has joined your dominion!"), false);
+        player.displayClientMessage(Component.literal(chosenName + " has joined your dominion!"), false);
     }
 
     public void goHome() {

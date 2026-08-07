@@ -14,6 +14,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -93,6 +94,94 @@ public class LumberjackLeafHarvestTests {
             helper.assertTrue(leafGone, "The canopy leaf should be harvested (cleared) once the trunk is felled");
             helper.assertTrue(itemEntitiesNearby.isEmpty(),
                     "Leaf drops should go straight into the inhabitant's inventory, not spawn as loose item entities");
+        });
+    }
+
+    /**
+     * Reproduces the "lumberjack never gets back to harvesting the canopy after being interrupted"
+     * bug: something pulling the inhabitant away mid-leaf-harvest (going to eat, sleep, ...) used to
+     * unconditionally reset the job back to GOTO_HUT, which - since the trunk was already empty by
+     * this point - walked straight back into CHOPPING, immediately bailed to RETURN_TO_HUT on the
+     * empty-trunk guard, and abandoned the pending canopy leaves for good. Harvesting leaves has no
+     * positional requirement, so an interruption during that phase should resume it right where it
+     * left off instead.
+     */
+    public static void interruptingLeafHarvestStillHarvestsCanopyLeavesOnResume(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        var markerRelPos = new BlockPos(2, 1, 2);
+        var barrelRelPos = new BlockPos(1, 1, 1);
+        var soilRelPos = new BlockPos(6, 0, 6);
+        var logRelPos = new BlockPos(6, 1, 6);
+        // Several leaves (rather than the sibling test's one) widen the HARVESTING_LEAVES window enough
+        // to reliably interrupt mid-harvest instead of racing a single ~3-tick-wide phase.
+        var leafRelPositions = List.of(
+                logRelPos.offset(1, 0, 0), logRelPos.offset(-1, 0, 0), logRelPos.offset(0, 0, 1));
+
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                helper.setBlock(soilRelPos.offset(dx, 0, dz), Blocks.GRASS_BLOCK);
+            }
+        }
+        helper.setBlock(logRelPos, Blocks.OAK_LOG);
+        for (var leafRelPos : leafRelPositions) {
+            helper.setBlock(leafRelPos, Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, false));
+        }
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+        var logPos = helper.absolutePos(logRelPos);
+        var leafPositions = leafRelPositions.stream().map(helper::absolutePos).toList();
+
+        if (level.getBlockEntity(barrelPos) instanceof Container container) {
+            container.setItem(0, new ItemStack(Items.IRON_AXE));
+        }
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Lumberyard", StructureType.LUMBERYARD, markerPos, Set.of(markerPos, barrelPos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+        workGoal.tick();
+        workGoal.tick();
+        inhabitant.snapTo(logPos.getX() + 0.5, logPos.getY(), logPos.getZ() + 0.5);
+        workGoal.tick();
+
+        // Fell the single-log trunk, landing in HARVESTING_LEAVES exactly as in the sibling test.
+        for (int i = 0; i < 40 && !"Harvesting leaves".equals(workGoal.getStatusDescription()); i++) {
+            workGoal.tick();
+        }
+        helper.assertTrue("Harvesting leaves".equals(workGoal.getStatusDescription()),
+                "Job should have reached the leaf-harvesting phase before being interrupted, was: "
+                        + workGoal.getStatusDescription());
+
+        // Simulate a higher-priority goal (eating, sleeping, ...) taking over mid-harvest, before every
+        // leaf has been harvested yet.
+        workGoal.stop();
+        workGoal.start();
+
+        for (int i = 0; i < 60; i++) {
+            workGoal.tick();
+        }
+
+        var anyLeafRemains = leafPositions.stream().anyMatch(pos -> level.getBlockState(pos).is(BlockTags.LEAVES));
+        var itemEntitiesNearby = level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                new net.minecraft.world.phys.AABB(logPos).inflate(4));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(!anyLeafRemains, "Every canopy leaf should still be harvested after resuming from an interruption");
+            helper.assertTrue(itemEntitiesNearby.isEmpty(),
+                    "Leaf drops should still go straight into the inhabitant's inventory after resuming, not spawn as loose item entities");
         });
     }
 

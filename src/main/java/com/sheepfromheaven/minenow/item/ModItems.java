@@ -29,14 +29,6 @@ public class ModItems {
                             .rarity(Rarity.UNCOMMON)
             ));
 
-    public static final DeferredHolder<Item, Item> STRUCTURE_MARKER = ITEMS.register("structure_marker",
-            () -> new net.minecraft.world.item.BlockItem(
-                    ModBlocks.STRUCTURE_MARKER.get(),
-                    new Item.Properties()
-                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "structure_marker")))
-                            .stacksTo(16)
-            ));
-
     public static final DeferredHolder<Item, Item> FISHERY_MARKER = ITEMS.register("fishery_marker",
             () -> new net.minecraft.world.item.BlockItem(
                     ModBlocks.FISHERY_MARKER.get(),

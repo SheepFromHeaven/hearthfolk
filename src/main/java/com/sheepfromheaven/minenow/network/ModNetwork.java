@@ -51,7 +51,6 @@ public class ModNetwork {
         registrar.playToServer(RenameDominionPacket.TYPE, RenameDominionPacket.CODEC, ModNetwork::handleRenameDominion);
         registrar.playToServer(RenameStructurePacket.TYPE, RenameStructurePacket.CODEC, ModNetwork::handleRenameStructure);
         registrar.playToServer(RecalculateStructurePacket.TYPE, RecalculateStructurePacket.CODEC, ModNetwork::handleRecalculateStructure);
-        registrar.playToServer(SetStructureTypePacket.TYPE, SetStructureTypePacket.CODEC, ModNetwork::handleSetStructureType);
         registrar.playToServer(OpenStructureFilterPacket.TYPE, OpenStructureFilterPacket.CODEC, ModNetwork::handleOpenStructureFilter);
         registrar.playToServer(GoHomePacket.TYPE, GoHomePacket.CODEC, ModNetwork::handleGoHome);
         registrar.playToServer(ViewInventoryPacket.TYPE, ViewInventoryPacket.CODEC, ModNetwork::handleViewInventory);
@@ -149,27 +148,6 @@ public class ModNetwork {
                     case RoomDetector.Result.NotEnclosed ignored ->
                         player.displayClientMessage(Component.literal("Room is no longer enclosed! Check for gaps."), false);
                 }
-            }
-        }
-    }
-
-    private static void handleSetStructureType(SetStructureTypePacket msg, IPayloadContext ctx) {
-        var player = (ServerPlayer) ctx.player();
-        var level = player.level();
-        var data = DominionSavedData.get(level);
-        var dominion = data.findDominionContaining(msg.markerPos());
-        if (dominion != null && dominion.getOwnerUuid().equals(player.getUUID())) {
-            var structure = dominion.getStructureAt(msg.markerPos());
-            if (structure != null) {
-                try {
-                    var type = StructureType.valueOf(msg.typeName());
-                    structure.setType(type);
-                    data.setDirty();
-                    if (level.getBlockEntity(msg.markerPos()) instanceof StructureMarkerBlockEntity be) {
-                        be.setStructureData(structure.getName(), type, dominion.getId(), structure.getId());
-                        be.refreshStatuses(structure, level);
-                    }
-                } catch (IllegalArgumentException ignored) {}
             }
         }
     }
@@ -340,7 +318,7 @@ public class ModNetwork {
         var level = player.level();
         if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
         if (level instanceof ServerLevel serverLevel) {
-            inhabitant.applyImmigrationDecision(serverLevel, player, msg.approve());
+            inhabitant.applyImmigrationDecision(serverLevel, player, msg.approve(), msg.name());
         }
     }
 
@@ -396,10 +374,6 @@ public class ModNetwork {
         ClientPacketDistributor.sendToServer(new RenameStructurePacket(markerPos, newName));
     }
 
-    public static void sendSetStructureType(BlockPos markerPos, String typeName) {
-        ClientPacketDistributor.sendToServer(new SetStructureTypePacket(markerPos, typeName));
-    }
-
     public static void sendOpenStructureFilter(BlockPos markerPos) {
         ClientPacketDistributor.sendToServer(new OpenStructureFilterPacket(markerPos));
     }
@@ -408,12 +382,20 @@ public class ModNetwork {
         ClientPacketDistributor.sendToServer(new RecalculateStructurePacket(markerPos));
     }
 
-    public static void sendOpenDominionScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos) {
+    public static void sendOpenDominionScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos, net.minecraft.server.level.ServerLevel level) {
         var names = dominion.getInhabitants().stream()
                 .map(DominionInhabitant::getName)
                 .collect(Collectors.joining(","));
+        var milestone = dominion.getTier().getLevelUpMilestone();
+        String milestoneProgress = milestone == null ? "" : String.join(",",
+                String.valueOf(dominion.getInhabitants().size()),
+                String.valueOf(dominion.getStructures().size()),
+                String.valueOf(dominion.getTotalStoredResources(level)),
+                String.valueOf(milestone.minPopulation()),
+                String.valueOf(milestone.minStructures()),
+                String.valueOf(milestone.minStoredResources()));
         PacketDistributor.sendToPlayer(player, new OpenDominionScreenPacket(
-                dominion.getName(), dominion.getTier().name(), bannerPos, names
+                dominion.getName(), dominion.getTier().name(), bannerPos, names, milestoneProgress
         ));
     }
 
@@ -526,8 +508,8 @@ public class ModNetwork {
                 candidate.getId(), candidate.getName().getString()));
     }
 
-    public static void sendImmigrationDecision(int entityId, boolean approve) {
-        ClientPacketDistributor.sendToServer(new ImmigrationDecisionPacket(entityId, approve));
+    public static void sendImmigrationDecision(int entityId, boolean approve, String name) {
+        ClientPacketDistributor.sendToServer(new ImmigrationDecisionPacket(entityId, approve, name));
     }
 
     public static void sendOpenRequestsScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos) {
@@ -594,16 +576,6 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record SetStructureTypePacket(BlockPos markerPos, String typeName) implements CustomPacketPayload {
-        public static final Type<SetStructureTypePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "set_structure_type"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, SetStructureTypePacket> CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC, SetStructureTypePacket::markerPos,
-                ByteBufCodecs.STRING_UTF8, SetStructureTypePacket::typeName,
-                SetStructureTypePacket::new
-        );
-        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    }
-
     /** {@code filterItem} is the configured Filter item being placed into the storehouse's filter slot, or empty to clear it. */
     public record OpenStructureFilterPacket(BlockPos markerPos) implements CustomPacketPayload {
         public static final Type<OpenStructureFilterPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_structure_filter"));
@@ -614,13 +586,20 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record OpenDominionScreenPacket(String dominionName, String tier, BlockPos bannerPos, String inhabitantNames) implements CustomPacketPayload {
+    /**
+     * {@code milestoneProgress} is a comma-separated
+     * {@code population,structureCount,storedResources,minPopulation,minStructures,minStoredResources}
+     * tuple, or empty when already at the max tier (no next-tier milestone to show).
+     */
+    public record OpenDominionScreenPacket(String dominionName, String tier, BlockPos bannerPos,
+                                            String inhabitantNames, String milestoneProgress) implements CustomPacketPayload {
         public static final Type<OpenDominionScreenPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_dominion_screen"));
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenDominionScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::dominionName,
                 ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::tier,
                 BlockPos.STREAM_CODEC, OpenDominionScreenPacket::bannerPos,
                 ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::inhabitantNames,
+                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::milestoneProgress,
                 OpenDominionScreenPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -816,11 +795,12 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record ImmigrationDecisionPacket(int entityId, boolean approve) implements CustomPacketPayload {
+    public record ImmigrationDecisionPacket(int entityId, boolean approve, String name) implements CustomPacketPayload {
         public static final Type<ImmigrationDecisionPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "immigration_decision"));
         public static final StreamCodec<RegistryFriendlyByteBuf, ImmigrationDecisionPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, ImmigrationDecisionPacket::entityId,
                 ByteBufCodecs.BOOL, ImmigrationDecisionPacket::approve,
+                ByteBufCodecs.STRING_UTF8, ImmigrationDecisionPacket::name,
                 ImmigrationDecisionPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

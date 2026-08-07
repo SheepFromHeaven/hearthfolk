@@ -66,13 +66,6 @@ public class StructureMarkerScreen extends SpecScreen {
             }
         });
 
-        on("minenow.cycle_type", (id, s, v) -> {
-            var types = StructureType.values();
-            this.structureType = types[(this.structureType.ordinal() + 1) % types.length];
-            ModNetwork.sendSetStructureType(markerPos, this.structureType.name());
-            rebuildWidgets();
-        });
-
         on("minenow.assign_resident", (id, s, v) -> openResidentPicker());
         on("minenow.assign_worker",   (id, s, v) -> openWorkerPicker());
 
@@ -144,9 +137,6 @@ public class StructureMarkerScreen extends SpecScreen {
             addRenderableWidget(nameField);
         }
 
-        AbstractWidget typeBtn = getWidget("btn_type");
-        if (typeBtn != null) typeBtn.setMessage(Component.literal("Type: " + structureType.getDisplayName()));
-
         AbstractWidget residentBtn = getWidget("btn_resident");
         if (residentBtn != null) {
             residentBtn.visible = isHouse() && !inhabitants.isEmpty();
@@ -199,6 +189,7 @@ public class StructureMarkerScreen extends SpecScreen {
 
         bindText("label_name", structureName);
         bindText("label_type", structureType.getDisplayName());
+        bindText("btn_type", "Type: " + structureType.getDisplayName());
         bindText("label_center", "Center: " + workAreaCenter.getX() + ", "
                 + workAreaCenter.getY() + ", " + workAreaCenter.getZ());
 

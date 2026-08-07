@@ -59,6 +59,12 @@ public class CookJobTests {
         var barrelPos = helper.absolutePos(barrelRelPos);
         var smokerPos = helper.absolutePos(smokerRelPos);
 
+        // Only fuel is missing here so this isolates the "food missing" label, distinct from
+        // missingBothRawFoodAndFuelReportsBothRequestsAtOnce which covers both missing at once.
+        if (level.getBlockEntity(barrelPos) instanceof Container container) {
+            container.setItem(0, new ItemStack(Items.COAL, 8));
+        }
+
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
         var structure = new DominionStructure("Tavern", StructureType.TAVERN, markerPos, Set.of(markerPos, barrelPos, smokerPos));
         dominion.addStructure(structure);
@@ -80,6 +86,50 @@ public class CookJobTests {
                     "Missing raw food should be reported generically, not as a specific item");
             helper.assertTrue(workGoal.getMissingItem() == null,
                     "No single item represents a whole category, so getMissingItem should stay null");
+        });
+    }
+
+    /**
+     * Reproduces the "cook only ever asks for one ingredient at a time" bug: with an empty
+     * storehouse, the cook needs both raw food and fuel at once, and both should show up on the
+     * dominion's request board simultaneously instead of only ever reporting food first and only
+     * getting to fuel once food is resolved.
+     */
+    public static void missingBothRawFoodAndFuelReportsBothRequestsAtOnce(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        var markerRelPos = new BlockPos(2, 1, 2);
+        var barrelRelPos = new BlockPos(1, 1, 1);
+        var smokerRelPos = new BlockPos(3, 1, 1);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+        helper.setBlock(smokerRelPos, Blocks.SMOKER);
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+        var smokerPos = helper.absolutePos(smokerRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Tavern", StructureType.TAVERN, markerPos, Set.of(markerPos, barrelPos, smokerPos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+        workGoal.tick();
+        workGoal.tick();
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(structure.getRequests().containsKey("raw food"),
+                    "Missing raw food should be requested even though fuel is also missing");
+            helper.assertTrue(structure.getRequests().containsKey("fuel"),
+                    "Missing fuel should be requested even though raw food is also missing");
         });
     }
 

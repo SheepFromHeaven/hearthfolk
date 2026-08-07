@@ -136,6 +136,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "felling_trunk_harvests_canopy_leaves_directly"),
                             com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "interrupting_leaf_harvest_still_harvests_canopy_leaves_on_resume"),
+                            com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::interruptingLeafHarvestStillHarvestsCanopyLeavesOnResume);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_shore_position_uses_rim_of_sunken_well_instead_of_the_water_itself"),
                             com.sheepfromheaven.minenow.gametest.FisherJobShoreTests::findShorePositionUsesRimOfSunkenWellInsteadOfTheWaterItself);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_shore_position_prefers_same_level_ring_over_rim"),
@@ -204,6 +206,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.CookJobTests::missingRawFoodReportsGenericLabelInsteadOfASpecificItem);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "cooking_with_burned_out_fuel_goes_back_to_fetch_more_fuel"),
                             com.sheepfromheaven.minenow.gametest.CookJobTests::cookingWithBurnedOutFuelGoesBackToFetchMoreFuel);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "missing_both_raw_food_and_fuel_reports_both_requests_at_once"),
+                            com.sheepfromheaven.minenow.gametest.CookJobTests::missingBothRawFoodAndFuelReportsBothRequestsAtOnce);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_lumberyard_barrel_is_stocked_with_an_axe"),
                             com.sheepfromheaven.minenow.gametest.DebugCommandsTests::debugLumberyardBarrelIsStockedWithAnAxe);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_fishery_barrel_is_stocked_with_a_fishing_rod"),
@@ -234,6 +238,14 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.StructureWandTests::structureWandBuildsBuildingWithFixed8x10x6Dimensions);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "shift_right_click_cycles_mode_and_builds_matching_furnished_structure"),
                             com.sheepfromheaven.minenow.gametest.StructureWandTests::shiftRightClickCyclesModeAndBuildsMatchingFurnishedStructure);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "shift_clicking_tool_in_general_slots_equips_main_hand_first"),
+                            com.sheepfromheaven.minenow.gametest.VanillaRowMenuTests::shiftClickingToolInGeneralSlotsEquipsMainHandFirst);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "shift_clicking_tool_from_player_inventory_equips_main_hand_first"),
+                            com.sheepfromheaven.minenow.gametest.VanillaRowMenuTests::shiftClickingToolFromPlayerInventoryEquipsMainHandFirst);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "picking_up_a_tool_equips_main_hand_instead_of_general_inventory"),
+                            com.sheepfromheaven.minenow.gametest.InhabitantPickupTests::pickingUpAToolEquipsMainHandInsteadOfGeneralInventory);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "picking_up_non_tool_item_goes_to_general_inventory"),
+                            com.sheepfromheaven.minenow.gametest.InhabitantPickupTests::pickingUpNonToolItemGoesToGeneralInventory);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {

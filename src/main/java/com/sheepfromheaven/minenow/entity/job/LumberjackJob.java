@@ -83,11 +83,19 @@ public class LumberjackJob implements Job {
 
     @Override
     public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        inhabitant.setChopping(false);
+        if (phase == Phase.HARVESTING_LEAVES) {
+            // Harvesting canopy leaves has no positional requirement (tickHarvestingLeaves never moves
+            // the inhabitant) - resuming right where it left off is safe and avoids the alternative of
+            // routing back through GOTO_HUT -> GOTO_TREE -> CHOPPING, which finds the (already felled,
+            // empty) trunk and bails straight to RETURN_TO_HUT, permanently abandoning canopyLeaves
+            // without ever harvesting them or collecting their drops.
+            return;
+        }
         // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant far
         // from wherever this phase left off - re-approach the hut rather than resuming chopping in place.
         phase = Phase.GOTO_HUT;
         containerTarget = null;
-        inhabitant.setChopping(false);
     }
 
     @Override
@@ -269,8 +277,18 @@ public class LumberjackJob implements Job {
     }
 
     private boolean tickChopping(InhabitantEntity inhabitant, ServerLevel level) {
-        if (trunk == null || trunk.isEmpty()) {
+        if (trunk == null) {
             phase = Phase.RETURN_TO_HUT;
+            inhabitant.setChopping(false);
+            return true;
+        }
+        if (trunk.isEmpty()) {
+            // The last log's impact (below) empties the trunk mid-animation-cycle, well before the
+            // end-of-cycle check further down runs - without this being canopy-aware too, every felled
+            // tree would land here on the very next tick and jump straight to RETURN_TO_HUT, silently
+            // abandoning canopyLeaves without ever harvesting them.
+            phase = canopyLeaves.isEmpty() ? Phase.RETURN_TO_HUT : Phase.HARVESTING_LEAVES;
+            waitTicks = LEAF_HARVEST_TICKS;
             inhabitant.setChopping(false);
             return true;
         }

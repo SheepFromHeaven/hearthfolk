@@ -2,7 +2,7 @@
   "id": "dominion_screen",
   "modId": "minenow",
   "width": 220,
-  "height": 175,
+  "height": 210,
   "actions": ["on_input", "rename", "toggle_range", "requests"],
   "bindingsSchema": {
     "name":               { "type": "string",  "previewValue": "My Dominion" },
@@ -13,7 +13,7 @@
   "widgets": [
     {
       "id": "panel_main", "type": "panel",
-      "x": 0, "y": 0, "w": 220, "h": 175,
+      "x": 0, "y": 0, "w": 220, "h": 210,
       "text": "", "icon": null,
       "props": { "style": "default" }
     },
@@ -34,44 +34,57 @@
       "bindings": { "text": "tier" }
     },
     {
+      "id": "tabs_main", "type": "tabs",
+      "x": 0, "y": 40, "w": 220, "h": 170,
+      "text": "", "icon": null,
+      "props": {},
+      "parentId": "panel_main"
+    },
+
+    { "id": "tab_general",      "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "General",      "icon": null, "props": {}, "parentId": "tabs_main" },
+    { "id": "tab_inhabitants",  "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "Inhabitants",  "icon": null, "props": {}, "parentId": "tabs_main" },
+    { "id": "tab_requirements", "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "Requirements", "icon": null, "props": {}, "parentId": "tabs_main" },
+
+    {
       "id": "input_name", "type": "input",
-      "x": 10, "y": 35, "w": 200, "h": 20,
+      "x": 10, "y": 4, "w": 200, "h": 20,
       "text": "", "icon": null,
       "props": { "max_length": "32", "hint_text": "Dominion name..." },
-      "parentId": "panel_main",
+      "parentId": "tab_general",
       "action": "on_input"
     },
     {
       "id": "btn_rename", "type": "button",
-      "x": 10, "y": 62, "w": 200, "h": 20,
+      "x": 10, "y": 30, "w": 200, "h": 20,
       "text": "Rename", "icon": null,
       "props": {},
-      "parentId": "panel_main",
+      "parentId": "tab_general",
       "action": "rename"
     },
     {
       "id": "btn_range", "type": "button",
-      "x": 10, "y": 88, "w": 200, "h": 20,
+      "x": 10, "y": 56, "w": 200, "h": 20,
       "text": "Show Range", "icon": null,
       "props": {},
-      "parentId": "panel_main",
+      "parentId": "tab_general",
       "action": "toggle_range",
       "bindings": { "text": "range_btn_label" }
     },
     {
       "id": "btn_requests", "type": "button",
-      "x": 10, "y": 114, "w": 200, "h": 20,
+      "x": 10, "y": 82, "w": 200, "h": 20,
       "text": "Requests", "icon": null,
       "props": {},
-      "parentId": "panel_main",
+      "parentId": "tab_general",
       "action": "requests"
     },
+
     {
       "id": "label_inhabitants_header", "type": "label",
-      "x": 10, "y": 140, "w": 200, "h": 10,
+      "x": 0, "y": 4, "w": 220, "h": 10,
       "text": "0 inhabitants", "icon": null,
       "props": { "color": "-12566464", "shadow": "false" },
-      "parentId": "panel_main",
+      "parentId": "tab_inhabitants",
       "bindings": { "text": "inhabitants_header" }
     }
   ]

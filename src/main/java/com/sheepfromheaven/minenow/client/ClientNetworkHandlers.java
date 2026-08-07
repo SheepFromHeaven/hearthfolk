@@ -16,7 +16,8 @@ public class ClientNetworkHandlers {
                     ? List.<String>of()
                     : List.of(msg.inhabitantNames().split(","));
             Minecraft.getInstance().setScreen(DominionScreen.create(
-                    msg.dominionName(), DominionTier.valueOf(msg.tier()), msg.bannerPos(), inhabitantNames));
+                    msg.dominionName(), DominionTier.valueOf(msg.tier()), msg.bannerPos(), inhabitantNames,
+                    msg.milestoneProgress()));
         });
     }
 
