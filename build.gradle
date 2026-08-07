@@ -91,12 +91,16 @@ repositories {
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
         content { includeGroup 'software.bernie.geckolib' }
     }
-    flatDir { dirs 'libs' }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
 }
 
 dependencies {
     implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.11:5.4.5'
-    implementation 'sheepfromheaven.screenspec:screenspec-neoforge:0.12.1'
+    implementation 'maven.modrinth:screenspec:TZJaqn9E'
 }
 
 tasks.withType(JavaCompile).configureEach {

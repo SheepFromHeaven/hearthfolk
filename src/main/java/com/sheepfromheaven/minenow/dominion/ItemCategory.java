@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow.dominion;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
@@ -24,6 +25,12 @@ public enum ItemCategory {
         @Override
         public boolean matches(ItemStack stack, ServerLevel level) {
             return !stack.isEmpty() && level.fuelValues().isFuel(stack);
+        }
+    },
+    LOGS {
+        @Override
+        public boolean matches(ItemStack stack, ServerLevel level) {
+            return !stack.isEmpty() && stack.is(ItemTags.LOGS);
         }
     };
 
