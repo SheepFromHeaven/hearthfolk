@@ -37,8 +37,10 @@ public class CookJob implements Job {
     private BlockPos containerTarget;
     /** Smoker slot (0 food / 1 fuel) an ingredient already picked up is destined for, or -1 if not carrying one. */
     private int pendingSmokerSlot = -1;
-    @Nullable
-    private String missingItemLabel;
+    /** Smoker slot the current {@link #containerTarget} trip is fetching for, mirrors {@link #pendingSmokerSlot} once loaded. */
+    private int fetchSlot = -1;
+    /** Both "raw food" and "fuel" can be missing at once - reported to the dominion's request board together. */
+    private final java.util.Set<String> missingItemLabels = new java.util.LinkedHashSet<>();
 
     @Override
     public boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -90,14 +92,12 @@ public class CookJob implements Job {
         var smokerPos = workplace.findBlock(level, state -> state.is(Blocks.SMOKER)).orElse(null);
         var smoker = smokerPos != null && level.getBlockEntity(smokerPos) instanceof Container container ? container : null;
         if (smoker == null) {
-            missingItemLabel = "a Smoker";
-            workplace.reportWorkerIssue(inhabitant.getUUID(),
-                    DominionStructure.WorkerIssue.urgent(missingItemLabel, 1), level.getGameTime());
-            DominionSavedData.get(level).setDirty();
+            reportMissing(inhabitant, workplace, level, "a Smoker", DominionStructure.WorkerIssue.urgent("a Smoker", 1));
             phase = Phase.MISSING_INGREDIENTS;
             waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
             return true;
         }
+        clearMissing(inhabitant, workplace, level, "a Smoker");
 
         // Already carrying an ingredient picked up on a previous tick - walk it over to the smoker
         // and load it in, rather than teleporting it straight from the barrel.
@@ -123,32 +123,57 @@ public class CookJob implements Job {
             return true;
         }
 
-        int neededSlot = smoker.getItem(0).isEmpty() ? 0 : smoker.getItem(1).isEmpty() ? 1 : -1;
-        if (neededSlot == -1) {
-            missingItemLabel = null;
+        boolean needFood = smoker.getItem(0).isEmpty();
+        boolean needFuel = smoker.getItem(1).isEmpty();
+        if (!needFood && !needFuel) {
+            clearMissing(inhabitant, workplace, level, "raw food");
+            clearMissing(inhabitant, workplace, level, "fuel");
             lookAtBlock(inhabitant, smokerPos);
             inhabitant.swing(InteractionHand.MAIN_HAND);
             phase = Phase.COOKING;
             return true;
         }
 
-        java.util.function.Predicate<net.minecraft.world.item.ItemStack> matcher = neededSlot == 0
-                ? stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent()
-                : stack -> CookingRecipes.isFuel(level, stack);
-
         if (containerTarget == null) {
-            containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), matcher);
-            if (containerTarget == null) {
-                missingItemLabel = neededSlot == 0 ? "raw food" : "fuel";
-                var category = neededSlot == 0 ? ItemCategory.RAW_FOOD : ItemCategory.FUEL;
-                workplace.reportWorkerIssue(inhabitant.getUUID(),
-                        DominionStructure.WorkerIssue.urgentCategory(missingItemLabel, category), level.getGameTime());
-                DominionSavedData.get(level).setDirty();
+            var foodContainer = needFood
+                    ? ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level),
+                            stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent())
+                    : null;
+            var fuelContainer = needFuel
+                    ? ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level),
+                            stack -> CookingRecipes.isFuel(level, stack))
+                    : null;
+
+            if (needFood && foodContainer == null) {
+                reportMissing(inhabitant, workplace, level, "raw food",
+                        DominionStructure.WorkerIssue.urgentCategory("raw food", ItemCategory.RAW_FOOD));
+            } else if (needFood) {
+                clearMissing(inhabitant, workplace, level, "raw food");
+            }
+            if (needFuel && fuelContainer == null) {
+                reportMissing(inhabitant, workplace, level, "fuel",
+                        DominionStructure.WorkerIssue.urgentCategory("fuel", ItemCategory.FUEL));
+            } else if (needFuel) {
+                clearMissing(inhabitant, workplace, level, "fuel");
+            }
+
+            if (foodContainer != null) {
+                containerTarget = foodContainer;
+                fetchSlot = 0;
+            } else if (fuelContainer != null) {
+                containerTarget = fuelContainer;
+                fetchSlot = 1;
+            } else {
                 phase = Phase.MISSING_INGREDIENTS;
                 waitTicks = MISSING_INGREDIENTS_RETRY_TICKS;
                 return true;
             }
         }
+
+        java.util.function.Predicate<net.minecraft.world.item.ItemStack> matcher = fetchSlot == 0
+                ? stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent()
+                : stack -> CookingRecipes.isFuel(level, stack);
+
         if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
             return true;
         }
@@ -162,7 +187,8 @@ public class CookJob implements Job {
             var extracted = ContainerUtil.extractFirst(container, inhabitant, matcher);
             if (!extracted.isEmpty()) {
                 inhabitant.getInventory().addItem(extracted);
-                pendingSmokerSlot = neededSlot;
+                pendingSmokerSlot = fetchSlot;
+                fetchSlot = -1;
                 actionPacer.recordAction(containerTarget);
                 containerTarget = null;
                 return true;
@@ -170,7 +196,21 @@ public class CookJob implements Job {
         }
         // The ingredient was gone by the time we arrived (race with another job/player) - rescan next tick.
         containerTarget = null;
+        fetchSlot = -1;
         return true;
+    }
+
+    private void reportMissing(InhabitantEntity inhabitant, DominionStructure workplace, ServerLevel level,
+                                String label, DominionStructure.WorkerIssue issue) {
+        missingItemLabels.add(label);
+        workplace.reportWorkerIssue(inhabitant.getUUID(), issue, level.getGameTime());
+        DominionSavedData.get(level).setDirty();
+    }
+
+    private void clearMissing(InhabitantEntity inhabitant, DominionStructure workplace, ServerLevel level, String label) {
+        if (!missingItemLabels.remove(label)) return;
+        workplace.clearWorkerIssue(inhabitant.getUUID(), label, level.getGameTime());
+        DominionSavedData.get(level).setDirty();
     }
 
     private boolean tickCooking(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -228,10 +268,9 @@ public class CookJob implements Job {
 
     private boolean tickMissingIngredients(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         if (--waitTicks <= 0) {
-            if (missingItemLabel != null) {
-                workplace.clearWorkerIssue(inhabitant.getUUID(), missingItemLabel, level.getGameTime());
-                DominionSavedData.get(level).setDirty();
-            }
+            // Don't clear the reported issues here - tickFindIngredients re-derives and re-reports/clears
+            // each of them against current storage on the very next visit, so the request board stays
+            // accurate for both "raw food" and "fuel" throughout the retry loop instead of flickering.
             phase = Phase.FIND_INGREDIENTS;
         }
         return true;
@@ -275,7 +314,7 @@ public class CookJob implements Job {
     @Override
     @Nullable
     public String getMissingItemLabel() {
-        return missingItemLabel;
+        return missingItemLabels.isEmpty() ? null : String.join(", ", missingItemLabels);
     }
 
     @Override
@@ -284,8 +323,9 @@ public class CookJob implements Job {
         tag.putInt("WaitTicks", waitTicks);
         actionPacer.save(tag, "Action");
         tag.putInt("PendingSmokerSlot", pendingSmokerSlot);
+        tag.putInt("FetchSlot", fetchSlot);
         if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
-        if (missingItemLabel != null) tag.putString("MissingItemLabel", missingItemLabel);
+        if (!missingItemLabels.isEmpty()) tag.putString("MissingItemLabels", String.join(",", missingItemLabels));
     }
 
     @Override
@@ -298,7 +338,12 @@ public class CookJob implements Job {
         waitTicks = tag.getIntOr("WaitTicks", 0);
         actionPacer.load(tag, "Action");
         pendingSmokerSlot = tag.getIntOr("PendingSmokerSlot", -1);
+        fetchSlot = tag.getIntOr("FetchSlot", -1);
         containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
-        missingItemLabel = tag.contains("MissingItemLabel") ? tag.getStringOr("MissingItemLabel", "") : null;
+        missingItemLabels.clear();
+        String saved = tag.getStringOr("MissingItemLabels", "");
+        if (!saved.isEmpty()) {
+            missingItemLabels.addAll(java.util.List.of(saved.split(",")));
+        }
     }
 }
