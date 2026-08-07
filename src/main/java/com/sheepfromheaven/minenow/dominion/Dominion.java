@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
+import com.sheepfromheaven.minenow.structure.field.Field;
 
 public class Dominion {
     private final UUID id;
@@ -24,6 +25,7 @@ public class Dominion {
     private final Map<UUID, DominionStructure> structures = new HashMap<>();
     private final Map<UUID, DominionInhabitant> inhabitants = new HashMap<>();
     private final Map<UUID, DominionPathNode> pathNodes = new HashMap<>();
+    private final Map<UUID, Field> fields = new HashMap<>();
     /** The single immigrant candidate currently walking to (or awaiting a decision at) the banner, if any. */
     @Nullable
     private UUID pendingImmigrantId;
@@ -93,7 +95,55 @@ public class Dominion {
             unassignInhabitant(structure, level);
             unassignWorker(structure, level);
             structures.remove(structureId);
+            for (var field : fields.values()) {
+                if (structureId.equals(field.getAssignedStructureId())) {
+                    field.setAssignedStructureId(null);
+                }
+            }
         }
+    }
+
+    public void addField(Field field) {
+        fields.put(field.getId(), field);
+    }
+
+    public void removeField(UUID fieldId) {
+        fields.remove(fieldId);
+    }
+
+    public Field getFieldById(UUID fieldId) {
+        return fields.get(fieldId);
+    }
+
+    /** The field whose marker sits exactly at {@code markerPos}, if any. */
+    public Field getFieldAt(BlockPos markerPos) {
+        for (var f : fields.values()) {
+            if (f.getMarkerPos().equals(markerPos)) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    /** The field whose claimed farmland area contains {@code pos}, if any. */
+    public Field getFieldContaining(BlockPos pos) {
+        for (var f : fields.values()) {
+            if (f.getArea().contains(pos)) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    public Collection<Field> getFields() {
+        return Collections.unmodifiableCollection(fields.values());
+    }
+
+    /** All fields currently assigned to the given structure (typically a FARM), e.g. for a farmer to tend. */
+    public List<Field> getFieldsAssignedTo(UUID structureId) {
+        return fields.values().stream()
+                .filter(f -> structureId.equals(f.getAssignedStructureId()))
+                .collect(Collectors.toList());
     }
 
     public void unassignInhabitant(DominionStructure structure, ServerLevel level) {
@@ -481,5 +531,6 @@ public class Dominion {
         }
         structures.clear();
         pathNodes.clear();
+        fields.clear();
     }
 }

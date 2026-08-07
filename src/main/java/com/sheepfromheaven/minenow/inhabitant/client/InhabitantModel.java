@@ -33,7 +33,7 @@ public class InhabitantModel extends GeoModel<InhabitantEntity> {
                 case FISHER -> TEXTURE_FISHER;
                 case COOK -> TEXTURE_COOK;
                 case LUMBERJACK -> TEXTURE_LUMBERJACK;
-                case COURIER -> TEXTURE;
+                case COURIER, FARMER -> TEXTURE;
             };
         }
         return TEXTURE;

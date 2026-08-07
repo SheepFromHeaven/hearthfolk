@@ -16,6 +16,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.Set;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
+import com.sheepfromheaven.minenow.structure.field.block.FieldMarkerBlock;
 import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlock;
 import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.townbanner.TownWallBannerBlock;
@@ -73,6 +74,12 @@ public class ModBlocks {
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> STOREHOUSE_MARKER =
             registerMarker("storehouse_marker", com.sheepfromheaven.minenow.structure.StructureType.STOREHOUSE);
 
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> FARM_MARKER =
+            registerMarker("farm_marker", com.sheepfromheaven.minenow.structure.StructureType.FARM);
+
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, FieldMarkerBlock> FIELD_MARKER =
+            BLOCKS.register("field_marker", () -> new FieldMarkerBlock(markerProps("field_marker")));
+
     public static StructureMarkerBlock getMarkerBlock(com.sheepfromheaven.minenow.structure.StructureType type) {
         return switch (type) {
             case HOUSE -> STRUCTURE_MARKER.get();
@@ -80,6 +87,7 @@ public class ModBlocks {
             case LUMBERYARD -> LUMBERYARD_MARKER.get();
             case TAVERN -> TAVERN_MARKER.get();
             case STOREHOUSE -> STOREHOUSE_MARKER.get();
+            case FARM -> FARM_MARKER.get();
         };
     }
 
@@ -92,7 +100,7 @@ public class ModBlocks {
             BLOCK_ENTITIES.register("structure_marker",
                     () -> new BlockEntityType<>(StructureMarkerBlockEntity::new,
                             Set.of(STRUCTURE_MARKER.get(), FISHERY_MARKER.get(), LUMBERYARD_MARKER.get(),
-                                    TAVERN_MARKER.get(), STOREHOUSE_MARKER.get())));
+                                    TAVERN_MARKER.get(), STOREHOUSE_MARKER.get(), FARM_MARKER.get())));
 
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);
