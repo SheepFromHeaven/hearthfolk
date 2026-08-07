@@ -446,10 +446,10 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     /**
      * Applies the dominion owner's approve/reject decision for this immigration candidate, gated to
      * the same rules as before (owner only, only while awaiting a decision): approving joins the
-     * dominion (subject to capacity), rejecting sends the candidate wandering off. Invoked from the
-     * ImmigrantRequestScreen's buttons via {@link ModNetwork}.
+     * dominion (subject to capacity) under the owner-chosen {@code name}, rejecting sends the
+     * candidate wandering off. Invoked from the ImmigrantRequestScreen's buttons via {@link ModNetwork}.
      */
-    public void applyImmigrationDecision(ServerLevel serverLevel, ServerPlayer player, boolean approve) {
+    public void applyImmigrationDecision(ServerLevel serverLevel, ServerPlayer player, boolean approve, String name) {
         var job = immigrationJob;
         if (job == null || job.getPhase() != ImmigrationJob.Phase.AWAITING_DECISION) {
             return;
@@ -467,17 +467,19 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             player.displayClientMessage(Component.literal(getName().getString() + " wanders off, rejected."), false);
             return;
         }
-        var inhabitant = new com.sheepfromheaven.minenow.dominion.DominionInhabitant(getUUID(), getName().getString());
+        String chosenName = name == null || name.isBlank() ? getName().getString() : name.trim();
+        var inhabitant = new com.sheepfromheaven.minenow.dominion.DominionInhabitant(getUUID(), chosenName);
         if (!dominion.addInhabitant(inhabitant)) {
             player.displayClientMessage(Component.literal("Your dominion is full - increase its tier to accept more inhabitants!"), false);
             return;
         }
+        setCustomName(Component.literal(chosenName));
         dominion.setPendingImmigrantId(null);
         dominion.setNextImmigrationAttemptTick(serverLevel.getGameTime() + 2400);
         setDominionId(dominion.getId());
         setImmigrationJob(null);
         data.setDirty();
-        player.displayClientMessage(Component.literal(getName().getString() + " has joined your dominion!"), false);
+        player.displayClientMessage(Component.literal(chosenName + " has joined your dominion!"), false);
     }
 
     public void goHome() {

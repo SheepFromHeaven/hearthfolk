@@ -317,7 +317,7 @@ public class ModNetwork {
         var level = player.level();
         if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
         if (level instanceof ServerLevel serverLevel) {
-            inhabitant.applyImmigrationDecision(serverLevel, player, msg.approve());
+            inhabitant.applyImmigrationDecision(serverLevel, player, msg.approve(), msg.name());
         }
     }
 
@@ -520,8 +520,8 @@ public class ModNetwork {
                 candidate.getId(), candidate.getName().getString()));
     }
 
-    public static void sendImmigrationDecision(int entityId, boolean approve) {
-        ClientPacketDistributor.sendToServer(new ImmigrationDecisionPacket(entityId, approve));
+    public static void sendImmigrationDecision(int entityId, boolean approve, String name) {
+        ClientPacketDistributor.sendToServer(new ImmigrationDecisionPacket(entityId, approve, name));
     }
 
     public static void sendOpenRequestsScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos) {
@@ -802,11 +802,12 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record ImmigrationDecisionPacket(int entityId, boolean approve) implements CustomPacketPayload {
+    public record ImmigrationDecisionPacket(int entityId, boolean approve, String name) implements CustomPacketPayload {
         public static final Type<ImmigrationDecisionPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "immigration_decision"));
         public static final StreamCodec<RegistryFriendlyByteBuf, ImmigrationDecisionPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, ImmigrationDecisionPacket::entityId,
                 ByteBufCodecs.BOOL, ImmigrationDecisionPacket::approve,
+                ByteBufCodecs.STRING_UTF8, ImmigrationDecisionPacket::name,
                 ImmigrationDecisionPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
