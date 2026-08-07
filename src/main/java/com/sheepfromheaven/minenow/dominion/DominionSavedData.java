@@ -58,11 +58,11 @@ public class DominionSavedData extends SavedData {
                             .forGetter(s -> s.getDesiredStock().entrySet().stream()
                                     .map(e -> Map.entry(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(e.getKey()).toString(), e.getValue()))
                                     .collect(java.util.stream.Collectors.toList())),
-                    Codec.STRING.listOf().optionalFieldOf("itemFilter", List.of())
-                            .forGetter(s -> s.getItemFilter().stream()
-                                    .map(item -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).toString())
-                                    .collect(java.util.stream.Collectors.toList()))
-            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius, requests, desiredStock, itemFilter) -> {
+                    net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf().optionalFieldOf("filterTemplates", List.of())
+                            .forGetter(DominionStructure::getFilterTemplates),
+                    Codec.BOOL.optionalFieldOf("filterWhitelist", true).forGetter(DominionStructure::isFilterWhitelist),
+                    Codec.BOOL.optionalFieldOf("filterMatchMetadata", false).forGetter(DominionStructure::isFilterMatchMetadata)
+            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius, requests, desiredStock, filterTemplates, filterWhitelist, filterMatchMetadata) -> {
                 var structure = new DominionStructure(UUID.fromString(id), name, StructureType.valueOf(type),
                         markerPos, new HashSet<>(roomBlocks),
                         assignedId.isEmpty() ? null : UUID.fromString(assignedId),
@@ -76,10 +76,7 @@ public class DominionSavedData extends SavedData {
                             .getValue(net.minecraft.resources.Identifier.parse(entry.getKey()));
                     structure.setDesiredStock(item, entry.getValue());
                 }
-                structure.setItemFilter(itemFilter.stream()
-                        .map(key -> net.minecraft.core.registries.BuiltInRegistries.ITEM
-                                .getValue(net.minecraft.resources.Identifier.parse(key)))
-                        .collect(java.util.stream.Collectors.toSet()));
+                structure.setFilter(filterTemplates, filterWhitelist, filterMatchMetadata);
                 return structure;
             })
     );

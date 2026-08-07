@@ -33,6 +33,14 @@ public class ModMenus {
     public static final VanillaRowInventoryKind INHABITANT_INVENTORY =
             new VanillaRowInventoryKind(INHABITANT_INVENTORY_TYPE, INHABITANT_INVENTORY_COLUMNS, INHABITANT_INVENTORY_ROWS);
 
+    public static final DeferredHolder<MenuType<?>, MenuType<FilterMenu>> FILTER_TYPE =
+            MENUS.register("filter", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create(
+                    (net.neoforged.neoforge.network.IContainerFactory<FilterMenu>) FilterMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<StructureFilterMenu>> STRUCTURE_FILTER_TYPE =
+            MENUS.register("structure_filter", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create(
+                    (net.neoforged.neoforge.network.IContainerFactory<StructureFilterMenu>) StructureFilterMenu::new));
+
     public static void register(IEventBus modBus) {
         MENUS.register(modBus);
     }

@@ -60,7 +60,9 @@ public class DominionStructure {
      * Items this structure is willing to store, e.g. a storehouse's optional filter for what couriers
      * may deposit here. Empty means no restriction — everything is accepted.
      */
-    private final Set<Item> itemFilter = new HashSet<>();
+    private List<net.minecraft.world.item.ItemStack> filterTemplates = new ArrayList<>();
+    private boolean filterWhitelist = true;
+    private boolean filterMatchMetadata = false;
 
     /** What a single worker reports it is blocked on or wants proactively restocked. */
     public record WorkerIssue(
@@ -313,18 +315,44 @@ public class DominionStructure {
         return Collections.unmodifiableMap(requests);
     }
 
-    /** True if this structure will accept {@code item} into storage - always true when no filter is set. */
+    /**
+     * True if this structure will accept {@code stack} into storage - always true when no filter
+     * templates are configured. Otherwise matches by item id (and, if {@link #filterMatchMetadata} is
+     * on, exact components too) against {@link #filterTemplates}; whitelist mode accepts a match,
+     * blacklist mode accepts a non-match.
+     */
+    public boolean accepts(net.minecraft.world.item.ItemStack stack) {
+        if (filterTemplates.isEmpty()) return true;
+        boolean matches = filterTemplates.stream().anyMatch(t -> matchesTemplate(stack, t));
+        return filterWhitelist == matches;
+    }
+
+    /** Convenience overload for callers that only have an {@link Item}, matched against the default instance. */
     public boolean accepts(Item item) {
-        return itemFilter.isEmpty() || itemFilter.contains(item);
+        return accepts(item.getDefaultInstance());
     }
 
-    public Set<Item> getItemFilter() {
-        return Collections.unmodifiableSet(itemFilter);
+    private boolean matchesTemplate(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.ItemStack template) {
+        if (!stack.is(template.getItem())) return false;
+        return !filterMatchMetadata || net.minecraft.world.item.ItemStack.isSameItemSameComponents(stack, template);
     }
 
-    public void setItemFilter(Set<Item> items) {
-        itemFilter.clear();
-        itemFilter.addAll(items);
+    public List<net.minecraft.world.item.ItemStack> getFilterTemplates() {
+        return Collections.unmodifiableList(filterTemplates);
+    }
+
+    public boolean isFilterWhitelist() {
+        return filterWhitelist;
+    }
+
+    public boolean isFilterMatchMetadata() {
+        return filterMatchMetadata;
+    }
+
+    public void setFilter(List<net.minecraft.world.item.ItemStack> templates, boolean whitelist, boolean matchMetadata) {
+        this.filterTemplates = new ArrayList<>(templates);
+        this.filterWhitelist = whitelist;
+        this.filterMatchMetadata = matchMetadata;
     }
 
     // --- Codec helpers (used only by DominionSavedData to persist/restore the computed request map) ---

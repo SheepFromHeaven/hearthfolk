@@ -1,0 +1,21 @@
+{
+  "id": "structure_filter_screen",
+  "modId": "minenow",
+  "width": 178,
+  "height": 132,
+  "container": {
+    "slots": [
+      { "id": "filter_slot",   "x": 80, "y": 24,  "cols": 1, "slot_size": 18, "viewport_rows": 1 },
+      { "id": "player_inv",    "x": 8,  "y": 50,  "cols": 9, "slot_size": 18, "viewport_rows": 3, "source": "player" },
+      { "id": "player_hotbar", "x": 8,  "y": 108, "cols": 9, "slot_size": 18, "viewport_rows": 1, "source": "player_hotbar" }
+    ]
+  },
+  "widgets": [
+    {
+      "id": "label_title", "type": "label",
+      "x": 0, "y": 6, "w": 178, "h": 10,
+      "text": "Storehouse Filter", "icon": null,
+      "props": { "color": "-12566464", "shadow": "false", "align": "center" }
+    }
+  ]
+}
