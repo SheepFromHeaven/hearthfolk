@@ -18,6 +18,8 @@ public class InhabitantModel extends GeoModel<InhabitantEntity> {
     private static final Identifier TEXTURE_FISHER = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant_fisherman.png");
     private static final Identifier TEXTURE_COOK = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant_cook.png");
     private static final Identifier TEXTURE_LUMBERJACK = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant_lumberjack.png");
+    // No dedicated art asset yet - reuses the lumberjack texture as a placeholder (see MinerJob task report).
+    private static final Identifier TEXTURE_MINER = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "textures/entity/inhabitant_lumberjack.png");
     private static final Identifier ANIMATIONS = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "inhabitant");
 
     @Override
@@ -33,6 +35,7 @@ public class InhabitantModel extends GeoModel<InhabitantEntity> {
                 case FISHER -> TEXTURE_FISHER;
                 case COOK -> TEXTURE_COOK;
                 case LUMBERJACK -> TEXTURE_LUMBERJACK;
+                case MINER -> TEXTURE_MINER;
                 case COURIER, CHARCOAL_BURNER, FORESTER, FARMER -> TEXTURE;
             };
         }

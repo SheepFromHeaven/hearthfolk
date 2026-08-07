@@ -66,8 +66,9 @@ public class DominionSavedData extends SavedData {
                     net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf().optionalFieldOf("filterTemplates", List.of())
                             .forGetter(DominionStructure::getFilterTemplates),
                     Codec.BOOL.optionalFieldOf("filterWhitelist", true).forGetter(DominionStructure::isFilterWhitelist),
-                    Codec.BOOL.optionalFieldOf("filterMatchMetadata", false).forGetter(DominionStructure::isFilterMatchMetadata)
-            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius, requests, desiredStock, filterTemplates, filterWhitelist, filterMatchMetadata) -> {
+                    Codec.BOOL.optionalFieldOf("filterMatchMetadata", false).forGetter(DominionStructure::isFilterMatchMetadata),
+                    Codec.BOOL.optionalFieldOf("placeSupportBeams", false).forGetter(DominionStructure::isPlaceSupportBeams)
+            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius, requests, desiredStock, filterTemplates, filterWhitelist, filterMatchMetadata, placeSupportBeams) -> {
                 var structure = new DominionStructure(UUID.fromString(id), name, StructureType.valueOf(type),
                         markerPos, new HashSet<>(roomBlocks),
                         assignedId.isEmpty() ? null : UUID.fromString(assignedId),
@@ -82,6 +83,7 @@ public class DominionSavedData extends SavedData {
                     structure.setDesiredStock(item, entry.getValue());
                 }
                 structure.setFilter(filterTemplates, filterWhitelist, filterMatchMetadata);
+                structure.setPlaceSupportBeams(placeSupportBeams);
                 return structure;
             })
     );

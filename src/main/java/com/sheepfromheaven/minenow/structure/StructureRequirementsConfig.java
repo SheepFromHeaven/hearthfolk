@@ -216,6 +216,12 @@ public class StructureRequirementsConfig {
         storehouse.add("requirements", storehouseReqs);
         root.add("STOREHOUSE", storehouse);
 
+        var mine = new JsonObject();
+        var mineReqs = new JsonArray();
+        addBlockReq(mineReqs, "minecraft:barrel", "Barrel", 1);
+        mine.add("requirements", mineReqs);
+        root.add("MINE", mine);
+
         var charcoalKiln = new JsonObject();
         var charcoalKilnReqs = new JsonArray();
         addBlockReq(charcoalKilnReqs, "minecraft:barrel", "Barrel", 1);
@@ -280,6 +286,11 @@ public class StructureRequirementsConfig {
                         s -> s.is(net.minecraft.world.level.block.Blocks.CHEST),
                         () -> new ItemStack(net.minecraft.world.item.Items.CHEST))
         ));
+        REQUIREMENTS.put(StructureType.MINE, List.of(
+                new StructureType.Requirement("Barrel", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
+                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
+        ));
         REQUIREMENTS.put(StructureType.NURSERY, List.of(
                 new StructureType.Requirement("Barrel", 1,
                         s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
@@ -311,6 +322,7 @@ public class StructureRequirementsConfig {
         MIN_SIZES.put(StructureType.LUMBERYARD, 0);
         MIN_SIZES.put(StructureType.TAVERN, 0);
         MIN_SIZES.put(StructureType.STOREHOUSE, 0);
+        MIN_SIZES.put(StructureType.MINE, 0);
         MIN_SIZES.put(StructureType.NURSERY, 0);
         MIN_SIZES.put(StructureType.CHARCOAL_KILN, 0);
         MIN_SIZES.put(StructureType.FARM, 0);
@@ -321,6 +333,7 @@ public class StructureRequirementsConfig {
         RANGE_RADII.put(StructureType.LUMBERYARD, 8);
         RANGE_RADII.put(StructureType.TAVERN, 0);
         RANGE_RADII.put(StructureType.STOREHOUSE, 0);
+        RANGE_RADII.put(StructureType.MINE, 0);
         RANGE_RADII.put(StructureType.NURSERY, 8);
         RANGE_RADII.put(StructureType.CHARCOAL_KILN, 0);
         RANGE_RADII.put(StructureType.FARM, 0);
@@ -331,6 +344,7 @@ public class StructureRequirementsConfig {
         RANGE_HEIGHTS.put(StructureType.LUMBERYARD, 4);
         RANGE_HEIGHTS.put(StructureType.TAVERN, 0);
         RANGE_HEIGHTS.put(StructureType.STOREHOUSE, 0);
+        RANGE_HEIGHTS.put(StructureType.MINE, 0);
         RANGE_HEIGHTS.put(StructureType.NURSERY, 2);
         RANGE_HEIGHTS.put(StructureType.CHARCOAL_KILN, 0);
         RANGE_HEIGHTS.put(StructureType.FARM, 0);
@@ -349,6 +363,7 @@ public class StructureRequirementsConfig {
         ));
         RANGE_REQUIREMENTS.put(StructureType.TAVERN, List.of());
         RANGE_REQUIREMENTS.put(StructureType.STOREHOUSE, List.of());
+        RANGE_REQUIREMENTS.put(StructureType.MINE, List.of());
         RANGE_REQUIREMENTS.put(StructureType.NURSERY, List.of(
                 new StructureType.Requirement("Plantable Ground", 1,
                         s -> s.is(net.minecraft.tags.BlockTags.DIRT)

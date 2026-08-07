@@ -8,6 +8,7 @@ import com.sheepfromheaven.minenow.jobs.fisher.FisherJob;
 import com.sheepfromheaven.minenow.jobs.forester.ForesterJob;
 import com.sheepfromheaven.minenow.jobs.Job;
 import com.sheepfromheaven.minenow.jobs.lumberjack.LumberjackJob;
+import com.sheepfromheaven.minenow.jobs.miner.MinerJob;
 
 import java.util.function.Supplier;
 
@@ -16,6 +17,7 @@ public enum JobType {
     LUMBERJACK("Lumberjack", LumberjackJob::new, true),
     COOK("Cook", CookJob::new, false),
     COURIER("Courier", CourierJob::new, false),
+    MINER("Miner", MinerJob::new, true),
     FORESTER("Forester", ForesterJob::new, true),
     CHARCOAL_BURNER("Charcoal Burner", CharcoalBurnerJob::new, false),
     FARMER("Farmer", FarmerJob::new, true);

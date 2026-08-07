@@ -22,8 +22,11 @@ public class ModCreativeTabs {
                         output.accept(ModItems.LUMBERYARD_MARKER.get());
                         output.accept(ModItems.TAVERN_MARKER.get());
                         output.accept(ModItems.STOREHOUSE_MARKER.get());
+                        output.accept(ModItems.MINE_MARKER.get());
                         output.accept(ModItems.NURSERY_MARKER.get());
                         output.accept(ModItems.CHARCOAL_KILN_MARKER.get());
+                        output.accept(ModItems.FARM_MARKER.get());
+                        output.accept(ModItems.FIELD_MARKER.get());
                         output.accept(ModItems.INVITATION.get());
                         output.accept(ModItems.TREE_SCANNER_WAND.get());
                         output.accept(ModItems.STRUCTURE_WAND.get());

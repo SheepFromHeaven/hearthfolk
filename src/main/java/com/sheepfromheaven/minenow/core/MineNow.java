@@ -260,6 +260,14 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantPickupTests::pickingUpAToolEquipsMainHandInsteadOfGeneralInventory);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "picking_up_non_tool_item_goes_to_general_inventory"),
                             com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantPickupTests::pickingUpNonToolItemGoesToGeneralInventory);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_digs_stairway_tunnels_through_ore_and_deposits_at_the_mine"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerDigsStairwayTunnelsThroughOreAndDepositsAtTheMine);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_places_support_beams_when_toggle_is_enabled"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerPlacesSupportBeamsWhenToggleIsEnabled);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_with_wooden_pickaxe_leaves_iron_ore_untouched"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithWoodenPickaxeLeavesIronOreUntouched);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_with_stone_pickaxe_mines_coal_and_iron_ore"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithStonePickaxeMinesCoalAndIronOre);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
