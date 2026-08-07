@@ -134,6 +134,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.LumberyardTests::findTreeInRangeSkipsLogPillarWithoutLeaves);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_tree_in_range_ignores_nearby_log_house_and_still_finds_real_tree"),
                             com.sheepfromheaven.minenow.jobs.gametest.LumberyardTests::findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_plantable_spot_in_range_finds_bare_grass"),
+                            com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeFindsBareGrass);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_plantable_spot_in_range_skips_spot_already_holding_a_sapling"),
+                            com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeSkipsSpotAlreadyHoldingASapling);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "felling_trunk_harvests_canopy_leaves_directly"),
                             com.sheepfromheaven.minenow.jobs.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "interrupting_leaf_harvest_still_harvests_canopy_leaves_on_resume"),
@@ -208,6 +212,14 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.CookJobTests::cookingWithBurnedOutFuelGoesBackToFetchMoreFuel);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "missing_both_raw_food_and_fuel_reports_both_requests_at_once"),
                             com.sheepfromheaven.minenow.jobs.gametest.CookJobTests::missingBothRawFoodAndFuelReportsBothRequestsAtOnce);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "charcoal_burner_loads_logs_into_the_furnace"),
+                            com.sheepfromheaven.minenow.jobs.gametest.CharcoalBurnerJobTests::charcoalBurnerLoadsLogsIntoTheFurnace);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "missing_logs_reports_a_request"),
+                            com.sheepfromheaven.minenow.jobs.gametest.CharcoalBurnerJobTests::missingLogsReportsARequest);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_harvests_and_replants_a_mature_crop"),
+                            com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerHarvestsAndReplantsAMatureCrop);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_respects_field_crop_allowance_across_multiple_fields"),
+                            com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerRespectsFieldCropAllowanceAcrossMultipleFields);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_lumberyard_barrel_is_stocked_with_an_axe"),
                             com.sheepfromheaven.minenow.command.gametest.DebugCommandsTests::debugLumberyardBarrelIsStockedWithAnAxe);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_fishery_barrel_is_stocked_with_a_fishing_rod"),
@@ -218,6 +230,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.pathfinding.gametest.PathNodeTests::pathNodeWandTogglesNodeAtClickedPosition);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "inhabitant_wanders_toward_nearby_street_node"),
                             com.sheepfromheaven.minenow.pathfinding.gametest.PathNodeTests::inhabitantWandersTowardNearbyStreetNode);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "inhabitant_climbs_ladder_to_reach_elevated_target"),
+                            com.sheepfromheaven.minenow.pathfinding.gametest.PathNodeTests::inhabitantClimbsLadderToReachElevatedTarget);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "add_inhabitant_rejects_when_at_capacity"),
                             com.sheepfromheaven.minenow.dominion.gametest.DominionGrowthTests::addInhabitantRejectsWhenAtCapacity);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "can_attempt_immigration_requires_attraction_room_and_cooldown"),

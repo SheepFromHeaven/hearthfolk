@@ -85,6 +85,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         super(type, level);
         setPersistenceRequired();
         setCanPickUpLoot(true);
+        this.moveControl = new LadderClimbingMoveControl(this);
         for (var need : NeedType.values()) {
             needs.put(need, 1.0f);
         }

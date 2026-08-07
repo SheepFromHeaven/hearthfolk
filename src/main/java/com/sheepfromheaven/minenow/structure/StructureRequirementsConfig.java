@@ -193,6 +193,23 @@ public class StructureRequirementsConfig {
         tavern.add("requirements", tavernReqs);
         root.add("TAVERN", tavern);
 
+        var nursery = new JsonObject();
+        var nurseryReqs = new JsonArray();
+        addBlockReq(nurseryReqs, "minecraft:barrel", "Barrel", 1);
+        nursery.add("requirements", nurseryReqs);
+        nursery.addProperty("rangeRadius", 8);
+        nursery.addProperty("rangeHeight", 2);
+        var nurseryRangeReqs = new JsonArray();
+        var soil = new JsonObject();
+        soil.addProperty("tag", "minecraft:dirt");
+        soil.addProperty("icon", "minecraft:oak_sapling");
+        soil.addProperty("name", "Plantable Ground");
+        soil.addProperty("count", 1);
+        soil.addProperty("airAbove", 1);
+        nurseryRangeReqs.add(soil);
+        nursery.add("rangeRequirements", nurseryRangeReqs);
+        root.add("NURSERY", nursery);
+
         var storehouse = new JsonObject();
         var storehouseReqs = new JsonArray();
         addBlockReq(storehouseReqs, "minecraft:chest", "Chest", 1);
@@ -204,6 +221,21 @@ public class StructureRequirementsConfig {
         addBlockReq(mineReqs, "minecraft:barrel", "Barrel", 1);
         mine.add("requirements", mineReqs);
         root.add("MINE", mine);
+
+        var charcoalKiln = new JsonObject();
+        var charcoalKilnReqs = new JsonArray();
+        addBlockReq(charcoalKilnReqs, "minecraft:barrel", "Barrel", 1);
+        addBlockReq(charcoalKilnReqs, "minecraft:furnace", "Furnace", 1);
+        charcoalKiln.add("requirements", charcoalKilnReqs);
+        root.add("CHARCOAL_KILN", charcoalKiln);
+
+        var farm = new JsonObject();
+        var farmReqs = new JsonArray();
+        addBlockReq(farmReqs, "minecraft:composter", "Composter", 1);
+        addBlockReq(farmReqs, "minecraft:carved_pumpkin", "Carved Pumpkin", 1);
+        addBlockReq(farmReqs, "minecraft:barrel", "Barrel", 1);
+        farm.add("requirements", farmReqs);
+        root.add("FARM", farm);
 
         try {
             Files.createDirectories(path.getParent());
@@ -259,6 +291,30 @@ public class StructureRequirementsConfig {
                         s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
                         () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
         ));
+        REQUIREMENTS.put(StructureType.NURSERY, List.of(
+                new StructureType.Requirement("Barrel", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
+                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
+        ));
+        REQUIREMENTS.put(StructureType.CHARCOAL_KILN, List.of(
+                new StructureType.Requirement("Barrel", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
+                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL)),
+                new StructureType.Requirement("Furnace", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.FURNACE),
+                        () -> new ItemStack(net.minecraft.world.item.Items.FURNACE))
+        ));
+        REQUIREMENTS.put(StructureType.FARM, List.of(
+                new StructureType.Requirement("Composter", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.COMPOSTER),
+                        () -> new ItemStack(net.minecraft.world.item.Items.COMPOSTER)),
+                new StructureType.Requirement("Carved Pumpkin", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.CARVED_PUMPKIN),
+                        () -> new ItemStack(net.minecraft.world.item.Items.CARVED_PUMPKIN)),
+                new StructureType.Requirement("Barrel", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
+                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
+        ));
 
         MIN_SIZES.clear();
         MIN_SIZES.put(StructureType.HOUSE, 32);
@@ -267,6 +323,9 @@ public class StructureRequirementsConfig {
         MIN_SIZES.put(StructureType.TAVERN, 0);
         MIN_SIZES.put(StructureType.STOREHOUSE, 0);
         MIN_SIZES.put(StructureType.MINE, 0);
+        MIN_SIZES.put(StructureType.NURSERY, 0);
+        MIN_SIZES.put(StructureType.CHARCOAL_KILN, 0);
+        MIN_SIZES.put(StructureType.FARM, 0);
 
         RANGE_RADII.clear();
         RANGE_RADII.put(StructureType.HOUSE, 0);
@@ -275,6 +334,9 @@ public class StructureRequirementsConfig {
         RANGE_RADII.put(StructureType.TAVERN, 0);
         RANGE_RADII.put(StructureType.STOREHOUSE, 0);
         RANGE_RADII.put(StructureType.MINE, 0);
+        RANGE_RADII.put(StructureType.NURSERY, 8);
+        RANGE_RADII.put(StructureType.CHARCOAL_KILN, 0);
+        RANGE_RADII.put(StructureType.FARM, 0);
 
         RANGE_HEIGHTS.clear();
         RANGE_HEIGHTS.put(StructureType.HOUSE, 0);
@@ -283,6 +345,9 @@ public class StructureRequirementsConfig {
         RANGE_HEIGHTS.put(StructureType.TAVERN, 0);
         RANGE_HEIGHTS.put(StructureType.STOREHOUSE, 0);
         RANGE_HEIGHTS.put(StructureType.MINE, 0);
+        RANGE_HEIGHTS.put(StructureType.NURSERY, 2);
+        RANGE_HEIGHTS.put(StructureType.CHARCOAL_KILN, 0);
+        RANGE_HEIGHTS.put(StructureType.FARM, 0);
 
         RANGE_REQUIREMENTS.clear();
         RANGE_REQUIREMENTS.put(StructureType.HOUSE, List.of());
@@ -299,5 +364,16 @@ public class StructureRequirementsConfig {
         RANGE_REQUIREMENTS.put(StructureType.TAVERN, List.of());
         RANGE_REQUIREMENTS.put(StructureType.STOREHOUSE, List.of());
         RANGE_REQUIREMENTS.put(StructureType.MINE, List.of());
+        RANGE_REQUIREMENTS.put(StructureType.NURSERY, List.of(
+                new StructureType.Requirement("Plantable Ground", 1,
+                        s -> s.is(net.minecraft.tags.BlockTags.DIRT)
+                                || s.is(net.minecraft.world.level.block.Blocks.GRASS_BLOCK)
+                                || s.is(net.minecraft.world.level.block.Blocks.PODZOL)
+                                || s.is(net.minecraft.world.level.block.Blocks.MYCELIUM)
+                                || s.is(net.minecraft.world.level.block.Blocks.FARMLAND),
+                        () -> new ItemStack(net.minecraft.world.item.Items.OAK_SAPLING), 1)
+        ));
+        RANGE_REQUIREMENTS.put(StructureType.CHARCOAL_KILN, List.of());
+        RANGE_REQUIREMENTS.put(StructureType.FARM, List.of());
     }
 }

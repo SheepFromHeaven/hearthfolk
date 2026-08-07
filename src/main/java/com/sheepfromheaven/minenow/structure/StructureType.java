@@ -15,7 +15,10 @@ public enum StructureType {
     LUMBERYARD("Lumberyard", JobType.LUMBERJACK),
     TAVERN("Tavern", JobType.COOK),
     STOREHOUSE("Storehouse", JobType.COURIER),
-    MINE("Mine", JobType.MINER);
+    MINE("Mine", JobType.MINER),
+    NURSERY("Nursery", JobType.FORESTER),
+    CHARCOAL_KILN("Charcoal Kiln", JobType.CHARCOAL_BURNER),
+    FARM("Farm", JobType.FARMER);
 
     private final String displayName;
     private final JobType jobType;

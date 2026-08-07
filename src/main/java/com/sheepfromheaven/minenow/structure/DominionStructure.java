@@ -31,6 +31,13 @@ public class DominionStructure {
      * from that by more than a few blocks even for a tree the player would call "clearly in range".
      */
     private static final int TREE_SEARCH_HEIGHT = 12;
+    /**
+     * How far above/below the work area center {@link #findPlantableSpotInRange} looks for bare soil.
+     * Deliberately much tighter than {@link #TREE_SEARCH_HEIGHT} - ground level shouldn't vary much
+     * across a work area, and a generous height would routinely surface unrelated dirt/grass deep
+     * underground or on a distant hill instead of the clearing right around the nursery.
+     */
+    private static final int PLANT_SEARCH_HEIGHT = 3;
 
     private final UUID id;
     private String name;
@@ -603,6 +610,41 @@ public class DominionStructure {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Scans the structure's work area for a bare patch of dirt/grass with open air above it and no
+     * sapling already growing there - a spot a forester can plant a new sapling on. Skips any position
+     * in {@code excluded} (spots already known to be unreachable), mirroring
+     * {@link #findTreeShapeInRange(Level, Set)}.
+     */
+    public Optional<BlockPos> findPlantableSpotInRange(Level level, Set<BlockPos> excluded) {
+        int radius = workAreaRadius;
+        var center = getWorkAreaCenter();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx * dx + dz * dz > radius * radius) continue;
+                for (int dy = -PLANT_SEARCH_HEIGHT; dy <= PLANT_SEARCH_HEIGHT; dy++) {
+                    var pos = center.offset(dx, dy, dz);
+                    if (excluded.contains(pos)) continue;
+                    if (!isSaplingSoil(level.getBlockState(pos))) continue;
+                    var above = pos.above();
+                    if (!level.getBlockState(above).is(BlockTags.SAPLINGS) && hasOpenAirAbove(level, pos, 1)) {
+                        return Optional.of(pos);
+                    }
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Ground a sapling can be planted on - vanilla saplings require this same set (see SaplingBlock's mayPlaceOn), which isn't fully captured by {@link BlockTags#DIRT} (that tag excludes grass/mycelium/podzol). */
+    private static boolean isSaplingSoil(net.minecraft.world.level.block.state.BlockState state) {
+        return state.is(BlockTags.DIRT)
+                || state.is(net.minecraft.world.level.block.Blocks.GRASS_BLOCK)
+                || state.is(net.minecraft.world.level.block.Blocks.PODZOL)
+                || state.is(net.minecraft.world.level.block.Blocks.MYCELIUM)
+                || state.is(net.minecraft.world.level.block.Blocks.FARMLAND);
     }
 
     public Optional<BlockPos> findRangeRequirementPosition(Level level, StructureType.Requirement requirement) {

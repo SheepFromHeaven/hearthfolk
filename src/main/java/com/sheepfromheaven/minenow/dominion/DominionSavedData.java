@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
+import com.sheepfromheaven.minenow.structure.field.CropKind;
+import com.sheepfromheaven.minenow.structure.field.Field;
 
 public class DominionSavedData extends SavedData {
     private final Map<UUID, Dominion> dominions;
@@ -100,6 +102,22 @@ public class DominionSavedData extends SavedData {
             })
     );
 
+    private static final Codec<Field> FIELD_CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                    Codec.STRING.fieldOf("id").forGetter(f -> f.getId().toString()),
+                    BlockPos.CODEC.fieldOf("markerPos").forGetter(Field::getMarkerPos),
+                    BlockPos.CODEC.listOf().fieldOf("area").forGetter(f -> new ArrayList<>(f.getArea())),
+                    Codec.STRING.listOf().fieldOf("allowedCrops").forGetter(f -> f.getAllowedCrops().stream().map(Enum::name).collect(Collectors.toList())),
+                    Codec.STRING.optionalFieldOf("assignedStructureId", "").forGetter(f -> f.getAssignedStructureId() != null ? f.getAssignedStructureId().toString() : "")
+            ).apply(instance, (id, markerPos, area, allowedCrops, assignedStructureId) -> {
+                var crops = allowedCrops.stream()
+                        .map(CropKind::valueOf)
+                        .collect(Collectors.toCollection(() -> java.util.EnumSet.noneOf(CropKind.class)));
+                return new Field(UUID.fromString(id), markerPos, new HashSet<>(area), crops,
+                        assignedStructureId.isEmpty() ? null : UUID.fromString(assignedStructureId));
+            })
+    );
+
     private static final Codec<DominionInhabitant> INHABITANT_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.STRING.fieldOf("id").forGetter(v -> v.getId().toString()),
@@ -134,9 +152,10 @@ public class DominionSavedData extends SavedData {
                     STRUCTURE_CODEC.listOf().optionalFieldOf("structures", List.of()).forGetter(d -> new ArrayList<>(d.getStructures())),
                     INHABITANT_CODEC.listOf().optionalFieldOf("villagers", List.of()).forGetter(d -> new ArrayList<>(d.getInhabitants())),
                     PATH_NODE_CODEC.listOf().optionalFieldOf("pathNodes", List.of()).forGetter(d -> new ArrayList<>(d.getPathNodes())),
+                    FIELD_CODEC.listOf().optionalFieldOf("fields", List.of()).forGetter(d -> new ArrayList<>(d.getFields())),
                     Codec.STRING.optionalFieldOf("pendingImmigrantId", "").forGetter(d -> d.getPendingImmigrantId() != null ? d.getPendingImmigrantId().toString() : ""),
                     Codec.LONG.optionalFieldOf("nextImmigrationAttemptTick", 0L).forGetter(Dominion::getNextImmigrationAttemptTick)
-            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes, pendingImmigrantId, nextImmigrationAttemptTick) -> {
+            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes, fields, pendingImmigrantId, nextImmigrationAttemptTick) -> {
                 var dominion = new Dominion(UUID.fromString(id), UUID.fromString(owner), name, pos, DominionTier.valueOf(tier));
                 for (var s : structures) {
                     dominion.addStructure(s);
@@ -146,6 +165,9 @@ public class DominionSavedData extends SavedData {
                 }
                 for (var n : pathNodes) {
                     dominion.addPathNode(n);
+                }
+                for (var f : fields) {
+                    dominion.addField(f);
                 }
                 dominion.setPendingImmigrantId(pendingImmigrantId.isEmpty() ? null : UUID.fromString(pendingImmigrantId));
                 dominion.setNextImmigrationAttemptTick(nextImmigrationAttemptTick);
