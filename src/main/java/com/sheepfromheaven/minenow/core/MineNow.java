@@ -230,6 +230,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.pathfinding.gametest.PathNodeTests::pathNodeWandTogglesNodeAtClickedPosition);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "inhabitant_wanders_toward_nearby_street_node"),
                             com.sheepfromheaven.minenow.pathfinding.gametest.PathNodeTests::inhabitantWandersTowardNearbyStreetNode);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "inhabitant_climbs_ladder_to_reach_elevated_target"),
+                            com.sheepfromheaven.minenow.pathfinding.gametest.PathNodeTests::inhabitantClimbsLadderToReachElevatedTarget);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "add_inhabitant_rejects_when_at_capacity"),
                             com.sheepfromheaven.minenow.dominion.gametest.DominionGrowthTests::addInhabitantRejectsWhenAtCapacity);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "can_attempt_immigration_requires_attraction_room_and_cooldown"),
