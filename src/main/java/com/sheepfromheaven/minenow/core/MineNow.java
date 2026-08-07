@@ -208,6 +208,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.CookJobTests::cookingWithBurnedOutFuelGoesBackToFetchMoreFuel);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "missing_both_raw_food_and_fuel_reports_both_requests_at_once"),
                             com.sheepfromheaven.minenow.jobs.gametest.CookJobTests::missingBothRawFoodAndFuelReportsBothRequestsAtOnce);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "charcoal_burner_loads_logs_into_the_furnace"),
+                            com.sheepfromheaven.minenow.jobs.gametest.CharcoalBurnerJobTests::charcoalBurnerLoadsLogsIntoTheFurnace);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "missing_logs_reports_a_request"),
+                            com.sheepfromheaven.minenow.jobs.gametest.CharcoalBurnerJobTests::missingLogsReportsARequest);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_lumberyard_barrel_is_stocked_with_an_axe"),
                             com.sheepfromheaven.minenow.command.gametest.DebugCommandsTests::debugLumberyardBarrelIsStockedWithAnAxe);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_fishery_barrel_is_stocked_with_a_fishing_rod"),
