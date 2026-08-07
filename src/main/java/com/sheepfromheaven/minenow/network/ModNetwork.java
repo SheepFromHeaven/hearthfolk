@@ -1,28 +1,28 @@
 package com.sheepfromheaven.minenow.network;
 
-import com.sheepfromheaven.minenow.MineNow;
-import com.sheepfromheaven.minenow.Config;
-import com.sheepfromheaven.minenow.block.StructureMarkerBlockEntity;
-import com.sheepfromheaven.minenow.block.TownBannerBlockEntity;
+import com.sheepfromheaven.minenow.core.MineNow;
+import com.sheepfromheaven.minenow.core.Config;
+import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
-import com.sheepfromheaven.minenow.dominion.DominionStructure;
+import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.dominion.DominionTier;
-import com.sheepfromheaven.minenow.dominion.JobType;
-import com.sheepfromheaven.minenow.dominion.RoomDetector;
+import com.sheepfromheaven.minenow.jobs.JobType;
+import com.sheepfromheaven.minenow.structure.RoomDetector;
 import com.sheepfromheaven.minenow.dominion.StructureRequest;
-import com.sheepfromheaven.minenow.dominion.StructureType;
+import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.dominion.NeedType;
-import com.sheepfromheaven.minenow.entity.InhabitantEntity;
+import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
-import com.sheepfromheaven.minenow.inventory.EquipmentSlotContainer;
-import com.sheepfromheaven.minenow.inventory.ModMenus;
+import com.sheepfromheaven.minenow.storage.inventory.EquipmentSlotContainer;
+import com.sheepfromheaven.minenow.storage.inventory.ModMenus;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -162,7 +162,7 @@ public class ModNetwork {
         if (structure == null) return;
 
         player.openMenu(new net.minecraft.world.SimpleMenuProvider(
-                (containerId, inv, p) -> new com.sheepfromheaven.minenow.inventory.StructureFilterMenu(containerId, inv, structure, data),
+                (containerId, inv, p) -> new com.sheepfromheaven.minenow.structure.inventory.StructureFilterMenu(containerId, inv, structure, data),
                 Component.literal("Filter")));
     }
 
@@ -327,39 +327,39 @@ public class ModNetwork {
     // -------------------------------------------------------------------------
 
     private static void handleOpenDominionScreen(OpenDominionScreenPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openDominionScreen(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.openDominionScreen(msg);
     }
 
     private static void handleOpenInhabitantScreen(OpenInhabitantScreenPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openInhabitantScreen(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.openInhabitantScreen(msg);
     }
 
     private static void handleOpenStructureScreen(OpenStructureScreenPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openStructureScreen(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.openStructureScreen(msg);
     }
 
     private static void handleOpenRequestsScreen(OpenRequestsScreenPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openRequestsScreen(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.openRequestsScreen(msg);
     }
 
     private static void handleInhabitantDebug(InhabitantDebugPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.updateInhabitantDebug(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.updateInhabitantDebug(msg);
     }
 
     private static void handleTreeScanClear(TreeScanClearPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.clearTreeScanOutline();
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.clearTreeScanOutline();
     }
 
     private static void handleTreeScanHighlight(TreeScanHighlightPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.addTreeScanHighlight(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.addTreeScanHighlight(msg);
     }
 
     private static void handlePathNodeSync(PathNodeSyncPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.updatePathNodes(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.updatePathNodes(msg);
     }
 
     private static void handleOpenImmigrantRequestScreen(OpenImmigrantRequestScreenPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.client.ClientNetworkHandlers.openImmigrantRequestScreen(msg);
+        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.openImmigrantRequestScreen(msg);
     }
 
     // -------------------------------------------------------------------------
@@ -429,8 +429,8 @@ public class ModNetwork {
         PacketDistributor.sendToPlayer(player, new TreeScanHighlightPacket(category, positions));
     }
 
-    public static void sendPathNodeSync(ServerPlayer player, List<com.sheepfromheaven.minenow.dominion.DominionPathNode> nodes) {
-        var positions = nodes.stream().map(com.sheepfromheaven.minenow.dominion.DominionPathNode::getPos).toList();
+    public static void sendPathNodeSync(ServerPlayer player, List<com.sheepfromheaven.minenow.pathfinding.DominionPathNode> nodes) {
+        var positions = nodes.stream().map(com.sheepfromheaven.minenow.pathfinding.DominionPathNode::getPos).toList();
         var impacts = nodes.stream().map(n -> n.getImpact().ordinal()).toList();
         PacketDistributor.sendToPlayer(player, new PathNodeSyncPacket(positions, impacts));
     }
@@ -718,7 +718,7 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    /** {@code impacts} is a parallel list of {@link com.sheepfromheaven.minenow.dominion.DominionPathNode.Impact} ordinals (0=LOW,1=MEDIUM,2=HIGH). */
+    /** {@code impacts} is a parallel list of {@link com.sheepfromheaven.minenow.pathfinding.DominionPathNode.Impact} ordinals (0=LOW,1=MEDIUM,2=HIGH). */
     public record PathNodeSyncPacket(List<BlockPos> positions, List<Integer> impacts) implements CustomPacketPayload {
         public static final Type<PathNodeSyncPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "path_node_sync"));
         public static final StreamCodec<RegistryFriendlyByteBuf, PathNodeSyncPacket> CODEC = StreamCodec.composite(

@@ -1,16 +1,16 @@
 package com.sheepfromheaven.minenow.command;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.sheepfromheaven.minenow.Config;
-import com.sheepfromheaven.minenow.block.ModBlocks;
-import com.sheepfromheaven.minenow.block.StructureMarkerBlockEntity;
+import com.sheepfromheaven.minenow.core.Config;
+import com.sheepfromheaven.minenow.core.ModBlocks;
+import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
-import com.sheepfromheaven.minenow.dominion.DominionStructure;
-import com.sheepfromheaven.minenow.dominion.RoomDetector;
-import com.sheepfromheaven.minenow.dominion.StructureType;
-import com.sheepfromheaven.minenow.entity.ModEntities;
+import com.sheepfromheaven.minenow.structure.DominionStructure;
+import com.sheepfromheaven.minenow.structure.RoomDetector;
+import com.sheepfromheaven.minenow.structure.StructureType;
+import com.sheepfromheaven.minenow.inhabitant.ModEntities;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -165,7 +165,7 @@ public class DebugCommands {
     }
 
     /**
-     * Builds a real naturally-grown tree {@link com.sheepfromheaven.minenow.entity.job.TreeScanner}
+     * Builds a real naturally-grown tree {@link com.sheepfromheaven.minenow.jobs.lumberjack.TreeScanner}
      * will recognize: soil below the trunk, and a non-persistent leaf horizontally adjacent to a
      * trunk log (a leaf directly above the trunk doesn't count - {@link TreeScanner} only checks
      * each log's horizontal neighbors).
@@ -185,7 +185,7 @@ public class DebugCommands {
     /**
      * Builds a real enclosed 5x5 room (stone-brick floor/walls/ceiling, oak door on the south
      * wall) around {@code center}, which becomes the interior floor tile the marker sits on.
-     * Matches what {@link com.sheepfromheaven.minenow.block.StructureMarkerBlock} expects from a
+     * Matches what {@link com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock} expects from a
      * player-built house, so the same {@link RoomDetector} flood-fill recognizes it.
      */
     private static void buildRoom(ServerLevel level, BlockPos center) {

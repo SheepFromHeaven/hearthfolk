@@ -1,6 +1,6 @@
 package com.sheepfromheaven.minenow.client;
 
-import com.sheepfromheaven.minenow.Config;
+import com.sheepfromheaven.minenow.core.Config;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;

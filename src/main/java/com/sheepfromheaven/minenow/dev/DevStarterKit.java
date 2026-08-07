@@ -1,6 +1,6 @@
 package com.sheepfromheaven.minenow.dev;
 
-import com.sheepfromheaven.minenow.item.ModItems;
+import com.sheepfromheaven.minenow.core.ModItems;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;

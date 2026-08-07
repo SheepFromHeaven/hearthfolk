@@ -1,6 +1,6 @@
 package com.sheepfromheaven.minenow.dominion;
 
-import com.sheepfromheaven.minenow.entity.InhabitantEntity;
+import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
@@ -11,6 +11,9 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
+import com.sheepfromheaven.minenow.structure.DominionStructure;
+import com.sheepfromheaven.minenow.structure.StructureType;
 
 public class Dominion {
     private final UUID id;
@@ -322,7 +325,7 @@ public class Dominion {
      * bell-attraction area scan, and the immigrant spawn-ring distance calc.
      */
     public int getEffectiveRadius() {
-        return (int) Math.round(com.sheepfromheaven.minenow.Config.defaultDominionRadius * tier.getRadiusMultiplier());
+        return (int) Math.round(com.sheepfromheaven.minenow.core.Config.defaultDominionRadius * tier.getRadiusMultiplier());
     }
 
     private boolean hasBellInArea(ServerLevel level) {

@@ -9,6 +9,9 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
+import com.sheepfromheaven.minenow.structure.DominionStructure;
+import com.sheepfromheaven.minenow.structure.StructureType;
 
 public class DominionSavedData extends SavedData {
     private final Map<UUID, Dominion> dominions;
@@ -263,7 +266,7 @@ public class DominionSavedData extends SavedData {
         int z = (int) Math.round(bannerPos.getZ() + Math.sin(angle) * radius);
         int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
 
-        var entity = com.sheepfromheaven.minenow.entity.ModEntities.INHABITANT.get()
+        var entity = com.sheepfromheaven.minenow.inhabitant.ModEntities.INHABITANT.get()
                 .create(level, net.minecraft.world.entity.EntitySpawnReason.NATURAL);
         if (entity == null) {
             return;
@@ -272,7 +275,7 @@ public class DominionSavedData extends SavedData {
         var name = "Newcomer";
         entity.setCustomName(net.minecraft.network.chat.Component.literal(name));
         entity.setCustomNameVisible(true);
-        entity.setImmigrationJob(new com.sheepfromheaven.minenow.entity.job.ImmigrationJob(dominion.getId()));
+        entity.setImmigrationJob(new com.sheepfromheaven.minenow.inhabitant.immigration.ImmigrationJob(dominion.getId()));
         level.addFreshEntity(entity);
         dominion.setPendingImmigrantId(entity.getUUID());
     }
