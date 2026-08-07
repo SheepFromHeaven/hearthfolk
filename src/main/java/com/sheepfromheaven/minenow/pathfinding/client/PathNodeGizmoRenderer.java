@@ -1,7 +1,7 @@
 package com.sheepfromheaven.minenow.pathfinding.client;
 
 import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
-import com.sheepfromheaven.minenow.core.ModItems;
+import com.sheepfromheaven.minenow.pathfinding.PathfindingItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gizmos.Gizmo;
@@ -84,8 +84,8 @@ public final class PathNodeGizmoRenderer {
     }
 
     private static boolean isHoldingWand(Minecraft mc) {
-        return mc.player.getMainHandItem().is(ModItems.PATH_NODE_WAND.get())
-                || mc.player.getOffhandItem().is(ModItems.PATH_NODE_WAND.get());
+        return mc.player.getMainHandItem().is(PathfindingItems.PATH_NODE_WAND.get())
+                || mc.player.getOffhandItem().is(PathfindingItems.PATH_NODE_WAND.get());
     }
 
     /** A ring of {@code segments + 1} points (closed loop) around {@code center} in the XZ plane. */

@@ -2,7 +2,8 @@ package com.sheepfromheaven.minenow.dominion.gametest;
 
 import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
 
-import com.sheepfromheaven.minenow.core.ModBlocks;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlocks;
+import com.sheepfromheaven.minenow.structure.StructureBlocks;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlock;
@@ -36,7 +37,7 @@ public class DominionTests {
         var level = helper.getLevel();
         var bannerRelPos = new BlockPos(1, 1, 1);
         var bannerPos = helper.absolutePos(bannerRelPos);
-        helper.setBlock(bannerRelPos, ModBlocks.TOWN_BANNER.get());
+        helper.setBlock(bannerRelPos, TownBannerBlocks.TOWN_BANNER.get());
 
         var structureRelPos = new BlockPos(3, 1, 3);
         var structurePos = helper.absolutePos(structureRelPos);
@@ -83,7 +84,7 @@ public class DominionTests {
 
         var structureRelPos = new BlockPos(3, 1, 3);
         var structurePos = helper.absolutePos(structureRelPos);
-        helper.setBlock(structureRelPos, ModBlocks.STRUCTURE_MARKER.get());
+        helper.setBlock(structureRelPos, StructureBlocks.STRUCTURE_MARKER.get());
 
         var structure = new DominionStructure("Home", StructureType.HOUSE, structurePos, Set.of(structurePos));
         dominion.addStructure(structure);

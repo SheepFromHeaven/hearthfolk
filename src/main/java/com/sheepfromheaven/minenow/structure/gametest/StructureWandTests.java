@@ -5,7 +5,7 @@ import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.structure.StructureType;
-import com.sheepfromheaven.minenow.core.ModItems;
+import com.sheepfromheaven.minenow.structure.StructureItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -60,7 +60,7 @@ public class StructureWandTests {
             var facing = player.getDirection();
             helper.assertTrue(facing == Direction.WEST, "Test setup sanity check: yaw 90 should resolve to west");
 
-            var wand = ModItems.STRUCTURE_WAND.get().getDefaultInstance();
+            var wand = StructureItems.STRUCTURE_WAND.get().getDefaultInstance();
             var hit = new BlockHitResult(Vec3.atCenterOf(clickedPos), Direction.UP, clickedPos, false);
             wand.useOn(new UseOnContext(level, player, InteractionHand.MAIN_HAND, wand, hit));
 
@@ -103,7 +103,7 @@ public class StructureWandTests {
             var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", centerPos);
             player.setUUID(dominion.getOwnerUuid());
 
-            var wand = ModItems.STRUCTURE_WAND.get().getDefaultInstance();
+            var wand = StructureItems.STRUCTURE_WAND.get().getDefaultInstance();
             var hit = new BlockHitResult(Vec3.atCenterOf(clickedPos), Direction.UP, clickedPos, false);
             wand.useOn(new UseOnContext(level, player, InteractionHand.MAIN_HAND, wand, hit));
 
@@ -158,7 +158,7 @@ public class StructureWandTests {
             var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", centerPos);
             player.setUUID(dominion.getOwnerUuid());
 
-            var wand = ModItems.STRUCTURE_WAND.get().getDefaultInstance();
+            var wand = StructureItems.STRUCTURE_WAND.get().getDefaultInstance();
             var hit = new BlockHitResult(Vec3.atCenterOf(clickedPos), Direction.UP, clickedPos, false);
 
             // HOUSE -> FISHERY is one shift-click away (StructureType enum order).

@@ -2,7 +2,8 @@ package com.sheepfromheaven.minenow.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.sheepfromheaven.minenow.core.Config;
-import com.sheepfromheaven.minenow.core.ModBlocks;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlocks;
+import com.sheepfromheaven.minenow.structure.StructureBlocks;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
@@ -67,7 +68,7 @@ public class DebugCommands {
         var dominion = data.findDominionContaining(origin);
         if (dominion == null) {
             var bannerPos = origin.north(WALL_RING + 3);
-            level.setBlockAndUpdate(bannerPos, ModBlocks.TOWN_BANNER.get().defaultBlockState());
+            level.setBlockAndUpdate(bannerPos, TownBannerBlocks.TOWN_BANNER.get().defaultBlockState());
             dominion = data.createDominion(ownerUuid, "Debug Village", bannerPos);
         }
 
@@ -213,7 +214,7 @@ public class DebugCommands {
         level.setBlockAndUpdate(doorUpper, Blocks.OAK_DOOR.defaultBlockState()
                 .setValue(DoorBlock.FACING, Direction.NORTH).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
 
-        level.setBlockAndUpdate(center, ModBlocks.STRUCTURE_MARKER.get().defaultBlockState());
+        level.setBlockAndUpdate(center, StructureBlocks.STRUCTURE_MARKER.get().defaultBlockState());
     }
 
     private static boolean registerStructure(ServerLevel level, Dominion dominion, String name, StructureType type,

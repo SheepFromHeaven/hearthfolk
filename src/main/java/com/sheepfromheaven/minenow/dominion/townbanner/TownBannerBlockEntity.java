@@ -1,6 +1,6 @@
 package com.sheepfromheaven.minenow.dominion.townbanner;
 
-import com.sheepfromheaven.minenow.core.ModBlocks;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlocks;
 import com.sheepfromheaven.minenow.dominion.DominionTier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.DyeColor;
@@ -25,7 +25,7 @@ public class TownBannerBlockEntity extends BannerBlockEntity {
 
     @Override
     public BlockEntityType<?> getType() {
-        return ModBlocks.TOWN_BANNER_BE.get();
+        return TownBannerBlocks.TOWN_BANNER_BE.get();
     }
 
     public String getDominionName() {

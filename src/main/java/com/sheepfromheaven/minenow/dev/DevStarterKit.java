@@ -1,6 +1,8 @@
 package com.sheepfromheaven.minenow.dev;
 
-import com.sheepfromheaven.minenow.core.ModItems;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerItems;
+import com.sheepfromheaven.minenow.structure.StructureItems;
+import com.sheepfromheaven.minenow.inhabitant.InhabitantItems;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -19,9 +21,9 @@ public final class DevStarterKit {
         }
         DevWorldState.pendingStarterKit = false;
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            serverPlayer.getInventory().add(new ItemStack(ModItems.TOWN_BANNER.get()));
-            serverPlayer.getInventory().add(new ItemStack(ModItems.STRUCTURE_WAND.get()));
-            serverPlayer.getInventory().add(new ItemStack(ModItems.INHABITANT_SPAWN_EGG.get(), 8));
+            serverPlayer.getInventory().add(new ItemStack(TownBannerItems.TOWN_BANNER.get()));
+            serverPlayer.getInventory().add(new ItemStack(StructureItems.STRUCTURE_WAND.get()));
+            serverPlayer.getInventory().add(new ItemStack(InhabitantItems.INHABITANT_SPAWN_EGG.get(), 8));
         }
     }
 }

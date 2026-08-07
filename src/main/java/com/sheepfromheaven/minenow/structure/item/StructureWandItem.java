@@ -1,6 +1,6 @@
 package com.sheepfromheaven.minenow.structure.item;
 
-import com.sheepfromheaven.minenow.core.ModBlocks;
+import com.sheepfromheaven.minenow.structure.StructureBlocks;
 import com.sheepfromheaven.minenow.core.ModDataComponents;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import net.minecraft.core.BlockPos;
@@ -117,7 +117,7 @@ public class StructureWandItem extends Item {
         var markerPos = local(doorPos, right, forward, WIDTH / 2, DEPTH / 2, floorY + 1);
         furnishStructure(level, type, doorPos, right, forward, floorY, markerPos);
 
-        var markerBlock = ModBlocks.getMarkerBlock(type);
+        var markerBlock = StructureBlocks.getMarkerBlock(type);
         var markerState = markerBlock.defaultBlockState();
         level.setBlockAndUpdate(markerPos, markerState);
         markerBlock.setPlacedBy(level, markerPos, markerState, player, ItemStack.EMPTY);

@@ -11,7 +11,7 @@ import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import com.sheepfromheaven.minenow.inhabitant.ModEntities;
 import com.sheepfromheaven.minenow.inhabitant.immigration.ImmigrationJob;
-import com.sheepfromheaven.minenow.core.ModItems;
+import com.sheepfromheaven.minenow.inhabitant.InhabitantItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -226,9 +226,9 @@ public class DominionGrowthTests {
             var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
             var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
 
-            var stack = new ItemStack(ModItems.INHABITANT_SPAWN_EGG.get());
+            var stack = new ItemStack(InhabitantItems.INHABITANT_SPAWN_EGG.get());
             var context = floorClickContext(helper, stack, new BlockPos(1, 0, 1));
-            var result = ModItems.INHABITANT_SPAWN_EGG.get().useOn(context);
+            var result = InhabitantItems.INHABITANT_SPAWN_EGG.get().useOn(context);
 
             var spawned = level.getEntitiesOfClass(InhabitantEntity.class,
                     AABB.encapsulatingFullBlocks(helper.absolutePos(new BlockPos(0, 0, 0)), helper.absolutePos(new BlockPos(8, 3, 8))));
@@ -256,9 +256,9 @@ public class DominionGrowthTests {
             var bannerPos = helper.absolutePos(new BlockPos(1, 1, 1));
             var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
 
-            var stack = new ItemStack(ModItems.INHABITANT_SPAWN_EGG.get());
+            var stack = new ItemStack(InhabitantItems.INHABITANT_SPAWN_EGG.get());
             var context = floorClickContext(helper, stack, new BlockPos(20, 0, 20));
-            var result = ModItems.INHABITANT_SPAWN_EGG.get().useOn(context);
+            var result = InhabitantItems.INHABITANT_SPAWN_EGG.get().useOn(context);
 
             var spawned = level.getEntitiesOfClass(InhabitantEntity.class,
                     AABB.encapsulatingFullBlocks(helper.absolutePos(new BlockPos(0, 0, 0)), helper.absolutePos(new BlockPos(30, 3, 30))));
@@ -286,9 +286,9 @@ public class DominionGrowthTests {
                 dominion.addInhabitant(new DominionInhabitant(UUID.randomUUID(), "Inhabitant " + i));
             }
 
-            var stack = new ItemStack(ModItems.INHABITANT_SPAWN_EGG.get());
+            var stack = new ItemStack(InhabitantItems.INHABITANT_SPAWN_EGG.get());
             var context = floorClickContext(helper, stack, new BlockPos(1, 0, 1));
-            var result = ModItems.INHABITANT_SPAWN_EGG.get().useOn(context);
+            var result = InhabitantItems.INHABITANT_SPAWN_EGG.get().useOn(context);
 
             var spawned = level.getEntitiesOfClass(InhabitantEntity.class,
                     AABB.encapsulatingFullBlocks(helper.absolutePos(new BlockPos(0, 0, 0)), helper.absolutePos(new BlockPos(8, 3, 8))));

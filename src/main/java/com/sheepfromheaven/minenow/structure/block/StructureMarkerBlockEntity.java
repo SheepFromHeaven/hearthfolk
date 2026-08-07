@@ -1,6 +1,6 @@
 package com.sheepfromheaven.minenow.structure.block;
 
-import com.sheepfromheaven.minenow.core.ModBlocks;
+import com.sheepfromheaven.minenow.structure.StructureBlocks;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import net.minecraft.core.BlockPos;
@@ -27,7 +27,7 @@ public class StructureMarkerBlockEntity extends BlockEntity {
     private int workAreaRadius = 0;
 
     public StructureMarkerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlocks.STRUCTURE_MARKER_BE.get(), pos, state);
+        super(StructureBlocks.STRUCTURE_MARKER_BE.get(), pos, state);
     }
 
     public String getStructureName() {

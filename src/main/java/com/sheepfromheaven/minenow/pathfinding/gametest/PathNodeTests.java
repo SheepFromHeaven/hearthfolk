@@ -5,7 +5,7 @@ import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
 import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.inhabitant.ModEntities;
-import com.sheepfromheaven.minenow.core.ModItems;
+import com.sheepfromheaven.minenow.pathfinding.PathfindingItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -32,7 +32,7 @@ public class PathNodeTests {
         var targetPos = helper.absolutePos(targetRelPos);
 
         var player = helper.makeMockServerPlayerInLevel();
-        var wand = ModItems.PATH_NODE_WAND.get().getDefaultInstance();
+        var wand = PathfindingItems.PATH_NODE_WAND.get().getDefaultInstance();
         var hit = new BlockHitResult(Vec3.atCenterOf(targetPos), Direction.UP, targetPos, false);
 
         wand.useOn(new UseOnContext(level, player, net.minecraft.world.InteractionHand.MAIN_HAND, wand, hit));

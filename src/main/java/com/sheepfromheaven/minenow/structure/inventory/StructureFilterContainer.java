@@ -5,7 +5,7 @@ import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.storage.item.FilterData;
 import com.sheepfromheaven.minenow.storage.item.FilterItem;
 import com.sheepfromheaven.minenow.core.ModDataComponents;
-import com.sheepfromheaven.minenow.core.ModItems;
+import com.sheepfromheaven.minenow.storage.StorageItems;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -91,7 +91,7 @@ public final class StructureFilterContainer implements Container {
 
     private ItemStack encodeFilterItem() {
         if (structure.getFilterTemplates().isEmpty()) return ItemStack.EMPTY;
-        var stack = ModItems.FILTER.get().getDefaultInstance();
+        var stack = StorageItems.FILTER.get().getDefaultInstance();
         stack.set(ModDataComponents.FILTER_DATA, new FilterData(
                 structure.getFilterTemplates(), structure.isFilterWhitelist(), structure.isFilterMatchMetadata()));
         return stack;

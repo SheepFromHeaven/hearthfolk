@@ -1,9 +1,15 @@
 ///
 package com.sheepfromheaven.minenow.core;
 
-import com.sheepfromheaven.minenow.core.ModBlocks;
 import com.sheepfromheaven.minenow.core.ModCreativeTabs;
-import com.sheepfromheaven.minenow.core.ModItems;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlocks;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerItems;
+import com.sheepfromheaven.minenow.structure.StructureBlocks;
+import com.sheepfromheaven.minenow.structure.StructureItems;
+import com.sheepfromheaven.minenow.inhabitant.InhabitantItems;
+import com.sheepfromheaven.minenow.pathfinding.PathfindingItems;
+import com.sheepfromheaven.minenow.jobs.lumberjack.LumberjackItems;
+import com.sheepfromheaven.minenow.storage.StorageItems;
 import com.mojang.logging.LogUtils;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -24,8 +30,14 @@ public final class MineNow {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public MineNow(IEventBus modBus, ModContainer modContainer) {
-        ModBlocks.register(modBus);
-        ModItems.register(modBus);
+        TownBannerBlocks.register(modBus);
+        TownBannerItems.register(modBus);
+        StructureBlocks.register(modBus);
+        StructureItems.register(modBus);
+        InhabitantItems.register(modBus);
+        PathfindingItems.register(modBus);
+        LumberjackItems.register(modBus);
+        StorageItems.register(modBus);
         com.sheepfromheaven.minenow.core.ModDataComponents.register(modBus);
         ModCreativeTabs.register(modBus);
         com.sheepfromheaven.minenow.inhabitant.ModEntities.register(modBus);
@@ -312,9 +324,9 @@ public final class MineNow {
 
     public static void registerRenderers(IEventBus modBus) {
         modBus.addListener(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers.class, event -> {
-            event.registerBlockEntityRenderer(ModBlocks.TOWN_BANNER_BE.get(),
+            event.registerBlockEntityRenderer(TownBannerBlocks.TOWN_BANNER_BE.get(),
                     com.sheepfromheaven.minenow.dominion.townbanner.client.TownBannerRenderer::new);
-            event.registerBlockEntityRenderer(ModBlocks.STRUCTURE_MARKER_BE.get(),
+            event.registerBlockEntityRenderer(StructureBlocks.STRUCTURE_MARKER_BE.get(),
                     com.sheepfromheaven.minenow.structure.client.StructureMarkerRenderer::new);
             event.registerEntityRenderer(com.sheepfromheaven.minenow.inhabitant.ModEntities.INHABITANT.get(),
                     com.sheepfromheaven.minenow.inhabitant.client.InhabitantRenderer::new);

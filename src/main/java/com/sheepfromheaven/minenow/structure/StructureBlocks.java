@@ -1,6 +1,9 @@
-package com.sheepfromheaven.minenow.core;
+package com.sheepfromheaven.minenow.structure;
 
 import com.sheepfromheaven.minenow.core.MineNow;
+import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
+import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
+import com.sheepfromheaven.minenow.structure.field.block.FieldMarkerBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -14,21 +17,15 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.Set;
-import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
-import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
-import com.sheepfromheaven.minenow.structure.field.block.FieldMarkerBlock;
-import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlock;
-import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlockEntity;
-import com.sheepfromheaven.minenow.dominion.townbanner.TownWallBannerBlock;
 
-public class ModBlocks {
+public class StructureBlocks {
     public static final DeferredRegister<net.minecraft.world.level.block.Block> BLOCKS =
-            DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK, MineNow.MOD_ID);
+            DeferredRegister.create(Registries.BLOCK, MineNow.MOD_ID);
 
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
-            DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, MineNow.MOD_ID);
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MineNow.MOD_ID);
 
-    private static BlockBehaviour.Properties markerProps(String name) {
+    static BlockBehaviour.Properties markerProps(String name) {
         return BlockBehaviour.Properties.of()
                 .setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, name)))
                 .mapColor(MapColor.STONE)
@@ -38,58 +35,41 @@ public class ModBlocks {
     }
 
     private static DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> registerMarker(
-            String name, com.sheepfromheaven.minenow.structure.StructureType type) {
+            String name, StructureType type) {
         return BLOCKS.register(name, () -> new StructureMarkerBlock(markerProps(name), type));
     }
 
-    private static BlockBehaviour.Properties bannerProps(String name) {
-        return BlockBehaviour.Properties.of()
-                .setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, name)))
-                .mapColor(MapColor.WOOD)
-                .forceSolidOn()
-                .instrument(NoteBlockInstrument.BASS)
-                .noCollision()
-                .strength(1.0F)
-                .sound(SoundType.WOOD);
-    }
-
-    public static final DeferredHolder<net.minecraft.world.level.block.Block, TownBannerBlock> TOWN_BANNER =
-            BLOCKS.register("town_banner", () -> new TownBannerBlock(bannerProps("town_banner")));
-
-    public static final DeferredHolder<net.minecraft.world.level.block.Block, TownWallBannerBlock> TOWN_WALL_BANNER =
-            BLOCKS.register("town_wall_banner", () -> new TownWallBannerBlock(bannerProps("town_wall_banner")));
-
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> STRUCTURE_MARKER =
-            registerMarker("structure_marker", com.sheepfromheaven.minenow.structure.StructureType.HOUSE);
+            registerMarker("structure_marker", StructureType.HOUSE);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> FISHERY_MARKER =
-            registerMarker("fishery_marker", com.sheepfromheaven.minenow.structure.StructureType.FISHERY);
+            registerMarker("fishery_marker", StructureType.FISHERY);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> LUMBERYARD_MARKER =
-            registerMarker("lumberyard_marker", com.sheepfromheaven.minenow.structure.StructureType.LUMBERYARD);
+            registerMarker("lumberyard_marker", StructureType.LUMBERYARD);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> TAVERN_MARKER =
-            registerMarker("tavern_marker", com.sheepfromheaven.minenow.structure.StructureType.TAVERN);
+            registerMarker("tavern_marker", StructureType.TAVERN);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> STOREHOUSE_MARKER =
-            registerMarker("storehouse_marker", com.sheepfromheaven.minenow.structure.StructureType.STOREHOUSE);
+            registerMarker("storehouse_marker", StructureType.STOREHOUSE);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> MINE_MARKER =
-            registerMarker("mine_marker", com.sheepfromheaven.minenow.structure.StructureType.MINE);
+            registerMarker("mine_marker", StructureType.MINE);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> NURSERY_MARKER =
-            registerMarker("nursery_marker", com.sheepfromheaven.minenow.structure.StructureType.NURSERY);
+            registerMarker("nursery_marker", StructureType.NURSERY);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> CHARCOAL_KILN_MARKER =
-            registerMarker("charcoal_kiln_marker", com.sheepfromheaven.minenow.structure.StructureType.CHARCOAL_KILN);
+            registerMarker("charcoal_kiln_marker", StructureType.CHARCOAL_KILN);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> FARM_MARKER =
-            registerMarker("farm_marker", com.sheepfromheaven.minenow.structure.StructureType.FARM);
+            registerMarker("farm_marker", StructureType.FARM);
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, FieldMarkerBlock> FIELD_MARKER =
             BLOCKS.register("field_marker", () -> new FieldMarkerBlock(markerProps("field_marker")));
 
-    public static StructureMarkerBlock getMarkerBlock(com.sheepfromheaven.minenow.structure.StructureType type) {
+    public static StructureMarkerBlock getMarkerBlock(StructureType type) {
         return switch (type) {
             case HOUSE -> STRUCTURE_MARKER.get();
             case FISHERY -> FISHERY_MARKER.get();
@@ -102,11 +82,6 @@ public class ModBlocks {
             case FARM -> FARM_MARKER.get();
         };
     }
-
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TownBannerBlockEntity>> TOWN_BANNER_BE =
-            BLOCK_ENTITIES.register("town_banner",
-                    () -> new BlockEntityType<>(TownBannerBlockEntity::new,
-                            Set.of(TOWN_BANNER.get(), TOWN_WALL_BANNER.get())));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<StructureMarkerBlockEntity>> STRUCTURE_MARKER_BE =
             BLOCK_ENTITIES.register("structure_marker",
