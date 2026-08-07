@@ -20,7 +20,7 @@ public class CourierJobTests {
         var markerPos = helper.absolutePos(new BlockPos(2, 1, 2));
         var structure = new DominionStructure("Storehouse", StructureType.STOREHOUSE, markerPos, Set.of());
 
-        structure.setItemFilter(Set.of(Items.COAL));
+        structure.setFilter(java.util.List.of(new net.minecraft.world.item.ItemStack(Items.COAL)), true, false);
 
         helper.succeedWhen(() -> {
             helper.assertTrue(structure.accepts(Items.COAL), "Filtered storehouse should accept a listed item");
@@ -84,7 +84,7 @@ public class CourierJobTests {
         var dest = new DominionStructure("House", StructureType.HOUSE, destMarkerPos, Set.of(destMarkerPos));
         var nearStorehouse = new DominionStructure("Near Storehouse", StructureType.STOREHOUSE,
                 helper.absolutePos(nearChestRel), Set.of(nearChestPos));
-        nearStorehouse.setItemFilter(Set.of(Items.IRON_INGOT)); // does not include coal
+        nearStorehouse.setFilter(java.util.List.of(new net.minecraft.world.item.ItemStack(Items.IRON_INGOT)), true, false); // does not include coal
         var farStorehouse = new DominionStructure("Far Storehouse", StructureType.STOREHOUSE,
                 helper.absolutePos(farChestRel), Set.of(farChestPos));
 

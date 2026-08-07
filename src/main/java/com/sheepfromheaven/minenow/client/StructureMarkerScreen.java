@@ -36,10 +36,8 @@ public class StructureMarkerScreen extends SpecScreen {
     private String assignedWorkerId;
     private BlockPos workAreaCenter;
     private int workAreaRadius;
-    private String itemFilterData;
 
     private EditBox nameField;
-    private EditBox filterField;
     private int lastMouseX, lastMouseY;
     private Component hoveredReqTooltip;
     private int refreshCooldown = REFRESH_INTERVAL_TICKS;
@@ -48,7 +46,7 @@ public class StructureMarkerScreen extends SpecScreen {
 
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
                                  String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
-                                 BlockPos workAreaCenter, int workAreaRadius, String itemFilterData) {
+                                 BlockPos workAreaCenter, int workAreaRadius) {
         super(Component.literal("Structure"), loadSpec());
         this.structureName = structureName;
         this.structureType = structureType;
@@ -58,7 +56,6 @@ public class StructureMarkerScreen extends SpecScreen {
         this.assignedWorkerId = assignedWorkerId;
         this.workAreaCenter = workAreaCenter;
         this.workAreaRadius = workAreaRadius;
-        this.itemFilterData = itemFilterData;
 
         on("minenow.rename", (id, s, v) -> {
             if (nameField == null) return;
@@ -99,11 +96,7 @@ public class StructureMarkerScreen extends SpecScreen {
             rebuildWidgets();
         });
 
-        on("minenow.save_item_filter", (id, s, v) -> {
-            if (filterField == null) return;
-            this.itemFilterData = filterField.getValue().trim();
-            ModNetwork.sendSetItemFilter(markerPos, this.itemFilterData);
-        });
+        on("minenow.open_filter", (id, s, v) -> ModNetwork.sendOpenStructureFilter(markerPos));
     }
 
     private static ScreenSpec loadSpec() {
@@ -113,7 +106,7 @@ public class StructureMarkerScreen extends SpecScreen {
 
     public boolean matchesMarker(BlockPos pos) { return markerPos.equals(pos); }
 
-    public void update(String inhabitantData, String assignedInhabitantId, String assignedWorkerId, String itemFilterData) {
+    public void update(String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
         var newInhabitants = parseInhabitants(inhabitantData);
         boolean changed = !this.assignedInhabitantId.equals(assignedInhabitantId)
                 || !this.assignedWorkerId.equals(assignedWorkerId)
@@ -122,7 +115,6 @@ public class StructureMarkerScreen extends SpecScreen {
         this.inhabitants.addAll(newInhabitants);
         this.assignedInhabitantId = assignedInhabitantId;
         this.assignedWorkerId = assignedWorkerId;
-        this.itemFilterData = itemFilterData;
         if (changed) rebuildWidgets();
     }
 
@@ -185,14 +177,6 @@ public class StructureMarkerScreen extends SpecScreen {
 
         AbstractWidget filterTab = getWidget("tab_filter");
         if (filterTab != null) filterTab.visible = isStorehouse();
-
-        if ("tab_filter".equals(activeTab("tabs_main"))) {
-            filterField = new EditBox(font, ox + 10, contentY + 18, spec().width - 20, 20, Component.literal("Item filter"));
-            filterField.setMaxLength(512);
-            filterField.setValue(itemFilterData);
-            filterField.setHint(Component.literal("e.g. minecraft:coal, minecraft:iron_ingot"));
-            addRenderableWidget(filterField);
-        }
 
         AbstractWidget toggleWorkarea = getWidget("btn_toggle_workarea");
         if (toggleWorkarea != null) toggleWorkarea.setMessage(

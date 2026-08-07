@@ -19,6 +19,12 @@ public class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.STRING_UTF8.map(StructureType::valueOf, StructureType::name))
                     .build());
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<FilterData>> FILTER_DATA =
+            DATA_COMPONENTS.register("filter_data", () -> DataComponentType.<FilterData>builder()
+                    .persistent(FilterData.CODEC)
+                    .networkSynchronized(FilterData.STREAM_CODEC)
+                    .build());
+
     public static void register(net.neoforged.bus.api.IEventBus modBus) {
         DATA_COMPONENTS.register(modBus);
     }

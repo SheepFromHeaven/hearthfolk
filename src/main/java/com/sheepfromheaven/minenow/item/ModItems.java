@@ -105,6 +105,13 @@ public class ModItems {
             ));
 
 
+    public static final DeferredHolder<Item, FilterItem> FILTER = ITEMS.register("filter",
+            () -> new FilterItem(
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "filter")))
+                            .stacksTo(1)
+            ));
+
     public static void register(IEventBus modBus) {
         ITEMS.register(modBus);
     }

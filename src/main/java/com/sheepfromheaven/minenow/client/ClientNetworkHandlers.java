@@ -59,12 +59,12 @@ public class ClientNetworkHandlers {
         Minecraft.getInstance().execute(() -> {
             var mc = Minecraft.getInstance();
             if (mc.screen instanceof StructureMarkerScreen screen && screen.matchesMarker(msg.markerPos())) {
-                screen.update(msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId(), msg.itemFilterData());
+                screen.update(msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId());
             } else {
                 mc.setScreen(new StructureMarkerScreen(
                         msg.structureName(), StructureType.valueOf(msg.structureType()), msg.markerPos(),
                         msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId(),
-                        msg.workAreaCenter(), msg.workAreaRadius(), msg.itemFilterData()));
+                        msg.workAreaCenter(), msg.workAreaRadius()));
             }
         });
     }
