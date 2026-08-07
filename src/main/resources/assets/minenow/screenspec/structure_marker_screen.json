@@ -3,7 +3,7 @@
   "modId": "minenow",
   "width": 220,
   "height": 220,
-  "actions": ["rename", "cycle_type", "assign_resident", "assign_worker", "set_work_center", "toggle_workarea", "recalculate", "toggle_range", "save_item_filter"],
+  "actions": ["rename", "assign_resident", "assign_worker", "set_work_center", "toggle_workarea", "recalculate", "toggle_range", "save_item_filter"],
   "bindingsSchema": {
     "structure_name":       { "type": "string",  "previewValue": "My House" },
     "structure_type":       { "type": "string",  "previewValue": "House" },
@@ -63,10 +63,10 @@
       "parentId": "tab_general", "action": "rename"
     },
     {
-      "id": "btn_type", "type": "button",
+      "id": "btn_type", "type": "label",
       "x": 10, "y": 48, "w": 200, "h": 20,
       "text": "Type: House", "icon": null, "props": {},
-      "parentId": "tab_general", "action": "cycle_type",
+      "parentId": "tab_general",
       "bindings": { "text": "type_btn_label" }
     },
     {

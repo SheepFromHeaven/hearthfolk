@@ -151,10 +151,6 @@ public class DominionStructure {
         return type;
     }
 
-    public void setType(StructureType type) {
-        this.type = type;
-    }
-
     public BlockPos getMarkerPos() {
         return markerPos;
     }
