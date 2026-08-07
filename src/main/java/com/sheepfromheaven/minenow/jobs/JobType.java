@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.jobs;
 import com.sheepfromheaven.minenow.jobs.charcoalburner.CharcoalBurnerJob;
 import com.sheepfromheaven.minenow.jobs.cook.CookJob;
 import com.sheepfromheaven.minenow.jobs.courier.CourierJob;
+import com.sheepfromheaven.minenow.jobs.farmer.FarmerJob;
 import com.sheepfromheaven.minenow.jobs.fisher.FisherJob;
 import com.sheepfromheaven.minenow.jobs.forester.ForesterJob;
 import com.sheepfromheaven.minenow.jobs.Job;
@@ -16,7 +17,8 @@ public enum JobType {
     COOK("Cook", CookJob::new, false),
     COURIER("Courier", CourierJob::new, false),
     FORESTER("Forester", ForesterJob::new, true),
-    CHARCOAL_BURNER("Charcoal Burner", CharcoalBurnerJob::new, false);
+    CHARCOAL_BURNER("Charcoal Burner", CharcoalBurnerJob::new, false),
+    FARMER("Farmer", FarmerJob::new, true);
 
     private final String displayName;
     private final Supplier<Job> factory;
