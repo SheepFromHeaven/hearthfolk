@@ -67,6 +67,14 @@ public class ModItems {
                             .stacksTo(16)
             ));
 
+    public static final DeferredHolder<Item, Item> NURSERY_MARKER = ITEMS.register("nursery_marker",
+            () -> new net.minecraft.world.item.BlockItem(
+                    ModBlocks.NURSERY_MARKER.get(),
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "nursery_marker")))
+                            .stacksTo(16)
+            ));
+
     public static final DeferredHolder<Item, Item> CHARCOAL_KILN_MARKER = ITEMS.register("charcoal_kiln_marker",
             () -> new net.minecraft.world.item.BlockItem(
                     ModBlocks.CHARCOAL_KILN_MARKER.get(),

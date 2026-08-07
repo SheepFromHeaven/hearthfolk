@@ -134,6 +134,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.LumberyardTests::findTreeInRangeSkipsLogPillarWithoutLeaves);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_tree_in_range_ignores_nearby_log_house_and_still_finds_real_tree"),
                             com.sheepfromheaven.minenow.jobs.gametest.LumberyardTests::findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_plantable_spot_in_range_finds_bare_grass"),
+                            com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeFindsBareGrass);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_plantable_spot_in_range_skips_spot_already_holding_a_sapling"),
+                            com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeSkipsSpotAlreadyHoldingASapling);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "felling_trunk_harvests_canopy_leaves_directly"),
                             com.sheepfromheaven.minenow.jobs.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "interrupting_leaf_harvest_still_harvests_canopy_leaves_on_resume"),
