@@ -32,7 +32,7 @@ final class TownBannerBehavior {
             var data = DominionSavedData.get((ServerLevel) level);
             var dominion = data.getDominionAt(pos);
             if (dominion != null && dominion.getOwnerUuid().equals(player.getUUID())) {
-                ModNetwork.sendOpenDominionScreen((net.minecraft.server.level.ServerPlayer) player, dominion, pos);
+                ModNetwork.sendOpenDominionScreen((net.minecraft.server.level.ServerPlayer) player, dominion, pos, (ServerLevel) level);
             }
         }
         return InteractionResult.SUCCESS;

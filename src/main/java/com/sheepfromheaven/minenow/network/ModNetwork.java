@@ -401,12 +401,20 @@ public class ModNetwork {
         ClientPacketDistributor.sendToServer(new RecalculateStructurePacket(markerPos));
     }
 
-    public static void sendOpenDominionScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos) {
+    public static void sendOpenDominionScreen(ServerPlayer player, Dominion dominion, BlockPos bannerPos, net.minecraft.server.level.ServerLevel level) {
         var names = dominion.getInhabitants().stream()
                 .map(DominionInhabitant::getName)
                 .collect(Collectors.joining(","));
+        var milestone = dominion.getTier().getLevelUpMilestone();
+        String milestoneProgress = milestone == null ? "" : String.join(",",
+                String.valueOf(dominion.getInhabitants().size()),
+                String.valueOf(dominion.getStructures().size()),
+                String.valueOf(dominion.getTotalStoredResources(level)),
+                String.valueOf(milestone.minPopulation()),
+                String.valueOf(milestone.minStructures()),
+                String.valueOf(milestone.minStoredResources()));
         PacketDistributor.sendToPlayer(player, new OpenDominionScreenPacket(
-                dominion.getName(), dominion.getTier().name(), bannerPos, names
+                dominion.getName(), dominion.getTier().name(), bannerPos, names, milestoneProgress
         ));
     }
 
@@ -599,13 +607,20 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record OpenDominionScreenPacket(String dominionName, String tier, BlockPos bannerPos, String inhabitantNames) implements CustomPacketPayload {
+    /**
+     * {@code milestoneProgress} is a comma-separated
+     * {@code population,structureCount,storedResources,minPopulation,minStructures,minStoredResources}
+     * tuple, or empty when already at the max tier (no next-tier milestone to show).
+     */
+    public record OpenDominionScreenPacket(String dominionName, String tier, BlockPos bannerPos,
+                                            String inhabitantNames, String milestoneProgress) implements CustomPacketPayload {
         public static final Type<OpenDominionScreenPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_dominion_screen"));
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenDominionScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::dominionName,
                 ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::tier,
                 BlockPos.STREAM_CODEC, OpenDominionScreenPacket::bannerPos,
                 ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::inhabitantNames,
+                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::milestoneProgress,
                 OpenDominionScreenPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
