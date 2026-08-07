@@ -22,6 +22,20 @@ public class ModBlocks {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, MineNow.MOD_ID);
 
+    private static BlockBehaviour.Properties markerProps(String name) {
+        return BlockBehaviour.Properties.of()
+                .setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, name)))
+                .mapColor(MapColor.STONE)
+                .instrument(NoteBlockInstrument.BASEDRUM)
+                .strength(1.5F)
+                .sound(SoundType.STONE);
+    }
+
+    private static DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> registerMarker(
+            String name, com.sheepfromheaven.minenow.dominion.StructureType type) {
+        return BLOCKS.register(name, () -> new StructureMarkerBlock(markerProps(name), type));
+    }
+
     private static BlockBehaviour.Properties bannerProps(String name) {
         return BlockBehaviour.Properties.of()
                 .setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, name)))
@@ -40,14 +54,29 @@ public class ModBlocks {
             BLOCKS.register("town_wall_banner", () -> new TownWallBannerBlock(bannerProps("town_wall_banner")));
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> STRUCTURE_MARKER =
-            BLOCKS.register("structure_marker", () -> new StructureMarkerBlock(
-                    BlockBehaviour.Properties.of()
-                            .setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "structure_marker")))
-                            .mapColor(MapColor.STONE)
-                            .instrument(NoteBlockInstrument.BASEDRUM)
-                            .strength(1.5F)
-                            .sound(SoundType.STONE)
-            ));
+            registerMarker("structure_marker", com.sheepfromheaven.minenow.dominion.StructureType.HOUSE);
+
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> FISHERY_MARKER =
+            registerMarker("fishery_marker", com.sheepfromheaven.minenow.dominion.StructureType.FISHERY);
+
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> LUMBERYARD_MARKER =
+            registerMarker("lumberyard_marker", com.sheepfromheaven.minenow.dominion.StructureType.LUMBERYARD);
+
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> TAVERN_MARKER =
+            registerMarker("tavern_marker", com.sheepfromheaven.minenow.dominion.StructureType.TAVERN);
+
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> STOREHOUSE_MARKER =
+            registerMarker("storehouse_marker", com.sheepfromheaven.minenow.dominion.StructureType.STOREHOUSE);
+
+    public static StructureMarkerBlock getMarkerBlock(com.sheepfromheaven.minenow.dominion.StructureType type) {
+        return switch (type) {
+            case HOUSE -> STRUCTURE_MARKER.get();
+            case FISHERY -> FISHERY_MARKER.get();
+            case LUMBERYARD -> LUMBERYARD_MARKER.get();
+            case TAVERN -> TAVERN_MARKER.get();
+            case STOREHOUSE -> STOREHOUSE_MARKER.get();
+        };
+    }
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TownBannerBlockEntity>> TOWN_BANNER_BE =
             BLOCK_ENTITIES.register("town_banner",
@@ -57,7 +86,8 @@ public class ModBlocks {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<StructureMarkerBlockEntity>> STRUCTURE_MARKER_BE =
             BLOCK_ENTITIES.register("structure_marker",
                     () -> new BlockEntityType<>(StructureMarkerBlockEntity::new,
-                            Set.of(STRUCTURE_MARKER.get())));
+                            Set.of(STRUCTURE_MARKER.get(), FISHERY_MARKER.get(), LUMBERYARD_MARKER.get(),
+                                    TAVERN_MARKER.get(), STOREHOUSE_MARKER.get())));
 
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);

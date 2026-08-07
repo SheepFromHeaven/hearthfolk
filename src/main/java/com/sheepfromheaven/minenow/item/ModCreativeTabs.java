@@ -19,6 +19,10 @@ public class ModCreativeTabs {
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.TOWN_BANNER.get());
                         output.accept(ModItems.STRUCTURE_MARKER.get());
+                        output.accept(ModItems.FISHERY_MARKER.get());
+                        output.accept(ModItems.LUMBERYARD_MARKER.get());
+                        output.accept(ModItems.TAVERN_MARKER.get());
+                        output.accept(ModItems.STOREHOUSE_MARKER.get());
                         output.accept(ModItems.INVITATION.get());
                         output.accept(ModItems.TREE_SCANNER_WAND.get());
                         output.accept(ModItems.STRUCTURE_WAND.get());

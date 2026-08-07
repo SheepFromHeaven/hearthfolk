@@ -37,6 +37,38 @@ public class ModItems {
                             .stacksTo(16)
             ));
 
+    public static final DeferredHolder<Item, Item> FISHERY_MARKER = ITEMS.register("fishery_marker",
+            () -> new net.minecraft.world.item.BlockItem(
+                    ModBlocks.FISHERY_MARKER.get(),
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "fishery_marker")))
+                            .stacksTo(16)
+            ));
+
+    public static final DeferredHolder<Item, Item> LUMBERYARD_MARKER = ITEMS.register("lumberyard_marker",
+            () -> new net.minecraft.world.item.BlockItem(
+                    ModBlocks.LUMBERYARD_MARKER.get(),
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "lumberyard_marker")))
+                            .stacksTo(16)
+            ));
+
+    public static final DeferredHolder<Item, Item> TAVERN_MARKER = ITEMS.register("tavern_marker",
+            () -> new net.minecraft.world.item.BlockItem(
+                    ModBlocks.TAVERN_MARKER.get(),
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "tavern_marker")))
+                            .stacksTo(16)
+            ));
+
+    public static final DeferredHolder<Item, Item> STOREHOUSE_MARKER = ITEMS.register("storehouse_marker",
+            () -> new net.minecraft.world.item.BlockItem(
+                    ModBlocks.STOREHOUSE_MARKER.get(),
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "storehouse_marker")))
+                            .stacksTo(16)
+            ));
+
     public static final DeferredHolder<Item, InvitationItem> INVITATION = ITEMS.register("invitation",
             () -> new InvitationItem(
                     new Item.Properties()
