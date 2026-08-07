@@ -234,6 +234,14 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.StructureWandTests::structureWandBuildsBuildingWithFixed8x10x6Dimensions);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "shift_right_click_cycles_mode_and_builds_matching_furnished_structure"),
                             com.sheepfromheaven.minenow.gametest.StructureWandTests::shiftRightClickCyclesModeAndBuildsMatchingFurnishedStructure);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "shift_clicking_tool_in_general_slots_equips_main_hand_first"),
+                            com.sheepfromheaven.minenow.gametest.VanillaRowMenuTests::shiftClickingToolInGeneralSlotsEquipsMainHandFirst);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "shift_clicking_tool_from_player_inventory_equips_main_hand_first"),
+                            com.sheepfromheaven.minenow.gametest.VanillaRowMenuTests::shiftClickingToolFromPlayerInventoryEquipsMainHandFirst);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "picking_up_a_tool_equips_main_hand_instead_of_general_inventory"),
+                            com.sheepfromheaven.minenow.gametest.InhabitantPickupTests::pickingUpAToolEquipsMainHandInsteadOfGeneralInventory);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "picking_up_non_tool_item_goes_to_general_inventory"),
+                            com.sheepfromheaven.minenow.gametest.InhabitantPickupTests::pickingUpNonToolItemGoesToGeneralInventory);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:picking_up_non_tool_item_goes_to_general_inventory",
+  "structure": "minenow:room_9x5x9",
+  "max_ticks": 40
+}

@@ -109,12 +109,22 @@ public class VanillaRowMenu extends AbstractContainerMenu {
             var stack = slot.getItem();
             result = stack.copy();
             int generalEnd = toolContainers.length + generalCapacity;
+            boolean hasToolSlots = toolContainers.length > 0;
             if (index < generalEnd) {
-                if (!moveItemStackTo(stack, generalEnd, slots.size(), true)) {
+                boolean isGeneralSlot = index >= toolContainers.length;
+                boolean movedToTool = isGeneralSlot && hasToolSlots
+                        && moveItemStackTo(stack, 0, toolContainers.length, false);
+                if (!movedToTool && !moveItemStackTo(stack, generalEnd, slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!moveItemStackTo(stack, toolContainers.length, generalEnd, false)) {
-                return ItemStack.EMPTY;
+            } else {
+                // From the player's own inventory: try the tool slot first too, same as the reverse
+                // direction above - otherwise shift-clicking a tool in always lands it in the general
+                // grid instead of equipping it.
+                boolean movedToTool = hasToolSlots && moveItemStackTo(stack, 0, toolContainers.length, false);
+                if (!movedToTool && !moveItemStackTo(stack, toolContainers.length, generalEnd, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
             if (stack.isEmpty()) {
                 slot.setByPlayer(ItemStack.EMPTY);

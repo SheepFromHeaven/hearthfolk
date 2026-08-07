@@ -79,9 +79,47 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     public InhabitantEntity(EntityType<? extends InhabitantEntity> type, Level level) {
         super(type, level);
         setPersistenceRequired();
+        setCanPickUpLoot(true);
         for (var need : NeedType.values()) {
             needs.put(need, 1.0f);
         }
+    }
+
+    /**
+     * Vanilla's own {@code Mob#pickUpItem} only equips items into gear slots (armor/weapons), so
+     * without this override enabling {@link #setCanPickUpLoot} would only ever pick up weapons and
+     * armor dropped nearby. Inhabitants should pick up anything within reach - job materials dropped
+     * by a player, a freshly felled tree's leaf drops that missed the lumberjack's own harvest pass, etc.
+     * A job tool (axe, fishing rod, ...) goes straight into the main-hand equipment slot if that's
+     * empty, exactly like one manually equipped from storage - everything else goes to the general
+     * job inventory instead.
+     */
+    @Override
+    protected void pickUpItem(ServerLevel level, net.minecraft.world.entity.item.ItemEntity itemEntity) {
+        var stack = itemEntity.getItem();
+        if (isJobTool(stack) && getItemBySlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND).isEmpty()) {
+            var toEquip = stack.split(1);
+            setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, toEquip);
+            onItemPickup(itemEntity);
+            take(itemEntity, 1);
+            if (stack.isEmpty()) {
+                itemEntity.discard();
+            }
+            return;
+        }
+        var leftover = getInventory().addItem(stack.copy());
+        int taken = stack.getCount() - leftover.getCount();
+        if (taken <= 0) return;
+        onItemPickup(itemEntity);
+        take(itemEntity, taken);
+        stack.shrink(taken);
+        if (stack.isEmpty()) {
+            itemEntity.discard();
+        }
+    }
+
+    private static boolean isJobTool(net.minecraft.world.item.ItemStack stack) {
+        return stack.is(net.minecraft.tags.ItemTags.AXES) || stack.is(net.minecraft.world.item.Items.FISHING_ROD);
     }
 
     private static final software.bernie.geckolib.animation.RawAnimation WALK =
