@@ -136,6 +136,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.gametest.LumberyardTests::findTreeInRangeIgnoresNearbyLogHouseAndStillFindsRealTree);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "felling_trunk_harvests_canopy_leaves_directly"),
                             com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "interrupting_leaf_harvest_still_harvests_canopy_leaves_on_resume"),
+                            com.sheepfromheaven.minenow.gametest.LumberjackLeafHarvestTests::interruptingLeafHarvestStillHarvestsCanopyLeavesOnResume);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_shore_position_uses_rim_of_sunken_well_instead_of_the_water_itself"),
                             com.sheepfromheaven.minenow.gametest.FisherJobShoreTests::findShorePositionUsesRimOfSunkenWellInsteadOfTheWaterItself);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_shore_position_prefers_same_level_ring_over_rim"),
