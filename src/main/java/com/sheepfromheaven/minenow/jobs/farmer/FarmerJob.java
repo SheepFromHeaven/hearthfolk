@@ -93,7 +93,7 @@ public class FarmerJob implements Job {
             if (--noCropCooldown > 0) {
                 return true;
             }
-            var dominion = DominionSavedData.get(level).findDominionContaining(workplace.getMarkerPos());
+            var dominion = DominionSavedData.get(level).getDominionById(inhabitant.getDominionId());
             var fields = dominion != null ? dominion.getFieldsAssignedTo(workplace.getId()) : java.util.List.<com.sheepfromheaven.minenow.structure.field.Field>of();
             var found = fields.isEmpty()
                     ? CropScanner.findMatureCropInRange(level, workplace.getWorkAreaCenter(), workplace.getWorkAreaRadius(), workplace.getWorkAreaRadius(), skippedCrops).orElse(null)
