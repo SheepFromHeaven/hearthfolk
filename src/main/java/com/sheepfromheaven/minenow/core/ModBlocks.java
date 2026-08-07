@@ -73,6 +73,9 @@ public class ModBlocks {
     public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> STOREHOUSE_MARKER =
             registerMarker("storehouse_marker", com.sheepfromheaven.minenow.structure.StructureType.STOREHOUSE);
 
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, StructureMarkerBlock> CHARCOAL_KILN_MARKER =
+            registerMarker("charcoal_kiln_marker", com.sheepfromheaven.minenow.structure.StructureType.CHARCOAL_KILN);
+
     public static StructureMarkerBlock getMarkerBlock(com.sheepfromheaven.minenow.structure.StructureType type) {
         return switch (type) {
             case HOUSE -> STRUCTURE_MARKER.get();
@@ -80,6 +83,7 @@ public class ModBlocks {
             case LUMBERYARD -> LUMBERYARD_MARKER.get();
             case TAVERN -> TAVERN_MARKER.get();
             case STOREHOUSE -> STOREHOUSE_MARKER.get();
+            case CHARCOAL_KILN -> CHARCOAL_KILN_MARKER.get();
         };
     }
 
@@ -92,7 +96,7 @@ public class ModBlocks {
             BLOCK_ENTITIES.register("structure_marker",
                     () -> new BlockEntityType<>(StructureMarkerBlockEntity::new,
                             Set.of(STRUCTURE_MARKER.get(), FISHERY_MARKER.get(), LUMBERYARD_MARKER.get(),
-                                    TAVERN_MARKER.get(), STOREHOUSE_MARKER.get())));
+                                    TAVERN_MARKER.get(), STOREHOUSE_MARKER.get(), CHARCOAL_KILN_MARKER.get())));
 
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);
