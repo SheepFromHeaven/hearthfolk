@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SAS",
+    "L L",
+    "TTT"
+  ],
+  "key": {
+    "S": "#minecraft:stairs",
+    "A": "#minecraft:slabs",
+    "L": "#minecraft:logs",
+    "T": "#minecraft:stone_tool_materials"
+  },
+  "result": {
+    "count": 1,
+    "id": "minenow:structure_base"
+  }
+}
