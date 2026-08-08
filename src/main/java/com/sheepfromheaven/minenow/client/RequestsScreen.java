@@ -3,13 +3,13 @@ package com.sheepfromheaven.minenow.client;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import sheepfromheaven.screenspec.runtime.ScreenSpec;
-import sheepfromheaven.screenspec.runtime.SpecScreen;
+import sheepfromheaven.screenspec.runtime.CustomWidgetRegistry;
 import sheepfromheaven.screenspec.runtime.ScreenSpecLoader;
+import sheepfromheaven.screenspec.runtime.SpecScreen;
+import sheepfromheaven.screenspec.runtime.WidgetSpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,13 +20,10 @@ import java.util.List;
  */
 public class RequestsScreen extends SpecScreen {
 
-    private static final int PANEL_WIDTH = 280;
-    private static final int PANEL_HEIGHT = 220;
-    private static final int ROW_HEIGHT = 16;
+    private static final int ROW_HEIGHT = 12;
     private static final int TEXT_SOFT = 0xFF666666;
     private static final int TEXT_URGENT = 0xFFAA2222;
     private static final int TEXT_HEADER = 0xFF303030;
-    private static final int TEXT_DARK = 0xFF404040;
 
     private static final int REFRESH_INTERVAL_TICKS = 20;
 
@@ -39,16 +36,14 @@ public class RequestsScreen extends SpecScreen {
     private int refreshCooldown = REFRESH_INTERVAL_TICKS;
 
     public RequestsScreen(Screen parent, String dominionName, List<RequestEntry> entries, BlockPos bannerPos) {
-        super(Component.literal("Requests"), loadSpec());
+        super(Component.translatable("screen.minenow.requests_screen"),
+                ScreenSpecLoader.fromResource(Minecraft.getInstance().getResourceManager(), "minenow", "requests_screen"));
         this.parent = parent;
         this.dominionName = dominionName;
         this.entries = new ArrayList<>(entries);
         this.bannerPos = bannerPos;
-    }
 
-    private static ScreenSpec loadSpec() {
-        return ScreenSpecLoader.fromResource(
-                Minecraft.getInstance().getResourceManager(), "minenow", "requests_screen");
+        CustomWidgetRegistry.register("requests_list", (graphics, widget, x, y) -> renderRequestsList(graphics, x, y));
     }
 
     public void update(List<RequestEntry> fresh) {
@@ -56,7 +51,6 @@ public class RequestsScreen extends SpecScreen {
         if (changed) {
             this.entries.clear();
             this.entries.addAll(fresh);
-            rebuildWidgets();
         }
     }
 
@@ -70,26 +64,9 @@ public class RequestsScreen extends SpecScreen {
     }
 
     @Override
-    protected void init() {
-        super.init();
-        int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - PANEL_HEIGHT) / 2;
-
-        if (!entries.isEmpty()) {
-            var list = new RequestList(left + 2, top + 26, PANEL_WIDTH - 4, PANEL_HEIGHT - 56);
-            buildRows(list);
-            addRenderableWidget(list);
-        }
-    }
-
-    private void buildRows(RequestList list) {
-        String lastStructure = null;
-        for (var entry : entries) {
-            if (!entry.structureName().equals(lastStructure)) {
-                list.add(new HeaderRow(entry.structureName()));
-                lastStructure = entry.structureName();
-            }
-            list.add(new EntryRow(entry));
+    protected void onAction(String actionId, WidgetSpec spec, Object value) {
+        if ("minenow.close".equals(actionId)) {
+            onClose();
         }
     }
 
@@ -97,11 +74,6 @@ public class RequestsScreen extends SpecScreen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         bindText("label_title", "Requests — " + dominionName);
         super.render(graphics, mouseX, mouseY, partialTick);
-
-        if (entries.isEmpty()) {
-            graphics.drawCenteredString(getFont(), "No pending requests",
-                    width / 2, (height - PANEL_HEIGHT) / 2 + 26, TEXT_SOFT);
-        }
     }
 
     @Override
@@ -112,6 +84,25 @@ public class RequestsScreen extends SpecScreen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    private void renderRequestsList(GuiGraphics graphics, int x, int y) {
+        if (entries.isEmpty()) {
+            graphics.drawString(getFont(), "No pending requests", x, y, TEXT_SOFT, false);
+            return;
+        }
+        String lastStructure = null;
+        for (var entry : entries) {
+            if (!entry.structureName().equals(lastStructure)) {
+                graphics.drawString(getFont(), entry.structureName(), x, y, TEXT_HEADER, false);
+                lastStructure = entry.structureName();
+                y += ROW_HEIGHT;
+            }
+            int color = entry.urgent() ? TEXT_URGENT : TEXT_SOFT;
+            String prefix = entry.urgent() ? "! " : "  ";
+            graphics.drawString(getFont(), prefix + entry.label() + "  x" + entry.amount(), x + 8, y, color, false);
+            y += ROW_HEIGHT;
+        }
     }
 
     /** Parses the flat wire encoding produced by {@link ModNetwork#encodeRequests}. */
@@ -127,51 +118,5 @@ public class RequestsScreen extends SpecScreen {
             } catch (NumberFormatException ignored) {}
         }
         return result;
-    }
-
-    @SuppressWarnings("rawtypes")
-    private class RequestList extends ObjectSelectionList {
-        RequestList(int x, int y, int width, int height) {
-            super(Minecraft.getInstance(), width, height, y, ROW_HEIGHT);
-            setX(x);
-        }
-
-        @SuppressWarnings("unchecked")
-        void add(ObjectSelectionList.Entry<?> row) {
-            addEntry(row);
-        }
-    }
-
-    private class HeaderRow extends ObjectSelectionList.Entry<HeaderRow> {
-        private final String name;
-
-        HeaderRow(String name) { this.name = name; }
-
-        @Override
-        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean hovered, float partialTick) {
-            graphics.drawString(getFont(), name, getContentX() + 2, getContentY() + (getContentHeight() - 8) / 2, TEXT_HEADER, false);
-        }
-
-        @Override
-        public Component getNarration() { return Component.literal(name); }
-    }
-
-    private class EntryRow extends ObjectSelectionList.Entry<EntryRow> {
-        private final RequestEntry entry;
-
-        EntryRow(RequestEntry entry) { this.entry = entry; }
-
-        @Override
-        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean hovered, float partialTick) {
-            int color = entry.urgent() ? TEXT_URGENT : TEXT_SOFT;
-            String prefix = entry.urgent() ? "! " : "  ";
-            String text = prefix + entry.label() + "  x" + entry.amount();
-            graphics.drawString(getFont(), text, getContentX() + 12, getContentY() + (getContentHeight() - 8) / 2, color, false);
-        }
-
-        @Override
-        public Component getNarration() {
-            return Component.literal(entry.label() + " x" + entry.amount());
-        }
     }
 }
