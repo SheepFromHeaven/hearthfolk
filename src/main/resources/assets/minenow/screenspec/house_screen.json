@@ -1,0 +1,363 @@
+{
+  "id": "house_screen",
+  "modId": "minenow",
+  "width": 220,
+  "height": 220,
+  "actions": [
+    "rename",
+    "assign_resident",
+    "assign_worker",
+    "set_work_center",
+    "toggle_workarea",
+    "recalculate",
+    "toggle_range",
+    "open_filter"
+  ],
+  "bindingsSchema": {
+    "structure_name": {
+      "type": "string",
+      "previewValue": "My House"
+    },
+    "structure_type": {
+      "type": "string",
+      "previewValue": "House"
+    },
+    "type_btn_label": {
+      "type": "string",
+      "previewValue": "Type: House"
+    },
+    "resident_btn_label": {
+      "type": "string",
+      "previewValue": "Resident: Alice"
+    },
+    "worker_btn_label": {
+      "type": "string",
+      "previewValue": "Worker: Bob"
+    },
+    "work_area_center": {
+      "type": "string",
+      "previewValue": "Center: 0, 64, 0"
+    },
+    "toggle_workarea_label": {
+      "type": "string",
+      "previewValue": "Show Workarea"
+    },
+    "toggle_range_label": {
+      "type": "string",
+      "previewValue": "Show Range"
+    },
+    "show_resident_btn": {
+      "type": "boolean",
+      "previewValue": true
+    },
+    "show_worker_btn": {
+      "type": "boolean",
+      "previewValue": true
+    },
+    "show_range_toggle": {
+      "type": "boolean",
+      "previewValue": true
+    },
+    "has_work_area": {
+      "type": "boolean",
+      "previewValue": true
+    }
+  },
+  "widgets": [
+    {
+      "id": "panel_main",
+      "type": "panel",
+      "x": 0,
+      "y": 0,
+      "w": 220,
+      "h": 220,
+      "text": "",
+      "icon": null,
+      "props": {
+        "style": "default"
+      }
+    },
+    {
+      "id": "label_name",
+      "type": "label",
+      "x": 0,
+      "y": 8,
+      "w": 220,
+      "h": 10,
+      "text": "Structure",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false",
+        "align": "center"
+      },
+      "parentId": "panel_main",
+      "bindings": {
+        "text": "structure_name"
+      }
+    },
+    {
+      "id": "label_type",
+      "type": "label",
+      "x": 0,
+      "y": 22,
+      "w": 220,
+      "h": 10,
+      "text": "House",
+      "icon": null,
+      "props": {
+        "color": "-7705344",
+        "shadow": "false",
+        "align": "center"
+      },
+      "parentId": "panel_main",
+      "bindings": {
+        "text": "structure_type"
+      }
+    },
+    {
+      "id": "tabs_main",
+      "type": "tabs",
+      "x": 0,
+      "y": 40,
+      "w": 220,
+      "h": 180,
+      "text": "",
+      "icon": null,
+      "props": {},
+      "parentId": "panel_main"
+    },
+    {
+      "id": "tab_general",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "General",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
+    },
+    {
+      "id": "tab_requirements",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "Requirements",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
+    },
+    {
+      "id": "tab_work_area",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "Work Area",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main",
+      "bindings": {
+        "visible": "has_work_area"
+      }
+    },
+    {
+      "id": "tab_filter",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "Filter",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
+    },
+    {
+      "id": "tab_debug",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "Debug",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
+    },
+    {
+      "id": "btn_rename",
+      "type": "button",
+      "x": 10,
+      "y": 22,
+      "w": 200,
+      "h": 20,
+      "text": "Rename",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_general",
+      "action": "rename"
+    },
+    {
+      "id": "btn_type",
+      "type": "label",
+      "x": 10,
+      "y": 48,
+      "w": 200,
+      "h": 20,
+      "text": "Type: House",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_general",
+      "bindings": {
+        "text": "type_btn_label"
+      }
+    },
+    {
+      "id": "btn_resident",
+      "type": "button",
+      "x": 10,
+      "y": 74,
+      "w": 200,
+      "h": 20,
+      "text": "Resident: None",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_general",
+      "action": "assign_resident",
+      "bindings": {
+        "text": "resident_btn_label",
+        "visible": "show_resident_btn"
+      }
+    },
+    {
+      "id": "btn_worker",
+      "type": "button",
+      "x": 10,
+      "y": 100,
+      "w": 200,
+      "h": 20,
+      "text": "Worker: None",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_general",
+      "action": "assign_worker",
+      "bindings": {
+        "text": "worker_btn_label",
+        "visible": "show_worker_btn"
+      }
+    },
+    {
+      "id": "label_center",
+      "type": "label",
+      "x": 0,
+      "y": 4,
+      "w": 220,
+      "h": 10,
+      "text": "Center: 0, 64, 0",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false",
+        "align": "center"
+      },
+      "parentId": "tab_work_area",
+      "bindings": {
+        "text": "work_area_center"
+      }
+    },
+    {
+      "id": "btn_set_center",
+      "type": "button",
+      "x": 10,
+      "y": 44,
+      "w": 200,
+      "h": 20,
+      "text": "Set Center of Workarea",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_work_area",
+      "action": "set_work_center"
+    },
+    {
+      "id": "btn_toggle_workarea",
+      "type": "button",
+      "x": 10,
+      "y": 70,
+      "w": 200,
+      "h": 20,
+      "text": "Show Workarea",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_work_area",
+      "action": "toggle_workarea",
+      "bindings": {
+        "text": "toggle_workarea_label"
+      }
+    },
+    {
+      "id": "label_filter_hint",
+      "type": "label",
+      "x": 0,
+      "y": 4,
+      "w": 220,
+      "h": 10,
+      "text": "Place a Filter item to restrict what this storehouse accepts",
+      "icon": null,
+      "props": {
+        "color": "4210752",
+        "shadow": "false",
+        "align": "center"
+      },
+      "parentId": "tab_filter"
+    },
+    {
+      "id": "btn_open_filter",
+      "type": "button",
+      "x": 10,
+      "y": 22,
+      "w": 200,
+      "h": 20,
+      "text": "Open Filter Slot",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_filter",
+      "action": "open_filter"
+    },
+    {
+      "id": "btn_recalculate",
+      "type": "button",
+      "x": 10,
+      "y": 4,
+      "w": 200,
+      "h": 20,
+      "text": "Recalculate Area",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_debug",
+      "action": "recalculate"
+    },
+    {
+      "id": "btn_toggle_range",
+      "type": "button",
+      "x": 10,
+      "y": 30,
+      "w": 200,
+      "h": 20,
+      "text": "Show Range",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_debug",
+      "action": "toggle_range",
+      "bindings": {
+        "text": "toggle_range_label",
+        "visible": "show_range_toggle"
+      }
+    }
+  ]
+}

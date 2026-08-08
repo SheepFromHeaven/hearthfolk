@@ -51,7 +51,7 @@ public class StructureMarkerScreen extends SpecScreen {
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
                                  String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
                                  BlockPos workAreaCenter, int workAreaRadius) {
-        super(Component.literal("Structure"), loadSpec());
+        super(Component.literal("Structure"), loadSpec(structureType));
         this.structureName = structureName;
         this.structureType = structureType;
         this.markerPos = markerPos;
@@ -96,9 +96,9 @@ public class StructureMarkerScreen extends SpecScreen {
         on("minenow.open_filter", (id, s, v) -> ModNetwork.sendOpenStructureFilter(markerPos));
     }
 
-    private static ScreenSpec loadSpec() {
+    private static ScreenSpec loadSpec(StructureType type) {
         return ScreenSpecLoader.fromResource(
-                Minecraft.getInstance().getResourceManager(), "minenow", "structure_marker_screen");
+                Minecraft.getInstance().getResourceManager(), "minenow", type.name().toLowerCase() + "_screen");
     }
 
     public boolean matchesMarker(BlockPos pos) { return markerPos.equals(pos); }
