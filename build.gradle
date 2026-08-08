@@ -100,7 +100,7 @@ repositories {
 
 dependencies {
     implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.11:5.4.5'
-    implementation 'maven.modrinth:screenspec:TZJaqn9E'
+    implementation 'maven.modrinth:screenspec:ZJ9vn4ak'
 }
 
 tasks.withType(JavaCompile).configureEach {
