@@ -78,6 +78,12 @@ public class StructureItems {
                             .stacksTo(16)
             ));
 
+    public static final DeferredHolder<Item, Item> STRUCTURE_BASE = ITEMS.register("structure_base",
+            () -> new Item(
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "structure_base")))
+            ));
+
     public static final DeferredHolder<Item, StructureWandItem> STRUCTURE_WAND = ITEMS.register("structure_wand",
             () -> new StructureWandItem(
                     new Item.Properties()

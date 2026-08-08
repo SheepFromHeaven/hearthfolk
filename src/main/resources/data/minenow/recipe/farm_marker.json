@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minenow:structure_base",
+    { "tag": "minecraft:hoes" }
+  ],
+  "result": {
+    "count": 1,
+    "id": "minenow:farm_marker"
+  }
+}

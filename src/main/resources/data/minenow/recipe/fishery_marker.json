@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minenow:structure_base",
+    "minecraft:fishing_rod"
+  ],
+  "result": {
+    "count": 1,
+    "id": "minenow:fishery_marker"
+  }
+}
