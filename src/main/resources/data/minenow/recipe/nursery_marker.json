@@ -3,7 +3,7 @@
   "category": "misc",
   "ingredients": [
     "minenow:structure_base",
-    { "tag": "minecraft:saplings" }
+    "#minecraft:saplings"
   ],
   "result": {
     "count": 1,

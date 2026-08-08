@@ -3,7 +3,7 @@
   "category": "misc",
   "ingredients": [
     "minenow:structure_base",
-    { "tag": "minecraft:pickaxes" }
+    "#minecraft:pickaxes"
   ],
   "result": {
     "count": 1,

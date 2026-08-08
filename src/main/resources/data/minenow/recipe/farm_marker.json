@@ -3,7 +3,7 @@
   "category": "misc",
   "ingredients": [
     "minenow:structure_base",
-    { "tag": "minecraft:hoes" }
+    "#minecraft:hoes"
   ],
   "result": {
     "count": 1,

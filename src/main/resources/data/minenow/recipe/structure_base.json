@@ -7,10 +7,10 @@
     "TTT"
   ],
   "key": {
-    "S": { "tag": "minecraft:stairs" },
-    "A": { "tag": "minecraft:slabs" },
-    "L": { "tag": "minecraft:logs" },
-    "T": { "tag": "minecraft:stone" }
+    "S": "#minecraft:stairs",
+    "A": "#minecraft:slabs",
+    "L": "#minecraft:logs",
+    "T": "#minecraft:stone_tool_materials"
   },
   "result": {
     "count": 1,
