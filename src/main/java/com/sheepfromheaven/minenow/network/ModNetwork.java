@@ -19,10 +19,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.Container;
-import net.minecraft.world.entity.EquipmentSlot;
-import com.sheepfromheaven.minenow.storage.inventory.EquipmentSlotContainer;
-import com.sheepfromheaven.minenow.storage.inventory.ModMenus;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,7 +49,6 @@ public class ModNetwork {
         registrar.playToServer(RecalculateStructurePacket.TYPE, RecalculateStructurePacket.CODEC, ModNetwork::handleRecalculateStructure);
         registrar.playToServer(OpenStructureFilterPacket.TYPE, OpenStructureFilterPacket.CODEC, ModNetwork::handleOpenStructureFilter);
         registrar.playToServer(GoHomePacket.TYPE, GoHomePacket.CODEC, ModNetwork::handleGoHome);
-        registrar.playToServer(ViewInventoryPacket.TYPE, ViewInventoryPacket.CODEC, ModNetwork::handleViewInventory);
         registrar.playToServer(RequestInhabitantDebugPacket.TYPE, RequestInhabitantDebugPacket.CODEC, ModNetwork::handleRequestInhabitantDebug);
         registrar.playToServer(AssignHousePacket.TYPE, AssignHousePacket.CODEC, ModNetwork::handleAssignHouse);
         registrar.playToServer(AssignWorkerPacket.TYPE, AssignWorkerPacket.CODEC, ModNetwork::handleAssignWorker);
@@ -176,20 +171,6 @@ public class ModNetwork {
         if (dominion != null && dominion.getOwnerUuid().equals(player.getUUID())) {
             inhabitant.goHome();
         }
-    }
-
-    private static void handleViewInventory(ViewInventoryPacket msg, IPayloadContext ctx) {
-        var player = (ServerPlayer) ctx.player();
-        var level = player.level();
-        if (!(level.getEntity(msg.entityId()) instanceof InhabitantEntity inhabitant)) return;
-        if (inhabitant.getDominionId() == null) return;
-        var data = DominionSavedData.get(level);
-        var dominion = data.getDominionById(inhabitant.getDominionId());
-        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
-        player.openMenu(ModMenus.INHABITANT_INVENTORY.createView(
-                inhabitant.getName(),
-                new Container[] {new EquipmentSlotContainer(inhabitant, EquipmentSlot.MAINHAND)},
-                inhabitant.getInventory()));
     }
 
     private static void handleRequestInhabitantDebug(RequestInhabitantDebugPacket msg, IPayloadContext ctx) {
@@ -413,10 +394,6 @@ public class ModNetwork {
         ClientPacketDistributor.sendToServer(new GoHomePacket(entityId));
     }
 
-    public static void sendViewInventory(int entityId) {
-        ClientPacketDistributor.sendToServer(new ViewInventoryPacket(entityId));
-    }
-
     public static void sendRequestInhabitantDebug(int entityId) {
         ClientPacketDistributor.sendToServer(new RequestInhabitantDebugPacket(entityId));
     }
@@ -628,15 +605,6 @@ public class ModNetwork {
         public static final StreamCodec<RegistryFriendlyByteBuf, GoHomePacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, GoHomePacket::entityId,
                 GoHomePacket::new
-        );
-        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    }
-
-    public record ViewInventoryPacket(int entityId) implements CustomPacketPayload {
-        public static final Type<ViewInventoryPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "view_inventory"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, ViewInventoryPacket> CODEC = StreamCodec.composite(
-                ByteBufCodecs.INT, ViewInventoryPacket::entityId,
-                ViewInventoryPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }

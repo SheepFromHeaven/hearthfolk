@@ -1,140 +1,326 @@
 {
   "id": "inhabitant_screen",
   "modId": "minenow",
-  "width": 200,
-  "height": 190,
-  "actions": ["go_home", "view_inventory", "issues"],
+  "width": 250,
+  "height": 220,
+  "actions": [
+    "go_home",
+    "issues"
+  ],
   "bindingsSchema": {
-    "inhabitant_name":  { "type": "string", "previewValue": "Alice" },
-    "dominion_name":    { "type": "string", "previewValue": "My Dominion" },
-    "job_status":       { "type": "string", "previewValue": "Job: Lumberjack" },
-    "issues_btn_label": { "type": "string", "previewValue": "Issues" },
-    "shelter":          { "type": "number", "previewValue": 0.8 },
-    "food":             { "type": "number", "previewValue": 0.6 },
-    "rest":             { "type": "number", "previewValue": 0.4 }
+    "inhabitant_name": {
+      "type": "string",
+      "previewValue": "Alice"
+    },
+    "dominion_name": {
+      "type": "string",
+      "previewValue": "My Dominion"
+    },
+    "job_status": {
+      "type": "string",
+      "previewValue": "Job: Lumberjack"
+    },
+    "issues_btn_label": {
+      "type": "string",
+      "previewValue": "Issues"
+    },
+    "shelter": {
+      "type": "number",
+      "previewValue": 0.8
+    },
+    "food": {
+      "type": "number",
+      "previewValue": 0.6
+    },
+    "rest": {
+      "type": "number",
+      "previewValue": 0.4
+    }
   },
   "widgets": [
     {
-      "id": "panel_main", "type": "panel",
-      "x": 0, "y": 0, "w": 200, "h": 190,
-      "text": "", "icon": null,
-      "props": { "style": "default" }
+      "id": "panel_main",
+      "type": "panel",
+      "x": 1,
+      "y": 2,
+      "w": 192,
+      "h": 216,
+      "text": "",
+      "icon": null,
+      "props": {
+        "style": "default"
+      }
     },
     {
-      "id": "label_name", "type": "label",
-      "x": 0, "y": 8, "w": 200, "h": 10,
-      "text": "Inhabitant", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
+      "id": "label_name",
+      "type": "label",
+      "x": 11,
+      "y": 10,
+      "w": 86,
+      "h": 10,
+      "text": "Inhabitant",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false",
+        "align": "left"
+      },
       "parentId": "panel_main",
-      "bindings": { "text": "inhabitant_name" }
+      "bindings": {
+        "text": "inhabitant_name"
+      }
     },
     {
-      "id": "label_dominion", "type": "label",
-      "x": 0, "y": 22, "w": 200, "h": 10,
-      "text": "Dominion", "icon": null,
-      "props": { "color": "-7810816", "shadow": "false", "align": "center" },
+      "id": "label_job_status",
+      "type": "label",
+      "x": 11,
+      "y": 21,
+      "w": 79,
+      "h": 10,
+      "text": "Job: Idle",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false",
+        "align": "left"
+      },
       "parentId": "panel_main",
-      "bindings": { "text": "dominion_name" }
+      "bindings": {
+        "text": "job_status"
+      }
     },
     {
-      "id": "tabs_main", "type": "tabs",
-      "x": 0, "y": 40, "w": 200, "h": 150,
-      "text": "", "icon": null,
+      "id": "label_dominion",
+      "type": "label",
+      "x": 101,
+      "y": 10,
+      "w": 80,
+      "h": 10,
+      "text": "Dominion",
+      "icon": null,
+      "props": {
+        "color": "-7810816",
+        "shadow": "false",
+        "align": "right"
+      },
+      "parentId": "panel_main",
+      "bindings": {
+        "text": "dominion_name"
+      }
+    },
+    {
+      "id": "tabs_main",
+      "type": "tabs",
+      "x": 11,
+      "y": 40,
+      "w": 170,
+      "h": 162,
+      "text": "",
+      "icon": null,
       "props": {},
       "parentId": "panel_main"
     },
-
-    { "id": "tab_general", "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "General", "icon": null, "props": {}, "parentId": "tabs_main" },
-    { "id": "tab_needs",   "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "Needs",   "icon": null, "props": {}, "parentId": "tabs_main" },
-    { "id": "tab_debug",   "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "Debug",   "icon": null, "props": {}, "parentId": "tabs_main" },
-
     {
-      "id": "btn_go_home", "type": "button",
-      "x": 10, "y": 10, "w": 180, "h": 20,
-      "text": "Go Home", "icon": null, "props": {},
-      "parentId": "tab_general", "action": "go_home"
+      "id": "tab_general",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "General",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
     },
     {
-      "id": "btn_view_inventory", "type": "button",
-      "x": 10, "y": 36, "w": 180, "h": 20,
-      "text": "View Inventory", "icon": null, "props": {},
-      "parentId": "tab_general", "action": "view_inventory"
+      "id": "tab_needs",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "Needs",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
     },
     {
-      "id": "btn_issues", "type": "button",
-      "x": 10, "y": 62, "w": 180, "h": 20,
-      "text": "Issues", "icon": null, "props": {},
-      "parentId": "tab_general", "action": "issues",
-      "bindings": { "text": "issues_btn_label" }
+      "id": "tab_debug",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "Debug",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
     },
     {
-      "id": "label_job_status", "type": "label",
-      "x": 10, "y": 92, "w": 180, "h": 10,
-      "text": "Job: Idle", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
+      "id": "btn_go_home",
+      "type": "button",
+      "x": 4,
+      "y": 10,
+      "w": 68,
+      "h": 20,
+      "text": "Go Home",
+      "icon": null,
+      "props": {},
       "parentId": "tab_general",
-      "bindings": { "text": "job_status" }
+      "action": "go_home"
     },
-
     {
-      "id": "label_needs_title", "type": "label",
-      "x": 10, "y": 10, "w": 180, "h": 8,
-      "text": "Needs", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false" },
+      "id": "btn_issues",
+      "type": "button",
+      "x": 98,
+      "y": 10,
+      "w": 68,
+      "h": 20,
+      "text": "Issues",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_general",
+      "action": "issues",
+      "bindings": {
+        "text": "issues_btn_label"
+      }
+    },
+    {
+      "id": "label_shelter",
+      "type": "label",
+      "x": 10,
+      "y": 10,
+      "w": 43,
+      "h": 10,
+      "text": "Shelter",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false"
+      },
       "parentId": "tab_needs"
     },
     {
-      "id": "label_shelter", "type": "label",
-      "x": 20, "y": 28, "w": 160, "h": 8,
-      "text": "Shelter", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false" },
+      "id": "progress_shelter",
+      "type": "progress",
+      "x": 10,
+      "y": 22,
+      "w": 160,
+      "h": 10,
+      "text": "",
+      "icon": null,
+      "props": {
+        "min": "0",
+        "max": "1",
+        "show_label": "true"
+      },
       "parentId": "tab_needs"
     },
     {
-      "id": "progress_shelter", "type": "progress",
-      "x": 20, "y": 38, "w": 160, "h": 10,
-      "text": "", "icon": null,
-      "props": { "min": "0", "max": "1", "show_label": "true" },
+      "id": "label_food",
+      "type": "label",
+      "x": 10,
+      "y": 38,
+      "w": 160,
+      "h": 8,
+      "text": "Food",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false"
+      },
       "parentId": "tab_needs"
     },
     {
-      "id": "label_food", "type": "label",
-      "x": 20, "y": 58, "w": 160, "h": 8,
-      "text": "Food", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false" },
+      "id": "progress_food",
+      "type": "progress",
+      "x": 10,
+      "y": 48,
+      "w": 160,
+      "h": 10,
+      "text": "",
+      "icon": null,
+      "props": {
+        "min": "0",
+        "max": "1",
+        "show_label": "true"
+      },
       "parentId": "tab_needs"
     },
     {
-      "id": "progress_food", "type": "progress",
-      "x": 20, "y": 68, "w": 160, "h": 10,
-      "text": "", "icon": null,
-      "props": { "min": "0", "max": "1", "show_label": "true" },
+      "id": "label_rest",
+      "type": "label",
+      "x": 10,
+      "y": 65,
+      "w": 160,
+      "h": 8,
+      "text": "Rest",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false"
+      },
       "parentId": "tab_needs"
     },
     {
-      "id": "label_rest", "type": "label",
-      "x": 20, "y": 88, "w": 160, "h": 8,
-      "text": "Rest", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false" },
+      "id": "progress_rest",
+      "type": "progress",
+      "x": 10,
+      "y": 75,
+      "w": 160,
+      "h": 10,
+      "text": "",
+      "icon": null,
+      "props": {
+        "min": "0",
+        "max": "1",
+        "show_label": "true"
+      },
       "parentId": "tab_needs"
     },
     {
-      "id": "progress_rest", "type": "progress",
-      "x": 20, "y": 98, "w": 160, "h": 10,
-      "text": "", "icon": null,
-      "props": { "min": "0", "max": "1", "show_label": "true" },
-      "parentId": "tab_needs"
-    },
-
-    {
-      "id": "list_debug", "type": "list",
-      "x": 3, "y": 6, "w": 194, "h": 116,
-      "text": "", "icon": null,
-      "props": { "item_height": "10" },
-      "parentId": "tab_debug",
-      "item_template": [
-        { "type": "label", "id": "text", "x": 4, "y": 1, "w": 192, "h": 8, "text": "", "icon": null, "props": { "color": "-12566464" } }
-      ]
+      "type": "custom",
+      "x": 2,
+      "y": 10,
+      "w": 175,
+      "h": 103,
+      "text": "",
+      "icon": null,
+      "props": {
+        "customType": "minenow:debug_area"
+      },
+      "id": "debug_area",
+      "parentId": "tab_debug"
     }
-  ]
+  ],
+  "appVersion": "0.10.0",
+  "container": {
+    "slots": [
+      {
+        "id": "inventory",
+        "x": 16,
+        "y": 98,
+        "cols": 9,
+        "slot_size": 18,
+        "viewport_rows": 2
+      },
+      {
+        "id": "inventory_main_hand",
+        "x": 88,
+        "y": 73,
+        "cols": 1,
+        "slot_size": 18,
+        "viewport_rows": 1
+      },
+      {
+        "id": "inventory_player",
+        "x": 16,
+        "y": 145,
+        "cols": 9,
+        "slot_size": 18,
+        "viewport_rows": 3,
+        "source": "player"
+      }
+    ]
+  }
 }

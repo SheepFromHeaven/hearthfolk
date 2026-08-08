@@ -33,12 +33,11 @@ public class ClientNetworkHandlers {
             var issues = msg.issuesData().isEmpty() ? List.<String>of()
                     : List.of(msg.issuesData().split(java.util.regex.Pattern.quote(ModNetwork.INHABITANT_FIELD_SEP), -1));
             var mc = Minecraft.getInstance();
+            // The screen itself is always opened via the inhabitant inventory menu now; this packet
+            // only ever refreshes an already-open one (both on first open and on periodic refresh).
             if (mc.screen instanceof InhabitantScreen screen && screen.matchesEntity(msg.entityId())) {
-                screen.update(msg.shelter(), msg.food(), msg.rest(), msg.jobStatus(), issues);
-            } else {
-                mc.setScreen(new InhabitantScreen(
-                        msg.entityId(), msg.name(), msg.dominionName(), msg.shelter(), msg.food(), msg.rest(),
-                        msg.jobStatus(), msg.debugEnabled(), issues));
+                screen.update(msg.name(), msg.dominionName(), msg.debugEnabled(),
+                        msg.shelter(), msg.food(), msg.rest(), msg.jobStatus(), issues);
             }
         });
     }

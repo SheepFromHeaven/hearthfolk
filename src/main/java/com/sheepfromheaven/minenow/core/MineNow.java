@@ -41,6 +41,7 @@ public final class MineNow {
         com.sheepfromheaven.minenow.core.ModDataComponents.register(modBus);
         ModCreativeTabs.register(modBus);
         com.sheepfromheaven.minenow.inhabitant.ModEntities.register(modBus);
+        com.sheepfromheaven.minenow.inhabitant.InhabitantMenus.register(modBus);
         com.sheepfromheaven.minenow.storage.inventory.ModMenus.register(modBus);
 
         modBus.addListener(this::commonSetup);
@@ -304,8 +305,8 @@ public final class MineNow {
         @SubscribeEvent
         public static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
             event.register(
-                    com.sheepfromheaven.minenow.storage.inventory.ModMenus.INHABITANT_INVENTORY_TYPE.get(),
-                    com.sheepfromheaven.minenow.storage.client.VanillaRowScreen::new);
+                    com.sheepfromheaven.minenow.inhabitant.InhabitantMenus.INHABITANT_INVENTORY_TYPE.get(),
+                    com.sheepfromheaven.minenow.inhabitant.client.InhabitantScreen::new);
             event.register(
                     com.sheepfromheaven.minenow.storage.inventory.ModMenus.FILTER_TYPE.get(),
                     com.sheepfromheaven.minenow.storage.client.FilterScreen::new);

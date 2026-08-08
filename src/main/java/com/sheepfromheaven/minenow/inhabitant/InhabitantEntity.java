@@ -5,6 +5,7 @@ import com.sheepfromheaven.minenow.jobs.JobType;
 import com.sheepfromheaven.minenow.dominion.NeedType;
 import com.sheepfromheaven.minenow.jobs.FinishWorkGoal;
 import com.sheepfromheaven.minenow.inhabitant.immigration.ImmigrationJob;
+import com.sheepfromheaven.minenow.inhabitant.inventory.InhabitantInventoryMenu;
 import com.sheepfromheaven.minenow.jobs.WorkGoal;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -66,8 +68,10 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
     private static final net.minecraft.network.syncher.EntityDataAccessor<Byte> DATA_JOB_TYPE =
             net.minecraft.network.syncher.SynchedEntityData.defineId(InhabitantEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BYTE);
 
+    public static final int INVENTORY_SIZE = 2;
+
     private final AnimatableInstanceCache animatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
-    private final SimpleContainer inventory = new SimpleContainer(2);
+    private final SimpleContainer inventory = new SimpleContainer(INVENTORY_SIZE);
 
     private UUID dominionId;
     private UUID homeStructureId;
@@ -424,6 +428,11 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             }
             var dominion = dominionId != null ? DominionSavedData.get(serverLevel).getDominionById(dominionId) : null;
             if (dominion != null) {
+                int entityId = getId();
+                serverPlayer.openMenu(
+                        new SimpleMenuProvider((containerId, inv, p) ->
+                                new InhabitantInventoryMenu(containerId, inv, this), getName()),
+                        buf -> buf.writeVarInt(entityId));
                 ModNetwork.sendOpenInhabitantScreen(serverPlayer, this, dominion);
                 return InteractionResult.SUCCESS;
             }

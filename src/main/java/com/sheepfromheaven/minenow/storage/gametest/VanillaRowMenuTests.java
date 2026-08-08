@@ -1,14 +1,21 @@
 package com.sheepfromheaven.minenow.storage.gametest;
 
-import com.sheepfromheaven.minenow.storage.inventory.ModMenus;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 
 // Registered into the vanilla test_function registry by MineNow's RegisterEvent listener;
 // the matching data/minenow/test_instance/*.json file supplies the (small, room_5x4x5) structure.
 public class VanillaRowMenuTests {
+
+    // VanillaRowMenu itself is generic, reusable menu infrastructure - no production consumer needs a
+    // registered MenuType for it right now, so these tests build a throwaway, unregistered one purely
+    // to satisfy AbstractContainerMenu's constructor; it's never serialized or looked up by id here.
+    private static final MenuType<com.sheepfromheaven.minenow.storage.inventory.VanillaRowMenu> TEST_MENU_TYPE =
+            new MenuType<>((id, inv) -> null, FeatureFlags.VANILLA_SET);
 
     /**
      * Reproduces the "shift-clicking a tool in the inhabitant's own inventory slots sends it to the
@@ -23,7 +30,7 @@ public class VanillaRowMenuTests {
         generalInventory.setItem(0, Items.IRON_AXE.getDefaultInstance());
 
         var menu = new com.sheepfromheaven.minenow.storage.inventory.VanillaRowMenu(
-                ModMenus.INHABITANT_INVENTORY_TYPE.get(), 1, player.getInventory(),
+                TEST_MENU_TYPE, 1, player.getInventory(),
                 new Container[] {toolContainer}, generalInventory, 2, 1);
 
         // Slot 0 is the tool slot; slot 1 is the first general-grid slot (holding the axe).
@@ -50,7 +57,7 @@ public class VanillaRowMenuTests {
         var generalInventory = new SimpleContainer(2);
 
         var menu = new com.sheepfromheaven.minenow.storage.inventory.VanillaRowMenu(
-                ModMenus.INHABITANT_INVENTORY_TYPE.get(), 1, player.getInventory(),
+                TEST_MENU_TYPE, 1, player.getInventory(),
                 new Container[] {toolContainer}, generalInventory, 2, 1);
 
         // Container slots run tool(1) + general grid(2) + player main inventory (27, added before the
