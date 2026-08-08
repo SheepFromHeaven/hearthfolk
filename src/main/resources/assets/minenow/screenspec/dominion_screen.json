@@ -3,89 +3,204 @@
   "modId": "minenow",
   "width": 220,
   "height": 210,
-  "actions": ["on_input", "rename", "toggle_range", "requests"],
+  "actions": [
+    "on_input",
+    "rename",
+    "toggle_range",
+    "requests"
+  ],
   "bindingsSchema": {
-    "name":               { "type": "string",  "previewValue": "My Dominion" },
-    "tier":               { "type": "string",  "previewValue": "Village" },
-    "inhabitants_header": { "type": "string",  "previewValue": "3 inhabitants" },
-    "range_btn_label":    { "type": "string",  "previewValue": "Show Range" }
+    "name": {
+      "type": "string",
+      "previewValue": "My Dominion"
+    },
+    "tier": {
+      "type": "string",
+      "previewValue": "Village"
+    },
+    "inhabitants_header": {
+      "type": "string",
+      "previewValue": "3 inhabitants"
+    },
+    "range_btn_label": {
+      "type": "string",
+      "previewValue": "Show Range"
+    }
   },
   "widgets": [
     {
-      "id": "panel_main", "type": "panel",
-      "x": 0, "y": 0, "w": 220, "h": 210,
-      "text": "", "icon": null,
-      "props": { "style": "default" }
+      "id": "tabs_main",
+      "type": "tabs",
+      "x": 0,
+      "y": 16,
+      "w": 220,
+      "h": 170,
+      "text": "",
+      "icon": null,
+      "props": {}
     },
     {
-      "id": "label_name", "type": "label",
-      "x": 0, "y": 8, "w": 220, "h": 10,
-      "text": "Dominion", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false", "align": "center" },
-      "parentId": "panel_main",
-      "bindings": { "text": "name" }
-    },
-    {
-      "id": "label_tier", "type": "label",
-      "x": 0, "y": 22, "w": 220, "h": 10,
-      "text": "Village", "icon": null,
-      "props": { "color": "-8163072", "shadow": "false", "align": "center" },
-      "parentId": "panel_main",
-      "bindings": { "text": "tier" }
-    },
-    {
-      "id": "tabs_main", "type": "tabs",
-      "x": 0, "y": 40, "w": 220, "h": 170,
-      "text": "", "icon": null,
+      "id": "tab_general",
+      "type": "tab",
+      "x": 0,
+      "y": 0,
+      "w": 72,
+      "h": 0,
+      "text": "General",
+      "icon": null,
       "props": {},
-      "parentId": "panel_main"
+      "parentId": "tabs_main"
     },
-
-    { "id": "tab_general",      "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "General",      "icon": null, "props": {}, "parentId": "tabs_main" },
-    { "id": "tab_inhabitants",  "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "Inhabitants",  "icon": null, "props": {}, "parentId": "tabs_main" },
-    { "id": "tab_requirements", "type": "tab", "x": 0, "y": 0, "w": 0, "h": 0, "text": "Requirements", "icon": null, "props": {}, "parentId": "tabs_main" },
-
     {
-      "id": "input_name", "type": "input",
-      "x": 10, "y": 4, "w": 200, "h": 20,
-      "text": "", "icon": null,
-      "props": { "max_length": "32", "hint_text": "Dominion name..." },
+      "id": "label_tier",
+      "type": "label",
+      "x": 55,
+      "y": 13,
+      "w": 110,
+      "h": 10,
+      "text": "Village",
+      "icon": null,
+      "props": {
+        "color": "-8163072",
+        "shadow": "false",
+        "align": "center"
+      },
       "parentId": "tab_general",
-      "action": "on_input"
+      "bindings": {
+        "text": "tier"
+      }
     },
     {
-      "id": "btn_rename", "type": "button",
-      "x": 10, "y": 30, "w": 200, "h": 20,
-      "text": "Rename", "icon": null,
+      "id": "tab_inhabitants",
+      "type": "tab",
+      "x": 74,
+      "y": 0,
+      "w": 72,
+      "h": 0,
+      "text": "Inhabitants",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
+    },
+    {
+      "id": "tab_requirements",
+      "type": "tab",
+      "x": 148,
+      "y": 0,
+      "w": 72,
+      "h": 0,
+      "text": "Requirements",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
+    },
+    {
+      "id": "input_name",
+      "type": "input",
+      "x": 10,
+      "y": 32,
+      "w": 130,
+      "h": 20,
+      "text": "",
+      "icon": null,
+      "props": {
+        "max_length": "32",
+        "hint_text": "Dominion name..."
+      },
+      "parentId": "tab_general",
+      "action": "on_input",
+      "bindings": {
+        "text": "name"
+      }
+    },
+    {
+      "id": "btn_rename",
+      "type": "button",
+      "x": 145,
+      "y": 32,
+      "w": 65,
+      "h": 20,
+      "text": "Rename",
+      "icon": null,
       "props": {},
       "parentId": "tab_general",
       "action": "rename"
     },
     {
-      "id": "btn_range", "type": "button",
-      "x": 10, "y": 56, "w": 200, "h": 20,
-      "text": "Show Range", "icon": null,
+      "id": "btn_range",
+      "type": "button",
+      "x": 10,
+      "y": 56,
+      "w": 200,
+      "h": 20,
+      "text": "Show Range",
+      "icon": null,
       "props": {},
       "parentId": "tab_general",
       "action": "toggle_range",
-      "bindings": { "text": "range_btn_label" }
+      "bindings": {
+        "text": "range_btn_label"
+      }
     },
     {
-      "id": "btn_requests", "type": "button",
-      "x": 10, "y": 82, "w": 200, "h": 20,
-      "text": "Requests", "icon": null,
+      "id": "btn_requests",
+      "type": "button",
+      "x": 10,
+      "y": 80,
+      "w": 200,
+      "h": 20,
+      "text": "Requests",
+      "icon": null,
       "props": {},
       "parentId": "tab_general",
       "action": "requests"
     },
-
     {
-      "id": "label_inhabitants_header", "type": "label",
-      "x": 0, "y": 4, "w": 220, "h": 10,
-      "text": "0 inhabitants", "icon": null,
-      "props": { "color": "-12566464", "shadow": "false" },
+      "id": "label_inhabitants_header",
+      "type": "label",
+      "x": 19,
+      "y": 13,
+      "w": 140,
+      "h": 10,
+      "text": "0 inhabitants",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false"
+      },
       "parentId": "tab_inhabitants",
-      "bindings": { "text": "inhabitants_header" }
+      "bindings": {
+        "text": "inhabitants_header"
+      }
+    },
+    {
+      "type": "custom",
+      "x": 16,
+      "y": 30,
+      "w": 188,
+      "h": 106,
+      "text": "",
+      "icon": null,
+      "props": {
+        "customType": "minenow:inhabitant_area"
+      },
+      "id": "inhabitant_area",
+      "parentId": "tab_inhabitants"
+    },
+    {
+      "type": "custom",
+      "x": 16,
+      "y": 14,
+      "w": 188,
+      "h": 122,
+      "text": "",
+      "icon": null,
+      "props": {
+        "customType": "minenow:requirements_area"
+      },
+      "id": "requirements_area",
+      "parentId": "tab_requirements"
     }
-  ]
+  ],
+  "appVersion": "0.9.1"
 }

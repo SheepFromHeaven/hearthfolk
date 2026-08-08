@@ -2,20 +2,19 @@ package com.sheepfromheaven.minenow.dominion.client;
 
 import com.sheepfromheaven.minenow.dominion.DominionTier;
 import com.sheepfromheaven.minenow.network.ModNetwork;
+import com.sheepfromheaven.minenow.pathfinding.client.RangeTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
-import net.minecraft.client.gui.components.AbstractWidget;
-import sheepfromheaven.screenspec.runtime.ScreenSpec;
-import sheepfromheaven.screenspec.runtime.SpecScreen;
+import net.minecraft.network.chat.Component;
+import sheepfromheaven.screenspec.runtime.CustomWidgetRegistry;
 import sheepfromheaven.screenspec.runtime.ScreenSpecLoader;
+import sheepfromheaven.screenspec.runtime.SpecScreen;
+import sheepfromheaven.screenspec.runtime.WidgetSpec;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import com.sheepfromheaven.minenow.client.BeveledBox;
-import com.sheepfromheaven.minenow.pathfinding.client.RangeTracker;
 
 public class DominionScreen extends SpecScreen {
 
@@ -38,9 +37,10 @@ public class DominionScreen extends SpecScreen {
     private final MilestoneProgress milestoneProgress;
     private String inputValue;
 
-    private DominionScreen(ScreenSpec spec, String dominionName, DominionTier tier,
-                           BlockPos bannerPos, List<String> inhabitantNames, String milestoneProgressData) {
-        super(Component.literal("Dominion"), spec);
+    private DominionScreen(String dominionName, DominionTier tier, BlockPos bannerPos,
+                            List<String> inhabitantNames, String milestoneProgressData) {
+        super(Component.translatable("screen.minenow.dominion_screen"),
+                ScreenSpecLoader.fromResource(Minecraft.getInstance().getResourceManager(), "minenow", "dominion_screen"));
         this.dominionName = dominionName;
         this.tier = tier;
         this.bannerPos = bannerPos;
@@ -48,25 +48,13 @@ public class DominionScreen extends SpecScreen {
         this.milestoneProgress = parseMilestoneProgress(milestoneProgressData);
         this.inputValue = dominionName;
 
-        on("minenow.on_input", (id, s, value) -> inputValue = (String) value);
-        on("minenow.rename", (id, s, value) -> {
-            String trimmed = inputValue.trim();
-            if (!trimmed.isEmpty() && !trimmed.equals(dominionName)) {
-                ModNetwork.sendRenameDominion(bannerPos, trimmed);
-            }
-        });
-        on("minenow.toggle_range", (id, s, value) -> {
-            RangeTracker.toggleRange(bannerPos);
-            rebuildWidgets();
-        });
-        on("minenow.requests", (id, s, value) -> ModNetwork.sendRequestRequestsScreen(bannerPos));
+        CustomWidgetRegistry.register("minenow:inhabitant_area", (graphics, widget, x, y) -> renderInhabitantArea(graphics, x, y));
+        CustomWidgetRegistry.register("minenow:requirements_area", (graphics, widget, x, y) -> renderRequirementsArea(graphics, x, y));
     }
 
     public static DominionScreen create(String dominionName, DominionTier tier, BlockPos bannerPos,
-                                        List<String> inhabitantNames, String milestoneProgressData) {
-        ScreenSpec spec = ScreenSpecLoader.fromResource(
-                Minecraft.getInstance().getResourceManager(), "minenow", "dominion_screen");
-        return new DominionScreen(spec, dominionName, tier, bannerPos, inhabitantNames, milestoneProgressData);
+                                         List<String> inhabitantNames, String milestoneProgressData) {
+        return new DominionScreen(dominionName, tier, bannerPos, inhabitantNames, milestoneProgressData);
     }
 
     @Nullable
@@ -82,50 +70,34 @@ public class DominionScreen extends SpecScreen {
     @Override
     protected void init() {
         super.init();
-        if ("tab_general".equals(activeTab("tabs_main"))) {
-            EditBox nameInput = getWidget("input_name");
-            if (nameInput != null) nameInput.setValue(inputValue);
-        }
+        EditBox nameInput = getWidget("input_name");
+        if (nameInput != null) nameInput.setValue(inputValue);
+    }
 
-        AbstractWidget reqTab = getWidget("tab_requirements");
-        if (reqTab != null) {
-            boolean unmet = milestoneProgress != null && !milestoneProgress.satisfied();
-            reqTab.setMessage(BeveledBox.withAlertMark("Requirements", unmet));
+    @Override
+    protected void onAction(String actionId, WidgetSpec spec, Object value) {
+        switch (actionId) {
+            case "minenow.on_input" -> inputValue = (String) value;
+            case "minenow.rename" -> {
+                String trimmed = inputValue.trim();
+                if (!trimmed.isEmpty() && !trimmed.equals(dominionName)) {
+                    ModNetwork.sendRenameDominion(bannerPos, trimmed);
+                }
+            }
+            case "minenow.toggle_range" -> {
+                RangeTracker.toggleRange(bannerPos);
+                rebuildWidgets();
+            }
+            case "minenow.requests" -> ModNetwork.sendRequestRequestsScreen(bannerPos);
         }
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        bindText("label_name", dominionName);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         bindText("label_tier", tier.getDisplayName());
-
-        String header = inhabitantNames.isEmpty() ? "" : "Inhabitants (" + inhabitantNames.size() + "):";
-        bindText("label_inhabitants_header", header);
-
-        // Update range button label each frame
-        AbstractWidget rangeBtn = getWidget("btn_range");
-        if (rangeBtn != null) rangeBtn.setMessage(Component.literal(
-                RangeTracker.isShowingRange(bannerPos) ? "Hide Range" : "Show Range"));
-
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        String activeTab = activeTab("tabs_main");
-        if (milestoneProgress != null && "tab_requirements".equals(activeTab)) {
-            renderMilestoneProgress(guiGraphics);
-        }
-
-        // Draw individual inhabitant names below the header label
-        if (!inhabitantNames.isEmpty() && "tab_inhabitants".equals(activeTab)) {
-            var headerWidget = getWidget("label_inhabitants_header");
-            if (headerWidget != null) {
-                int x = headerWidget.getX();
-                int y = headerWidget.getY() + 14;
-                for (var name : inhabitantNames) {
-                    guiGraphics.drawString(getFont(), "  " + name, x, y, 0xFF303030, false);
-                    y += INHABITANT_LINE_H;
-                }
-            }
-        }
+        bindText("label_inhabitants_header", inhabitantNames.isEmpty() ? "" : inhabitantNames.size() + " inhabitants");
+        bindText("btn_range", RangeTracker.isShowingRange(bannerPos) ? "Hide Range" : "Show Range");
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -133,12 +105,18 @@ public class DominionScreen extends SpecScreen {
         return false;
     }
 
-    private void renderMilestoneProgress(GuiGraphics graphics) {
-        int ox = (width  - spec().width)  / 2;
-        int oy = (height - spec().height) / 2;
-        int x = ox + 10;
-        int y = oy + 64; // tabs.y=40 + tab strip height (20) + small padding
+    private void renderInhabitantArea(GuiGraphics graphics, int x, int y) {
+        for (var name : inhabitantNames) {
+            graphics.drawString(getFont(), name, x, y, 0xFF303030, false);
+            y += INHABITANT_LINE_H;
+        }
+    }
 
+    private void renderRequirementsArea(GuiGraphics graphics, int x, int y) {
+        if (milestoneProgress == null) {
+            graphics.drawString(getFont(), "Max tier reached.", x, y, 0xFF404040, false);
+            return;
+        }
         graphics.drawString(getFont(), "Next tier requires:", x, y, 0xFF404040, false);
         y += 12;
         y = drawMilestoneLine(graphics, x, y, "Population", milestoneProgress.population(), milestoneProgress.minPopulation());
