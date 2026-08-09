@@ -3,7 +3,9 @@ package com.sheepfromheaven.minenow.dominion;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
@@ -274,8 +276,14 @@ public class DominionSavedData extends SavedData {
     public void tickGrowth(ServerLevel level) {
         long currentTick = level.getGameTime();
         for (var dominion : dominions.values()) {
-            if (dominion.checkAndApplyLevelUp(level) != null) {
+            var newTier = dominion.checkAndApplyLevelUp(level);
+            if (newTier != null) {
                 setDirty();
+                var owner = level.getServer().getPlayerList().getPlayer(dominion.getOwnerUuid());
+                if (owner != null) {
+                    owner.displayClientMessage(Component.literal(
+                            dominion.getName() + " has grown into a " + newTier.getDisplayName() + "!"), false);
+                }
             }
             if (dominion.canAttemptImmigration(currentTick, level) && level.getRandom().nextFloat() < 0.10f) {
                 spawnImmigrationCandidate(level, dominion);
