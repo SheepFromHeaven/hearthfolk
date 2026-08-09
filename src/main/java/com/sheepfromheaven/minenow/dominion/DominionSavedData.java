@@ -3,7 +3,9 @@ package com.sheepfromheaven.minenow.dominion;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
@@ -283,9 +285,11 @@ public class DominionSavedData extends SavedData {
                     case CITY -> com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_CITY;
                     default -> null;
                 };
-                if (trigger != null) {
-                    var owner = level.getServer().getPlayerList().getPlayer(dominion.getOwnerUuid());
-                    if (owner != null) {
+                var owner = level.getServer().getPlayerList().getPlayer(dominion.getOwnerUuid());
+                if (owner != null) {
+                    owner.displayClientMessage(Component.literal(
+                            dominion.getName() + " has grown into a " + newTier.getDisplayName() + "!"), false);
+                    if (trigger != null) {
                         trigger.get().trigger(owner);
                     }
                 }
