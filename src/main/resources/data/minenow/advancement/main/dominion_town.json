@@ -1,0 +1,26 @@
+{
+  "parent": "minenow:main/dominion_village",
+  "criteria": {
+    "dominion_tier_town": {
+      "trigger": "minenow:dominion_tier_town"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.dominion_town.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:iron_ingot"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.dominion_town.title"
+    }
+  },
+  "requirements": [
+    [
+      "dominion_tier_town"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

@@ -1,0 +1,26 @@
+{
+  "parent": "minenow:main/root",
+  "criteria": {
+    "dominion_tier_settlement": {
+      "trigger": "minenow:dominion_tier_settlement"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.dominion_settlement.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minenow:town_banner"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.dominion_settlement.title"
+    }
+  },
+  "requirements": [
+    [
+      "dominion_tier_settlement"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

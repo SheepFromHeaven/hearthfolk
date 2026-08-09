@@ -279,10 +279,19 @@ public class DominionSavedData extends SavedData {
             var newTier = dominion.checkAndApplyLevelUp(level);
             if (newTier != null) {
                 setDirty();
+                var trigger = switch (newTier) {
+                    case VILLAGE -> com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_VILLAGE;
+                    case TOWN -> com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_TOWN;
+                    case CITY -> com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_CITY;
+                    default -> null;
+                };
                 var owner = level.getServer().getPlayerList().getPlayer(dominion.getOwnerUuid());
                 if (owner != null) {
                     owner.displayClientMessage(Component.literal(
                             dominion.getName() + " has grown into a " + newTier.getDisplayName() + "!"), false);
+                    if (trigger != null) {
+                        trigger.get().trigger(owner);
+                    }
                 }
             }
             if (dominion.canAttemptImmigration(currentTick, level) && level.getRandom().nextFloat() < 0.10f) {

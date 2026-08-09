@@ -80,6 +80,9 @@ public class InvitationItem extends Item {
             stack.shrink(1);
         }
 
+        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            com.sheepfromheaven.minenow.core.ModCriteriaTriggers.INVITED_VILLAGER.get().trigger(serverPlayer);
+        }
         player.displayClientMessage(Component.literal(name + " has joined your dominion!"), false);
         return InteractionResult.SUCCESS;
     }

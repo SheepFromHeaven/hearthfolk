@@ -20,6 +20,9 @@ final class TownBannerBehavior {
             var data = DominionSavedData.get(serverLevel);
             var dominion = data.createDominion(player.getUUID(), player.getName().getString() + "'s Settlement", pos);
             player.displayClientMessage(Component.literal("Founded " + dominion.getName() + "!"), false);
+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_SETTLEMENT.get().trigger(serverPlayer);
+            }
 
             if (level.getBlockEntity(pos) instanceof TownBannerBlockEntity be) {
                 be.setDominionData(dominion.getName(), dominion.getTier());

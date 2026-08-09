@@ -1,0 +1,26 @@
+{
+  "parent": "minenow:main/root",
+  "criteria": {
+    "attracted_wanderer": {
+      "trigger": "minenow:attracted_wanderer"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.attract_wanderer.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:map"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.attract_wanderer.title"
+    }
+  },
+  "requirements": [
+    [
+      "attracted_wanderer"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

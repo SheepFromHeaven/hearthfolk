@@ -1,0 +1,26 @@
+{
+  "parent": "minenow:main/invitation",
+  "criteria": {
+    "invited_villager": {
+      "trigger": "minenow:invited_villager"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.invite_villager.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:emerald"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.invite_villager.title"
+    }
+  },
+  "requirements": [
+    [
+      "invited_villager"
+    ]
+  ],
+  "sends_telemetry_event": false
+}
