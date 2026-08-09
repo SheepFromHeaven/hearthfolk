@@ -30,6 +30,7 @@ public class InhabitantSelectionScreen extends SpecScreen {
     private final Screen parent;
     private final List<Candidate> candidates;
     private final String currentlyAssignedId;
+    private final List<String> currentlyAssignedIds;
     private final Consumer<String> onSelect;
 
     public InhabitantSelectionScreen(Screen parent, Component title, List<Candidate> candidates,
@@ -38,7 +39,32 @@ public class InhabitantSelectionScreen extends SpecScreen {
         this.parent = parent;
         this.candidates = candidates;
         this.currentlyAssignedId = currentlyAssignedId;
+        this.currentlyAssignedIds = null;
         this.onSelect = onSelect;
+    }
+
+    private InhabitantSelectionScreen(Screen parent, Component title, List<Candidate> candidates,
+                                      List<String> currentlyAssignedIds, Consumer<String> onSelect) {
+        super(title, loadSpec());
+        this.parent = parent;
+        this.candidates = candidates;
+        this.currentlyAssignedId = null;
+        this.currentlyAssignedIds = currentlyAssignedIds;
+        this.onSelect = onSelect;
+    }
+
+    /**
+     * A picker with no single "current" selection and no "None" unassign row - every click toggles that
+     * candidate's own assignment via {@code onSelect} (add or remove), for structures that can hold
+     * several workers at once rather than exactly one.
+     */
+    public static InhabitantSelectionScreen multiSelect(Screen parent, Component title, List<Candidate> candidates,
+                                                         List<String> currentlyAssignedIds, Consumer<String> onSelect) {
+        return new InhabitantSelectionScreen(parent, title, candidates, currentlyAssignedIds, onSelect);
+    }
+
+    private boolean isMultiSelect() {
+        return currentlyAssignedIds != null;
     }
 
     private static ScreenSpec loadSpec() {
@@ -55,12 +81,14 @@ public class InhabitantSelectionScreen extends SpecScreen {
 
         var list = new InhabitantList(ox + 2, oy + 24, spec().width - 4, spec().height - 26);
 
-        list.add(new Row(new Candidate("", null, "None", "Unassign", false),
-                currentlyAssignedId == null || currentlyAssignedId.isEmpty()));
+        if (!isMultiSelect()) {
+            list.add(new Row(new Candidate("", null, "None", "Unassign", false),
+                    currentlyAssignedId == null || currentlyAssignedId.isEmpty()));
+        }
 
         candidates.stream()
                 .sorted(Comparator.comparing(Candidate::busy).thenComparing(c -> c.name().toLowerCase(Locale.ROOT)))
-                .forEach(c -> list.add(new Row(c, c.id().equals(currentlyAssignedId))));
+                .forEach(c -> list.add(new Row(c, isMultiSelect() ? currentlyAssignedIds.contains(c.id()) : c.id().equals(currentlyAssignedId))));
 
         addRenderableWidget(list);
     }

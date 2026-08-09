@@ -34,6 +34,15 @@ public enum DominionTier {
         return radiusMultiplier;
     }
 
+    /**
+     * Highest {@link com.sheepfromheaven.minenow.structure.DominionStructure} level any structure in a
+     * dominion at this tier may reach - one level per tier reached so far (SETTLEMENT allows level 1,
+     * VILLAGE allows level 2, ...), independent of each structure type's own {@code MAX_LEVEL} cap.
+     */
+    public int getMaxStructureLevel() {
+        return ordinal() + 1;
+    }
+
     /** The tier that follows this one, or {@code null} if already at the max tier ({@link #CITY}). */
     @Nullable
     public DominionTier next() {

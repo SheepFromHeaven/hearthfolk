@@ -85,7 +85,7 @@ public class FisheryStorageTests {
         var structure = new DominionStructure("Fishery", StructureType.FISHERY, markerPos,
                 Set.of(barrelPos, cauldronPos));
 
-        var statuses = structure.checkRequirements(helper.getLevel());
+        var statuses = structure.checkRequirements(helper.getLevel(), null);
 
         helper.succeedWhen(() -> {
             helper.assertTrue(!statuses.isEmpty(), "Fishery should have requirements defined");

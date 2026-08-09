@@ -52,6 +52,7 @@ public class ModNetwork {
         registrar.playToServer(RequestInhabitantDebugPacket.TYPE, RequestInhabitantDebugPacket.CODEC, ModNetwork::handleRequestInhabitantDebug);
         registrar.playToServer(AssignHousePacket.TYPE, AssignHousePacket.CODEC, ModNetwork::handleAssignHouse);
         registrar.playToServer(AssignWorkerPacket.TYPE, AssignWorkerPacket.CODEC, ModNetwork::handleAssignWorker);
+        registrar.playToServer(LevelUpStructurePacket.TYPE, LevelUpStructurePacket.CODEC, ModNetwork::handleLevelUpStructure);
         registrar.playToServer(SetWorkAreaCenterPacket.TYPE, SetWorkAreaCenterPacket.CODEC, ModNetwork::handleSetWorkAreaCenter);
         registrar.playToServer(SetWorkAreaRadiusPacket.TYPE, SetWorkAreaRadiusPacket.CODEC, ModNetwork::handleSetWorkAreaRadius);
         registrar.playToServer(RefreshInhabitantScreenPacket.TYPE, RefreshInhabitantScreenPacket.CODEC, ModNetwork::handleRefreshInhabitantScreen);
@@ -196,6 +197,7 @@ public class ModNetwork {
         }
     }
 
+    /** Toggles {@code inhabitantId}'s residency on the structure - unassigns them if already living here, otherwise assigns them to the next open slot. */
     private static void handleAssignHouse(AssignHousePacket msg, IPayloadContext ctx) {
         var player = (ServerPlayer) ctx.player();
         var level = player.level();
@@ -203,17 +205,19 @@ public class ModNetwork {
         var dominion = data.findDominionContaining(msg.markerPos());
         if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
         var structure = dominion.getStructureAt(msg.markerPos());
-        if (structure == null || structure.getType() != StructureType.HOUSE) return;
+        if (structure == null || structure.getType() != StructureType.HOUSE || msg.inhabitantId().isEmpty()) return;
 
-        var inhabitantId = msg.inhabitantId().isEmpty() ? null : UUID.fromString(msg.inhabitantId());
-        if (!dominion.assignHouse(structure, inhabitantId, level)) {
+        var inhabitantId = UUID.fromString(msg.inhabitantId());
+        if (structure.getAssignedResidentIds().contains(inhabitantId)) {
+            dominion.unassignInhabitant(structure, inhabitantId, level);
+        } else if (!dominion.assignHouse(structure, inhabitantId, level)) {
             player.displayClientMessage(Component.literal(
-                    structure.getName() + " isn't ready to be lived in yet."), false);
-            return;
+                    structure.getName() + " isn't ready to be lived in yet, or has no open slots."), false);
         }
         data.setDirty();
     }
 
+    /** Toggles {@code inhabitantId}'s work assignment on the structure - unassigns them if already a worker here, otherwise assigns them to the next open slot. */
     private static void handleAssignWorker(AssignWorkerPacket msg, IPayloadContext ctx) {
         var player = (ServerPlayer) ctx.player();
         var level = player.level();
@@ -221,11 +225,35 @@ public class ModNetwork {
         var dominion = data.findDominionContaining(msg.markerPos());
         if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
         var structure = dominion.getStructureAt(msg.markerPos());
-        if (structure == null || structure.getType().getJobType().isEmpty()) return;
+        if (structure == null || structure.getType().getJobType().isEmpty() || msg.inhabitantId().isEmpty()) return;
 
-        var inhabitantId = msg.inhabitantId().isEmpty() ? null : UUID.fromString(msg.inhabitantId());
-        dominion.assignWorker(structure, inhabitantId, level);
+        var inhabitantId = UUID.fromString(msg.inhabitantId());
+        if (structure.getAssignedWorkerIds().contains(inhabitantId)) {
+            dominion.unassignWorker(structure, inhabitantId, level);
+        } else if (!dominion.assignWorker(structure, inhabitantId, level)) {
+            player.displayClientMessage(Component.literal(structure.getName() + " has no open work slots."), false);
+        }
         data.setDirty();
+    }
+
+    private static void handleLevelUpStructure(LevelUpStructurePacket msg, IPayloadContext ctx) {
+        var player = (ServerPlayer) ctx.player();
+        var level = player.level();
+        var data = DominionSavedData.get(level);
+        var dominion = data.findDominionContaining(msg.markerPos());
+        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+        var structure = dominion.getStructureAt(msg.markerPos());
+        if (structure == null) return;
+
+        if (dominion.tryLevelUpStructure(structure.getId(), (ServerLevel) level)) {
+            data.setDirty();
+            player.displayClientMessage(Component.literal(
+                    structure.getName() + " leveled up to " + structure.getLevel() + "!"), false);
+        } else {
+            player.displayClientMessage(Component.literal(
+                    structure.getName() + " isn't ready to level up yet."), false);
+        }
+        sendOpenStructureScreen(player, dominion, structure);
     }
 
     private static void handleSetWorkAreaCenter(SetWorkAreaCenterPacket msg, IPayloadContext ctx) {
@@ -430,14 +458,29 @@ public class ModNetwork {
                             i.getName(), jobLabel, homed ? "1" : "0");
                 })
                 .collect(Collectors.joining(","));
-        var assignedId = structure.getAssignedInhabitantId();
-        var assignedWorkerId = structure.getAssignedWorkerId();
+        var assignedResidentData = structure.getAssignedResidentIds().stream().map(UUID::toString).collect(Collectors.joining(","));
+        var assignedWorkerData = structure.getAssignedWorkerIds().stream().map(UUID::toString).collect(Collectors.joining(","));
+        var requirementData = encodeStatuses(structure.checkRequirements(player.level(), dominion));
+        var levelUpData = encodeStatuses(structure.checkLevelUpRequirements(player.level(), dominion));
         PacketDistributor.sendToPlayer(player, new OpenStructureScreenPacket(
                 structure.getName(), structure.getType().name(), structure.getMarkerPos(),
-                inhabitants, assignedId != null ? assignedId.toString() : "",
-                assignedWorkerId != null ? assignedWorkerId.toString() : "",
-                structure.getWorkAreaCenter(), structure.getWorkAreaRadius()
+                inhabitants, assignedResidentData,
+                assignedWorkerData,
+                structure.getWorkAreaCenter(), structure.getWorkAreaRadius(),
+                new StructureLevelInfo(structure.getLevel(), dominion.getStructureLevelCap(structure.getId()),
+                        requirementData, levelUpData,
+                        structure.getInhabitantSlots(), structure.getFunctioningInhabitantSlots(player.level(), dominion))
         ));
+    }
+
+    private static String encodeStatuses(List<com.sheepfromheaven.minenow.requirement.RequirementStatus> statuses) {
+        return statuses.stream()
+                .map(s -> String.join(INHABITANT_FIELD_SEP, s.name(), String.valueOf(s.required()), String.valueOf(s.found())))
+                .collect(Collectors.joining(","));
+    }
+
+    public static void sendLevelUpStructure(BlockPos markerPos) {
+        ClientPacketDistributor.sendToServer(new LevelUpStructurePacket(markerPos));
     }
 
     public static void sendAssignHouse(BlockPos markerPos, String inhabitantId) {
@@ -697,20 +740,45 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+    /** Groups the leveling-tab fields of {@link OpenStructureScreenPacket} into one sub-record - StreamCodec.composite tops out well before the packet's full field count. */
+    public record StructureLevelInfo(int level, int levelCap, String requirementData, String levelUpRequirementData,
+                                     int inhabitantSlots, int functioningInhabitantSlots) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, StructureLevelInfo> CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, StructureLevelInfo::level,
+                ByteBufCodecs.VAR_INT, StructureLevelInfo::levelCap,
+                ByteBufCodecs.STRING_UTF8, StructureLevelInfo::requirementData,
+                ByteBufCodecs.STRING_UTF8, StructureLevelInfo::levelUpRequirementData,
+                ByteBufCodecs.VAR_INT, StructureLevelInfo::inhabitantSlots,
+                ByteBufCodecs.VAR_INT, StructureLevelInfo::functioningInhabitantSlots,
+                StructureLevelInfo::new
+        );
+    }
+
     public record OpenStructureScreenPacket(String structureName, String structureType, BlockPos markerPos,
-                                            String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
-                                            BlockPos workAreaCenter, int workAreaRadius) implements CustomPacketPayload {
+                                            String inhabitantData, String assignedResidentData, String assignedWorkerData,
+                                            BlockPos workAreaCenter, int workAreaRadius,
+                                            StructureLevelInfo levelInfo) implements CustomPacketPayload {
         public static final Type<OpenStructureScreenPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_structure_screen"));
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenStructureScreenPacket> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureName,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::structureType,
                 BlockPos.STREAM_CODEC, OpenStructureScreenPacket::markerPos,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::inhabitantData,
-                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedInhabitantId,
-                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedWorkerId,
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedResidentData,
+                ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedWorkerData,
                 BlockPos.STREAM_CODEC, OpenStructureScreenPacket::workAreaCenter,
                 ByteBufCodecs.VAR_INT, OpenStructureScreenPacket::workAreaRadius,
+                StructureLevelInfo.CODEC, OpenStructureScreenPacket::levelInfo,
                 OpenStructureScreenPacket::new
+        );
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public record LevelUpStructurePacket(BlockPos markerPos) implements CustomPacketPayload {
+        public static final Type<LevelUpStructurePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "level_up_structure"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, LevelUpStructurePacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, LevelUpStructurePacket::markerPos,
+                LevelUpStructurePacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }

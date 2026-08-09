@@ -260,10 +260,10 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             return;
         }
         if (!level().isClientSide() && tickCount % 200 == 0) {
-            if (homeStructureId == null) {
-                setNeed(NeedType.SHELTER, getNeed(NeedType.SHELTER) - 0.02f);
-            } else {
+            if (isShelterFunctioning()) {
                 setNeed(NeedType.SHELTER, Math.min(1.0f, getNeed(NeedType.SHELTER) + 0.05f));
+            } else {
+                setNeed(NeedType.SHELTER, getNeed(NeedType.SHELTER) - 0.02f);
             }
             setNeed(NeedType.FOOD, getNeed(NeedType.FOOD) - 0.01f);
             if (isSleeping()) {
@@ -317,6 +317,24 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         setCustomNameVisible(true);
     }
 
+    /**
+     * Whether this inhabitant currently has a working home slot - assigned to a house *and* that
+     * specific slot (by assignment order, see {@link com.sheepfromheaven.minenow.structure.DominionStructure#canReside})
+     * still has its requirements met. A resident whose slot stopped functioning (e.g. their bed was
+     * broken) loses shelter regen just like a worker in the same situation loses their ability to work.
+     */
+    private boolean isShelterFunctioning() {
+        if (homeStructureId == null || dominionId == null || !(level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        var dominion = DominionSavedData.get(serverLevel).getDominionById(dominionId);
+        if (dominion == null) return false;
+        var structure = dominion.getStructureById(homeStructureId);
+        if (structure == null) return false;
+        var dominionInhabitant = dominion.getInhabitantByEntityUuid(getUUID());
+        return dominionInhabitant != null && structure.canReside(dominionInhabitant.getId(), serverLevel, dominion);
+    }
+
     /** Returns the display name of the first unmet requirement of this inhabitant's assigned house, if any. */
     @Nullable
     private String findMissingHomeRequirement() {
@@ -327,7 +345,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         if (dominion == null) return null;
         var structure = dominion.getStructureById(homeStructureId);
         if (structure == null) return null;
-        for (var status : structure.checkRequirements(serverLevel)) {
+        for (var status : structure.checkOperationalRequirements(serverLevel, dominion)) {
             if (!status.satisfied()) {
                 return status.name();
             }
@@ -518,7 +536,9 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         if (homeStructureId != null) {
             var structure = dominion.getStructureById(homeStructureId);
             if (structure != null) {
-                return structure.findBedPos(serverLevel);
+                var dominionInhabitant = dominion.getInhabitantByEntityUuid(getUUID());
+                int slotIndex = dominionInhabitant != null ? structure.getAssignedResidentIds().indexOf(dominionInhabitant.getId()) : -1;
+                return structure.findBedPos(serverLevel, Math.max(slotIndex, 0));
             }
         }
         return dominion.getBannerPos();

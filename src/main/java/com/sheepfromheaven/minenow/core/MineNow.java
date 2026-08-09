@@ -281,6 +281,20 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithWoodenPickaxeLeavesIronOreUntouched);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_with_stone_pickaxe_mines_coal_and_iron_ore"),
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithStonePickaxeMinesCoalAndIronOre);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "fresh_structure_starts_at_level_one"),
+                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::freshStructureStartsAtLevelOne);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_up_fails_without_meeting_next_level_requirements"),
+                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelUpFailsWithoutMeetingNextLevelRequirements);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_up_succeeds_once_next_level_requirements_are_met"),
+                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelUpSucceedsOnceNextLevelRequirementsAreMet);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_up_is_capped_by_dominion_tier"),
+                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelUpIsCappedByDominionTier);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_effects_grant_work_slots_and_productivity_stacking"),
+                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelEffectsGrantWorkSlotsAndProductivityStacking);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "losing_a_level_up_requirement_only_disables_the_slot_it_unlocked"),
+                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::losingALevelUpRequirementOnlyDisablesTheSlotItUnlocked);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "json_override_replaces_compiled_in_level_data"),
+                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelJsonConfigTests::jsonOverrideReplacesCompiledInLevelData);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
@@ -297,6 +311,8 @@ public final class MineNow {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         com.sheepfromheaven.minenow.structure.StructureRequirementsConfig.load(
+                net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get());
+        com.sheepfromheaven.minenow.structure.StructureLevelJsonConfig.load(
                 net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get());
     }
 

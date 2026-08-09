@@ -54,8 +54,10 @@ public class DominionSavedData extends SavedData {
                     Codec.STRING.fieldOf("type").forGetter(s -> s.getType().name()),
                     BlockPos.CODEC.fieldOf("markerPos").forGetter(DominionStructure::getMarkerPos),
                     BlockPos.CODEC.listOf().fieldOf("roomBlocks").forGetter(s -> new ArrayList<>(s.getRoomBlocks())),
-                    Codec.STRING.optionalFieldOf("assignedInhabitantId", "").forGetter(s -> s.getAssignedInhabitantId() != null ? s.getAssignedInhabitantId().toString() : ""),
-                    Codec.STRING.optionalFieldOf("assignedWorkerId", "").forGetter(s -> s.getAssignedWorkerId() != null ? s.getAssignedWorkerId().toString() : ""),
+                    Codec.STRING.listOf().optionalFieldOf("assignedResidentIds", List.of())
+                            .forGetter(s -> s.getAssignedResidentIds().stream().map(UUID::toString).collect(java.util.stream.Collectors.toList())),
+                    Codec.STRING.listOf().optionalFieldOf("assignedWorkerIds", List.of())
+                            .forGetter(s -> s.getAssignedWorkerIds().stream().map(UUID::toString).collect(java.util.stream.Collectors.toList())),
                     BlockPos.CODEC.optionalFieldOf("workAreaOffset", BlockPos.ZERO).forGetter(DominionStructure::getWorkAreaOffset),
                     Codec.INT.optionalFieldOf("workAreaRadius", DominionStructure.DEFAULT_WORK_AREA_RADIUS).forGetter(DominionStructure::getWorkAreaRadius),
                     REQUEST_CODEC.listOf().optionalFieldOf("requests", List.of()).forGetter(s -> new ArrayList<>(s.getRequests().values())),
@@ -67,12 +69,13 @@ public class DominionSavedData extends SavedData {
                             .forGetter(DominionStructure::getFilterTemplates),
                     Codec.BOOL.optionalFieldOf("filterWhitelist", true).forGetter(DominionStructure::isFilterWhitelist),
                     Codec.BOOL.optionalFieldOf("filterMatchMetadata", false).forGetter(DominionStructure::isFilterMatchMetadata),
-                    Codec.BOOL.optionalFieldOf("placeSupportBeams", false).forGetter(DominionStructure::isPlaceSupportBeams)
-            ).apply(instance, (id, name, type, markerPos, roomBlocks, assignedId, workerId, workAreaOffset, workAreaRadius, requests, desiredStock, filterTemplates, filterWhitelist, filterMatchMetadata, placeSupportBeams) -> {
+                    Codec.BOOL.optionalFieldOf("placeSupportBeams", false).forGetter(DominionStructure::isPlaceSupportBeams),
+                    Codec.INT.optionalFieldOf("level", 1).forGetter(DominionStructure::getLevel)
+            ).apply(instance, (id, name, type, markerPos, roomBlocks, residentIds, workerIds, workAreaOffset, workAreaRadius, requests, desiredStock, filterTemplates, filterWhitelist, filterMatchMetadata, placeSupportBeams, level) -> {
                 var structure = new DominionStructure(UUID.fromString(id), name, StructureType.valueOf(type),
                         markerPos, new HashSet<>(roomBlocks),
-                        assignedId.isEmpty() ? null : UUID.fromString(assignedId),
-                        workerId.isEmpty() ? null : UUID.fromString(workerId),
+                        residentIds.stream().map(UUID::fromString).toList(),
+                        workerIds.stream().map(UUID::fromString).toList(),
                         workAreaOffset, workAreaRadius);
                 for (var req : requests) {
                     structure.restoreRequest(req);
@@ -84,6 +87,7 @@ public class DominionSavedData extends SavedData {
                 }
                 structure.setFilter(filterTemplates, filterWhitelist, filterMatchMetadata);
                 structure.setPlaceSupportBeams(placeSupportBeams);
+                structure.setLevel(level);
                 return structure;
             })
     );

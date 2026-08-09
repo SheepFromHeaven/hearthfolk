@@ -29,11 +29,12 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import java.util.UUID;
 
 /**
- * Dev-only shortcut for manual playtesting: builds an actual enclosed room for each structure
- * type (walls, floor, ceiling, door) with its requirements already inside, runs the same
- * RoomDetector flood-fill a player-placed marker would use, and spawns free inhabitants - so a
- * whole testable village can be stood up in one command instead of building every structure and
- * recruiting by hand.
+ * Home of the {@code /minenow} command tree. {@code debugvillage} is a dev-only shortcut for manual
+ * playtesting: builds an actual enclosed room for each structure type (walls, floor, ceiling, door) with
+ * its requirements already inside, runs the same RoomDetector flood-fill a player-placed marker would
+ * use, and spawns free inhabitants - so a whole testable village can be stood up in one command instead
+ * of building every structure and recruiting by hand. {@code reloadconfig} is the one player-facing (op
+ * only) command here, for reloading structure config without a restart.
  */
 public class DebugCommands {
     private static final String[] DEBUG_NAMES = {
@@ -54,7 +55,23 @@ public class DebugCommands {
                 .then(Commands.literal("debugvillage")
                         .then(Commands.argument("inhabitants", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 32))
                                 .executes(ctx -> run(ctx.getSource(), com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "inhabitants"))))
-                        .executes(ctx -> run(ctx.getSource(), 4))));
+                        .executes(ctx -> run(ctx.getSource(), 4)))
+                .then(Commands.literal("reloadconfig")
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .executes(DebugCommands::reloadConfig)));
+    }
+
+    /**
+     * Re-reads {@code minenow-structures.json} and {@code minenow-structure-levels.json} from disk
+     * without restarting the server, so a modpack maker (or anyone hand-editing the config) can see
+     * changes take effect immediately.
+     */
+    private static int reloadConfig(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx) {
+        var configDir = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get();
+        com.sheepfromheaven.minenow.structure.StructureRequirementsConfig.load(configDir);
+        com.sheepfromheaven.minenow.structure.StructureLevelJsonConfig.load(configDir);
+        ctx.getSource().sendSuccess(() -> Component.literal("MineNow structure config reloaded."), true);
+        return 1;
     }
 
     private static int run(CommandSourceStack source, int inhabitantCount) {

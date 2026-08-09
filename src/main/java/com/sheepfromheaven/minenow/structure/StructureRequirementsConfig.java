@@ -17,12 +17,17 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+/**
+ * Player-editable config for the "range" requirements only (a tree/water tile somewhere nearby, not
+ * inside the structure's own room) - things like a fishery needing water in range or a lumberyard
+ * needing a tree. The in-room build/level requirements used to live here too but now live in each
+ * type's own {@link StructureDefinition} (e.g. {@code structure.fishery.FisheryDefinition}), since they
+ * needed to vary per level as well as per type.
+ */
 public class StructureRequirementsConfig {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private static final Map<StructureType, List<StructureType.Requirement>> REQUIREMENTS = new EnumMap<>(StructureType.class);
-    private static final Map<StructureType, Integer> MIN_SIZES = new EnumMap<>(StructureType.class);
     private static final Map<StructureType, Integer> RANGE_RADII = new EnumMap<>(StructureType.class);
     private static final Map<StructureType, Integer> RANGE_HEIGHTS = new EnumMap<>(StructureType.class);
     private static final Map<StructureType, List<StructureType.Requirement>> RANGE_REQUIREMENTS = new EnumMap<>(StructureType.class);
@@ -34,25 +39,18 @@ public class StructureRequirementsConfig {
         }
         try {
             var json = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-            REQUIREMENTS.clear();
-            MIN_SIZES.clear();
             RANGE_RADII.clear();
             RANGE_HEIGHTS.clear();
             RANGE_REQUIREMENTS.clear();
             for (var type : StructureType.values()) {
                 if (json.has(type.name())) {
                     var entry = json.getAsJsonObject(type.name());
-                    var reqs = parseRequirements(entry.getAsJsonArray("requirements"), type.name());
-                    REQUIREMENTS.put(type, reqs);
-                    MIN_SIZES.put(type, entry.has("minSize") ? entry.get("minSize").getAsInt() : 0);
                     RANGE_RADII.put(type, entry.has("rangeRadius") ? entry.get("rangeRadius").getAsInt() : 0);
                     RANGE_HEIGHTS.put(type, entry.has("rangeHeight") ? entry.get("rangeHeight").getAsInt() : 0);
                     RANGE_REQUIREMENTS.put(type, entry.has("rangeRequirements")
                             ? parseRequirements(entry.getAsJsonArray("rangeRequirements"), type.name())
                             : List.of());
                 } else {
-                    REQUIREMENTS.put(type, List.of());
-                    MIN_SIZES.put(type, 0);
                     RANGE_RADII.put(type, 0);
                     RANGE_HEIGHTS.put(type, 0);
                     RANGE_REQUIREMENTS.put(type, List.of());
@@ -63,14 +61,6 @@ public class StructureRequirementsConfig {
             LOGGER.error("Failed to load minenow-structures.json, using defaults", e);
             loadHardcodedDefaults();
         }
-    }
-
-    public static List<StructureType.Requirement> getRequirements(StructureType type) {
-        return REQUIREMENTS.getOrDefault(type, List.of());
-    }
-
-    public static int getMinSize(StructureType type) {
-        return MIN_SIZES.getOrDefault(type, 0);
     }
 
     public static int getRangeRadius(StructureType type) {
@@ -140,23 +130,7 @@ public class StructureRequirementsConfig {
     private static void writeDefaults(Path path) {
         var root = new JsonObject();
 
-        var house = new JsonObject();
-        var houseReqs = new JsonArray();
-        var bed = new JsonObject();
-        bed.addProperty("tag", "minecraft:beds");
-        bed.addProperty("icon", "minecraft:red_bed");
-        bed.addProperty("name", "Bed");
-        bed.addProperty("count", 1);
-        houseReqs.add(bed);
-        house.add("requirements", houseReqs);
-        house.addProperty("minSize", 32);
-        root.add("HOUSE", house);
-
         var fishery = new JsonObject();
-        var fishReqs = new JsonArray();
-        addBlockReq(fishReqs, "minecraft:barrel", "Barrel", 1);
-        addBlockReq(fishReqs, "minecraft:cauldron", "Cauldron", 1);
-        fishery.add("requirements", fishReqs);
         fishery.addProperty("rangeRadius", 8);
         fishery.addProperty("rangeHeight", 8);
         var fishRangeReqs = new JsonArray();
@@ -171,9 +145,6 @@ public class StructureRequirementsConfig {
         root.add("FISHERY", fishery);
 
         var lumberyard = new JsonObject();
-        var lumberReqs = new JsonArray();
-        addBlockReq(lumberReqs, "minecraft:barrel", "Barrel", 1);
-        lumberyard.add("requirements", lumberReqs);
         lumberyard.addProperty("rangeRadius", 8);
         lumberyard.addProperty("rangeHeight", 4);
         var lumberRangeReqs = new JsonArray();
@@ -186,17 +157,7 @@ public class StructureRequirementsConfig {
         lumberyard.add("rangeRequirements", lumberRangeReqs);
         root.add("LUMBERYARD", lumberyard);
 
-        var tavern = new JsonObject();
-        var tavernReqs = new JsonArray();
-        addBlockReq(tavernReqs, "minecraft:barrel", "Barrel", 1);
-        addBlockReq(tavernReqs, "minecraft:smoker", "Smoker", 1);
-        tavern.add("requirements", tavernReqs);
-        root.add("TAVERN", tavern);
-
         var nursery = new JsonObject();
-        var nurseryReqs = new JsonArray();
-        addBlockReq(nurseryReqs, "minecraft:barrel", "Barrel", 1);
-        nursery.add("requirements", nurseryReqs);
         nursery.addProperty("rangeRadius", 8);
         nursery.addProperty("rangeHeight", 2);
         var nurseryRangeReqs = new JsonArray();
@@ -210,33 +171,6 @@ public class StructureRequirementsConfig {
         nursery.add("rangeRequirements", nurseryRangeReqs);
         root.add("NURSERY", nursery);
 
-        var storehouse = new JsonObject();
-        var storehouseReqs = new JsonArray();
-        addBlockReq(storehouseReqs, "minecraft:chest", "Chest", 1);
-        storehouse.add("requirements", storehouseReqs);
-        root.add("STOREHOUSE", storehouse);
-
-        var mine = new JsonObject();
-        var mineReqs = new JsonArray();
-        addBlockReq(mineReqs, "minecraft:barrel", "Barrel", 1);
-        mine.add("requirements", mineReqs);
-        root.add("MINE", mine);
-
-        var charcoalKiln = new JsonObject();
-        var charcoalKilnReqs = new JsonArray();
-        addBlockReq(charcoalKilnReqs, "minecraft:barrel", "Barrel", 1);
-        addBlockReq(charcoalKilnReqs, "minecraft:furnace", "Furnace", 1);
-        charcoalKiln.add("requirements", charcoalKilnReqs);
-        root.add("CHARCOAL_KILN", charcoalKiln);
-
-        var farm = new JsonObject();
-        var farmReqs = new JsonArray();
-        addBlockReq(farmReqs, "minecraft:composter", "Composter", 1);
-        addBlockReq(farmReqs, "minecraft:carved_pumpkin", "Carved Pumpkin", 1);
-        addBlockReq(farmReqs, "minecraft:barrel", "Barrel", 1);
-        farm.add("requirements", farmReqs);
-        root.add("FARM", farm);
-
         try {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(root));
@@ -245,88 +179,7 @@ public class StructureRequirementsConfig {
         }
     }
 
-    private static void addBlockReq(JsonArray arr, String block, String name, int count) {
-        var obj = new JsonObject();
-        obj.addProperty("block", block);
-        obj.addProperty("name", name);
-        obj.addProperty("count", count);
-        arr.add(obj);
-    }
-
     private static void loadHardcodedDefaults() {
-        REQUIREMENTS.clear();
-        REQUIREMENTS.put(StructureType.HOUSE, List.of(
-                new StructureType.Requirement("Bed", 1,
-                        s -> s.getBlock() instanceof net.minecraft.world.level.block.BedBlock,
-                        () -> new ItemStack(net.minecraft.world.item.Items.RED_BED))
-        ));
-        REQUIREMENTS.put(StructureType.FISHERY, List.of(
-                new StructureType.Requirement("Barrel", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
-                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL)),
-                new StructureType.Requirement("Cauldron", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.CAULDRON),
-                        () -> new ItemStack(net.minecraft.world.item.Items.CAULDRON))
-        ));
-        REQUIREMENTS.put(StructureType.LUMBERYARD, List.of(
-                new StructureType.Requirement("Barrel", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
-                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
-        ));
-        REQUIREMENTS.put(StructureType.TAVERN, List.of(
-                new StructureType.Requirement("Barrel", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
-                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL)),
-                new StructureType.Requirement("Smoker", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.SMOKER),
-                        () -> new ItemStack(net.minecraft.world.item.Items.SMOKER))
-        ));
-        REQUIREMENTS.put(StructureType.STOREHOUSE, List.of(
-                new StructureType.Requirement("Chest", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.CHEST),
-                        () -> new ItemStack(net.minecraft.world.item.Items.CHEST))
-        ));
-        REQUIREMENTS.put(StructureType.MINE, List.of(
-                new StructureType.Requirement("Barrel", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
-                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
-        ));
-        REQUIREMENTS.put(StructureType.NURSERY, List.of(
-                new StructureType.Requirement("Barrel", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
-                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
-        ));
-        REQUIREMENTS.put(StructureType.CHARCOAL_KILN, List.of(
-                new StructureType.Requirement("Barrel", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
-                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL)),
-                new StructureType.Requirement("Furnace", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.FURNACE),
-                        () -> new ItemStack(net.minecraft.world.item.Items.FURNACE))
-        ));
-        REQUIREMENTS.put(StructureType.FARM, List.of(
-                new StructureType.Requirement("Composter", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.COMPOSTER),
-                        () -> new ItemStack(net.minecraft.world.item.Items.COMPOSTER)),
-                new StructureType.Requirement("Carved Pumpkin", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.CARVED_PUMPKIN),
-                        () -> new ItemStack(net.minecraft.world.item.Items.CARVED_PUMPKIN)),
-                new StructureType.Requirement("Barrel", 1,
-                        s -> s.is(net.minecraft.world.level.block.Blocks.BARREL),
-                        () -> new ItemStack(net.minecraft.world.item.Items.BARREL))
-        ));
-
-        MIN_SIZES.clear();
-        MIN_SIZES.put(StructureType.HOUSE, 32);
-        MIN_SIZES.put(StructureType.FISHERY, 0);
-        MIN_SIZES.put(StructureType.LUMBERYARD, 0);
-        MIN_SIZES.put(StructureType.TAVERN, 0);
-        MIN_SIZES.put(StructureType.STOREHOUSE, 0);
-        MIN_SIZES.put(StructureType.MINE, 0);
-        MIN_SIZES.put(StructureType.NURSERY, 0);
-        MIN_SIZES.put(StructureType.CHARCOAL_KILN, 0);
-        MIN_SIZES.put(StructureType.FARM, 0);
-
         RANGE_RADII.clear();
         RANGE_RADII.put(StructureType.HOUSE, 0);
         RANGE_RADII.put(StructureType.FISHERY, 8);

@@ -92,8 +92,8 @@ public class Dominion {
     public void removeStructure(UUID structureId, ServerLevel level) {
         var structure = structures.get(structureId);
         if (structure != null) {
-            unassignInhabitant(structure, level);
-            unassignWorker(structure, level);
+            unassignAllResidents(structure, level);
+            unassignAllWorkers(structure, level);
             structures.remove(structureId);
             for (var field : fields.values()) {
                 if (structureId.equals(field.getAssignedStructureId())) {
@@ -146,10 +146,10 @@ public class Dominion {
                 .collect(Collectors.toList());
     }
 
-    public void unassignInhabitant(DominionStructure structure, ServerLevel level) {
-        UUID inhabitantId = structure.getAssignedInhabitantId();
-        if (inhabitantId == null) return;
-        var inhabitant = inhabitants.get(inhabitantId);
+    /** Frees {@code residentId}'s slot (and their bed's POI reservation) on {@code structure}, if they hold one there. */
+    public void unassignInhabitant(DominionStructure structure, UUID residentId, ServerLevel level) {
+        if (residentId == null || !structure.getAssignedResidentIds().contains(residentId)) return;
+        var inhabitant = inhabitants.get(residentId);
         if (inhabitant != null) {
             inhabitant.setHomeStructureId(null);
             var entity = level.getEntity(inhabitant.getEntityUuid());
@@ -157,13 +157,20 @@ public class Dominion {
                 ie.setHomeStructureId(null);
             }
         }
-        structure.setAssignedInhabitantId(null);
-        releaseHomePoi(structure, level);
+        releaseHomePoi(structure, residentId, level);
+        structure.removeResident(residentId);
     }
 
-    public void unassignWorker(DominionStructure structure, ServerLevel level) {
-        UUID workerId = structure.getAssignedWorkerId();
-        if (workerId == null) return;
+    /** Frees every resident slot on {@code structure} - e.g. when the structure itself is being removed. */
+    public void unassignAllResidents(DominionStructure structure, ServerLevel level) {
+        for (var residentId : List.copyOf(structure.getAssignedResidentIds())) {
+            unassignInhabitant(structure, residentId, level);
+        }
+    }
+
+    /** Frees {@code workerId}'s slot on {@code structure}, if they hold one there. */
+    public void unassignWorker(DominionStructure structure, UUID workerId, ServerLevel level) {
+        if (workerId == null || !structure.getAssignedWorkerIds().contains(workerId)) return;
         var inhabitant = inhabitants.get(workerId);
         if (inhabitant != null) {
             inhabitant.setWorkStructureId(null);
@@ -172,56 +179,61 @@ public class Dominion {
                 ie.setWorkStructureId(null);
             }
         }
-        structure.setAssignedWorkerId(null);
+        structure.removeWorker(workerId);
+    }
+
+    /** Frees every work slot on {@code structure} - e.g. when the structure itself is being removed. */
+    public void unassignAllWorkers(DominionStructure structure, ServerLevel level) {
+        for (var workerId : List.copyOf(structure.getAssignedWorkerIds())) {
+            unassignWorker(structure, workerId, level);
+        }
     }
 
     /**
-     * Assigns {@code inhabitantId} as the structure's inhabitant, clearing whoever previously
-     * lived there and unassigning the inhabitant from any other structure it called home -
-     * an inhabitant can only ever have one home at a time. Pass {@code null} to just vacate it.
-     * Refuses to move someone in if the structure doesn't meet its requirements (e.g. no bed);
-     * vacating is always allowed. Returns whether the assignment took effect.
+     * Assigns {@code inhabitantId} to the next open resident slot on {@code structure}, first
+     * unassigning them from any other structure they called home - an inhabitant can only ever have one
+     * home at a time. Refuses to move someone in if the structure doesn't meet its requirements (e.g. no
+     * bed) or every slot is already taken.
+     *
+     * @return true if they now live here; false if the inhabitant doesn't exist, the structure isn't
+     * ready, or there's no open slot
      */
     public boolean assignHouse(DominionStructure structure, UUID inhabitantId, ServerLevel level) {
-        if (inhabitantId == null) {
-            unassignInhabitant(structure, level);
-            return true;
-        }
-        if (!structure.isFullySatisfied(level)) {
-            return false;
-        }
-        unassignInhabitant(structure, level);
+        if (inhabitantId == null) return false;
+        if (!structure.isFullySatisfied(level, this)) return false;
         var newInhabitant = inhabitants.get(inhabitantId);
         if (newInhabitant == null) return false;
 
         for (var s : structures.values()) {
-            if (inhabitantId.equals(s.getAssignedInhabitantId())) {
-                unassignInhabitant(s, level);
+            if (s.getAssignedResidentIds().contains(inhabitantId)) {
+                unassignInhabitant(s, inhabitantId, level);
             }
         }
 
-        structure.setAssignedInhabitantId(inhabitantId);
+        if (!structure.hasOpenResidentSlot()) return false;
+
+        structure.addResident(inhabitantId);
         newInhabitant.setHomeStructureId(structure.getId());
         var entity = level.getEntity(newInhabitant.getEntityUuid());
         if (entity instanceof InhabitantEntity ie) {
             ie.setHomeStructureId(structure.getId());
         }
-        claimHomePoi(structure, level);
+        claimHomePoi(structure, inhabitantId, level);
         return true;
     }
 
     /**
-     * Reserves the structure's bed as a vanilla "home" point of interest so wandering vanilla
-     * villagers can't claim it as their own bed once it's assigned to an inhabitant.
+     * Reserves {@code residentId}'s own bed as a vanilla "home" point of interest so wandering vanilla
+     * villagers can't claim it once it's assigned to an inhabitant.
      */
-    private void claimHomePoi(DominionStructure structure, ServerLevel level) {
-        var bedPos = resolveHomePoiPos(structure, level);
+    private void claimHomePoi(DominionStructure structure, UUID residentId, ServerLevel level) {
+        var bedPos = resolveHomePoiPos(structure, residentId, level);
         if (bedPos == null) return;
         level.getPoiManager().take(type -> type.is(PoiTypes.HOME), (type, pos) -> pos.equals(bedPos), bedPos, 1);
     }
 
-    private void releaseHomePoi(DominionStructure structure, ServerLevel level) {
-        var bedPos = resolveHomePoiPos(structure, level);
+    private void releaseHomePoi(DominionStructure structure, UUID residentId, ServerLevel level) {
+        var bedPos = resolveHomePoiPos(structure, residentId, level);
         if (bedPos == null) return;
         var poiManager = level.getPoiManager();
         if (poiManager.exists(bedPos, type -> type.is(PoiTypes.HOME))) {
@@ -229,8 +241,11 @@ public class Dominion {
         }
     }
 
-    private BlockPos resolveHomePoiPos(DominionStructure structure, ServerLevel level) {
-        var bedPos = structure.findBedPos(level);
+    /** {@code residentId}'s own bed (by their slot index among the structure's residents), as a home-POI head position. */
+    private BlockPos resolveHomePoiPos(DominionStructure structure, UUID residentId, ServerLevel level) {
+        int slotIndex = structure.getAssignedResidentIds().indexOf(residentId);
+        if (slotIndex < 0) return null;
+        var bedPos = structure.findBedPos(level, slotIndex);
         var state = level.getBlockState(bedPos);
         if (!state.is(BlockTags.BEDS)) return null;
         if (state.getValue(BedBlock.PART) != BedPart.HEAD) {
@@ -240,32 +255,64 @@ public class Dominion {
     }
 
     /**
-     * Assigns {@code inhabitantId} as the structure's worker, clearing whoever previously worked
-     * there and unassigning the inhabitant from any other job it held - an inhabitant can only
-     * ever hold one job at a time. Pass {@code null} to just vacate it.
+     * Assigns {@code inhabitantId} to the next open work slot on {@code structure}, first unassigning
+     * them from any other job they held - an inhabitant can only ever hold one job at a time.
+     *
+     * @return true if they now occupy a slot here; false if the inhabitant doesn't exist or every
+     * slot is already taken
      */
-    public void assignWorker(DominionStructure structure, UUID inhabitantId, ServerLevel level) {
-        unassignWorker(structure, level);
-        if (inhabitantId == null) return;
+    public boolean assignWorker(DominionStructure structure, UUID inhabitantId, ServerLevel level) {
+        if (inhabitantId == null) return false;
         var newInhabitant = inhabitants.get(inhabitantId);
-        if (newInhabitant == null) return;
+        if (newInhabitant == null) return false;
 
         for (var s : structures.values()) {
-            if (inhabitantId.equals(s.getAssignedWorkerId())) {
-                unassignWorker(s, level);
+            if (s.getAssignedWorkerIds().contains(inhabitantId)) {
+                unassignWorker(s, inhabitantId, level);
             }
         }
 
-        structure.setAssignedWorkerId(inhabitantId);
+        if (!structure.hasOpenWorkSlot()) return false;
+
+        structure.addWorker(inhabitantId);
         newInhabitant.setWorkStructureId(structure.getId());
         var entity = level.getEntity(newInhabitant.getEntityUuid());
         if (entity instanceof InhabitantEntity ie) {
             ie.setWorkStructureId(structure.getId());
         }
+        return true;
     }
 
     public DominionStructure getStructureById(UUID structureId) {
         return structures.get(structureId);
+    }
+
+    /**
+     * The highest level {@code structureId} could reach right now, if the player triggered every
+     * upgrade in sequence - the lower of its type's own cap and this dominion's tier cap. Does not
+     * check per-level requirements, only the ceiling.
+     */
+    public int getStructureLevelCap(UUID structureId) {
+        var structure = structures.get(structureId);
+        if (structure == null) return 0;
+        return Math.min(structure.getType().getMaxLevel(), tier.getMaxStructureLevel());
+    }
+
+    /**
+     * Player-triggered upgrade: advances {@code structureId} to the next level if its requirements
+     * for that level are met and the dominion's current tier allows it. Never happens automatically.
+     *
+     * @return true if the structure leveled up, false if it's missing, already at its cap, or its
+     * next-level requirements aren't met yet
+     */
+    public boolean tryLevelUpStructure(UUID structureId, ServerLevel level) {
+        var structure = structures.get(structureId);
+        if (structure == null || structure.isMaxLevel()) return false;
+        int nextLevel = structure.getLevel() + 1;
+        if (nextLevel > tier.getMaxStructureLevel()) return false;
+        if (!structure.isReadyToLevelUp(level, this)) return false;
+        structure.setLevel(nextLevel);
+        return true;
     }
 
     public DominionStructure getStructureAt(BlockPos markerPos) {
@@ -445,14 +492,14 @@ public class Dominion {
         if (inhabitant.getHomeStructureId() != null) {
             var structure = structures.get(inhabitant.getHomeStructureId());
             if (structure != null) {
-                structure.setAssignedInhabitantId(null);
-                releaseHomePoi(structure, level);
+                releaseHomePoi(structure, inhabitantId, level);
+                structure.removeResident(inhabitantId);
             }
         }
         if (inhabitant.getWorkStructureId() != null) {
             var structure = structures.get(inhabitant.getWorkStructureId());
             if (structure != null) {
-                structure.setAssignedWorkerId(null);
+                structure.removeWorker(inhabitantId);
             }
         }
     }

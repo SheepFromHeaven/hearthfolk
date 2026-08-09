@@ -65,13 +65,18 @@ public class ClientNetworkHandlers {
     public static void openStructureScreen(ModNetwork.OpenStructureScreenPacket msg) {
         Minecraft.getInstance().execute(() -> {
             var mc = Minecraft.getInstance();
+            var info = msg.levelInfo();
             if (mc.screen instanceof StructureMarkerScreen screen && screen.matchesMarker(msg.markerPos())) {
-                screen.update(msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId());
+                screen.update(msg.inhabitantData(), msg.assignedResidentData(), msg.assignedWorkerData(),
+                        info.level(), info.levelCap(), info.requirementData(), info.levelUpRequirementData(),
+                        info.inhabitantSlots(), info.functioningInhabitantSlots());
             } else {
                 mc.setScreen(new StructureMarkerScreen(
                         msg.structureName(), StructureType.valueOf(msg.structureType()), msg.markerPos(),
-                        msg.inhabitantData(), msg.assignedInhabitantId(), msg.assignedWorkerId(),
-                        msg.workAreaCenter(), msg.workAreaRadius()));
+                        msg.inhabitantData(), msg.assignedResidentData(), msg.assignedWorkerData(),
+                        msg.workAreaCenter(), msg.workAreaRadius(),
+                        info.level(), info.levelCap(), info.requirementData(), info.levelUpRequirementData(),
+                        info.inhabitantSlots(), info.functioningInhabitantSlots()));
             }
         });
     }

@@ -103,8 +103,8 @@ public class DominionTests {
         dominionInhabitant.setHomeStructureId(structureId);
         dominionInhabitant.setWorkStructureId(structureId);
         dominion.addInhabitant(dominionInhabitant);
-        structure.setAssignedInhabitantId(dominionInhabitant.getId());
-        structure.setAssignedWorkerId(dominionInhabitant.getId());
+        structure.addResident(dominionInhabitant.getId());
+        structure.addWorker(dominionInhabitant.getId());
 
         var player = helper.makeMockPlayer(GameType.CREATIVE);
         var structureMarkerBlock = (StructureMarkerBlock) level.getBlockState(structurePos).getBlock();
@@ -154,9 +154,9 @@ public class DominionTests {
         dominion.assignHouse(houseB, dominionInhabitant.getId(), level);
 
         helper.succeedWhen(() -> {
-            helper.assertTrue(houseA.getAssignedInhabitantId() == null,
+            helper.assertTrue(houseA.getAssignedResidentIds().isEmpty(),
                     "Previous house should no longer be assigned to the inhabitant");
-            helper.assertTrue(dominionInhabitant.getId().equals(houseB.getAssignedInhabitantId()),
+            helper.assertTrue(houseB.getAssignedResidentIds().contains(dominionInhabitant.getId()),
                     "New house should be assigned to the inhabitant");
             helper.assertTrue(houseB.getId().equals(dominionInhabitant.getHomeStructureId()),
                     "Inhabitant's home structure should point at the new house only");
@@ -189,9 +189,9 @@ public class DominionTests {
         dominion.assignWorker(jobB, dominionInhabitant.getId(), level);
 
         helper.succeedWhen(() -> {
-            helper.assertTrue(jobA.getAssignedWorkerId() == null,
+            helper.assertTrue(jobA.getAssignedWorkerIds().isEmpty(),
                     "Previous job should no longer be assigned to the inhabitant");
-            helper.assertTrue(dominionInhabitant.getId().equals(jobB.getAssignedWorkerId()),
+            helper.assertTrue(jobB.getAssignedWorkerIds().contains(dominionInhabitant.getId()),
                     "New job should be assigned to the inhabitant");
             helper.assertTrue(jobB.getId().equals(dominionInhabitant.getWorkStructureId()),
                     "Inhabitant's work structure should point at the new job only");
@@ -227,7 +227,7 @@ public class DominionTests {
         dominion.assignHouse(structure, dominionInhabitant.getId(), level);
         boolean freeAfterAssign = poiManager.getCountInRange(type -> type.is(PoiTypes.HOME), bedPos, 1, PoiManager.Occupancy.HAS_SPACE) > 0;
 
-        dominion.assignHouse(structure, null, level);
+        dominion.unassignInhabitant(structure, dominionInhabitant.getId(), level);
         boolean freeAfterUnassign = poiManager.getCountInRange(type -> type.is(PoiTypes.HOME), bedPos, 1, PoiManager.Occupancy.HAS_SPACE) > 0;
 
         helper.succeedWhen(() -> {
@@ -257,7 +257,7 @@ public class DominionTests {
 
         helper.succeedWhen(() -> {
             helper.assertTrue(!assigned, "Assigning a house with no bed should be refused");
-            helper.assertTrue(structure.getAssignedInhabitantId() == null,
+            helper.assertTrue(structure.getAssignedResidentIds().isEmpty(),
                     "House without a bed should have no assigned inhabitant");
             helper.assertTrue(dominionInhabitant.getHomeStructureId() == null,
                     "Inhabitant should not be homed when the assignment was refused");
@@ -396,14 +396,16 @@ public class DominionTests {
         var structure = new DominionStructure("Home", StructureType.HOUSE, markerPos, roomBlocks);
         dominion.addStructure(structure);
 
-        var statuses = structure.checkRequirements(level);
+        // checkRequirements() also reports the (informational, non-gating) room-size status - this test
+        // is specifically about the bed being detected, so only that status needs to be satisfied.
+        var bedStatus = structure.checkRequirements(level, dominion).stream()
+                .filter(s -> s.name().equals("Bed"))
+                .findFirst();
         helper.succeedWhen(() -> {
-            helper.assertTrue(!statuses.isEmpty(), "The house should have at least a bed requirement");
-            for (var status : statuses) {
-                helper.assertTrue(status.satisfied(),
-                        "Requirement '" + status.name() + "' should be satisfied by the bed actually in the room, but found "
-                                + status.found() + "/" + status.required());
-            }
+            helper.assertTrue(bedStatus.isPresent(), "The house should have a bed requirement");
+            helper.assertTrue(bedStatus.get().satisfied(),
+                    "The bed requirement should be satisfied by the bed actually in the room, but found "
+                            + bedStatus.get().found() + "/" + bedStatus.get().required());
         });
     }
 }
