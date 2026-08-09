@@ -274,8 +274,21 @@ public class DominionSavedData extends SavedData {
     public void tickGrowth(ServerLevel level) {
         long currentTick = level.getGameTime();
         for (var dominion : dominions.values()) {
-            if (dominion.checkAndApplyLevelUp(level) != null) {
+            var newTier = dominion.checkAndApplyLevelUp(level);
+            if (newTier != null) {
                 setDirty();
+                var trigger = switch (newTier) {
+                    case VILLAGE -> com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_VILLAGE;
+                    case TOWN -> com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_TOWN;
+                    case CITY -> com.sheepfromheaven.minenow.core.ModCriteriaTriggers.DOMINION_TIER_CITY;
+                    default -> null;
+                };
+                if (trigger != null) {
+                    var owner = level.getServer().getPlayerList().getPlayer(dominion.getOwnerUuid());
+                    if (owner != null) {
+                        trigger.get().trigger(owner);
+                    }
+                }
             }
             if (dominion.canAttemptImmigration(currentTick, level) && level.getRandom().nextFloat() < 0.10f) {
                 spawnImmigrationCandidate(level, dominion);

@@ -59,6 +59,10 @@ public class WalkToBannerGoal extends Goal {
         if (distSq <= ARRIVAL_DISTANCE_SQ) {
             job.setPhase(ImmigrationJob.Phase.AWAITING_DECISION);
             inhabitant.getNavigation().stop();
+            var owner = serverLevel.getServer().getPlayerList().getPlayer(dominion.getOwnerUuid());
+            if (owner != null) {
+                com.sheepfromheaven.minenow.core.ModCriteriaTriggers.ATTRACTED_WANDERER.get().trigger(owner);
+            }
             return;
         }
         if (--repathCooldown <= 0) {

@@ -1,0 +1,26 @@
+{
+  "parent": "minenow:main/dominion_settlement",
+  "criteria": {
+    "dominion_tier_village": {
+      "trigger": "minenow:dominion_tier_village"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.dominion_village.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:copper_ingot"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.dominion_village.title"
+    }
+  },
+  "requirements": [
+    [
+      "dominion_tier_village"
+    ]
+  ],
+  "sends_telemetry_event": false
+}
