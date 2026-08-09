@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.4.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.3.0...v0.4.0) (2026-08-09)
+
+
+### Features
+
+* **advancement:** add advancement page for dominion progression ([#38](https://github.com/SheepFromHeaven/mine-now/issues/38)) ([a94b7a7](https://github.com/SheepFromHeaven/mine-now/commit/a94b7a7a8a82645d64c0361ab91549180370aa56))
+* **charcoal-kiln:** add Charcoal Burner job and Charcoal Kiln building ([#29](https://github.com/SheepFromHeaven/mine-now/issues/29)) ([95d8f09](https://github.com/SheepFromHeaven/mine-now/commit/95d8f09178caf64103bdb95ce2f4282533826745)), closes [#12](https://github.com/SheepFromHeaven/mine-now/issues/12)
+* **client:** animate lumberjack chop with geckolib and synced body state ([58f0beb](https://github.com/SheepFromHeaven/mine-now/commit/58f0beb0d064c4e34a01f99e388b010b8a263b94))
+* courier carries full stacks and batches multiple deliveries per trip ([1de4e21](https://github.com/SheepFromHeaven/mine-now/commit/1de4e218489e4a037e2686f9a3f42c7f7cd5345c))
+* courier fulfills category requests (raw food, fuel) ([1ccd6b7](https://github.com/SheepFromHeaven/mine-now/commit/1ccd6b771e942bf9fdc09c5847a18ad76999d255))
+* **courier:** add Courier job, Storehouse structure, and storehouse screen ([a913589](https://github.com/SheepFromHeaven/mine-now/commit/a913589fb0992f2c432cfc5b394471d1c325c5b7))
+* dominion growth system — leveling, capacity, and immigration ([#24](https://github.com/SheepFromHeaven/mine-now/issues/24)) ([87198f9](https://github.com/SheepFromHeaven/mine-now/commit/87198f94af2c660b0f446f1de07ed7c073d93fba))
+* **dominion:** add structure inventory snapshot and item request system ([716b91d](https://github.com/SheepFromHeaven/mine-now/commit/716b91dae898d7806052f1052a47ecfff8b9be1f))
+* **dominion:** notify owner when dominion advances tier ([#36](https://github.com/SheepFromHeaven/mine-now/issues/36)) ([9aa4f05](https://github.com/SheepFromHeaven/mine-now/commit/9aa4f0521cfe37d3376fdb9847b677b229a01ad0))
+* **farm:** add Farmer job, Farm building, and multi-field farmland claims ([#31](https://github.com/SheepFromHeaven/mine-now/issues/31)) ([d8d591a](https://github.com/SheepFromHeaven/mine-now/commit/d8d591a9e9f07f77e988025fb23c3393eb7a646b))
+* **fisher:** animate cast, fish_wait, and reel with synced fisher state ([9d74f35](https://github.com/SheepFromHeaven/mine-now/commit/9d74f35e3cec6d787674e7abce3a3098128f906a))
+* **fisher:** halve bobber, anchor line to rod tip, and cast-rod visuals ([0fbd9d8](https://github.com/SheepFromHeaven/mine-now/commit/0fbd9d84a0864fd12ca3d36ee8a689c9c17c358a))
+* **fisher:** spawn visible fishing bobber with line and re-validate water source ([6b1fbde](https://github.com/SheepFromHeaven/mine-now/commit/6b1fbde3e598b7ec997f9454f6f5e3e7a98e9b2e))
+* **forester:** add forester job and nursery structure ([#30](https://github.com/SheepFromHeaven/mine-now/issues/30)) ([8883056](https://github.com/SheepFromHeaven/mine-now/commit/88830566084fe767e1d15763ca5001124a678427))
+* **inhabitant:** add cook and lumberjack job textures ([3321525](https://github.com/SheepFromHeaven/mine-now/commit/33215255bd652569d87b6c186b69014be902f630))
+* **inhabitant:** merge inventory view into the inhabitant screen ([c88c6c7](https://github.com/SheepFromHeaven/mine-now/commit/c88c6c77b63a169dbce5f0ea460cb1868318b888))
+* **inhabitant:** select entity texture by job type ([28aa358](https://github.com/SheepFromHeaven/mine-now/commit/28aa35846a13f84da3aa6b0507a422d4c2969352))
+* **inhabitant:** support ladder and vine climbing in pathfinding ([#32](https://github.com/SheepFromHeaven/mine-now/issues/32)) ([2792b24](https://github.com/SheepFromHeaven/mine-now/commit/2792b2469deb7e0ae63e56ad16dfbc52f440d114))
+* **miner:** add Miner job, Mine building, and mining claim markers ([#33](https://github.com/SheepFromHeaven/mine-now/issues/33)) ([5f735fd](https://github.com/SheepFromHeaven/mine-now/commit/5f735fd0f79caac532753d7f3eda4bc52bb00d6a))
+* path node impact modes (low/medium/high) with color-coded wand ([5fbcc08](https://github.com/SheepFromHeaven/mine-now/commit/5fbcc08e29b09e3b08a972fa7115e811c3b109af))
+* per-structure marker blocks with wand mode cycling and facing-aware placement ([#26](https://github.com/SheepFromHeaven/mine-now/issues/26)) ([4cf78f2](https://github.com/SheepFromHeaven/mine-now/commit/4cf78f27b59eeaca052c283f1350e93d2c09cf3a))
+* player-placed path node system for inhabitant street routing ([#23](https://github.com/SheepFromHeaven/mine-now/issues/23)) ([24bd776](https://github.com/SheepFromHeaven/mine-now/commit/24bd776938ecf3d42257e8ba1fce6563b397ff3c))
+* **storehouse:** replace typed item filter with a drag-and-drop Filter item ([#27](https://github.com/SheepFromHeaven/mine-now/issues/27)) ([b0e3091](https://github.com/SheepFromHeaven/mine-now/commit/b0e30913900160d32c3ca40243071354dfabbdac))
+* **structure:** add structure leveling system with generic inhabitant slots ([#35](https://github.com/SheepFromHeaven/mine-now/issues/35)) ([4642a66](https://github.com/SheepFromHeaven/mine-now/commit/4642a665c2f82b7c0432f6e212cb846b96799bdc))
+* **structure:** add structure_base crafting ingredient and marker recipes ([#34](https://github.com/SheepFromHeaven/mine-now/issues/34)) ([080ba8a](https://github.com/SheepFromHeaven/mine-now/commit/080ba8ab7a61ee9624e48732ea73c5e78fbcf542))
+* **ui:** add requests screen and live-refresh all open screens ([3e81b13](https://github.com/SheepFromHeaven/mine-now/commit/3e81b13f039a45b44da3ab0c91566fe5b5743656))
+* **ui:** migrate all screens to ScreenSpec JSON-driven UI ([eeae8cf](https://github.com/SheepFromHeaven/mine-now/commit/eeae8cf86c970d620a66a89605e5c7665a71073e))
+* warehouse (storehouse) item filters and nearest-storehouse courier selection ([#21](https://github.com/SheepFromHeaven/mine-now/issues/21)) ([77ad619](https://github.com/SheepFromHeaven/mine-now/commit/77ad61998848db192024e8dd2db09e6391964b01))
+
+
+### Bug Fixes
+
+* courier navigates to standable pos beside containers, not into them ([d3c4a6d](https://github.com/SheepFromHeaven/mine-now/commit/d3c4a6de24d2c3ca45256406136a45fa13131f27))
+* inhabitant job/structure bugs, wand orientation, and UI fixes ([#25](https://github.com/SheepFromHeaven/mine-now/issues/25)) ([7255045](https://github.com/SheepFromHeaven/mine-now/commit/7255045c9130d5d03a42e335ec5cef84030a673f))
+* **ui:** fix transparent labels and broken close/issues screen ([48fe27c](https://github.com/SheepFromHeaven/mine-now/commit/48fe27cb56110bb1105fdda733fb6240c9cbf61f))
+* **ui:** upgrade screenspec to 0.12.1, fixing list widget rendering ([5910244](https://github.com/SheepFromHeaven/mine-now/commit/5910244639178c5b1f3c78bc251ca89feb138668))
+
 ## [0.3.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.2.0...v0.3.0) (2026-07-28)
 
 
