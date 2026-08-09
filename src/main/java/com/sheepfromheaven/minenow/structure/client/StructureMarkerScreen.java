@@ -1,12 +1,12 @@
 package com.sheepfromheaven.minenow.structure.client;
 
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
-import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.jobs.JobType;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import com.sheepfromheaven.minenow.client.WorldPickMode;
 import com.sheepfromheaven.minenow.pathfinding.client.RangeTracker;
+import com.sheepfromheaven.minenow.requirement.RequirementStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -36,10 +36,16 @@ public class StructureMarkerScreen extends SpecScreen {
     private StructureType structureType;
     private final BlockPos markerPos;
     private final List<InhabitantEntry> inhabitants;
-    private String assignedInhabitantId;
-    private String assignedWorkerId;
+    private List<String> assignedResidentIds;
+    private List<String> assignedWorkerIds;
     private BlockPos workAreaCenter;
     private int workAreaRadius;
+    private int level;
+    private int levelCap;
+    private List<RequirementStatus> currentRequirementStatuses;
+    private List<RequirementStatus> levelUpStatuses;
+    private int inhabitantSlots;
+    private int functioningInhabitantSlots;
 
     private EditBox nameField;
     private int lastMouseX, lastMouseY;
@@ -49,17 +55,27 @@ public class StructureMarkerScreen extends SpecScreen {
     public record InhabitantEntry(String id, UUID entityUuid, String name, String jobLabel, boolean homed) {}
 
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
-                                 String inhabitantData, String assignedInhabitantId, String assignedWorkerId,
-                                 BlockPos workAreaCenter, int workAreaRadius) {
+                                 String inhabitantData, String assignedResidentData, String assignedWorkerData,
+                                 BlockPos workAreaCenter, int workAreaRadius,
+                                 int level, int levelCap, String requirementData, String levelUpRequirementData,
+                                 int inhabitantSlots, int functioningInhabitantSlots) {
         super(Component.literal("Structure"), loadSpec(structureType));
         this.structureName = structureName;
         this.structureType = structureType;
         this.markerPos = markerPos;
         this.inhabitants = parseInhabitants(inhabitantData);
-        this.assignedInhabitantId = assignedInhabitantId;
-        this.assignedWorkerId = assignedWorkerId;
+        this.assignedResidentIds = parseIdList(assignedResidentData);
+        this.assignedWorkerIds = parseIdList(assignedWorkerData);
         this.workAreaCenter = workAreaCenter;
         this.workAreaRadius = workAreaRadius;
+        this.level = level;
+        this.levelCap = levelCap;
+        this.currentRequirementStatuses = parseStatusList(requirementData);
+        this.levelUpStatuses = parseStatusList(levelUpRequirementData);
+        this.inhabitantSlots = inhabitantSlots;
+        this.functioningInhabitantSlots = functioningInhabitantSlots;
+
+        on("minenow.level_up", (id, s, v) -> ModNetwork.sendLevelUpStructure(markerPos));
 
         on("minenow.rename", (id, s, v) -> {
             if (nameField == null) return;
@@ -103,15 +119,26 @@ public class StructureMarkerScreen extends SpecScreen {
 
     public boolean matchesMarker(BlockPos pos) { return markerPos.equals(pos); }
 
-    public void update(String inhabitantData, String assignedInhabitantId, String assignedWorkerId) {
+    public void update(String inhabitantData, String assignedResidentData, String assignedWorkerData,
+                        int level, int levelCap, String requirementData, String levelUpRequirementData,
+                        int inhabitantSlots, int functioningInhabitantSlots) {
         var newInhabitants = parseInhabitants(inhabitantData);
-        boolean changed = !this.assignedInhabitantId.equals(assignedInhabitantId)
-                || !this.assignedWorkerId.equals(assignedWorkerId)
-                || !this.inhabitants.equals(newInhabitants);
+        var newResidentIds = parseIdList(assignedResidentData);
+        var newWorkerIds = parseIdList(assignedWorkerData);
+        boolean changed = !this.assignedResidentIds.equals(newResidentIds)
+                || !this.assignedWorkerIds.equals(newWorkerIds)
+                || !this.inhabitants.equals(newInhabitants)
+                || this.level != level;
         this.inhabitants.clear();
         this.inhabitants.addAll(newInhabitants);
-        this.assignedInhabitantId = assignedInhabitantId;
-        this.assignedWorkerId = assignedWorkerId;
+        this.assignedResidentIds = newResidentIds;
+        this.assignedWorkerIds = newWorkerIds;
+        this.level = level;
+        this.levelCap = levelCap;
+        this.currentRequirementStatuses = parseStatusList(requirementData);
+        this.levelUpStatuses = parseStatusList(levelUpRequirementData);
+        this.inhabitantSlots = inhabitantSlots;
+        this.functioningInhabitantSlots = functioningInhabitantSlots;
         if (changed) rebuildWidgets();
     }
 
@@ -144,13 +171,19 @@ public class StructureMarkerScreen extends SpecScreen {
         AbstractWidget residentBtn = getWidget("btn_resident");
         if (residentBtn != null) {
             residentBtn.visible = isHouse() && !inhabitants.isEmpty();
-            residentBtn.setMessage(Component.literal("Resident: " + labelFor(assignedInhabitantId)));
+            String residentNames = assignedResidentIds.isEmpty() ? "None" : assignedResidentIds.stream()
+                    .map(this::labelFor)
+                    .collect(java.util.stream.Collectors.joining(", "));
+            residentBtn.setMessage(Component.literal("Residents (" + functioningInhabitantSlots + "/" + inhabitantSlots + "): " + residentNames));
         }
 
         AbstractWidget workerBtn = getWidget("btn_worker");
         if (workerBtn != null) {
             workerBtn.visible = hasJob() && !inhabitants.isEmpty();
-            workerBtn.setMessage(Component.literal("Worker: " + labelFor(assignedWorkerId)));
+            String workerNames = assignedWorkerIds.isEmpty() ? "None" : assignedWorkerIds.stream()
+                    .map(this::labelFor)
+                    .collect(java.util.stream.Collectors.joining(", "));
+            workerBtn.setMessage(Component.literal("Workers (" + functioningInhabitantSlots + "/" + inhabitantSlots + "): " + workerNames));
         }
 
         // --- requirements tab label (alert mark if unmet) ---
@@ -175,6 +208,20 @@ public class StructureMarkerScreen extends SpecScreen {
         AbstractWidget toggleWorkarea = getWidget("btn_toggle_workarea");
         if (toggleWorkarea != null) toggleWorkarea.setMessage(
                 Component.literal(WorkAreaTracker.isShowingWorkArea(markerPos) ? "Hide Workarea" : "Show Workarea"));
+
+        AbstractWidget levelUpBtn = getWidget("btn_level_up");
+        if (levelUpBtn != null) {
+            boolean maxLevel = level >= StructureType.MAX_LEVEL;
+            boolean atTierCap = level >= levelCap;
+            boolean requirementsMet = !levelUpStatuses.isEmpty() && levelUpStatuses.stream().allMatch(RequirementStatus::satisfied);
+            boolean ready = !maxLevel && !atTierCap && requirementsMet;
+            levelUpBtn.visible = !maxLevel;
+            levelUpBtn.active = ready;
+            levelUpBtn.setMessage(Component.literal(
+                    ready ? "Level Up (" + level + " → " + (level + 1) + ")"
+                            : atTierCap ? "Grow Dominion to Level Up"
+                            : "Level " + level + " (requirements not met)"));
+        }
 
         // --- debug tab ---
         AbstractWidget toggleRange = getWidget("btn_toggle_range");
@@ -213,20 +260,21 @@ public class StructureMarkerScreen extends SpecScreen {
         int oy = (height - spec().height) / 2;
         int y  = oy + 64; // tab content top + small padding
 
-        if (hasSpaceRequirement()) {
-            var status = getSpaceStatus();
-            int color = status.satisfied() ? SATISFIED : UNSATISFIED;
-            graphics.drawCenteredString(font, "Space: " + status.found() + "/" + status.required(),
-                    width / 2, y, color);
-            y += 16;
+        graphics.drawCenteredString(font, "Level " + level + " / " + StructureType.MAX_LEVEL, width / 2, y, 0xFF404040);
+        y += 14;
+
+        if (!currentRequirementStatuses.isEmpty()) {
+            graphics.drawString(font, "To operate at level " + level + ":", ox + 10, y, 0xFF404040, false);
+            y += 12;
+            y = drawStatusList(graphics, currentRequirementStatuses, ox, y);
+            y += 6;
         }
 
-        var reqs = structureType.getRequirements();
-        if (!reqs.isEmpty()) {
-            graphics.drawString(font, "Requirements:", ox + 10, y, 0xFF404040, false);
-            y += 14;
-            hoveredReqTooltip = drawSlots(graphics, reqs, getRequirementStatuses(), y);
-            y += SLOT_SIZE + 10;
+        if (level < StructureType.MAX_LEVEL && !levelUpStatuses.isEmpty()) {
+            graphics.drawString(font, "Next level:", ox + 10, y, 0xFF404040, false);
+            y += 12;
+            y = drawStatusList(graphics, levelUpStatuses, ox, y);
+            y += 6;
         }
 
         if (hasRangeRequirement() && !structureType.getRangeRequirements().isEmpty()) {
@@ -238,9 +286,18 @@ public class StructureMarkerScreen extends SpecScreen {
         }
     }
 
+    private int drawStatusList(GuiGraphics graphics, List<RequirementStatus> statuses, int ox, int y) {
+        for (var status : statuses) {
+            int color = status.satisfied() ? SATISFIED : UNSATISFIED;
+            graphics.drawString(font, status.name() + ": " + status.found() + "/" + status.required(), ox + 14, y, color, false);
+            y += 11;
+        }
+        return y;
+    }
+
     private Component drawSlots(GuiGraphics graphics,
                                  List<StructureType.Requirement> reqs,
-                                 List<DominionStructure.RequirementStatus> statuses,
+                                 List<RequirementStatus> statuses,
                                  int slotY) {
         int totalWidth = reqs.size() * SLOT_SIZE + (reqs.size() - 1) * SLOT_GAP;
         int startX = (width - totalWidth) / 2;
@@ -274,12 +331,10 @@ public class StructureMarkerScreen extends SpecScreen {
     private boolean isStorehouse()  { return structureType == StructureType.STOREHOUSE; }
     private boolean hasJob()        { return structureType.getJobType().isPresent(); }
     private boolean hasWorkArea()   { return structureType.getJobType().map(JobType::hasWorkArea).orElse(false); }
-    private boolean hasSpaceRequirement()  { return structureType.getMinSize() > 0; }
     private boolean hasRangeRequirement()  { return structureType.getRangeRadius() > 0; }
 
     private boolean hasUnmetRequirement() {
-        if (hasSpaceRequirement() && !getSpaceStatus().satisfied()) return true;
-        for (var s : getRequirementStatuses()) if (!s.satisfied()) return true;
+        for (var s : currentRequirementStatuses) if (!s.satisfied()) return true;
         if (hasRangeRequirement()) for (var s : getRangeRequirementStatuses()) if (!s.satisfied()) return true;
         return false;
     }
@@ -293,59 +348,59 @@ public class StructureMarkerScreen extends SpecScreen {
                 .orElse("None");
     }
 
-    private List<DominionStructure.RequirementStatus> getRequirementStatuses() {
-        var mc = Minecraft.getInstance();
-        if (mc.level != null && mc.level.getBlockEntity(markerPos) instanceof StructureMarkerBlockEntity be) {
-            var s = be.getRequirementStatuses();
-            if (!s.isEmpty()) return s;
-        }
-        return structureType.getRequirements().stream()
-                .map(r -> new DominionStructure.RequirementStatus(r.displayName(), r.count(), 0))
-                .toList();
-    }
-
-    private List<DominionStructure.RequirementStatus> getRangeRequirementStatuses() {
+    private List<RequirementStatus> getRangeRequirementStatuses() {
         var mc = Minecraft.getInstance();
         if (mc.level != null && mc.level.getBlockEntity(markerPos) instanceof StructureMarkerBlockEntity be) {
             var s = be.getRangeRequirementStatuses();
             if (!s.isEmpty()) return s;
         }
         return structureType.getRangeRequirements().stream()
-                .map(r -> new DominionStructure.RequirementStatus(r.displayName(), r.count(), 0))
+                .map(r -> new RequirementStatus(r.displayName(), r.count(), 0))
                 .toList();
     }
 
-    private DominionStructure.RequirementStatus getSpaceStatus() {
-        var mc = Minecraft.getInstance();
-        if (mc.level != null && mc.level.getBlockEntity(markerPos) instanceof StructureMarkerBlockEntity be
-                && be.getSpaceStatus() != null) {
-            return be.getSpaceStatus();
-        }
-        return new DominionStructure.RequirementStatus("Space", structureType.getMinSize(), 0);
-    }
-
+    /**
+     * Opens a picker where clicking a name toggles their assignment (add to the next open slot, or
+     * remove if already here) rather than replacing a single selection - a house can have several
+     * residents now. The player reopens this to assign more than one in a sitting.
+     */
     private void openResidentPicker() {
         var candidates = inhabitants.stream()
                 .map(i -> new InhabitantSelectionScreen.Candidate(i.id(), i.entityUuid(), i.name(),
-                        i.homed() ? "Housed" : "", i.homed() && !i.id().equals(assignedInhabitantId)))
+                        i.homed() ? "Housed" : "", i.homed() && !assignedResidentIds.contains(i.id())))
                 .toList();
-        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this,
-                Component.literal("Assign Resident"), candidates, assignedInhabitantId, id -> {
-            assignedInhabitantId = id;
+        Minecraft.getInstance().setScreen(InhabitantSelectionScreen.multiSelect(this,
+                Component.literal("Assign Residents"), candidates, assignedResidentIds, id -> {
+            assignedResidentIds = toggle(assignedResidentIds, id);
             ModNetwork.sendAssignHouse(markerPos, id);
         }));
     }
 
+    /**
+     * Opens a picker where clicking a name toggles their assignment (add to the next open slot, or
+     * remove if already here) rather than replacing a single selection - a structure can have several
+     * workers now. The player reopens this to assign more than one in a sitting.
+     */
     private void openWorkerPicker() {
         var candidates = inhabitants.stream()
                 .map(i -> new InhabitantSelectionScreen.Candidate(i.id(), i.entityUuid(), i.name(),
-                        i.jobLabel(), !i.jobLabel().isEmpty() && !i.id().equals(assignedWorkerId)))
+                        i.jobLabel(), !i.jobLabel().isEmpty() && !assignedWorkerIds.contains(i.id())))
                 .toList();
-        Minecraft.getInstance().setScreen(new InhabitantSelectionScreen(this,
-                Component.literal("Assign Worker"), candidates, assignedWorkerId, id -> {
-            assignedWorkerId = id;
+        Minecraft.getInstance().setScreen(InhabitantSelectionScreen.multiSelect(this,
+                Component.literal("Assign Workers"), candidates, assignedWorkerIds, id -> {
+            assignedWorkerIds = toggle(assignedWorkerIds, id);
             ModNetwork.sendAssignWorker(markerPos, id);
         }));
+    }
+
+    /** Adds {@code id} to a copy of {@code ids} if absent, removes it if present. */
+    private static List<String> toggle(List<String> ids, String id) {
+        if (ids.contains(id)) {
+            return ids.stream().filter(existing -> !existing.equals(id)).toList();
+        }
+        var updated = new ArrayList<>(ids);
+        updated.add(id);
+        return updated;
     }
 
     private static List<InhabitantEntry> parseInhabitants(String data) {
@@ -356,6 +411,22 @@ public class StructureMarkerScreen extends SpecScreen {
             if (fields.length < 5) continue;
             list.add(new InhabitantEntry(fields[0], UUID.fromString(fields[1]), fields[2], fields[3],
                     "1".equals(fields[4])));
+        }
+        return list;
+    }
+
+    private static List<String> parseIdList(String data) {
+        if (data == null || data.isEmpty()) return List.of();
+        return List.of(data.split(","));
+    }
+
+    private static List<RequirementStatus> parseStatusList(String data) {
+        var list = new ArrayList<RequirementStatus>();
+        if (data == null || data.isEmpty()) return list;
+        for (var entry : data.split(",")) {
+            var fields = entry.split(ModNetwork.INHABITANT_FIELD_SEP, -1);
+            if (fields.length < 3) continue;
+            list.add(new RequirementStatus(fields[0], Integer.parseInt(fields[1]), Integer.parseInt(fields[2])));
         }
         return list;
     }

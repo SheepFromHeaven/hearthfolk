@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:losing_a_level_up_requirement_only_disables_the_slot_it_unlocked",
+  "structure": "minenow:room_9x5x9",
+  "max_ticks": 20
+}

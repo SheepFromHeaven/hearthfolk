@@ -32,13 +32,22 @@ public class WorkGoal extends Goal {
 
     @Nullable
     private DominionStructure resolveWorkplace() {
+        return resolveWorkplace(resolveDominion());
+    }
+
+    @Nullable
+    private DominionStructure resolveWorkplace(@Nullable com.sheepfromheaven.minenow.dominion.Dominion dominion) {
         var structureId = inhabitant.getWorkStructureId();
+        return dominion != null && structureId != null ? dominion.getStructureById(structureId) : null;
+    }
+
+    @Nullable
+    private com.sheepfromheaven.minenow.dominion.Dominion resolveDominion() {
         var dominionId = inhabitant.getDominionId();
-        if (structureId == null || dominionId == null || !(inhabitant.level() instanceof ServerLevel serverLevel)) {
+        if (dominionId == null || !(inhabitant.level() instanceof ServerLevel serverLevel)) {
             return null;
         }
-        var dominion = DominionSavedData.get(serverLevel).getDominionById(dominionId);
-        return dominion != null ? dominion.getStructureById(structureId) : null;
+        return DominionSavedData.get(serverLevel).getDominionById(dominionId);
     }
 
     private void refreshJob(DominionStructure workplace) {
@@ -57,10 +66,13 @@ public class WorkGoal extends Goal {
     @Override
     public boolean canUse() {
         if (inhabitant.isGoHomeRequested()) return false;
-        var workplace = resolveWorkplace();
-        if (workplace == null || !(inhabitant.level() instanceof ServerLevel serverLevel)) return false;
+        var dominion = resolveDominion();
+        var workplace = resolveWorkplace(dominion);
+        if (workplace == null || dominion == null || !(inhabitant.level() instanceof ServerLevel serverLevel)) return false;
         refreshJob(workplace);
-        return job != null && workplace.isFullySatisfied(serverLevel)
+        var dominionInhabitant = dominion.getInhabitantByEntityUuid(inhabitant.getUUID());
+        return job != null && dominionInhabitant != null
+                && workplace.canWork(dominionInhabitant.getId(), serverLevel, dominion)
                 && job.canStart(inhabitant, serverLevel, workplace);
     }
 

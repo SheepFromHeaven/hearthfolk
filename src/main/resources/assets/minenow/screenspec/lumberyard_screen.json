@@ -11,7 +11,8 @@
     "toggle_workarea",
     "recalculate",
     "toggle_range",
-    "open_filter"
+    "open_filter",
+    "level_up"
   ],
   "bindingsSchema": {
     "structure_name": {
@@ -59,6 +60,14 @@
       "previewValue": true
     },
     "has_work_area": {
+      "type": "boolean",
+      "previewValue": true
+    },
+    "level_up_btn_label": {
+      "type": "string",
+      "previewValue": "Level Up (1 -> 2)"
+    },
+    "show_level_up_btn": {
       "type": "boolean",
       "previewValue": true
     }
@@ -357,6 +366,23 @@
       "bindings": {
         "text": "toggle_range_label",
         "visible": "show_range_toggle"
+      }
+    },
+    {
+      "id": "btn_level_up",
+      "type": "button",
+      "x": 10,
+      "y": 192,
+      "w": 200,
+      "h": 20,
+      "text": "Level Up",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_requirements",
+      "action": "level_up",
+      "bindings": {
+        "text": "level_up_btn_label",
+        "visible": "show_level_up_btn"
       }
     }
   ]

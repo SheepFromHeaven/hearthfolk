@@ -130,9 +130,9 @@ public class StructureWandItem extends Item {
     }
 
     /**
-     * Places the structure type's required blocks (e.g. a barrel and cauldron for a fishery) on the
-     * interior floor so the room satisfies {@link StructureType#getRequirements()} as soon as it's
-     * built, rather than leaving the player to hunt down and place them by hand.
+     * Places the structure type's level-1 required blocks (e.g. a barrel and cauldron for a fishery) on
+     * the interior floor so the room satisfies {@link StructureType#getRequirements(int)} as soon as
+     * it's built, rather than leaving the player to hunt down and place them by hand.
      */
     private static void furnishStructure(ServerLevel level, StructureType type, BlockPos doorPos, Direction right, Direction forward,
                                           int floorY, BlockPos markerPos) {
@@ -147,12 +147,16 @@ public class StructureWandItem extends Item {
         }
 
         int index = 0;
-        for (var requirement : type.getRequirements()) {
-            var block = Block.byItem(requirement.icon().get().getItem());
+        for (var requirement : type.getRequirements(1)) {
+            if (!(requirement instanceof com.sheepfromheaven.minenow.requirement.BlockCountRequirement blockReq)) {
+                continue; // e.g. a room-size requirement has no block to place
+            }
+            var raw = blockReq.raw();
+            var block = Block.byItem(raw.icon().get().getItem());
             if (block == Blocks.AIR) {
                 continue;
             }
-            for (int i = 0; i < requirement.count() && index < candidates.size(); i++, index++) {
+            for (int i = 0; i < raw.count() && index < candidates.size(); i++, index++) {
                 level.setBlockAndUpdate(candidates.get(index), block.defaultBlockState());
             }
         }

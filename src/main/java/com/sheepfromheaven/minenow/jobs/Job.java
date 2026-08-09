@@ -19,6 +19,15 @@ public interface Job {
     /** Whether the job should attempt to (re)start work right now. */
     boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace);
 
+    /**
+     * The workplace's current productivity multiplier (1.0 = base rate), e.g. from level-up bonuses.
+     * Implementations may use this to scale their own pacing (faster harvest cycles, shorter container
+     * cooldowns, ...) - nothing applies it automatically.
+     */
+    default double getProductivityMultiplier(DominionStructure workplace) {
+        return workplace.getProductivityMultiplier();
+    }
+
     /** Called once when the goal takes control. */
     void start(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace);
 

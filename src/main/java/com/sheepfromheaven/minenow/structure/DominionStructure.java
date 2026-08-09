@@ -15,8 +15,14 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
+import com.sheepfromheaven.minenow.dominion.Dominion;
 import com.sheepfromheaven.minenow.dominion.ItemCategory;
 import com.sheepfromheaven.minenow.dominion.StructureRequest;
+import com.sheepfromheaven.minenow.effect.StructureStats;
+import com.sheepfromheaven.minenow.requirement.Requirement;
+import com.sheepfromheaven.minenow.requirement.RequirementContext;
+import com.sheepfromheaven.minenow.requirement.RequirementStatus;
+import com.sheepfromheaven.minenow.requirement.RoomSizeRequirement;
 
 public class DominionStructure {
     public static final int MIN_WORK_AREA_RADIUS = 2;
@@ -44,9 +50,24 @@ public class DominionStructure {
     private StructureType type;
     private final BlockPos markerPos;
     private Set<BlockPos> roomBlocks;
-    private UUID assignedInhabitantId;
-    private UUID assignedWorkerId;
-    private BlockPos cachedBedPos;
+    private int level = 1;
+    /**
+     * Residents currently assigned to this structure (a house), in assignment order. Same slot-gating
+     * rule as {@link #assignedWorkerIds}: slot {@code i} is only ever gated by the {@code i}-th entry of
+     * {@link #getInhabitantSlotUnlockLevels()}.
+     */
+    private final List<UUID> assignedResidentIds = new ArrayList<>();
+    /**
+     * Workers currently assigned to this structure (a workplace), in assignment order. Order matters:
+     * slot {@code i} (0-indexed) is only ever gated by the {@code i}-th entry of {@link #getInhabitantSlotUnlockLevels()},
+     * so the earliest-assigned worker keeps their (lower-level) slot even if a later slot's requirements
+     * stop being met - see {@link #canWork}. A structure only ever uses one of {@link #assignedResidentIds}
+     * or {@link #assignedWorkerIds} (a house doesn't have workers, a workplace doesn't have residents),
+     * but both fields exist unconditionally so the class doesn't need a role-specific subtype.
+     */
+    private final List<UUID> assignedWorkerIds = new ArrayList<>();
+    /** One entry per resident/worker slot index, cached lazily - see {@link #findBedPos(Level, int)}. */
+    private final Map<Integer, BlockPos> cachedBedPosBySlot = new HashMap<>();
     private BlockPos cachedApproachPos;
     /** Offset from {@link #markerPos}; {@link BlockPos#ZERO} means the work area is centered on the marker. */
     private BlockPos workAreaOffset = BlockPos.ZERO;
@@ -116,15 +137,15 @@ public class DominionStructure {
     }
 
     public DominionStructure(UUID id, String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks,
-                              UUID assignedInhabitantId, UUID assignedWorkerId,
+                              List<UUID> assignedResidentIds, List<UUID> assignedWorkerIds,
                               BlockPos workAreaOffset, int workAreaRadius) {
         this.id = id;
         this.name = name;
         this.type = type;
         this.markerPos = markerPos;
         this.roomBlocks = roomBlocks;
-        this.assignedInhabitantId = assignedInhabitantId;
-        this.assignedWorkerId = assignedWorkerId;
+        this.assignedResidentIds.addAll(assignedResidentIds);
+        this.assignedWorkerIds.addAll(assignedWorkerIds);
         this.workAreaOffset = workAreaOffset;
         this.workAreaRadius = clampWorkAreaRadius(workAreaRadius);
     }
@@ -170,6 +191,65 @@ public class DominionStructure {
         return type;
     }
 
+    public int getLevel() {
+        return level;
+    }
+
+    /** For codec restore and {@link com.sheepfromheaven.minenow.dominion.Dominion#tryLevelUpStructure} only. */
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public boolean isMaxLevel() {
+        return level >= type.getMaxLevel();
+    }
+
+    /**
+     * Folds every {@link com.sheepfromheaven.minenow.effect.StructureEffect} this structure has earned
+     * (currently: one set per level beyond 1, from {@link StructureType#getLevelEffects}) into a single
+     * snapshot. Computed fresh each call rather than cached/persisted, so it can never go stale.
+     */
+    public StructureStats getStats() {
+        var stats = new StructureStats();
+        for (int lvl = 1; lvl <= level; lvl++) {
+            for (var effect : type.getLevelEffects(lvl)) {
+                effect.apply(this, stats);
+            }
+        }
+        return stats;
+    }
+
+    /** How many inhabitants (workers or residents) this structure can support in total, per its level's earned {@link com.sheepfromheaven.minenow.effect.InhabitantSlotsEffect}s. */
+    public int getInhabitantSlots() {
+        return getStats().getInhabitantSlots();
+    }
+
+    /**
+     * Multiplier applied to this structure's base work rate, growing with level. Jobs may consult this
+     * (see {@link com.sheepfromheaven.minenow.jobs.Job#getProductivityMultiplier}) to speed up their own
+     * pacing; not applied automatically.
+     */
+    public double getProductivityMultiplier() {
+        return getStats().getProductivityMultiplier();
+    }
+
+    /**
+     * Requirement statuses that must all be satisfied to advance from {@link #getLevel()} to the next
+     * level. Empty once {@link #isMaxLevel()}. {@code dominion} may be null if this structure isn't
+     * attached to one yet; requirements that need it (e.g. another structure at a given level) simply
+     * report unmet in that case.
+     */
+    public List<RequirementStatus> checkLevelUpRequirements(Level level, @Nullable Dominion dominion) {
+        if (isMaxLevel()) return List.of();
+        var ctx = new RequirementContext(level, dominion, this);
+        return type.getRequirements(this.level + 1).stream().map(r -> r.evaluate(ctx)).toList();
+    }
+
+    /** Whether every requirement for the next level is currently satisfied (ignoring the dominion's tier cap). */
+    public boolean isReadyToLevelUp(Level level, @Nullable Dominion dominion) {
+        return !isMaxLevel() && checkLevelUpRequirements(level, dominion).stream().allMatch(RequirementStatus::satisfied);
+    }
+
     public BlockPos getMarkerPos() {
         return markerPos;
     }
@@ -180,23 +260,93 @@ public class DominionStructure {
 
     public void setRoomBlocks(Set<BlockPos> roomBlocks) {
         this.roomBlocks = roomBlocks;
-        this.cachedBedPos = null;
+        this.cachedBedPosBySlot.clear();
     }
 
-    public UUID getAssignedInhabitantId() {
-        return assignedInhabitantId;
+    public List<UUID> getAssignedResidentIds() {
+        return Collections.unmodifiableList(assignedResidentIds);
     }
 
-    public void setAssignedInhabitantId(UUID assignedInhabitantId) {
-        this.assignedInhabitantId = assignedInhabitantId;
+    public boolean hasOpenResidentSlot() {
+        return assignedResidentIds.size() < getInhabitantSlots();
     }
 
-    public UUID getAssignedWorkerId() {
-        return assignedWorkerId;
+    /** Adds a resident to the next open slot. Caller must check {@link #hasOpenResidentSlot()} first. */
+    public void addResident(UUID residentId) {
+        assignedResidentIds.add(residentId);
     }
 
-    public void setAssignedWorkerId(UUID assignedWorkerId) {
-        this.assignedWorkerId = assignedWorkerId;
+    public void removeResident(UUID residentId) {
+        assignedResidentIds.remove(residentId);
+    }
+
+    /**
+     * Whether {@code residentId} currently has a functioning slot to live in - true only if they're
+     * assigned here *and* their slot (by assignment order) is one of the currently-functioning ones.
+     */
+    public boolean canReside(UUID residentId, Level level, @Nullable Dominion dominion) {
+        int slotIndex = assignedResidentIds.indexOf(residentId);
+        return slotIndex >= 0 && slotIndex < getFunctioningInhabitantSlots(level, dominion);
+    }
+
+    public List<UUID> getAssignedWorkerIds() {
+        return Collections.unmodifiableList(assignedWorkerIds);
+    }
+
+    public boolean hasOpenWorkSlot() {
+        return assignedWorkerIds.size() < getInhabitantSlots();
+    }
+
+    /** Adds a worker to the next open slot. Caller must check {@link #hasOpenWorkSlot()} first. */
+    public void addWorker(UUID workerId) {
+        assignedWorkerIds.add(workerId);
+    }
+
+    public void removeWorker(UUID workerId) {
+        assignedWorkerIds.remove(workerId);
+    }
+
+    /**
+     * The level each inhabitant slot was unlocked at, in slot order: every {@link com.sheepfromheaven.minenow.effect.InhabitantSlotsEffect}
+     * earned at any level from 1 up to the structure's current level - including level 1 itself, so a
+     * type that wants more than one worker or resident from the start just grants more than one slot
+     * there - adds one entry tagged with the level that granted it.
+     */
+    public List<Integer> getInhabitantSlotUnlockLevels() {
+        var unlockLevels = new ArrayList<Integer>();
+        for (int lvl = 1; lvl <= level; lvl++) {
+            for (var effect : type.getLevelEffects(lvl)) {
+                if (effect instanceof com.sheepfromheaven.minenow.effect.InhabitantSlotsEffect slotsEffect) {
+                    for (int i = 0; i < slotsEffect.getAmount(); i++) {
+                        unlockLevels.add(lvl);
+                    }
+                }
+            }
+        }
+        return unlockLevels;
+    }
+
+    /**
+     * How many of this structure's inhabitant slots are currently functioning - i.e. for how many of
+     * {@link #getInhabitantSlotUnlockLevels()} the block requirements still hold as though the structure's
+     * level were only that slot's unlock level. A slot unlocked at a higher level can stop functioning
+     * (its blocks got removed) without affecting a lower-level slot that's still fully equipped.
+     */
+    public int getFunctioningInhabitantSlots(Level level, @Nullable Dominion dominion) {
+        int count = 0;
+        for (int unlockLevel : getInhabitantSlotUnlockLevels()) {
+            if (isOperationalAt(unlockLevel, level, dominion)) count++;
+        }
+        return count;
+    }
+
+    /**
+     * Whether {@code workerId} currently has a functioning slot to work in - true only if they're
+     * assigned here *and* their slot (by assignment order) is one of the currently-functioning ones.
+     */
+    public boolean canWork(UUID workerId, Level level, @Nullable Dominion dominion) {
+        int slotIndex = assignedWorkerIds.indexOf(workerId);
+        return slotIndex >= 0 && slotIndex < getFunctioningInhabitantSlots(level, dominion);
     }
 
     public boolean containsBlock(BlockPos pos) {
@@ -383,18 +533,40 @@ public class DominionStructure {
         requests.put(req.label(), req);
     }
 
+    /** The bed for resident slot 0 - see {@link #findBedPos(Level, int)}. */
     public BlockPos findBedPos(Level level) {
-        if (cachedBedPos != null && level.getBlockState(cachedBedPos).is(BlockTags.BEDS)) {
-            return cachedBedPos;
+        return findBedPos(level, 0);
+    }
+
+    /**
+     * The bed reserved for resident slot {@code slotIndex} (0-indexed), so each resident sleeps in - and
+     * has a POI reserved on - their own bed rather than everyone piling into the first one found. Falls
+     * back to the marker position if the room doesn't have that many distinct beds.
+     */
+    public BlockPos findBedPos(Level level, int slotIndex) {
+        var cached = cachedBedPosBySlot.get(slotIndex);
+        if (cached != null && level.getBlockState(cached).is(BlockTags.BEDS)) {
+            return cached;
         }
-        for (var bp : collectInteriorAndWalls()) {
+        var beds = findAllBedPositions(level);
+        if (slotIndex >= beds.size()) {
+            return markerPos;
+        }
+        var bedPos = beds.get(slotIndex);
+        cachedBedPosBySlot.put(slotIndex, bedPos);
+        return bedPos;
+    }
+
+    /** Every distinct bed in the room, normalized to each bed's foot position, in scan order. */
+    private List<BlockPos> findAllBedPositions(Level level) {
+        var beds = new LinkedHashSet<BlockPos>();
+        for (var bp : getInteriorAndWalls()) {
             var state = level.getBlockState(bp);
             if (state.is(BlockTags.BEDS)) {
-                cachedBedPos = normalizeToBedFoot(level, bp, state);
-                return cachedBedPos;
+                beds.add(normalizeToBedFoot(level, bp, state));
             }
         }
-        return markerPos;
+        return List.copyOf(beds);
     }
 
     /**
@@ -480,28 +652,54 @@ public class DominionStructure {
         return !level.getBlockState(below).getCollisionShape(level, below).isEmpty();
     }
 
-    public RequirementStatus getSpaceStatus() {
-        return new RequirementStatus("Space", type.getMinSize(), roomBlocks.size());
+    /**
+     * Whether this structure currently holds up to the *block* requirements for {@link #getLevel()} -
+     * not just what it took to originally build/level up to it. Re-evaluated fresh every call, so a
+     * structure that loses a level-gating block stops counting as functional immediately, even though
+     * {@link #getLevel()} doesn't change; the player has to restore what's missing rather than being
+     * knocked back down a level. Room size is intentionally excluded here (see {@link #checkRequirements}) -
+     * it's tracked for build/level-up progress, not as an ongoing operational gate.
+     */
+    public boolean isFullySatisfied(Level level, @Nullable Dominion dominion) {
+        return checkOperationalRequirements(level, dominion).stream().allMatch(RequirementStatus::satisfied);
     }
 
-    public boolean isFullySatisfied(Level level) {
-        return checkRequirements(level).stream().allMatch(RequirementStatus::satisfied);
+    /**
+     * The block requirements that gate whether this structure can actually be used right now (excludes
+     * room size - see {@link #isFullySatisfied}). Backs {@link #isFullySatisfied} (checked by {@code
+     * Dominion#assignHouse} up front, so a player can't move someone into an unfinished house) and
+     * {@link #getFunctioningInhabitantSlots} (checked continuously, per slot, by {@link #canWork}/
+     * {@link #canReside} - a worker can be assigned to an unfinished workplace, they just won't be able
+     * to work until it's ready); a resident's missing-requirement complaint reads this list directly to
+     * name what's missing, rather than the full display list from {@link #checkRequirements}.
+     */
+    public List<RequirementStatus> checkOperationalRequirements(Level level, @Nullable Dominion dominion) {
+        return evaluate(operationalRequirementsAt(this.level), level, dominion);
     }
 
-    public List<RequirementStatus> checkRequirements(Level level) {
-        var interiorAndWalls = collectInteriorAndWalls();
-        var results = new ArrayList<RequirementStatus>();
-        for (var req : type.getRequirements()) {
-            int found = 0;
-            for (var bp : interiorAndWalls) {
-                var state = level.getBlockState(bp);
-                if (req.matcher().test(state)) {
-                    found++;
-                }
-            }
-            results.add(new RequirementStatus(req.displayName(), req.count(), found));
-        }
-        return results;
+    /** Whether the block requirements hold as though this structure's level were only {@code upToLevel} - see {@link #getFunctioningInhabitantSlots}. */
+    private boolean isOperationalAt(int upToLevel, Level level, @Nullable Dominion dominion) {
+        return evaluate(operationalRequirementsAt(upToLevel), level, dominion).stream().allMatch(RequirementStatus::satisfied);
+    }
+
+    private List<Requirement> operationalRequirementsAt(int upToLevel) {
+        return type.getRequirements(upToLevel).stream()
+                .filter(r -> !(r instanceof RoomSizeRequirement))
+                .toList();
+    }
+
+    /**
+     * Every requirement (room size included) for {@link #getLevel()}, for display in the Requirements
+     * tab - e.g. so a player can see they've dipped below the room size a level asked for, even though
+     * {@link #isFullySatisfied} doesn't treat that as broken.
+     */
+    public List<RequirementStatus> checkRequirements(Level level, @Nullable Dominion dominion) {
+        return evaluate(type.getRequirements(this.level), level, dominion);
+    }
+
+    private List<RequirementStatus> evaluate(List<Requirement> requirements, Level level, @Nullable Dominion dominion) {
+        var ctx = new RequirementContext(level, dominion, this);
+        return requirements.stream().map(r -> r.evaluate(ctx)).toList();
     }
 
     public List<RequirementStatus> checkRangeRequirements(Level level) {
@@ -539,7 +737,7 @@ public class DominionStructure {
 
     public List<BlockPos> findStorageContainers(Level level) {
         var results = new ArrayList<BlockPos>();
-        for (var bp : collectInteriorAndWalls()) {
+        for (var bp : getInteriorAndWalls()) {
             var state = level.getBlockState(bp);
             if (state.is(STORAGE_TAG) && level.getBlockEntity(bp) instanceof Container) {
                 results.add(bp);
@@ -550,7 +748,7 @@ public class DominionStructure {
 
     /** First interior/wall block matching {@code matcher} (e.g. the tavern's smoker), if any. */
     public Optional<BlockPos> findBlock(Level level, Predicate<net.minecraft.world.level.block.state.BlockState> matcher) {
-        for (var bp : collectInteriorAndWalls()) {
+        for (var bp : getInteriorAndWalls()) {
             if (matcher.test(level.getBlockState(bp))) {
                 return Optional.of(bp);
             }
@@ -560,7 +758,7 @@ public class DominionStructure {
 
     public List<BlockPos> findContainers(Level level) {
         var results = new ArrayList<BlockPos>();
-        for (var bp : collectInteriorAndWalls()) {
+        for (var bp : getInteriorAndWalls()) {
             if (level.getBlockEntity(bp) instanceof Container) {
                 results.add(bp);
             }
@@ -689,7 +887,8 @@ public class DominionStructure {
         return true;
     }
 
-    private Set<BlockPos> collectInteriorAndWalls() {
+    /** Interior room blocks plus their immediate neighbors - the search space for job blocks and level-up requirements. */
+    public Set<BlockPos> getInteriorAndWalls() {
         var all = new HashSet<>(roomBlocks);
         for (var bp : roomBlocks) {
             for (var dir : Direction.values()) {
@@ -697,9 +896,5 @@ public class DominionStructure {
             }
         }
         return all;
-    }
-
-    public record RequirementStatus(String name, int required, int found) {
-        public boolean satisfied() { return found >= required; }
     }
 }
