@@ -5,14 +5,13 @@ import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
 import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
+import com.sheepfromheaven.minenow.jobs.JobActions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.world.Container;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -28,9 +27,6 @@ import java.util.Set;
  * and plants it there before heading home for the next one.
  */
 public class ForesterJob implements Job {
-    private static final int ARRIVE_DISTANCE_SQ = 4;
-    private static final int REPATH_INTERVAL = 60;
-    private static final double WALK_SPEED = 0.6;
     private static final int PLANT_TICKS = 10;
     private static final int MISSING_SAPLING_RETRY_TICKS = 100;
     private static final int NO_SPOT_RETRY_TICKS = 100;
@@ -41,11 +37,10 @@ public class ForesterJob implements Job {
     @Nullable
     private BlockPos plantSpot;
     private int waitTicks;
-    private int repathCooldown;
     private int noSpotCooldown;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
-    @Nullable
-    private BlockPos containerTarget;
+    private final JobActions.Nav nav = new JobActions.Nav();
+    private final JobActions.ContainerTarget containerTarget = new JobActions.ContainerTarget();
     /** Spots found to have no valid sapling planted at them (already occupied, blocked, ...) recently. */
     private final Set<BlockPos> unreachableSpots = new HashSet<>();
     @Nullable
@@ -69,7 +64,7 @@ public class ForesterJob implements Job {
     @Override
     public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         phase = Phase.GOTO_HUT;
-        containerTarget = null;
+        containerTarget.pos = null;
     }
 
     @Override
@@ -84,7 +79,7 @@ public class ForesterJob implements Job {
     }
 
     private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = hasSapling(inhabitant) ? Phase.GOTO_SPOT : Phase.FIND_SAPLING;
         }
         return true;
@@ -96,35 +91,20 @@ public class ForesterJob implements Job {
             phase = Phase.GOTO_SPOT;
             return true;
         }
-        if (containerTarget == null) {
-            containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), stack -> stack.is(ItemTags.SAPLINGS));
-            if (containerTarget == null) {
-                missingItem = Items.OAK_SAPLING;
-                phase = Phase.MISSING_SAPLING;
-                waitTicks = MISSING_SAPLING_RETRY_TICKS;
-                return true;
-            }
-        }
-        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+        boolean wasSearching = containerTarget.pos == null;
+        var sapling = JobActions.takeFromContainer(inhabitant, level, workplace, actionPacer, nav, containerTarget,
+                stack -> stack.is(ItemTags.SAPLINGS), true);
+        if (!sapling.isEmpty()) {
+            inhabitant.getInventory().addItem(sapling);
+            missingItem = null;
+            phase = Phase.GOTO_SPOT;
             return true;
         }
-        if (!actionPacer.isReady(containerTarget)) {
-            return true;
+        if (wasSearching && containerTarget.pos == null) {
+            missingItem = Items.OAK_SAPLING;
+            phase = Phase.MISSING_SAPLING;
+            waitTicks = MISSING_SAPLING_RETRY_TICKS;
         }
-        lookAtBlock(inhabitant, containerTarget);
-        if (level.getBlockEntity(containerTarget) instanceof Container container) {
-            var sapling = ContainerUtil.extractFirst(container, inhabitant, stack -> stack.is(ItemTags.SAPLINGS));
-            if (!sapling.isEmpty()) {
-                inhabitant.getInventory().addItem(sapling);
-                missingItem = null;
-                actionPacer.recordAction(containerTarget);
-                containerTarget = null;
-                phase = Phase.GOTO_SPOT;
-                return true;
-            }
-        }
-        // The sapling was gone by the time we arrived (race with another job/player) - rescan next tick.
-        containerTarget = null;
         return true;
     }
 
@@ -146,7 +126,7 @@ public class ForesterJob implements Job {
             }
             plantSpot = found;
         }
-        if (moveTowardsAndCheckArrival(inhabitant, plantSpot.above())) {
+        if (JobActions.walkTo(inhabitant, plantSpot.above(), nav)) {
             phase = Phase.PLANTING;
             waitTicks = PLANT_TICKS;
         }
@@ -158,25 +138,28 @@ public class ForesterJob implements Job {
             phase = Phase.GOTO_HUT;
             return true;
         }
-        lookAtBlock(inhabitant, plantSpot);
-        if (--waitTicks > 0) {
-            return true;
-        }
-        var above = plantSpot.above();
-        var sapling = ContainerUtil.extractFirst(inhabitant.getInventory(), inhabitant, stack -> stack.is(ItemTags.SAPLINGS));
-        if (!sapling.isEmpty() && level.getBlockState(above).isAir()) {
-            var block = sapling.getItem() instanceof net.minecraft.world.item.BlockItem blockItem ? blockItem.getBlock() : null;
-            if (block != null) {
-                level.setBlockAndUpdate(above, block.defaultBlockState());
-                var soundType = level.getBlockState(above).getSoundType();
-                level.playSound(null, above, soundType.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS,
-                        soundType.getVolume(), soundType.getPitch());
-                inhabitant.swing(InteractionHand.MAIN_HAND);
+        var progress = new JobActions.SwingProgress();
+        progress.remainingTicks = waitTicks;
+        boolean done = JobActions.tickSwing(inhabitant, plantSpot, progress, PLANT_TICKS, PLANT_TICKS, () -> {
+            var above = plantSpot.above();
+            var sapling = ContainerUtil.extractFirst(inhabitant.getInventory(), inhabitant, stack -> stack.is(ItemTags.SAPLINGS));
+            if (!sapling.isEmpty() && level.getBlockState(above).isAir()) {
+                var block = sapling.getItem() instanceof net.minecraft.world.item.BlockItem blockItem ? blockItem.getBlock() : null;
+                if (block != null) {
+                    level.setBlockAndUpdate(above, block.defaultBlockState());
+                    var soundType = level.getBlockState(above).getSoundType();
+                    level.playSound(null, above, soundType.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS,
+                            soundType.getVolume(), soundType.getPitch());
+                }
+            } else if (!sapling.isEmpty()) {
+                // Spot got taken (another sapling grew, a player built there, ...) while we waited - put the
+                // sapling back rather than losing it.
+                inhabitant.getInventory().addItem(sapling);
             }
-        } else if (!sapling.isEmpty()) {
-            // Spot got taken (another sapling grew, a player built there, ...) while we waited - put the
-            // sapling back rather than losing it.
-            inhabitant.getInventory().addItem(sapling);
+        });
+        waitTicks = progress.remainingTicks;
+        if (!done) {
+            return true;
         }
         unreachableSpots.add(plantSpot);
         plantSpot = null;
@@ -189,21 +172,6 @@ public class ForesterJob implements Job {
             phase = Phase.FIND_SAPLING;
         }
         return true;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
-        boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
-        if (arrived) {
-            inhabitant.getNavigation().stop();
-            return true;
-        }
-        // The navigator can report itself as "done" while still short of the target (e.g. stopped
-        // just outside a doorway), so force a fresh path periodically rather than only when idle.
-        if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {
-            inhabitant.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
-            repathCooldown = REPATH_INTERVAL;
-        }
-        return false;
     }
 
     private boolean hasSapling(InhabitantEntity inhabitant) {
@@ -258,7 +226,7 @@ public class ForesterJob implements Job {
                 "Phase: " + phase,
                 "Plant spot: " + plantSpot,
                 "Wait ticks: " + waitTicks,
-                "Repath: " + repathCooldown + ", no-spot: " + noSpotCooldown,
+                "No-spot: " + noSpotCooldown,
                 "Unreachable spots skipped: " + unreachableSpots.size()
         );
     }
@@ -269,7 +237,7 @@ public class ForesterJob implements Job {
         tag.putInt("WaitTicks", waitTicks);
         actionPacer.save(tag, "Action");
         if (plantSpot != null) tag.putLong("PlantSpot", plantSpot.asLong());
-        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
+        if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
         if (missingItem != null) tag.putString("MissingItem", BuiltInRegistries.ITEM.getKey(missingItem).toString());
     }
 
@@ -283,7 +251,7 @@ public class ForesterJob implements Job {
         waitTicks = tag.getIntOr("WaitTicks", 0);
         actionPacer.load(tag, "Action");
         plantSpot = tag.contains("PlantSpot") ? BlockPos.of(tag.getLongOr("PlantSpot", 0)) : null;
-        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
+        containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItem = tag.contains("MissingItem")
                 ? BuiltInRegistries.ITEM.getValue(Identifier.parse(tag.getStringOr("MissingItem", "")))
                 : null;

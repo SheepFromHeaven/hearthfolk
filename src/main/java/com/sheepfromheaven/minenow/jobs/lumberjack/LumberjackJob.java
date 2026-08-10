@@ -3,8 +3,8 @@ package com.sheepfromheaven.minenow.jobs.lumberjack;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
-import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
+import com.sheepfromheaven.minenow.jobs.JobActions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -12,8 +12,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.world.Container;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -36,9 +34,6 @@ import java.util.stream.Collectors;
  * the logs back at the hut before heading home at night.
  */
 public class LumberjackJob implements Job {
-    private static final int ARRIVE_DISTANCE_SQ = 4;
-    private static final int REPATH_INTERVAL = 60;
-    private static final double WALK_SPEED = 0.6;
     /** Total ticks for one chop cycle — must match animation.inhabitant.chop length (0.9s * 20 TPS = 18). */
     private static final int CHOP_TICKS = 18;
     /** Tick within the cycle at which the axe "impacts" — matches the t=0.4s downstroke keyframe (8 ticks). */
@@ -46,6 +41,8 @@ public class LumberjackJob implements Job {
     private static final int MISSING_TOOL_RETRY_TICKS = 100;
     private static final int NO_TREE_RETRY_TICKS = 100;
     private static final int AXE_DAMAGE_PER_LOG = 2;
+    private static final JobActions.MineOptions CHOP_OPTIONS =
+            new JobActions.MineOptions(CHOP_TICKS, CHOP_IMPACT_TICK, false, AXE_DAMAGE_PER_LOG);
     /** ~8 leaves/second at 20 TPS - fast, but each leaf popping is still individually visible. */
     private static final int LEAF_HARVEST_TICKS = 3;
 
@@ -58,11 +55,10 @@ public class LumberjackJob implements Job {
     private List<BlockPos> canopyLeaves = List.of();
     private BlockPos standPos;
     private int waitTicks;
-    private int repathCooldown;
     private int noTreeCooldown;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
-    @Nullable
-    private BlockPos containerTarget;
+    private final JobActions.Nav nav = new JobActions.Nav();
+    private final JobActions.ContainerTarget containerTarget = new JobActions.ContainerTarget();
     /** Trunk base positions found to have no reachable standing spot, so they're skipped in future scans. */
     private final Set<BlockPos> unreachableTreeBases = new HashSet<>();
     @Nullable
@@ -98,7 +94,7 @@ public class LumberjackJob implements Job {
         // Whatever pulled control away (going to sleep, eating, ...) may have moved the inhabitant far
         // from wherever this phase left off - re-approach the hut rather than resuming chopping in place.
         phase = Phase.GOTO_HUT;
-        containerTarget = null;
+        containerTarget.pos = null;
     }
 
     @Override
@@ -116,7 +112,7 @@ public class LumberjackJob implements Job {
     }
 
     private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = hasAxe(inhabitant) ? Phase.GOTO_TREE : Phase.FIND_AXE;
         }
         return true;
@@ -128,35 +124,21 @@ public class LumberjackJob implements Job {
             phase = Phase.GOTO_TREE;
             return true;
         }
-        if (containerTarget == null) {
-            containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), stack -> stack.is(ItemTags.AXES));
-            if (containerTarget == null) {
-                missingItem = Items.WOODEN_AXE;
-                phase = Phase.MISSING_TOOL;
-                waitTicks = MISSING_TOOL_RETRY_TICKS;
-                return true;
-            }
-        }
-        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+        boolean wasSearching = containerTarget.pos == null;
+        var axe = JobActions.takeFromContainer(inhabitant, level, workplace, actionPacer, nav, containerTarget,
+                stack -> stack.is(ItemTags.AXES), true);
+        if (!axe.isEmpty()) {
+            inhabitant.setItemSlot(EquipmentSlot.MAINHAND, axe);
+            missingItem = null;
+            phase = Phase.GOTO_TREE;
             return true;
         }
-        if (!actionPacer.isReady(containerTarget)) {
-            return true;
+        if (wasSearching && containerTarget.pos == null) {
+            // No axe anywhere in storage.
+            missingItem = Items.WOODEN_AXE;
+            phase = Phase.MISSING_TOOL;
+            waitTicks = MISSING_TOOL_RETRY_TICKS;
         }
-        lookAtBlock(inhabitant, containerTarget);
-        if (level.getBlockEntity(containerTarget) instanceof Container container) {
-            var axe = ContainerUtil.extractFirst(container, inhabitant, stack -> stack.is(ItemTags.AXES));
-            if (!axe.isEmpty()) {
-                inhabitant.setItemSlot(EquipmentSlot.MAINHAND, axe);
-                missingItem = null;
-                actionPacer.recordAction(containerTarget);
-                containerTarget = null;
-                phase = Phase.GOTO_TREE;
-                return true;
-            }
-        }
-        // The axe was gone by the time we arrived (race with another job/player) - rescan next tick.
-        containerTarget = null;
         return true;
     }
 
@@ -201,7 +183,7 @@ public class LumberjackJob implements Job {
             canopyLeaves.remove(candidate);
             canopyLeaves.remove(candidate.above());
         }
-        if (moveTowardsAndCheckArrival(inhabitant, standPos)) {
+        if (JobActions.walkTo(inhabitant, standPos, nav)) {
             inhabitant.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             phase = Phase.CHOPPING;
             waitTicks = CHOP_TICKS;
@@ -299,45 +281,29 @@ public class LumberjackJob implements Job {
         inhabitant.setChopping(true);
         var targetPos = trunk.getFirst();
 
-        // Turn the full body toward the target, not just the head.
+        // Turn the full body toward the target, not just the head (tickSwing below only handles the look).
         double dx = targetPos.getX() + 0.5 - inhabitant.getX();
         double dz = targetPos.getZ() + 0.5 - inhabitant.getZ();
         float targetYaw = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180.0 / Math.PI)) - 90.0f;
         inhabitant.setYRot(net.minecraft.util.Mth.approachDegrees(inhabitant.getYRot(), targetYaw, 10.0f));
         inhabitant.yBodyRot = inhabitant.getYRot();
-        inhabitant.getLookControl().setLookAt(targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5);
 
-        --waitTicks;
-
-        // At the impact frame (t=0.4s into the animation) break the block and play the sound.
-        if (waitTicks == CHOP_TICKS - CHOP_IMPACT_TICK) {
-            var pos = trunk.getFirst();
-            var state = level.getBlockState(pos);
-            if (state.isAir()) {
-                // Block already gone (broken by player etc.) — skip it.
-                trunk.removeFirst();
-            } else {
-                var soundType = state.getSoundType();
-                level.playSound(null, pos, soundType.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS,
-                        soundType.getVolume(), soundType.getPitch());
-                level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-                trunk.removeFirst();
-                inhabitant.getInventory().addItem(new ItemStack(state.getBlock().asItem()));
-                inhabitant.swing(InteractionHand.MAIN_HAND);
-                var axe = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
-                if (!axe.isEmpty()) {
-                    axe.hurtAndBreak(AXE_DAMAGE_PER_LOG, inhabitant, EquipmentSlot.MAINHAND);
-                }
-            }
+        var axe = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
+        var progress = new JobActions.SwingProgress();
+        progress.remainingTicks = waitTicks;
+        boolean cycleDone = JobActions.mineBlockWithTool(inhabitant, level, targetPos, axe, progress, CHOP_OPTIONS);
+        waitTicks = progress.remainingTicks;
+        if (cycleDone && !trunk.isEmpty() && trunk.getFirst().equals(targetPos)) {
+            trunk.removeFirst();
         }
 
         // End of the full animation cycle — decide what to do next.
-        if (waitTicks <= 0) {
+        if (cycleDone) {
             if (trunk.isEmpty()) {
                 phase = canopyLeaves.isEmpty() ? Phase.RETURN_TO_HUT : Phase.HARVESTING_LEAVES;
                 waitTicks = LEAF_HARVEST_TICKS;
                 inhabitant.setChopping(false);
-            } else if (inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
+            } else if (axe.isEmpty()) {
                 phase = Phase.RETURN_TO_HUT;
                 inhabitant.setChopping(false);
             } else {
@@ -385,36 +351,14 @@ public class LumberjackJob implements Job {
     }
 
     private boolean tickReturnToHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = Phase.DEPOSIT;
         }
         return true;
     }
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var carried = inhabitant.getInventory();
-        for (int i = 0; i < carried.getContainerSize(); i++) {
-            var stack = carried.getItem(i);
-            if (stack.isEmpty()) continue;
-            if (containerTarget == null) {
-                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
-                if (containerTarget == null) {
-                    // No room anywhere right now - stay put and retry next tick rather than getting stuck.
-                    return true;
-                }
-            }
-            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
-                return true;
-            }
-            if (!actionPacer.isReady(containerTarget)) {
-                return true;
-            }
-            lookAtBlock(inhabitant, containerTarget);
-            if (level.getBlockEntity(containerTarget) instanceof Container container) {
-                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
-            }
-            actionPacer.recordAction(containerTarget);
-            containerTarget = null;
+        if (!JobActions.depositCarriedItems(inhabitant, level, workplace, actionPacer, nav, containerTarget)) {
             return true;
         }
         phase = Phase.GOTO_HUT;
@@ -430,21 +374,6 @@ public class LumberjackJob implements Job {
             phase = Phase.FIND_AXE;
         }
         return true;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
-        boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
-        if (arrived) {
-            inhabitant.getNavigation().stop();
-            return true;
-        }
-        // The navigator can report itself as "done" while still short of the target (e.g. stopped
-        // just outside a doorway), so force a fresh path periodically rather than only when idle.
-        if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {
-            inhabitant.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
-            repathCooldown = REPATH_INTERVAL;
-        }
-        return false;
     }
 
     private boolean hasAxe(InhabitantEntity inhabitant) {
@@ -494,7 +423,7 @@ public class LumberjackJob implements Job {
         lines.add("Canopy leaves: " + canopyLeaves.size());
         lines.add("Stand pos: " + standPos);
         lines.add("Wait ticks: " + waitTicks + " / " + CHOP_TICKS + " (impact at " + CHOP_IMPACT_TICK + ")");
-        lines.add("Repath: " + repathCooldown + ", no-tree: " + noTreeCooldown);
+        lines.add("No-tree: " + noTreeCooldown);
         lines.add("Unreachable trees skipped: " + unreachableTreeBases.size());
         return lines;
     }
@@ -509,7 +438,7 @@ public class LumberjackJob implements Job {
         }
         tag.putLongArray("CanopyLeaves", canopyLeaves.stream().mapToLong(BlockPos::asLong).toArray());
         if (standPos != null) tag.putLong("StandPos", standPos.asLong());
-        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
+        if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
         if (missingItem != null) tag.putString("MissingItem", BuiltInRegistries.ITEM.getKey(missingItem).toString());
     }
 
@@ -529,7 +458,7 @@ public class LumberjackJob implements Job {
                 .<List<BlockPos>>map(arr -> Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toCollection(ArrayList::new)))
                 .orElse(List.of());
         standPos = tag.contains("StandPos") ? BlockPos.of(tag.getLongOr("StandPos", 0)) : null;
-        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
+        containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItem = tag.contains("MissingItem")
                 ? BuiltInRegistries.ITEM.getValue(Identifier.parse(tag.getStringOr("MissingItem", "")))
                 : null;

@@ -22,6 +22,7 @@ import java.util.UUID;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
 import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
+import com.sheepfromheaven.minenow.jobs.JobActions;
 
 /**
  * Courier job: checks the dominion's pending item requests, loads up to one stack per inventory
@@ -30,15 +31,12 @@ import com.sheepfromheaven.minenow.jobs.Job;
  * Phases: GOTO_WORKPLACE → FIND_REQUEST → GOTO_SOURCE (repeated per task) → GOTO_DEST → IDLE
  */
 public class CourierJob implements Job {
-    private static final int ARRIVE_DISTANCE_SQ = 4;
-    private static final int REPATH_INTERVAL = 60;
-    private static final double WALK_SPEED = 0.6;
     private static final int IDLE_WAIT_TICKS = 100;
 
     private enum Phase { GOTO_WORKPLACE, FIND_REQUEST, GOTO_SOURCE, GOTO_DEST, IDLE }
 
     private Phase phase = Phase.GOTO_WORKPLACE;
-    private int repathCooldown;
+    private final JobActions.Nav nav = new JobActions.Nav();
     private int idleTicks;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
 
@@ -86,7 +84,7 @@ public class CourierJob implements Job {
     }
 
     private boolean tickGotoWorkplace(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.walkTo(inhabitant, workplace.findApproachPos(level), nav)) {
             phase = Phase.FIND_REQUEST;
         }
         return true;
@@ -167,7 +165,7 @@ public class CourierJob implements Job {
         BlockPos srcNav = taskSourceNavTargets.get(taskIndex);
         Item item = taskItems.get(taskIndex);
 
-        if (!moveTowardsAndCheckArrival(inhabitant, srcNav)) return true;
+        if (!JobActions.walkTo(inhabitant, srcNav, nav)) return true;
         if (!actionPacer.isReady(src)) return true;
 
         lookAtBlock(inhabitant, src);
@@ -229,7 +227,7 @@ public class CourierJob implements Job {
             }
         }
 
-        if (!moveTowardsAndCheckArrival(inhabitant, destNavTarget != null ? destNavTarget : destPos)) return true;
+        if (!JobActions.walkTo(inhabitant, destNavTarget != null ? destNavTarget : destPos, nav)) return true;
         if (!actionPacer.isReady(destPos)) return true;
 
         lookAtBlock(inhabitant, destPos);
@@ -328,19 +326,6 @@ public class CourierJob implements Job {
             if (src != null) return src;
         }
         return null;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
-        boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
-        if (arrived) {
-            inhabitant.getNavigation().stop();
-            return true;
-        }
-        if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {
-            inhabitant.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
-            repathCooldown = REPATH_INTERVAL;
-        }
-        return false;
     }
 
     @Override
