@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.jobs.miner;
 
+import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
@@ -26,7 +27,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Walks to a mining claim (the Mine structure's work area, marker + radius), carves a stairway down
+ * Walks to a mining claim - the nearest placed {@code MineClaimMarkerBlock} assigned to this Mine,
+ * or the structure's own work area (marker + radius) if none have been placed - carves a stairway down
  * to {@link #MAX_DEPTH}, then tunnels forward breaking every block in its path - collecting ore drops
  * (recognized via {@code minecraft:ores}) as well as the plain spoil (stone, dirt, ...) - until the
  * claim's radius is exhausted or the inventory is full, then walks back and deposits everything at
@@ -104,7 +106,7 @@ public class MinerJob implements Job {
 
     private boolean tickGotoClaim(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         if (claimCenter == null) {
-            claimCenter = workplace.getWorkAreaCenter();
+            claimCenter = pickClaimCenter(inhabitant, level, workplace);
             claimRadius = workplace.getWorkAreaRadius();
         }
         if (JobActions.walkTo(inhabitant, claimCenter, nav)) {
@@ -113,6 +115,30 @@ public class MinerJob implements Job {
             phase = Phase.FIND_PICKAXE;
         }
         return true;
+    }
+
+    /**
+     * The nearest mine claim marker assigned to this Mine, if any, else the structure's own
+     * marker+radius work area - so a mine with no claims placed behaves exactly as before, while
+     * placing claim markers elsewhere extends the mineable area to (also) surround each of them.
+     */
+    private BlockPos pickClaimCenter(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        var dominion = DominionSavedData.get(level).getDominionById(inhabitant.getDominionId());
+        var claims = dominion != null ? dominion.getMineClaimsAssignedTo(workplace.getId()) : List.<com.sheepfromheaven.minenow.structure.mine.MineClaim>of();
+        if (claims.isEmpty()) {
+            return workplace.getWorkAreaCenter();
+        }
+        var from = inhabitant.blockPosition();
+        var best = claims.get(0).getMarkerPos();
+        double bestDistSq = best.distSqr(from);
+        for (var claim : claims) {
+            double distSq = claim.getMarkerPos().distSqr(from);
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
+                best = claim.getMarkerPos();
+            }
+        }
+        return best;
     }
 
     /**

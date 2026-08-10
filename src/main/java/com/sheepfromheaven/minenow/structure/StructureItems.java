@@ -78,6 +78,14 @@ public class StructureItems {
                             .stacksTo(16)
             ));
 
+    public static final DeferredHolder<Item, Item> MINE_CLAIM_MARKER = ITEMS.register("mine_claim_marker",
+            () -> new net.minecraft.world.item.BlockItem(
+                    StructureBlocks.MINE_CLAIM_MARKER.get(),
+                    new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "mine_claim_marker")))
+                            .stacksTo(16)
+            ));
+
     public static final DeferredHolder<Item, Item> STRUCTURE_BASE = ITEMS.register("structure_base",
             () -> new Item(
                     new Item.Properties()

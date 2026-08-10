@@ -16,6 +16,7 @@ import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.structure.field.CropKind;
 import com.sheepfromheaven.minenow.structure.field.Field;
+import com.sheepfromheaven.minenow.structure.mine.MineClaim;
 
 public class DominionSavedData extends SavedData {
     private final Map<UUID, Dominion> dominions;
@@ -124,6 +125,17 @@ public class DominionSavedData extends SavedData {
             })
     );
 
+    private static final Codec<MineClaim> MINE_CLAIM_CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                    Codec.STRING.fieldOf("id").forGetter(c -> c.getId().toString()),
+                    BlockPos.CODEC.fieldOf("markerPos").forGetter(MineClaim::getMarkerPos),
+                    Codec.STRING.optionalFieldOf("assignedStructureId", "").forGetter(c -> c.getAssignedStructureId() != null ? c.getAssignedStructureId().toString() : "")
+            ).apply(instance, (id, markerPos, assignedStructureId) ->
+                    new MineClaim(UUID.fromString(id), markerPos,
+                            assignedStructureId.isEmpty() ? null : UUID.fromString(assignedStructureId))
+            )
+    );
+
     private static final Codec<DominionInhabitant> INHABITANT_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.STRING.fieldOf("id").forGetter(v -> v.getId().toString()),
@@ -159,11 +171,12 @@ public class DominionSavedData extends SavedData {
                     INHABITANT_CODEC.listOf().optionalFieldOf("villagers", List.of()).forGetter(d -> new ArrayList<>(d.getInhabitants())),
                     PATH_NODE_CODEC.listOf().optionalFieldOf("pathNodes", List.of()).forGetter(d -> new ArrayList<>(d.getPathNodes())),
                     FIELD_CODEC.listOf().optionalFieldOf("fields", List.of()).forGetter(d -> new ArrayList<>(d.getFields())),
+                    MINE_CLAIM_CODEC.listOf().optionalFieldOf("mineClaims", List.of()).forGetter(d -> new ArrayList<>(d.getMineClaims())),
                     Codec.STRING.optionalFieldOf("pendingImmigrantId", "").forGetter(d -> d.getPendingImmigrantId() != null ? d.getPendingImmigrantId().toString() : ""),
                     Codec.LONG.optionalFieldOf("nextImmigrationAttemptTick", 0L).forGetter(Dominion::getNextImmigrationAttemptTick),
                     net.minecraft.world.level.block.entity.BannerPatternLayers.CODEC.optionalFieldOf("bannerPattern", net.minecraft.world.level.block.entity.BannerPatternLayers.EMPTY)
                             .forGetter(Dominion::getBannerPattern)
-            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes, fields, pendingImmigrantId, nextImmigrationAttemptTick, bannerPattern) -> {
+            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes, fields, mineClaims, pendingImmigrantId, nextImmigrationAttemptTick, bannerPattern) -> {
                 var dominion = new Dominion(UUID.fromString(id), UUID.fromString(owner), name, pos, DominionTier.valueOf(tier));
                 for (var s : structures) {
                     dominion.addStructure(s);
@@ -176,6 +189,9 @@ public class DominionSavedData extends SavedData {
                 }
                 for (var f : fields) {
                     dominion.addField(f);
+                }
+                for (var c : mineClaims) {
+                    dominion.addMineClaim(c);
                 }
                 dominion.setPendingImmigrantId(pendingImmigrantId.isEmpty() ? null : UUID.fromString(pendingImmigrantId));
                 dominion.setNextImmigrationAttemptTick(nextImmigrationAttemptTick);

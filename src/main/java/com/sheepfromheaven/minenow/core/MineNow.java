@@ -294,6 +294,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithWoodenPickaxeLeavesIronOreUntouched);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_with_stone_pickaxe_mines_coal_and_iron_ore"),
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithStonePickaxeMinesCoalAndIronOre);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_tunnels_around_a_placed_mine_claim_outside_the_structures_own_work_area"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerTunnelsAroundAPlacedMineClaimOutsideTheStructuresOwnWorkArea);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "fresh_structure_starts_at_level_one"),
                             com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::freshStructureStartsAtLevelOne);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_up_fails_without_meeting_next_level_requirements"),
