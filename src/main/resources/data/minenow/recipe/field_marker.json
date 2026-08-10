@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:carved_pumpkin",
+    "#c:seeds"
+  ],
+  "result": {
+    "count": 1,
+    "id": "minenow:field_marker"
+  }
+}
