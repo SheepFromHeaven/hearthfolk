@@ -154,6 +154,12 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeFindsBareGrass);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_plantable_spot_in_range_skips_spot_already_holding_a_sapling"),
                             com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeSkipsSpotAlreadyHoldingASapling);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "planting_a_sapling_consumes_only_one_from_the_stack"),
+                            com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::plantingASaplingConsumesOnlyOneFromTheStack);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_plantable_spot_in_range_skips_spots_within_min_spacing_of_existing_sapling"),
+                            com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeSkipsSpotsWithinMinSpacingOfExistingSapling);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "forester_plants_multiple_saplings_on_the_same_trip_without_returning_to_the_hut"),
+                            com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::foresterPlantsMultipleSaplingsOnTheSameTripWithoutReturningToTheHut);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "felling_trunk_harvests_canopy_leaves_directly"),
                             com.sheepfromheaven.minenow.jobs.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "interrupting_leaf_harvest_still_harvests_canopy_leaves_on_resume"),

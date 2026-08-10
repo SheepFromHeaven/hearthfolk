@@ -163,7 +163,7 @@ public class ForesterJob implements Job {
             return true;
         }
         var above = plantSpot.above();
-        var sapling = ContainerUtil.extractFirst(inhabitant.getInventory(), inhabitant, stack -> stack.is(ItemTags.SAPLINGS));
+        var sapling = ContainerUtil.extractOne(inhabitant.getInventory(), inhabitant, stack -> stack.is(ItemTags.SAPLINGS));
         if (!sapling.isEmpty() && level.getBlockState(above).isAir()) {
             var block = sapling.getItem() instanceof net.minecraft.world.item.BlockItem blockItem ? blockItem.getBlock() : null;
             if (block != null) {
@@ -172,6 +172,8 @@ public class ForesterJob implements Job {
                 level.playSound(null, above, soundType.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS,
                         soundType.getVolume(), soundType.getPitch());
                 inhabitant.swing(InteractionHand.MAIN_HAND);
+            } else {
+                inhabitant.getInventory().addItem(sapling);
             }
         } else if (!sapling.isEmpty()) {
             // Spot got taken (another sapling grew, a player built there, ...) while we waited - put the
@@ -180,7 +182,9 @@ public class ForesterJob implements Job {
         }
         unreachableSpots.add(plantSpot);
         plantSpot = null;
-        phase = Phase.GOTO_HUT;
+        // Keep working the same trip out while saplings remain in the carried stack, rather than
+        // walking all the way back to the hut just to immediately turn around for the next one.
+        phase = hasSapling(inhabitant) ? Phase.GOTO_SPOT : Phase.GOTO_HUT;
         return false;
     }
 
