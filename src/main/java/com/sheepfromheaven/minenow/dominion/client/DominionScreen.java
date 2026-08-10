@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow.dominion.client;
 
 import com.sheepfromheaven.minenow.dominion.DominionTier;
+import com.sheepfromheaven.minenow.dominion.inventory.DominionMenu;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import com.sheepfromheaven.minenow.pathfinding.client.RangeTracker;
 import net.minecraft.client.Minecraft;
@@ -8,15 +9,17 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
 import sheepfromheaven.screenspec.runtime.CustomWidgetRegistry;
 import sheepfromheaven.screenspec.runtime.ScreenSpecLoader;
-import sheepfromheaven.screenspec.runtime.SpecScreen;
+import sheepfromheaven.screenspec.runtime.SpecContainerScreen;
 import sheepfromheaven.screenspec.runtime.WidgetSpec;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class DominionScreen extends SpecScreen {
+/** The dominion screen: general info, inhabitants, requirements progress, and a Banner tab with a real slot for applying a template banner's design - see {@link DominionMenu}. */
+public class DominionScreen extends SpecContainerScreen<DominionMenu> {
 
     private static final int INHABITANT_LINE_H = 12;
     private static final int SATISFIED   = 0xFF3CB043;
@@ -37,24 +40,19 @@ public class DominionScreen extends SpecScreen {
     private final MilestoneProgress milestoneProgress;
     private String inputValue;
 
-    private DominionScreen(String dominionName, DominionTier tier, BlockPos bannerPos,
-                            List<String> inhabitantNames, String milestoneProgressData) {
-        super(Component.translatable("screen.minenow.dominion_screen"),
-                ScreenSpecLoader.fromResource(Minecraft.getInstance().getResourceManager(), "minenow", "dominion_screen"));
-        this.dominionName = dominionName;
-        this.tier = tier;
-        this.bannerPos = bannerPos;
-        this.inhabitantNames = inhabitantNames;
-        this.milestoneProgress = parseMilestoneProgress(milestoneProgressData);
+    public DominionScreen(DominionMenu menu, Inventory playerInventory, Component title) {
+        super(menu, playerInventory, title, ScreenSpecLoader.fromResource(
+                Minecraft.getInstance().getResourceManager(), "minenow", "dominion_screen"));
+        this.dominionName = menu.getDominionName();
+        this.tier = DominionTier.valueOf(menu.getTier());
+        this.bannerPos = menu.getBannerPos();
+        this.inhabitantNames = menu.getInhabitantNames().isEmpty()
+                ? List.of() : List.of(menu.getInhabitantNames().split(","));
+        this.milestoneProgress = parseMilestoneProgress(menu.getMilestoneProgressData());
         this.inputValue = dominionName;
 
         CustomWidgetRegistry.register("minenow:inhabitant_area", (graphics, widget, x, y) -> renderInhabitantArea(graphics, x, y));
         CustomWidgetRegistry.register("minenow:requirements_area", (graphics, widget, x, y) -> renderRequirementsArea(graphics, x, y));
-    }
-
-    public static DominionScreen create(String dominionName, DominionTier tier, BlockPos bannerPos,
-                                         List<String> inhabitantNames, String milestoneProgressData) {
-        return new DominionScreen(dominionName, tier, bannerPos, inhabitantNames, milestoneProgressData);
     }
 
     @Nullable
@@ -89,6 +87,7 @@ public class DominionScreen extends SpecScreen {
                 rebuildWidgets();
             }
             case "minenow.requests" -> ModNetwork.sendRequestRequestsScreen(bannerPos);
+            case "minenow.apply_banner" -> ModNetwork.sendApplyBanner(bannerPos);
         }
     }
 

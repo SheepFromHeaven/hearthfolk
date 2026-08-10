@@ -90,6 +90,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.inhabitant.gametest.GoHomeGoalTests::inhabitantOpensGateToReachBed);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "disbanding_dominion_converts_inhabitants_and_clears_data"),
                             com.sheepfromheaven.minenow.dominion.gametest.DominionTests::disbandingDominionConvertsInhabitantsAndClearsData);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "applying_banner_pattern_updates_placed_banner"),
+                            com.sheepfromheaven.minenow.dominion.gametest.DominionTests::applyingBannerPatternUpdatesPlacedBanner);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "destroying_structure_removes_inhabitant_home_and_job"),
                             com.sheepfromheaven.minenow.dominion.gametest.DominionTests::destroyingStructureRemovesInhabitantHomeAndJob);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "assigning_new_home_unassigns_inhabitant_from_previous_home"),
@@ -330,6 +332,9 @@ public final class MineNow {
             event.register(
                     com.sheepfromheaven.minenow.storage.inventory.ModMenus.STRUCTURE_FILTER_TYPE.get(),
                     com.sheepfromheaven.minenow.structure.client.StructureFilterScreen::new);
+            event.register(
+                    com.sheepfromheaven.minenow.storage.inventory.ModMenus.DOMINION_TYPE.get(),
+                    com.sheepfromheaven.minenow.dominion.client.DominionScreen::new);
         }
 
         @SubscribeEvent

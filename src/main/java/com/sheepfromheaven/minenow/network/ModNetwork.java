@@ -59,9 +59,9 @@ public class ModNetwork {
         registrar.playToServer(RefreshStructureScreenPacket.TYPE, RefreshStructureScreenPacket.CODEC, ModNetwork::handleRefreshStructureScreen);
         registrar.playToServer(RequestRequestsScreenPacket.TYPE, RequestRequestsScreenPacket.CODEC, ModNetwork::handleRequestRequestsScreen);
         registrar.playToServer(ImmigrationDecisionPacket.TYPE, ImmigrationDecisionPacket.CODEC, ModNetwork::handleImmigrationDecision);
+        registrar.playToServer(ApplyBannerPacket.TYPE, ApplyBannerPacket.CODEC, ModNetwork::handleApplyBanner);
 
         // clientbound
-        registrar.playToClient(OpenDominionScreenPacket.TYPE, OpenDominionScreenPacket.CODEC, ModNetwork::handleOpenDominionScreen);
         registrar.playToClient(OpenInhabitantScreenPacket.TYPE, OpenInhabitantScreenPacket.CODEC, ModNetwork::handleOpenInhabitantScreen);
         registrar.playToClient(OpenStructureScreenPacket.TYPE, OpenStructureScreenPacket.CODEC, ModNetwork::handleOpenStructureScreen);
         registrar.playToClient(OpenRequestsScreenPacket.TYPE, OpenRequestsScreenPacket.CODEC, ModNetwork::handleOpenRequestsScreen);
@@ -331,13 +331,32 @@ public class ModNetwork {
         }
     }
 
+    private static void handleApplyBanner(ApplyBannerPacket msg, IPayloadContext ctx) {
+        var player = (ServerPlayer) ctx.player();
+        var level = player.level();
+        var data = DominionSavedData.get(level);
+        var dominion = data.getDominionAt(msg.bannerPos());
+        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
+        if (!(player.containerMenu instanceof com.sheepfromheaven.minenow.dominion.inventory.DominionMenu menu)) return;
+        if (!msg.bannerPos().equals(menu.getBannerPos())) return;
+
+        var template = menu.getBannerStack();
+        if (template.isEmpty()) return;
+        var pattern = template.getOrDefault(
+                net.minecraft.core.component.DataComponents.BANNER_PATTERNS,
+                net.minecraft.world.level.block.entity.BannerPatternLayers.EMPTY);
+
+        dominion.setBannerPattern(pattern);
+        data.setDirty();
+        if (level.getBlockEntity(msg.bannerPos()) instanceof TownBannerBlockEntity be) {
+            be.setBannerPattern(pattern);
+        }
+        player.displayClientMessage(Component.literal("Banner design applied!"), false);
+    }
+
     // -------------------------------------------------------------------------
     // Clientbound handlers
     // -------------------------------------------------------------------------
-
-    private static void handleOpenDominionScreen(OpenDominionScreenPacket msg, IPayloadContext ctx) {
-        com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.openDominionScreen(msg);
-    }
 
     private static void handleOpenInhabitantScreen(OpenInhabitantScreenPacket msg, IPayloadContext ctx) {
         com.sheepfromheaven.minenow.network.client.ClientNetworkHandlers.openInhabitantScreen(msg);
@@ -403,9 +422,21 @@ public class ModNetwork {
                 String.valueOf(milestone.minPopulation()),
                 String.valueOf(milestone.minStructures()),
                 String.valueOf(milestone.minStoredResources()));
-        PacketDistributor.sendToPlayer(player, new OpenDominionScreenPacket(
-                dominion.getName(), dominion.getTier().name(), bannerPos, names, milestoneProgress
-        ));
+        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                        (containerId, inv, p) -> new com.sheepfromheaven.minenow.dominion.inventory.DominionMenu(
+                                containerId, inv, dominion.getName(), dominion.getTier().name(), bannerPos, names, milestoneProgress),
+                        Component.literal(dominion.getName())),
+                buf -> {
+                    buf.writeUtf(dominion.getName());
+                    buf.writeUtf(dominion.getTier().name());
+                    buf.writeBlockPos(bannerPos);
+                    buf.writeUtf(names);
+                    buf.writeUtf(milestoneProgress);
+                });
+    }
+
+    public static void sendApplyBanner(BlockPos bannerPos) {
+        ClientPacketDistributor.sendToServer(new ApplyBannerPacket(bannerPos));
     }
 
     public static void sendOpenInhabitantScreen(ServerPlayer player, InhabitantEntity entity, Dominion dominion) {
@@ -611,16 +642,11 @@ public class ModNetwork {
      * {@code population,structureCount,storedResources,minPopulation,minStructures,minStoredResources}
      * tuple, or empty when already at the max tier (no next-tier milestone to show).
      */
-    public record OpenDominionScreenPacket(String dominionName, String tier, BlockPos bannerPos,
-                                            String inhabitantNames, String milestoneProgress) implements CustomPacketPayload {
-        public static final Type<OpenDominionScreenPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_dominion_screen"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, OpenDominionScreenPacket> CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::dominionName,
-                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::tier,
-                BlockPos.STREAM_CODEC, OpenDominionScreenPacket::bannerPos,
-                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::inhabitantNames,
-                ByteBufCodecs.STRING_UTF8, OpenDominionScreenPacket::milestoneProgress,
-                OpenDominionScreenPacket::new
+    public record ApplyBannerPacket(BlockPos bannerPos) implements CustomPacketPayload {
+        public static final Type<ApplyBannerPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "apply_banner"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, ApplyBannerPacket> CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, ApplyBannerPacket::bannerPos,
+                ApplyBannerPacket::new
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
