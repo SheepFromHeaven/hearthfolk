@@ -44,6 +44,8 @@ public class DominionStructure {
      * underground or on a distant hill instead of the clearing right around the nursery.
      */
     private static final int PLANT_SEARCH_HEIGHT = 3;
+    /** Minimum horizontal distance a new sapling must keep from any sapling already planted nearby. */
+    private static final int MIN_SAPLING_SPACING = 2;
 
     private final UUID id;
     private String name;
@@ -811,14 +813,18 @@ public class DominionStructure {
     }
 
     /**
-     * Scans the structure's work area for a bare patch of dirt/grass with open air above it and no
-     * sapling already growing there - a spot a forester can plant a new sapling on. Skips any position
-     * in {@code excluded} (spots already known to be unreachable), mirroring
-     * {@link #findTreeShapeInRange(Level, Set)}.
+     * Scans the structure's work area for a bare patch of dirt/grass with open air above it, no
+     * sapling already growing there, and no other sapling planted within
+     * {@link #MIN_SAPLING_SPACING} blocks - a spot a forester can plant a new sapling on, spaced out
+     * so the nursery doesn't end up as one solid row. Skips any position in {@code excluded} (spots
+     * already known to be unreachable), mirroring {@link #findTreeShapeInRange(Level, Set)}. Picks
+     * randomly among every valid candidate rather than always the first found, so plantings scatter
+     * across the work area instead of filling it in scan order.
      */
     public Optional<BlockPos> findPlantableSpotInRange(Level level, Set<BlockPos> excluded) {
         int radius = workAreaRadius;
         var center = getWorkAreaCenter();
+        var candidates = new ArrayList<BlockPos>();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (dx * dx + dz * dz > radius * radius) continue;
@@ -827,13 +833,31 @@ public class DominionStructure {
                     if (excluded.contains(pos)) continue;
                     if (!isSaplingSoil(level.getBlockState(pos))) continue;
                     var above = pos.above();
-                    if (!level.getBlockState(above).is(BlockTags.SAPLINGS) && hasOpenAirAbove(level, pos, 1)) {
-                        return Optional.of(pos);
+                    if (!level.getBlockState(above).is(BlockTags.SAPLINGS) && hasOpenAirAbove(level, pos, 1)
+                            && !hasNearbySapling(level, pos)) {
+                        candidates.add(pos);
                     }
                 }
             }
         }
-        return Optional.empty();
+        if (candidates.isEmpty()) return Optional.empty();
+        return Optional.of(candidates.get(level.getRandom().nextInt(candidates.size())));
+    }
+
+    /** True if a sapling is already planted within {@link #MIN_SAPLING_SPACING} blocks of {@code pos}. */
+    private boolean hasNearbySapling(Level level, BlockPos pos) {
+        for (int dx = -MIN_SAPLING_SPACING; dx <= MIN_SAPLING_SPACING; dx++) {
+            for (int dz = -MIN_SAPLING_SPACING; dz <= MIN_SAPLING_SPACING; dz++) {
+                if (dx == 0 && dz == 0) continue;
+                if (dx * dx + dz * dz > MIN_SAPLING_SPACING * MIN_SAPLING_SPACING) continue;
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (level.getBlockState(pos.offset(dx, dy, dz)).is(BlockTags.SAPLINGS)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /** Ground a sapling can be planted on - vanilla saplings require this same set (see SaplingBlock's mayPlaceOn), which isn't fully captured by {@link BlockTags#DIRT} (that tag excludes grass/mycelium/podzol). */

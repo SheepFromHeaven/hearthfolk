@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
@@ -650,6 +651,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             immigrationJob.save(immigrationTag);
             output.store("ImmigrationJob", CompoundTag.CODEC, immigrationTag);
         }
+        ContainerHelper.saveAllItems(output, inventory.getItems());
     }
 
     @Override
@@ -668,5 +670,6 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
             input.read("WorkGoal", CompoundTag.CODEC).ifPresent(workGoal::load);
         }
         input.read("ImmigrationJob", CompoundTag.CODEC).ifPresent(tag -> immigrationJob = ImmigrationJob.load(tag));
+        ContainerHelper.loadAllItems(input, inventory.getItems());
     }
 }
