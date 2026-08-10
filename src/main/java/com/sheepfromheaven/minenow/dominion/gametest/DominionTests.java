@@ -7,6 +7,7 @@ import com.sheepfromheaven.minenow.structure.StructureBlocks;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlock;
+import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlockEntity;
 import com.sheepfromheaven.minenow.dominion.DominionInhabitant;
 import com.sheepfromheaven.minenow.dominion.DominionSavedData;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
@@ -14,13 +15,18 @@ import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.inhabitant.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.BannerPatterns;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.AABB;
 
@@ -71,6 +77,36 @@ public class DominionTests {
 
             helper.assertTrue(DominionSavedData.get(level).getDominionById(dominionId) == null,
                     "Dominion data should be deleted after disband");
+        });
+    }
+
+    /** Mirrors ModNetwork's handleApplyBanner exactly, minus the network/menu plumbing, to isolate whether the actual apply logic works. */
+    public static void applyingBannerPatternUpdatesPlacedBanner(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        var level = helper.getLevel();
+        var bannerRelPos = new BlockPos(1, 1, 1);
+        var bannerPos = helper.absolutePos(bannerRelPos);
+        helper.setBlock(bannerRelPos, TownBannerBlocks.TOWN_BANNER.get());
+
+        var data = DominionSavedData.get(level);
+        var dominion = data.createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+
+        var patternRegistry = level.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
+        var creeper = patternRegistry.get(BannerPatterns.CREEPER).orElseThrow();
+        var pattern = new BannerPatternLayers(java.util.List.of(new BannerPatternLayers.Layer(creeper, DyeColor.RED)));
+
+        dominion.setBannerPattern(pattern);
+        data.setDirty();
+        if (level.getBlockEntity(bannerPos) instanceof TownBannerBlockEntity be) {
+            be.setBannerPattern(pattern);
+        }
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(dominion.getBannerPattern().equals(pattern), "Dominion should store the applied pattern");
+            helper.assertTrue(level.getBlockEntity(bannerPos) instanceof TownBannerBlockEntity be
+                            && be.getPatterns().equals(pattern),
+                    "Placed banner's block entity should reflect the applied pattern");
         });
     }
 

@@ -3,9 +3,13 @@ package com.sheepfromheaven.minenow.dominion.townbanner;
 import com.sheepfromheaven.minenow.dominion.townbanner.TownBannerBlocks;
 import com.sheepfromheaven.minenow.dominion.DominionTier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.AbstractBannerBlock;
+import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -39,6 +43,17 @@ public class TownBannerBlockEntity extends BannerBlockEntity {
     public void setDominionData(String name, DominionTier tier) {
         this.dominionName = name;
         this.tier = tier;
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    /** Applies the dominion's designed banner pattern to this placed banner, reusing vanilla's item-component plumbing. */
+    public void setBannerPattern(BannerPatternLayers pattern) {
+        var stack = new ItemStack(BannerBlock.byColor(getBaseColor()));
+        stack.set(DataComponents.BANNER_PATTERNS, pattern);
+        applyImplicitComponents(stack);
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);

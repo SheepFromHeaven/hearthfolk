@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.level.block.state.properties.BedPart;
 
 import javax.annotation.Nullable;
@@ -22,6 +23,8 @@ public class Dominion {
     private String name;
     private BlockPos bannerPos;
     private DominionTier tier;
+    /** The dominion's official banner design, applied to the placed banner block and inhabitant capes. */
+    private BannerPatternLayers bannerPattern = BannerPatternLayers.EMPTY;
     private final Map<UUID, DominionStructure> structures = new HashMap<>();
     private final Map<UUID, DominionInhabitant> inhabitants = new HashMap<>();
     private final Map<UUID, DominionPathNode> pathNodes = new HashMap<>();
@@ -83,6 +86,14 @@ public class Dominion {
 
     public void setTier(DominionTier tier) {
         this.tier = tier;
+    }
+
+    public BannerPatternLayers getBannerPattern() {
+        return bannerPattern;
+    }
+
+    public void setBannerPattern(BannerPatternLayers bannerPattern) {
+        this.bannerPattern = bannerPattern;
     }
 
     public void addStructure(DominionStructure structure) {

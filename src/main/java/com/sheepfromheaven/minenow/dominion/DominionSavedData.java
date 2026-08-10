@@ -158,8 +158,10 @@ public class DominionSavedData extends SavedData {
                     PATH_NODE_CODEC.listOf().optionalFieldOf("pathNodes", List.of()).forGetter(d -> new ArrayList<>(d.getPathNodes())),
                     FIELD_CODEC.listOf().optionalFieldOf("fields", List.of()).forGetter(d -> new ArrayList<>(d.getFields())),
                     Codec.STRING.optionalFieldOf("pendingImmigrantId", "").forGetter(d -> d.getPendingImmigrantId() != null ? d.getPendingImmigrantId().toString() : ""),
-                    Codec.LONG.optionalFieldOf("nextImmigrationAttemptTick", 0L).forGetter(Dominion::getNextImmigrationAttemptTick)
-            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes, fields, pendingImmigrantId, nextImmigrationAttemptTick) -> {
+                    Codec.LONG.optionalFieldOf("nextImmigrationAttemptTick", 0L).forGetter(Dominion::getNextImmigrationAttemptTick),
+                    net.minecraft.world.level.block.entity.BannerPatternLayers.CODEC.optionalFieldOf("bannerPattern", net.minecraft.world.level.block.entity.BannerPatternLayers.EMPTY)
+                            .forGetter(Dominion::getBannerPattern)
+            ).apply(instance, (id, owner, name, pos, tier, structures, villagers, pathNodes, fields, pendingImmigrantId, nextImmigrationAttemptTick, bannerPattern) -> {
                 var dominion = new Dominion(UUID.fromString(id), UUID.fromString(owner), name, pos, DominionTier.valueOf(tier));
                 for (var s : structures) {
                     dominion.addStructure(s);
@@ -175,6 +177,7 @@ public class DominionSavedData extends SavedData {
                 }
                 dominion.setPendingImmigrantId(pendingImmigrantId.isEmpty() ? null : UUID.fromString(pendingImmigrantId));
                 dominion.setNextImmigrationAttemptTick(nextImmigrationAttemptTick);
+                dominion.setBannerPattern(bannerPattern);
                 return dominion;
             })
     );

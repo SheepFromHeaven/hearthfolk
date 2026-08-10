@@ -23,6 +23,7 @@ final class TownBannerBehavior {
 
             if (level.getBlockEntity(pos) instanceof TownBannerBlockEntity be) {
                 be.setDominionData(dominion.getName(), dominion.getTier());
+                be.setBannerPattern(dominion.getBannerPattern());
             }
         }
     }

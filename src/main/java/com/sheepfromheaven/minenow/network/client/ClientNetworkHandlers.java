@@ -1,12 +1,10 @@
 package com.sheepfromheaven.minenow.network.client;
 
-import com.sheepfromheaven.minenow.dominion.DominionTier;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.network.ModNetwork;
 import net.minecraft.client.Minecraft;
 
 import java.util.List;
-import com.sheepfromheaven.minenow.dominion.client.DominionScreen;
 import com.sheepfromheaven.minenow.inhabitant.immigration.client.ImmigrantRequestScreen;
 import com.sheepfromheaven.minenow.inhabitant.client.InhabitantScreen;
 import com.sheepfromheaven.minenow.pathfinding.client.PathNodeTracker;
@@ -17,17 +15,6 @@ import com.sheepfromheaven.minenow.jobs.lumberjack.client.TreeScanOutlineTracker
 // Kept separate from ModNetwork so that class's bytecode never references Minecraft/Screen
 // directly; those references crash channel registration on a dedicated server.
 public class ClientNetworkHandlers {
-    public static void openDominionScreen(ModNetwork.OpenDominionScreenPacket msg) {
-        Minecraft.getInstance().execute(() -> {
-            var inhabitantNames = msg.inhabitantNames().isEmpty()
-                    ? List.<String>of()
-                    : List.of(msg.inhabitantNames().split(","));
-            Minecraft.getInstance().setScreen(DominionScreen.create(
-                    msg.dominionName(), DominionTier.valueOf(msg.tier()), msg.bannerPos(), inhabitantNames,
-                    msg.milestoneProgress()));
-        });
-    }
-
     public static void openInhabitantScreen(ModNetwork.OpenInhabitantScreenPacket msg) {
         Minecraft.getInstance().execute(() -> {
             var issues = msg.issuesData().isEmpty() ? List.<String>of()

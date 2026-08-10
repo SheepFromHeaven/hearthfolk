@@ -2,12 +2,13 @@
   "id": "dominion_screen",
   "modId": "minenow",
   "width": 220,
-  "height": 210,
+  "height": 220,
   "actions": [
     "on_input",
     "rename",
     "toggle_range",
-    "requests"
+    "requests",
+    "apply_banner"
   ],
   "bindingsSchema": {
     "name": {
@@ -34,7 +35,7 @@
       "x": 0,
       "y": 16,
       "w": 220,
-      "h": 170,
+      "h": 180,
       "text": "",
       "icon": null,
       "props": {}
@@ -44,7 +45,7 @@
       "type": "tab",
       "x": 0,
       "y": 0,
-      "w": 72,
+      "w": 55,
       "h": 0,
       "text": "General",
       "icon": null,
@@ -73,9 +74,9 @@
     {
       "id": "tab_inhabitants",
       "type": "tab",
-      "x": 74,
+      "x": 55,
       "y": 0,
-      "w": 72,
+      "w": 55,
       "h": 0,
       "text": "Inhabitants",
       "icon": null,
@@ -85,11 +86,23 @@
     {
       "id": "tab_requirements",
       "type": "tab",
-      "x": 148,
+      "x": 110,
       "y": 0,
-      "w": 72,
+      "w": 55,
       "h": 0,
       "text": "Requirements",
+      "icon": null,
+      "props": {},
+      "parentId": "tabs_main"
+    },
+    {
+      "id": "tab_banner",
+      "type": "tab",
+      "x": 165,
+      "y": 0,
+      "w": 55,
+      "h": 0,
+      "text": "Banner",
       "icon": null,
       "props": {},
       "parentId": "tabs_main"
@@ -200,7 +213,79 @@
       },
       "id": "requirements_area",
       "parentId": "tab_requirements"
+    },
+    {
+      "id": "label_banner_hint",
+      "type": "label",
+      "x": 16,
+      "y": 12,
+      "w": 188,
+      "h": 10,
+      "text": "Place a banner below, then Apply:",
+      "icon": null,
+      "props": {
+        "color": "-12566464",
+        "shadow": "false",
+        "align": "center"
+      },
+      "parentId": "tab_banner"
+    },
+    {
+      "id": "banner_slot",
+      "type": "inventory_area",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_banner"
+    },
+    {
+      "id": "btn_apply_banner",
+      "type": "button",
+      "x": 60,
+      "y": 46,
+      "w": 100,
+      "h": 20,
+      "text": "Apply",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_banner",
+      "action": "apply_banner"
+    },
+    {
+      "id": "player_inv",
+      "type": "inventory_area",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_banner"
+    },
+    {
+      "id": "player_hotbar",
+      "type": "inventory_area",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "text": "",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_banner"
     }
   ],
+  "container": {
+    "slots": [
+      { "id": "banner_slot",   "x": 101, "y": 56,  "cols": 1, "slot_size": 18, "viewport_rows": 1 },
+      { "id": "player_inv",    "x": 16,  "y": 112, "cols": 9, "slot_size": 18, "viewport_rows": 3, "source": "player" },
+      { "id": "player_hotbar", "x": 16,  "y": 170, "cols": 9, "slot_size": 18, "viewport_rows": 1, "source": "player_hotbar" }
+    ]
+  },
   "appVersion": "0.9.1"
 }
