@@ -160,6 +160,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::findPlantableSpotInRangeSkipsSpotsWithinMinSpacingOfExistingSapling);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "forester_plants_multiple_saplings_on_the_same_trip_without_returning_to_the_hut"),
                             com.sheepfromheaven.minenow.jobs.forester.gametest.ForesterTests::foresterPlantsMultipleSaplingsOnTheSameTripWithoutReturningToTheHut);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "inventory_survives_a_save_and_load_round_trip"),
+                            com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantPersistenceTests::inventorySurvivesASaveAndLoadRoundTrip);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "felling_trunk_harvests_canopy_leaves_directly"),
                             com.sheepfromheaven.minenow.jobs.gametest.LumberjackLeafHarvestTests::fellingTrunkHarvestsCanopyLeavesDirectly);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "interrupting_leaf_harvest_still_harvests_canopy_leaves_on_resume"),
