@@ -49,9 +49,9 @@ public class JobInterruptionTests {
 
     /**
      * Reproduces the "unassigning a job leaves the old goal/status hanging around" bug: unassigning
-     * an inhabitant mid-chop (workStructureId cleared to null, as Dominion.unassignWorker does) should
-     * drop the stale job entirely rather than leaving its last phase and status text pointing at a
-     * job site the inhabitant is no longer assigned to.
+     * an inhabitant mid-chop (as Dominion.unassignWorker does - clearJob() pushed straight into the
+     * goal) should drop the stale job entirely rather than leaving its last phase and status text
+     * pointing at a job site the inhabitant is no longer assigned to.
      */
     public static void unassigningLumberjackMidChopDropsStaleJob(GameTestHelper helper) {
         var setup = setUpChoppingLumberjack(helper);
@@ -60,16 +60,44 @@ public class JobInterruptionTests {
         helper.assertTrue("Chopping wood".equals(workGoal.getStatusDescription()),
                 "Job should have reached the chopping phase before being unassigned");
 
-        // Mirrors Dominion.unassignWorker: only the data field is cleared, nothing calls into the goal.
+        // Mirrors Dominion.unassignWorker: pushes the teardown into the goal directly.
         setup.inhabitant.setWorkStructureId(null);
-        workGoal.stop();
+        workGoal.clearJob();
 
-        helper.succeedWhen(() -> {
-            helper.assertTrue("Idle".equals(workGoal.getStatusDescription()),
-                    "Unassigning mid-job should drop the stale job instead of leaving old status text behind");
-            helper.assertTrue(workGoal.getJobType() == null,
-                    "Unassigning mid-job should leave no job type behind once the goal has stopped");
-        });
+        helper.assertTrue("Idle".equals(workGoal.getStatusDescription()),
+                "Unassigning mid-job should drop the stale job instead of leaving old status text behind");
+        helper.assertTrue(workGoal.getJobType() == null,
+                "Unassigning mid-job should leave no job type behind once cleared");
+        helper.succeed();
+    }
+
+    /**
+     * Reproduces the "reassigned worker keeps showing the old job's status" bug: reassigning a worker
+     * to a different structure mid-chop (as Dominion.assignWorker does - assignJob() pushed straight
+     * into the goal) must tear down the old job against its own workplace and start the new one
+     * immediately, instead of continuing to tick the old job against the new workplace.
+     */
+    public static void reassigningLumberjackMidChopDropsStaleJob(GameTestHelper helper) {
+        var setup = setUpChoppingLumberjack(helper);
+        var workGoal = setup.workGoal;
+
+        helper.assertTrue("Chopping wood".equals(workGoal.getStatusDescription()),
+                "Job should have reached the chopping phase before being reassigned");
+
+        var level = helper.getLevel();
+        var dominion = DominionSavedData.get(level).getDominionById(setup.inhabitant.getDominionId());
+        var otherStructure = new DominionStructure("Other", StructureType.LUMBERYARD,
+                setup.markerPos.offset(10, 0, 10), Set.of(setup.markerPos.offset(10, 0, 10)));
+        dominion.addStructure(otherStructure);
+
+        // Mirrors Dominion.assignWorker: pushes the reassignment into the goal directly.
+        setup.inhabitant.setWorkStructureId(otherStructure.getId());
+        workGoal.assignJob(otherStructure);
+
+        helper.assertTrue("Heading to work".equals(workGoal.getStatusDescription()),
+                "Reassigning mid-job should replace the stale job with a fresh one for the new structure "
+                        + "instead of leaving old status text behind");
+        helper.succeed();
     }
 
     /**

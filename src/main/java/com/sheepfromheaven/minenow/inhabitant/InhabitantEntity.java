@@ -622,6 +622,16 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         this.workStructureId = workStructureId;
     }
 
+    /** Tears down whatever job is currently running (if any) and starts the one for {@code structure}. */
+    public void assignJob(com.sheepfromheaven.minenow.structure.DominionStructure structure) {
+        if (workGoal != null) workGoal.assignJob(structure);
+    }
+
+    /** Tears down whatever job is currently running, leaving the inhabitant idle. */
+    public void clearJob() {
+        if (workGoal != null) workGoal.clearJob();
+    }
+
     public float getNeed(NeedType type) {
         return needs.getOrDefault(type, 0.0f);
     }

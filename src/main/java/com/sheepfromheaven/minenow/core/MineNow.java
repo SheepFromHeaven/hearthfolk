@@ -214,6 +214,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.inhabitant.gametest.JobInterruptionTests::unassigningLumberjackMidChopDropsStaleJob);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "job_does_not_start_when_structure_requirements_are_unmet"),
                             com.sheepfromheaven.minenow.inhabitant.gametest.JobInterruptionTests::jobDoesNotStartWhenStructureRequirementsAreUnmet);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "reassigning_lumberjack_mid_chop_drops_stale_job"),
+                            com.sheepfromheaven.minenow.inhabitant.gametest.JobInterruptionTests::reassigningLumberjackMidChopDropsStaleJob);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "issues_list_survives_network_round_trip"),
                             com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantIssuesNetworkTests::issuesListSurvivesNetworkRoundTrip);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "bed_in_real_detected_room_satisfies_house_requirement"),

@@ -188,6 +188,7 @@ public class Dominion {
             var entity = level.getEntity(inhabitant.getEntityUuid());
             if (entity instanceof InhabitantEntity ie) {
                 ie.setWorkStructureId(null);
+                ie.clearJob();
             }
         }
         structure.removeWorker(workerId);
@@ -290,6 +291,7 @@ public class Dominion {
         var entity = level.getEntity(newInhabitant.getEntityUuid());
         if (entity instanceof InhabitantEntity ie) {
             ie.setWorkStructureId(structure.getId());
+            ie.assignJob(structure);
         }
         return true;
     }
