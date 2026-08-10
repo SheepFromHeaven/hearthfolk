@@ -5,11 +5,11 @@ import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
 import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
+import com.sheepfromheaven.minenow.jobs.JobActions;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.Container;
 import net.minecraft.world.level.block.Block;
 
 import javax.annotation.Nullable;
@@ -27,9 +27,6 @@ import java.util.stream.Collectors;
  * everything else it's carrying back at the hut before heading home at night.
  */
 public class FarmerJob implements Job {
-    private static final int ARRIVE_DISTANCE_SQ = 4;
-    private static final int REPATH_INTERVAL = 60;
-    private static final double WALK_SPEED = 0.6;
     /** ~0.5s at 20 TPS - fast, but the harvest still reads as a distinct visible action. */
     private static final int HARVEST_TICKS = 10;
     private static final int NO_CROP_RETRY_TICKS = 100;
@@ -40,11 +37,10 @@ public class FarmerJob implements Job {
     @Nullable
     private BlockPos targetCrop;
     private int waitTicks;
-    private int repathCooldown;
     private int noCropCooldown;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
-    @Nullable
-    private BlockPos containerTarget;
+    private final JobActions.Nav nav = new JobActions.Nav();
+    private final JobActions.ContainerTarget containerTarget = new JobActions.ContainerTarget();
     /** Crop positions found to have no valid replant this cycle, so they're skipped in future scans until harvested. */
     private final Set<BlockPos> skippedCrops = new HashSet<>();
 
@@ -66,7 +62,7 @@ public class FarmerJob implements Job {
     @Override
     public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         phase = Phase.GOTO_HUT;
-        containerTarget = null;
+        containerTarget.pos = null;
         targetCrop = null;
     }
 
@@ -82,7 +78,7 @@ public class FarmerJob implements Job {
     }
 
     private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = Phase.GOTO_FIELD;
         }
         return true;
@@ -106,7 +102,7 @@ public class FarmerJob implements Job {
             }
             targetCrop = found;
         }
-        if (moveTowardsAndCheckArrival(inhabitant, targetCrop)) {
+        if (JobActions.walkTo(inhabitant, targetCrop, nav)) {
             inhabitant.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             phase = Phase.HARVESTING;
             waitTicks = HARVEST_TICKS;
@@ -159,53 +155,18 @@ public class FarmerJob implements Job {
     }
 
     private boolean tickReturnToHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = Phase.DEPOSIT;
         }
         return true;
     }
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var carried = inhabitant.getInventory();
-        for (int i = 0; i < carried.getContainerSize(); i++) {
-            var stack = carried.getItem(i);
-            if (stack.isEmpty()) continue;
-            if (containerTarget == null) {
-                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
-                if (containerTarget == null) {
-                    // No room anywhere right now - stay put and retry next tick rather than getting stuck.
-                    return true;
-                }
-            }
-            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
-                return true;
-            }
-            if (!actionPacer.isReady(containerTarget)) {
-                return true;
-            }
-            lookAtBlock(inhabitant, containerTarget);
-            if (level.getBlockEntity(containerTarget) instanceof Container container) {
-                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
-            }
-            actionPacer.recordAction(containerTarget);
-            containerTarget = null;
+        if (!JobActions.depositCarriedItems(inhabitant, level, workplace, actionPacer, nav, containerTarget)) {
             return true;
         }
         phase = Phase.GOTO_FIELD;
         skippedCrops.clear();
-        return false;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
-        boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
-        if (arrived) {
-            inhabitant.getNavigation().stop();
-            return true;
-        }
-        if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {
-            inhabitant.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
-            repathCooldown = REPATH_INTERVAL;
-        }
         return false;
     }
 
@@ -247,7 +208,7 @@ public class FarmerJob implements Job {
         lines.add("Phase: " + phase);
         lines.add("Target crop: " + targetCrop);
         lines.add("Wait ticks: " + waitTicks + " / " + HARVEST_TICKS);
-        lines.add("Repath: " + repathCooldown + ", no-crop: " + noCropCooldown);
+        lines.add("No-crop: " + noCropCooldown);
         lines.add("Skipped crops: " + skippedCrops.size());
         return lines;
     }
@@ -258,7 +219,7 @@ public class FarmerJob implements Job {
         tag.putInt("WaitTicks", waitTicks);
         actionPacer.save(tag, "Action");
         if (targetCrop != null) tag.putLong("TargetCrop", targetCrop.asLong());
-        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
+        if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
         tag.putLongArray("SkippedCrops", skippedCrops.stream().mapToLong(BlockPos::asLong).toArray());
     }
 
@@ -272,7 +233,7 @@ public class FarmerJob implements Job {
         waitTicks = tag.getIntOr("WaitTicks", 0);
         actionPacer.load(tag, "Action");
         targetCrop = tag.contains("TargetCrop") ? BlockPos.of(tag.getLongOr("TargetCrop", 0)) : null;
-        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
+        containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         skippedCrops.clear();
         tag.getLongArray("SkippedCrops")
                 .ifPresent(arr -> skippedCrops.addAll(Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toList())));

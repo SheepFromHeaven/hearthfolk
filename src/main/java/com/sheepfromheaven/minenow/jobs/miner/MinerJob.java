@@ -3,8 +3,8 @@ package com.sheepfromheaven.minenow.jobs.miner;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
-import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
+import com.sheepfromheaven.minenow.jobs.JobActions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -13,7 +13,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -35,8 +34,6 @@ import java.util.stream.Collectors;
  * phase/resume/deposit conventions.
  */
 public class MinerJob implements Job {
-    private static final int ARRIVE_DISTANCE_SQ = 4;
-    private static final int REPATH_INTERVAL = 60;
     private static final double WALK_SPEED = 0.6;
     /** How far below the claim marker/work-area's Y the stairway descends before tunneling begins. */
     public static final int MAX_DEPTH = 12;
@@ -64,11 +61,10 @@ public class MinerJob implements Job {
     private int depthDug;
     private int tunnelSteps;
     private int waitTicks;
-    private int repathCooldown;
     private int noClaimCooldown;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
-    @Nullable
-    private BlockPos containerTarget;
+    private final JobActions.Nav nav = new JobActions.Nav();
+    private final JobActions.ContainerTarget containerTarget = new JobActions.ContainerTarget();
 
     @Override
     public boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -90,7 +86,7 @@ public class MinerJob implements Job {
         // Whatever pulled control away may have moved the inhabitant far from the dig site - re-approach
         // the claim rather than resuming mid-tunnel from an arbitrary position.
         phase = Phase.GOTO_CLAIM;
-        containerTarget = null;
+        containerTarget.pos = null;
     }
 
     @Override
@@ -111,7 +107,7 @@ public class MinerJob implements Job {
             claimCenter = workplace.getWorkAreaCenter();
             claimRadius = workplace.getWorkAreaRadius();
         }
-        if (moveTowardsAndCheckArrival(inhabitant, claimCenter)) {
+        if (JobActions.walkTo(inhabitant, claimCenter, nav)) {
             cursor = claimCenter;
             depthDug = 0;
             phase = Phase.FIND_PICKAXE;
@@ -132,36 +128,21 @@ public class MinerJob implements Job {
             waitTicks = MINE_TICKS;
             return true;
         }
-        if (containerTarget == null) {
-            containerTarget = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level), stack -> stack.is(ItemTags.PICKAXES));
-            if (containerTarget == null) {
-                // No pickaxe anywhere - proceed bare-handed rather than stalling forever; ore that
-                // requires a tool simply gets skipped (see breakAndCollect) until one becomes available.
-                phase = Phase.DIG_STAIRWAY;
-                waitTicks = MINE_TICKS;
-                return true;
-            }
-        }
-        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+        boolean wasSearching = containerTarget.pos == null;
+        var pickaxe = JobActions.takeFromContainer(inhabitant, level, workplace, actionPacer, nav, containerTarget,
+                stack -> stack.is(ItemTags.PICKAXES), true);
+        if (!pickaxe.isEmpty()) {
+            inhabitant.setItemSlot(EquipmentSlot.MAINHAND, pickaxe);
+            phase = Phase.DIG_STAIRWAY;
+            waitTicks = MINE_TICKS;
             return true;
         }
-        if (!actionPacer.isReady(containerTarget)) {
-            return true;
+        if (wasSearching && containerTarget.pos == null) {
+            // No pickaxe anywhere - proceed bare-handed rather than stalling forever; ore that
+            // requires a tool simply gets skipped (see breakAndCollect) until one becomes available.
+            phase = Phase.DIG_STAIRWAY;
+            waitTicks = MINE_TICKS;
         }
-        lookAtBlock(inhabitant, containerTarget);
-        if (level.getBlockEntity(containerTarget) instanceof Container container) {
-            var pickaxe = ContainerUtil.extractFirst(container, inhabitant, stack -> stack.is(ItemTags.PICKAXES));
-            if (!pickaxe.isEmpty()) {
-                inhabitant.setItemSlot(EquipmentSlot.MAINHAND, pickaxe);
-                actionPacer.recordAction(containerTarget);
-                containerTarget = null;
-                phase = Phase.DIG_STAIRWAY;
-                waitTicks = MINE_TICKS;
-                return true;
-            }
-        }
-        // The pickaxe was gone by the time we arrived (race with another job/player) - rescan next tick.
-        containerTarget = null;
         return true;
     }
 
@@ -180,20 +161,20 @@ public class MinerJob implements Job {
         // instead of marching monotonically off in one direction and burning through the claim's
         // (deliberately small, max 6) radius budget before tunneling even starts.
         var dir = SPIRAL_DIRECTIONS[depthDug % SPIRAL_DIRECTIONS.length];
-        lookAtBlock(inhabitant, cursor.relative(dir));
-        if (--waitTicks > 0) {
-            return true;
-        }
-        // One stair step: carve forward+down (floor and headroom) so the inhabitant can walk onto it.
-        var next = cursor.below().relative(dir);
-        breakAndCollect(inhabitant, level, next);
-        breakAndCollect(inhabitant, level, next.above());
-        breakAndCollect(inhabitant, level, cursor.relative(dir));
-        cursor = next;
-        depthDug++;
-        maybePlaceSupport(level, workplace, cursor, dir);
-        inhabitant.getNavigation().moveTo(cursor.getX() + 0.5, cursor.getY(), cursor.getZ() + 0.5, WALK_SPEED);
-        waitTicks = MINE_TICKS;
+        var swingProgress = new JobActions.SwingProgress();
+        swingProgress.remainingTicks = waitTicks;
+        boolean done = JobActions.tickSwing(inhabitant, cursor.relative(dir), swingProgress, MINE_TICKS, MINE_TICKS, () -> {
+            // One stair step: carve forward+down (floor and headroom) so the inhabitant can walk onto it.
+            var next = cursor.below().relative(dir);
+            breakAndCollect(inhabitant, level, next);
+            breakAndCollect(inhabitant, level, next.above());
+            breakAndCollect(inhabitant, level, cursor.relative(dir));
+            cursor = next;
+            depthDug++;
+            maybePlaceSupport(level, workplace, cursor, dir);
+            inhabitant.getNavigation().moveTo(cursor.getX() + 0.5, cursor.getY(), cursor.getZ() + 0.5, WALK_SPEED);
+        });
+        waitTicks = done ? MINE_TICKS : swingProgress.remainingTicks;
         return true;
     }
 
@@ -203,19 +184,19 @@ public class MinerJob implements Job {
             return true;
         }
         var front = cursor.relative(tunnelDirection);
-        lookAtBlock(inhabitant, front);
-        if (--waitTicks > 0) {
-            return true;
-        }
-        breakAndCollect(inhabitant, level, front);
-        breakAndCollect(inhabitant, level, front.above());
-        breakOreNeighbors(inhabitant, level, front);
-        breakOreNeighbors(inhabitant, level, front.above());
-        cursor = front;
-        tunnelSteps++;
-        maybePlaceSupport(level, workplace, cursor, tunnelDirection);
-        inhabitant.getNavigation().moveTo(cursor.getX() + 0.5, cursor.getY(), cursor.getZ() + 0.5, WALK_SPEED);
-        waitTicks = MINE_TICKS;
+        var swingProgress = new JobActions.SwingProgress();
+        swingProgress.remainingTicks = waitTicks;
+        boolean done = JobActions.tickSwing(inhabitant, front, swingProgress, MINE_TICKS, MINE_TICKS, () -> {
+            breakAndCollect(inhabitant, level, front);
+            breakAndCollect(inhabitant, level, front.above());
+            breakOreNeighbors(inhabitant, level, front);
+            breakOreNeighbors(inhabitant, level, front.above());
+            cursor = front;
+            tunnelSteps++;
+            maybePlaceSupport(level, workplace, cursor, tunnelDirection);
+            inhabitant.getNavigation().moveTo(cursor.getX() + 0.5, cursor.getY(), cursor.getZ() + 0.5, WALK_SPEED);
+        });
+        waitTicks = done ? MINE_TICKS : swingProgress.remainingTicks;
         return true;
     }
 
@@ -305,35 +286,14 @@ public class MinerJob implements Job {
 
     private boolean tickReturnStairway(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         // The stairway and tunnel are already carved open, so ordinary pathfinding can retrace them.
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = Phase.DEPOSIT;
         }
         return true;
     }
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var carried = inhabitant.getInventory();
-        for (int i = 0; i < carried.getContainerSize(); i++) {
-            var stack = carried.getItem(i);
-            if (stack.isEmpty()) continue;
-            if (containerTarget == null) {
-                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
-                if (containerTarget == null) {
-                    return true;
-                }
-            }
-            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
-                return true;
-            }
-            if (!actionPacer.isReady(containerTarget)) {
-                return true;
-            }
-            lookAtBlock(inhabitant, containerTarget);
-            if (level.getBlockEntity(containerTarget) instanceof Container container) {
-                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
-            }
-            actionPacer.recordAction(containerTarget);
-            containerTarget = null;
+        if (!JobActions.depositCarriedItems(inhabitant, level, workplace, actionPacer, nav, containerTarget)) {
             return true;
         }
         // Cycle finished - claim may still have more to give, so head back and continue tunneling.
@@ -348,19 +308,6 @@ public class MinerJob implements Job {
             phase = Phase.GOTO_CLAIM;
         }
         return true;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
-        boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
-        if (arrived) {
-            inhabitant.getNavigation().stop();
-            return true;
-        }
-        if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {
-            inhabitant.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
-            repathCooldown = REPATH_INTERVAL;
-        }
-        return false;
     }
 
     @Override
@@ -411,7 +358,7 @@ public class MinerJob implements Job {
             tag.putLong("ClaimCenter", claimCenter.asLong());
             tag.putInt("ClaimRadius", claimRadius);
         }
-        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
+        if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
     }
 
     @Override
@@ -433,6 +380,6 @@ public class MinerJob implements Job {
         cursor = tag.contains("Cursor") ? BlockPos.of(tag.getLongOr("Cursor", 0)) : null;
         claimCenter = tag.contains("ClaimCenter") ? BlockPos.of(tag.getLongOr("ClaimCenter", 0)) : null;
         claimRadius = tag.getIntOr("ClaimRadius", 0);
-        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
+        containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
     }
 }

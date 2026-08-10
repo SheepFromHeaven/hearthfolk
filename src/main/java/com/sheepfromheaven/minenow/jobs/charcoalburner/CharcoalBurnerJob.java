@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
 import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
+import com.sheepfromheaven.minenow.jobs.JobActions;
 
 /**
  * Goes to the kiln, finds logs in storage, loads them into the kiln's actual Furnace block as both
@@ -25,19 +26,15 @@ import com.sheepfromheaven.minenow.jobs.Job;
  * {@link com.sheepfromheaven.minenow.jobs.cook.CookJob}'s Smoker-driven approach.
  */
 public class CharcoalBurnerJob implements Job {
-    private static final int ARRIVE_DISTANCE_SQ = 4;
-    private static final int REPATH_INTERVAL = 60;
-    private static final double WALK_SPEED = 0.6;
     private static final int MISSING_LOGS_RETRY_TICKS = 100;
 
     private enum Phase { GOTO_HUT, FIND_LOGS, BURNING, DEPOSIT, MISSING_LOGS }
 
     private Phase phase = Phase.GOTO_HUT;
     private int waitTicks;
-    private int repathCooldown;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
-    @Nullable
-    private BlockPos containerTarget;
+    private final JobActions.Nav nav = new JobActions.Nav();
+    private final JobActions.ContainerTarget containerTarget = new JobActions.ContainerTarget();
     /** Furnace slot (0 input / 1 fuel) a log already picked up is destined for, or -1 if not carrying one. */
     private int pendingFurnaceSlot = -1;
     /** Furnace slot the current {@link #containerTarget} trip is fetching for, mirrors {@link #pendingFurnaceSlot} once loaded. */
@@ -68,7 +65,7 @@ public class CharcoalBurnerJob implements Job {
         // result stays in its output slot, and a log already picked up but not yet loaded just stays
         // in the inhabitant's own inventory.
         phase = Phase.GOTO_HUT;
-        containerTarget = null;
+        containerTarget.pos = null;
     }
 
     @Override
@@ -83,7 +80,7 @@ public class CharcoalBurnerJob implements Job {
     }
 
     private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = Phase.FIND_LOGS;
         }
         return true;
@@ -102,7 +99,7 @@ public class CharcoalBurnerJob implements Job {
 
         // Already carrying a log picked up on a previous tick - walk it over to the furnace and load it in.
         if (pendingFurnaceSlot != -1) {
-            if (!moveTowardsAndCheckArrival(inhabitant, furnacePos)) {
+            if (!JobActions.walkTo(inhabitant, furnacePos, nav)) {
                 return true;
             }
             if (!actionPacer.isReady(furnacePos)) {
@@ -133,49 +130,35 @@ public class CharcoalBurnerJob implements Job {
             return true;
         }
 
-        if (containerTarget == null) {
-            // Logs serve as both the smelting input and the fuel, so either slot pulls from the same
-            // "any log" search - no separate fuel category needed like Cook's food/fuel split.
-            var logContainer = ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level),
-                    CharcoalRecipes::isLog);
-
-            if (logContainer == null) {
-                reportMissing(inhabitant, workplace, level,
-                        DominionStructure.WorkerIssue.urgentCategory("logs", ItemCategory.LOGS));
-                phase = Phase.MISSING_LOGS;
-                waitTicks = MISSING_LOGS_RETRY_TICKS;
-                return true;
-            }
-            clearMissing(inhabitant, workplace, level);
-
-            containerTarget = logContainer;
+        // Logs serve as both the smelting input and the fuel, so either slot pulls from the same
+        // "any log" search - no separate fuel category needed like Cook's food/fuel split.
+        boolean wasSearching = containerTarget.pos == null;
+        if (wasSearching) {
             fetchSlot = needInput ? 0 : 1;
         }
-
-        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+        // Grab just one log, not the whole stack - unlike Cook's food/fuel split, both furnace slots
+        // here draw from the same "any log" match, so grabbing a full stack for the first slot would
+        // starve the second trip that needs the same barrel for the other slot.
+        var extracted = JobActions.takeFromContainer(inhabitant, level, workplace, actionPacer, nav, containerTarget,
+                CharcoalRecipes::isLog, false);
+        if (wasSearching && containerTarget.pos != null) {
+            // Found a container to fetch from this call - clear the "missing logs" issue right away
+            // rather than waiting for the trip there and the extraction itself to finish.
+            clearMissing(inhabitant, workplace, level);
+        }
+        if (!extracted.isEmpty()) {
+            inhabitant.getInventory().addItem(extracted);
+            pendingFurnaceSlot = fetchSlot;
+            fetchSlot = -1;
             return true;
         }
-        if (!actionPacer.isReady(containerTarget)) {
-            return true;
+        if (wasSearching && containerTarget.pos == null) {
+            reportMissing(inhabitant, workplace, level,
+                    DominionStructure.WorkerIssue.urgentCategory("logs", ItemCategory.LOGS));
+            phase = Phase.MISSING_LOGS;
+            waitTicks = MISSING_LOGS_RETRY_TICKS;
+            fetchSlot = -1;
         }
-        lookAtBlock(inhabitant, containerTarget);
-        if (level.getBlockEntity(containerTarget) instanceof Container container) {
-            // Grab just one log, not the whole stack - unlike Cook's food/fuel split, both furnace
-            // slots here draw from the same "any log" match, so grabbing a full stack for the first
-            // slot would starve the second trip that needs the same barrel for the other slot.
-            var extracted = ContainerUtil.extractOne(container, inhabitant, CharcoalRecipes::isLog);
-            if (!extracted.isEmpty()) {
-                inhabitant.getInventory().addItem(extracted);
-                pendingFurnaceSlot = fetchSlot;
-                fetchSlot = -1;
-                actionPacer.recordAction(containerTarget);
-                containerTarget = null;
-                return true;
-            }
-        }
-        // The log was gone by the time we arrived (race with another job/player) - rescan next tick.
-        containerTarget = null;
-        fetchSlot = -1;
         return true;
     }
 
@@ -215,29 +198,7 @@ public class CharcoalBurnerJob implements Job {
     }
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var carried = inhabitant.getInventory();
-        for (int i = 0; i < carried.getContainerSize(); i++) {
-            var stack = carried.getItem(i);
-            if (stack.isEmpty()) continue;
-            if (containerTarget == null) {
-                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
-                if (containerTarget == null) {
-                    // No room anywhere right now - stay put and retry next tick rather than getting stuck.
-                    return true;
-                }
-            }
-            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
-                return true;
-            }
-            if (!actionPacer.isReady(containerTarget)) {
-                return true;
-            }
-            lookAtBlock(inhabitant, containerTarget);
-            if (level.getBlockEntity(containerTarget) instanceof Container container) {
-                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
-            }
-            actionPacer.recordAction(containerTarget);
-            containerTarget = null;
+        if (!JobActions.depositCarriedItems(inhabitant, level, workplace, actionPacer, nav, containerTarget)) {
             return true;
         }
         phase = Phase.GOTO_HUT;
@@ -251,19 +212,6 @@ public class CharcoalBurnerJob implements Job {
             phase = Phase.FIND_LOGS;
         }
         return true;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
-        boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
-        if (arrived) {
-            inhabitant.getNavigation().stop();
-            return true;
-        }
-        if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {
-            inhabitant.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
-            repathCooldown = REPATH_INTERVAL;
-        }
-        return false;
     }
 
     @Override
@@ -296,7 +244,7 @@ public class CharcoalBurnerJob implements Job {
         actionPacer.save(tag, "Action");
         tag.putInt("PendingFurnaceSlot", pendingFurnaceSlot);
         tag.putInt("FetchSlot", fetchSlot);
-        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
+        if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
     }
 
     @Override
@@ -310,6 +258,6 @@ public class CharcoalBurnerJob implements Job {
         actionPacer.load(tag, "Action");
         pendingFurnaceSlot = tag.getIntOr("PendingFurnaceSlot", -1);
         fetchSlot = tag.getIntOr("FetchSlot", -1);
-        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
+        containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
     }
 }

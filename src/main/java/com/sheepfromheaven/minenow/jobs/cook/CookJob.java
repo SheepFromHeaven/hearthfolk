@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
 import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
+import com.sheepfromheaven.minenow.jobs.JobActions;
 
 /**
  * Goes to the tavern, finds raw food and fuel in storage, loads them into the tavern's actual
@@ -25,19 +26,15 @@ import com.sheepfromheaven.minenow.jobs.Job;
  * deposits the cooked result back into storage once the smoker produces it.
  */
 public class CookJob implements Job {
-    private static final int ARRIVE_DISTANCE_SQ = 4;
-    private static final int REPATH_INTERVAL = 60;
-    private static final double WALK_SPEED = 0.6;
     private static final int MISSING_INGREDIENTS_RETRY_TICKS = 100;
 
     private enum Phase { GOTO_HUT, FIND_INGREDIENTS, COOKING, DEPOSIT, MISSING_INGREDIENTS }
 
     private Phase phase = Phase.GOTO_HUT;
     private int waitTicks;
-    private int repathCooldown;
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
-    @Nullable
-    private BlockPos containerTarget;
+    private final JobActions.Nav nav = new JobActions.Nav();
+    private final JobActions.ContainerTarget containerTarget = new JobActions.ContainerTarget();
     /** Smoker slot (0 food / 1 fuel) an ingredient already picked up is destined for, or -1 if not carrying one. */
     private int pendingSmokerSlot = -1;
     /** Smoker slot the current {@link #containerTarget} trip is fetching for, mirrors {@link #pendingSmokerSlot} once loaded. */
@@ -70,7 +67,7 @@ public class CookJob implements Job {
         // already loaded stays in the smoker, the result (if any) stays in its output slot, and an
         // ingredient already picked up but not yet loaded just stays in the inhabitant's own inventory.
         phase = Phase.GOTO_HUT;
-        containerTarget = null;
+        containerTarget.pos = null;
     }
 
     @Override
@@ -85,7 +82,7 @@ public class CookJob implements Job {
     }
 
     private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (moveTowardsAndCheckArrival(inhabitant, workplace.findApproachPos(level))) {
+        if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
             phase = Phase.FIND_INGREDIENTS;
         }
         return true;
@@ -105,7 +102,7 @@ public class CookJob implements Job {
         // Already carrying an ingredient picked up on a previous tick - walk it over to the smoker
         // and load it in, rather than teleporting it straight from the barrel.
         if (pendingSmokerSlot != -1) {
-            if (!moveTowardsAndCheckArrival(inhabitant, smokerPos)) {
+            if (!JobActions.walkTo(inhabitant, smokerPos, nav)) {
                 return true;
             }
             if (!actionPacer.isReady(smokerPos)) {
@@ -137,14 +134,12 @@ public class CookJob implements Job {
             return true;
         }
 
-        if (containerTarget == null) {
+        if (containerTarget.pos == null) {
             var foodContainer = needFood
-                    ? ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level),
-                            stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent())
+                    ? JobActions.searchStructureForItem(level, workplace, stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent())
                     : null;
             var fuelContainer = needFuel
-                    ? ContainerUtil.findContainerWith(level, workplace.findStorageContainers(level),
-                            stack -> CookingRecipes.isFuel(level, stack))
+                    ? JobActions.searchStructureForItem(level, workplace, stack -> CookingRecipes.isFuel(level, stack))
                     : null;
 
             if (needFood && foodContainer == null) {
@@ -161,10 +156,10 @@ public class CookJob implements Job {
             }
 
             if (foodContainer != null) {
-                containerTarget = foodContainer;
+                containerTarget.pos = foodContainer;
                 fetchSlot = 0;
             } else if (fuelContainer != null) {
-                containerTarget = fuelContainer;
+                containerTarget.pos = fuelContainer;
                 fetchSlot = 1;
             } else {
                 phase = Phase.MISSING_INGREDIENTS;
@@ -177,29 +172,19 @@ public class CookJob implements Job {
                 ? stack -> CookingRecipes.findSmokingRecipe(level, stack).isPresent()
                 : stack -> CookingRecipes.isFuel(level, stack);
 
-        if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
+        // Grab the whole matching stack, not just one item - the smoker's slot holds a full stack and
+        // cooks through it automatically, so this avoids a barrel trip per single item.
+        var extracted = JobActions.takeFromContainer(inhabitant, level, workplace, actionPacer, nav, containerTarget, matcher, true);
+        if (!extracted.isEmpty()) {
+            inhabitant.getInventory().addItem(extracted);
+            pendingSmokerSlot = fetchSlot;
+            fetchSlot = -1;
             return true;
         }
-        if (!actionPacer.isReady(containerTarget)) {
-            return true;
+        if (containerTarget.pos == null) {
+            // The ingredient was gone by the time we arrived (race with another job/player) - rescan next tick.
+            fetchSlot = -1;
         }
-        lookAtBlock(inhabitant, containerTarget);
-        if (level.getBlockEntity(containerTarget) instanceof Container container) {
-            // Grab the whole matching stack, not just one item - the smoker's slot holds a full
-            // stack and cooks through it automatically, so this avoids a barrel trip per single item.
-            var extracted = ContainerUtil.extractFirst(container, inhabitant, matcher);
-            if (!extracted.isEmpty()) {
-                inhabitant.getInventory().addItem(extracted);
-                pendingSmokerSlot = fetchSlot;
-                fetchSlot = -1;
-                actionPacer.recordAction(containerTarget);
-                containerTarget = null;
-                return true;
-            }
-        }
-        // The ingredient was gone by the time we arrived (race with another job/player) - rescan next tick.
-        containerTarget = null;
-        fetchSlot = -1;
         return true;
     }
 
@@ -240,29 +225,7 @@ public class CookJob implements Job {
     }
 
     private boolean tickDeposit(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        var carried = inhabitant.getInventory();
-        for (int i = 0; i < carried.getContainerSize(); i++) {
-            var stack = carried.getItem(i);
-            if (stack.isEmpty()) continue;
-            if (containerTarget == null) {
-                containerTarget = ContainerUtil.findContainerAccepting(level, workplace.findStorageContainers(level), stack);
-                if (containerTarget == null) {
-                    // No room anywhere right now - stay put and retry next tick rather than getting stuck.
-                    return true;
-                }
-            }
-            if (!moveTowardsAndCheckArrival(inhabitant, containerTarget)) {
-                return true;
-            }
-            if (!actionPacer.isReady(containerTarget)) {
-                return true;
-            }
-            lookAtBlock(inhabitant, containerTarget);
-            if (level.getBlockEntity(containerTarget) instanceof Container container) {
-                carried.setItem(i, ContainerUtil.insertItem(container, inhabitant, stack));
-            }
-            actionPacer.recordAction(containerTarget);
-            containerTarget = null;
+        if (!JobActions.depositCarriedItems(inhabitant, level, workplace, actionPacer, nav, containerTarget)) {
             return true;
         }
         phase = Phase.GOTO_HUT;
@@ -277,19 +240,6 @@ public class CookJob implements Job {
             phase = Phase.FIND_INGREDIENTS;
         }
         return true;
-    }
-
-    private boolean moveTowardsAndCheckArrival(InhabitantEntity inhabitant, BlockPos target) {
-        boolean arrived = inhabitant.distanceToSqr(target.getX() + 0.5, target.getY(), target.getZ() + 0.5) <= ARRIVE_DISTANCE_SQ;
-        if (arrived) {
-            inhabitant.getNavigation().stop();
-            return true;
-        }
-        if (inhabitant.getNavigation().isDone() || --repathCooldown <= 0) {
-            inhabitant.getNavigation().moveTo(target.getX() + 0.5, target.getY(), target.getZ() + 0.5, WALK_SPEED);
-            repathCooldown = REPATH_INTERVAL;
-        }
-        return false;
     }
 
     private boolean isDaytime(ServerLevel level) {
@@ -327,7 +277,7 @@ public class CookJob implements Job {
         actionPacer.save(tag, "Action");
         tag.putInt("PendingSmokerSlot", pendingSmokerSlot);
         tag.putInt("FetchSlot", fetchSlot);
-        if (containerTarget != null) tag.putLong("ContainerTarget", containerTarget.asLong());
+        if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
         if (!missingItemLabels.isEmpty()) tag.putString("MissingItemLabels", String.join(",", missingItemLabels));
     }
 
@@ -342,7 +292,7 @@ public class CookJob implements Job {
         actionPacer.load(tag, "Action");
         pendingSmokerSlot = tag.getIntOr("PendingSmokerSlot", -1);
         fetchSlot = tag.getIntOr("FetchSlot", -1);
-        containerTarget = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
+        containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
         missingItemLabels.clear();
         String saved = tag.getStringOr("MissingItemLabels", "");
         if (!saved.isEmpty()) {
