@@ -43,6 +43,7 @@ public final class MineNow {
         com.sheepfromheaven.minenow.inhabitant.ModEntities.register(modBus);
         com.sheepfromheaven.minenow.inhabitant.InhabitantMenus.register(modBus);
         com.sheepfromheaven.minenow.storage.inventory.ModMenus.register(modBus);
+        ModCriteriaTriggers.register(modBus);
 
         modBus.addListener(this::commonSetup);
 

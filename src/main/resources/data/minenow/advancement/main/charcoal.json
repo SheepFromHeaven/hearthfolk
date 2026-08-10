@@ -1,0 +1,34 @@
+{
+  "parent": "minenow:main/structure_base",
+  "criteria": {
+    "placed_kiln": {
+      "conditions": {
+        "location": [
+          {
+            "block": "minenow:charcoal_kiln_marker",
+            "condition": "minecraft:block_state_property"
+          }
+        ]
+      },
+      "trigger": "minecraft:placed_block"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.charcoal.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minenow:charcoal_kiln_marker"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.charcoal.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_kiln"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

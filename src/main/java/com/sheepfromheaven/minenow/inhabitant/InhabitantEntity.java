@@ -512,6 +512,7 @@ public class InhabitantEntity extends PathfinderMob implements GeoEntity, Invent
         setDominionId(dominion.getId());
         setImmigrationJob(null);
         data.setDirty();
+        com.sheepfromheaven.minenow.core.ModCriteriaTriggers.ACCEPTED_NEWCOMER.get().trigger(player);
         player.displayClientMessage(Component.literal(chosenName + " has joined your dominion!"), false);
     }
 

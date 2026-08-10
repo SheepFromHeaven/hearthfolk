@@ -1,0 +1,34 @@
+{
+  "parent": "minenow:main/structure_base",
+  "criteria": {
+    "placed_fishery": {
+      "conditions": {
+        "location": [
+          {
+            "block": "minenow:fishery_marker",
+            "condition": "minecraft:block_state_property"
+          }
+        ]
+      },
+      "trigger": "minecraft:placed_block"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.fisher.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minenow:fishery_marker"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.fisher.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_fishery"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

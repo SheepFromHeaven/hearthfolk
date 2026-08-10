@@ -4,7 +4,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-version = '0.3.0' // x-release-please-version
+version = '0.4.0' // x-release-please-version
 group = 'com.sheepfromheaven.minenow'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -101,6 +101,7 @@ repositories {
 dependencies {
     implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.11:5.4.5'
     implementation 'maven.modrinth:screenspec:sByrxfE3'
+    runtimeOnly 'maven.modrinth:jei:NfVKHhHa'
 }
 
 tasks.withType(JavaCompile).configureEach {

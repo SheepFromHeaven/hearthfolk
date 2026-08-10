@@ -1,0 +1,26 @@
+{
+  "parent": "minenow:main/attract_wanderer",
+  "criteria": {
+    "accepted_newcomer": {
+      "trigger": "minenow:accepted_newcomer"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.minenow.main.accept_newcomer.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:bell"
+    },
+    "title": {
+      "translate": "advancements.minenow.main.accept_newcomer.title"
+    }
+  },
+  "requirements": [
+    [
+      "accepted_newcomer"
+    ]
+  ],
+  "sends_telemetry_event": false
+}
