@@ -1,6 +1,8 @@
 package com.sheepfromheaven.minenow.structure;
 
 import com.sheepfromheaven.minenow.jobs.lumberjack.TreeScanner;
+import com.sheepfromheaven.minenow.structure.workarea.CylinderArea;
+import com.sheepfromheaven.minenow.structure.workarea.WorkArea;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -25,9 +27,8 @@ import com.sheepfromheaven.minenow.requirement.RequirementStatus;
 import com.sheepfromheaven.minenow.requirement.RoomSizeRequirement;
 
 public class DominionStructure {
-    public static final int MIN_WORK_AREA_RADIUS = 2;
-    public static final int MAX_WORK_AREA_RADIUS = 6;
-    public static final int DEFAULT_WORK_AREA_RADIUS = 6;
+    /** Radius a lumberjack/forester forages if a type somehow has no {@code staticWorkArea} effect configured. */
+    private static final int FALLBACK_FORAGING_RADIUS = 6;
     private static final int APPROACH_SEARCH_RADIUS = 6;
     /**
      * How far above/below the work area center to look for a tree trunk base. Deliberately more
@@ -71,9 +72,6 @@ public class DominionStructure {
     /** One entry per resident/worker slot index, cached lazily - see {@link #findBedPos(Level, int)}. */
     private final Map<Integer, BlockPos> cachedBedPosBySlot = new HashMap<>();
     private BlockPos cachedApproachPos;
-    /** Offset from {@link #markerPos}; {@link BlockPos#ZERO} means the work area is centered on the marker. */
-    private BlockPos workAreaOffset = BlockPos.ZERO;
-    private int workAreaRadius = DEFAULT_WORK_AREA_RADIUS;
     /**
      * Issues reported by individual workers, keyed by worker UUID then by issue label.
      * Multiple workers reporting the same label → amounts are summed when producing requests.
@@ -139,8 +137,7 @@ public class DominionStructure {
     }
 
     public DominionStructure(UUID id, String name, StructureType type, BlockPos markerPos, Set<BlockPos> roomBlocks,
-                              List<UUID> assignedResidentIds, List<UUID> assignedWorkerIds,
-                              BlockPos workAreaOffset, int workAreaRadius) {
+                              List<UUID> assignedResidentIds, List<UUID> assignedWorkerIds) {
         this.id = id;
         this.name = name;
         this.type = type;
@@ -148,33 +145,53 @@ public class DominionStructure {
         this.roomBlocks = roomBlocks;
         this.assignedResidentIds.addAll(assignedResidentIds);
         this.assignedWorkerIds.addAll(assignedWorkerIds);
-        this.workAreaOffset = workAreaOffset;
-        this.workAreaRadius = clampWorkAreaRadius(workAreaRadius);
     }
 
-    public BlockPos getWorkAreaCenter() {
-        return markerPos.offset(workAreaOffset);
+    /**
+     * The placement box within which work-area markers may be placed, centred on the marker and sized by
+     * {@link com.sheepfromheaven.minenow.effect.TerritoryEffect}s granted up to the current level. Returns
+     * {@code null} for structures with no territory granted (they accept no markers). Each axis is forced
+     * odd so the marker is the exact centre.
+     */
+    @Nullable
+    public Territory getTerritory() {
+        var stats = getStats();
+        int sx = stats.getTerritorySizeX();
+        int sy = stats.getTerritorySizeY();
+        int sz = stats.getTerritorySizeZ();
+        if (sx <= 0 || sy <= 0 || sz <= 0) {
+            return null;
+        }
+        return new Territory(markerPos, halfExtent(sx), halfExtent(sy), halfExtent(sz));
     }
 
-    /** The raw offset from the marker, as persisted by the save codec. */
-    public BlockPos getWorkAreaOffset() {
-        return workAreaOffset;
+    /** Rounds an axis size up to the next odd number (keeping a single centre block) and halves it. */
+    private static int halfExtent(int size) {
+        int odd = (size % 2 == 0) ? size + 1 : size;
+        return (odd - 1) / 2;
     }
 
-    public void setWorkAreaCenter(BlockPos center) {
-        this.workAreaOffset = center.subtract(markerPos);
+    /** Work areas contributed by this structure's active effects (static area, interior), off the hot path. */
+    private List<WorkArea> effectWorkAreas() {
+        var out = new ArrayList<WorkArea>();
+        for (int lvl = 1; lvl <= level; lvl++) {
+            for (var effect : type.getLevelEffects(lvl)) {
+                effect.contributeWorkAreas(this, out);
+            }
+        }
+        return out;
     }
 
-    public int getWorkAreaRadius() {
-        return workAreaRadius;
-    }
-
-    public void setWorkAreaRadius(int radius) {
-        this.workAreaRadius = clampWorkAreaRadius(radius);
-    }
-
-    private static int clampWorkAreaRadius(int radius) {
-        return Math.clamp(radius, MIN_WORK_AREA_RADIUS, MAX_WORK_AREA_RADIUS);
+    /**
+     * The single static foraging area a lumberjack/forester works, sourced from a
+     * {@link com.sheepfromheaven.minenow.effect.StaticWorkAreaEffect}. Falls back to a marker-centred
+     * default radius if a type somehow has none configured, so the helpers never divide by a zero area.
+     */
+    private CylinderArea foragingArea() {
+        for (var area : effectWorkAreas()) {
+            if (area instanceof CylinderArea c) return c;
+        }
+        return new CylinderArea(markerPos, FALLBACK_FORAGING_RADIUS, FALLBACK_FORAGING_RADIUS);
     }
 
     public UUID getId() {
@@ -791,9 +808,10 @@ public class DominionStructure {
      * leaf drops (saplings, apples, sticks) alongside the logs use this instead.
      */
     public Optional<TreeScanner.TreeShape> findTreeShapeInRange(Level level, Set<BlockPos> excludedBases) {
-        int radius = workAreaRadius;
+        var area = foragingArea();
+        int radius = area.radius();
         int height = TREE_SEARCH_HEIGHT;
-        var center = getWorkAreaCenter();
+        var center = area.center();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (dx * dx + dz * dz > radius * radius) continue;
@@ -822,8 +840,9 @@ public class DominionStructure {
      * across the work area instead of filling it in scan order.
      */
     public Optional<BlockPos> findPlantableSpotInRange(Level level, Set<BlockPos> excluded) {
-        int radius = workAreaRadius;
-        var center = getWorkAreaCenter();
+        var area = foragingArea();
+        int radius = area.radius();
+        var center = area.center();
         var candidates = new ArrayList<BlockPos>();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {

@@ -6,6 +6,8 @@ import com.sheepfromheaven.minenow.inhabitant.InhabitantEntity;
 import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
 import com.sheepfromheaven.minenow.jobs.Job;
 import com.sheepfromheaven.minenow.jobs.JobActions;
+import com.sheepfromheaven.minenow.structure.workarea.CylinderArea;
+import com.sheepfromheaven.minenow.structure.workarea.WorkArea;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -42,6 +44,8 @@ public class MinerJob implements Job {
     /** Ticks spent "mining" a single block, so breaking reads as an animated action rather than instant. */
     private static final int MINE_TICKS = 10;
     private static final int NO_CLAIM_RETRY_TICKS = 100;
+    /** How far a single mine claim reaches from its marker, in XZ blocks (the tunnel's exhaustion radius). */
+    public static final int CLAIM_RADIUS = 6;
     /** Placed every this-many tunnel steps when the support-beam toggle is on. */
     private static final int SUPPORT_SPACING = 4;
     /**
@@ -57,8 +61,9 @@ public class MinerJob implements Job {
     /** Current floor position the inhabitant is standing/digging from. */
     @Nullable
     private BlockPos cursor;
-    private BlockPos claimCenter;
-    private int claimRadius;
+    /** The area currently being worked - a claim cylinder, or the structure's own work area as fallback. */
+    @Nullable
+    private WorkArea workArea;
     private Direction tunnelDirection = Direction.SOUTH;
     private int depthDug;
     private int tunnelSteps;
@@ -105,28 +110,31 @@ public class MinerJob implements Job {
     }
 
     private boolean tickGotoClaim(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (claimCenter == null) {
-            claimCenter = pickClaimCenter(inhabitant, level, workplace);
-            claimRadius = workplace.getWorkAreaRadius();
+        if (workArea == null) {
+            workArea = pickClaimArea(inhabitant, level, workplace);
+            if (workArea == null) {
+                // No mine claim placed in this Mine's territory - nothing to work (the claim marker is a
+                // level-1 work condition), so park and retry rather than mining around the structure.
+                phase = Phase.NO_CLAIM;
+                noClaimCooldown = NO_CLAIM_RETRY_TICKS;
+                return true;
+            }
         }
-        if (JobActions.walkTo(inhabitant, claimCenter, nav)) {
-            cursor = claimCenter;
+        if (JobActions.walkTo(inhabitant, workArea.center(), nav)) {
+            cursor = workArea.center();
             depthDug = 0;
             phase = Phase.FIND_PICKAXE;
         }
         return true;
     }
 
-    /**
-     * The nearest mine claim marker assigned to this Mine, if any, else the structure's own
-     * marker+radius work area - so a mine with no claims placed behaves exactly as before, while
-     * placing claim markers elsewhere extends the mineable area to (also) surround each of them.
-     */
-    private BlockPos pickClaimCenter(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+    /** The nearest mine claim assigned to this Mine as a {@link #CLAIM_RADIUS} cylinder, or null if none placed. */
+    @Nullable
+    private WorkArea pickClaimArea(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         var dominion = DominionSavedData.get(level).getDominionById(inhabitant.getDominionId());
         var claims = dominion != null ? dominion.getMineClaimsAssignedTo(workplace.getId()) : List.<com.sheepfromheaven.minenow.structure.mine.MineClaim>of();
         if (claims.isEmpty()) {
-            return workplace.getWorkAreaCenter();
+            return null;
         }
         var from = inhabitant.blockPosition();
         var best = claims.get(0).getMarkerPos();
@@ -138,7 +146,7 @@ public class MinerJob implements Job {
                 best = claim.getMarkerPos();
             }
         }
-        return best;
+        return new CylinderArea(best, CLAIM_RADIUS, CLAIM_RADIUS);
     }
 
     /**
@@ -205,7 +213,7 @@ public class MinerJob implements Job {
     }
 
     private boolean tickTunnel(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (isInventoryFull(inhabitant) || tunnelExhausted(level)) {
+        if (isInventoryFull(inhabitant) || tunnelExhausted()) {
             phase = Phase.RETURN_STAIRWAY;
             return true;
         }
@@ -226,11 +234,9 @@ public class MinerJob implements Job {
         return true;
     }
 
-    /** True once the tunnel has run past the claim's radius from its center, in map (XZ) distance. */
-    private boolean tunnelExhausted(ServerLevel level) {
-        long dx = cursor.getX() - claimCenter.getX();
-        long dz = cursor.getZ() - claimCenter.getZ();
-        return dx * dx + dz * dz > (long) claimRadius * claimRadius;
+    /** True once the tunnel cursor has run outside the worked area (XZ), see {@link CylinderArea#contains}. */
+    private boolean tunnelExhausted() {
+        return workArea == null || !workArea.contains(cursor);
     }
 
     private boolean isInventoryFull(InhabitantEntity inhabitant) {
@@ -324,7 +330,7 @@ public class MinerJob implements Job {
         }
         // Cycle finished - claim may still have more to give, so head back and continue tunneling.
         phase = Phase.GOTO_CLAIM;
-        claimCenter = null;
+        workArea = null;
         cursor = null;
         return false;
     }
@@ -365,7 +371,8 @@ public class MinerJob implements Job {
         var lines = new ArrayList<String>();
         lines.add("Phase: " + phase);
         lines.add("Cursor: " + cursor);
-        lines.add("Claim center: " + claimCenter + ", radius: " + claimRadius);
+        lines.add("Work area: " + (workArea != null ? workArea.center() : null)
+                + (workArea instanceof CylinderArea c ? ", radius: " + c.radius() : ""));
         lines.add("Depth dug: " + depthDug + " / " + MAX_DEPTH);
         lines.add("Tunnel steps: " + tunnelSteps);
         return lines;
@@ -380,9 +387,9 @@ public class MinerJob implements Job {
         tag.putString("TunnelDirection", tunnelDirection.name());
         actionPacer.save(tag, "Action");
         if (cursor != null) tag.putLong("Cursor", cursor.asLong());
-        if (claimCenter != null) {
-            tag.putLong("ClaimCenter", claimCenter.asLong());
-            tag.putInt("ClaimRadius", claimRadius);
+        if (workArea instanceof CylinderArea c) {
+            tag.putLong("ClaimCenter", c.center().asLong());
+            tag.putInt("ClaimRadius", c.radius());
         }
         if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
     }
@@ -404,8 +411,13 @@ public class MinerJob implements Job {
         }
         actionPacer.load(tag, "Action");
         cursor = tag.contains("Cursor") ? BlockPos.of(tag.getLongOr("Cursor", 0)) : null;
-        claimCenter = tag.contains("ClaimCenter") ? BlockPos.of(tag.getLongOr("ClaimCenter", 0)) : null;
-        claimRadius = tag.getIntOr("ClaimRadius", 0);
+        if (tag.contains("ClaimCenter")) {
+            var center = BlockPos.of(tag.getLongOr("ClaimCenter", 0));
+            int radius = tag.getIntOr("ClaimRadius", 0);
+            workArea = new CylinderArea(center, radius, radius);
+        } else {
+            workArea = null;
+        }
         containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
     }
 }

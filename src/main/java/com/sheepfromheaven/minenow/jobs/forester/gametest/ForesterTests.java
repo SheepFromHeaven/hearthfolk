@@ -105,7 +105,6 @@ public class ForesterTests {
 
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
         var structure = new DominionStructure("Nursery", StructureType.NURSERY, markerPos, Set.of(markerPos));
-        structure.setWorkAreaRadius(6);
         dominion.addStructure(structure);
 
         var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
@@ -168,7 +167,6 @@ public class ForesterTests {
 
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
         var structure = new DominionStructure("Nursery", StructureType.NURSERY, markerPos, Set.of(markerPos));
-        structure.setWorkAreaRadius(6);
         dominion.addStructure(structure);
 
         var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);

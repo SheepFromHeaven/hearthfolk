@@ -53,8 +53,6 @@ public class ModNetwork {
         registrar.playToServer(AssignHousePacket.TYPE, AssignHousePacket.CODEC, ModNetwork::handleAssignHouse);
         registrar.playToServer(AssignWorkerPacket.TYPE, AssignWorkerPacket.CODEC, ModNetwork::handleAssignWorker);
         registrar.playToServer(LevelUpStructurePacket.TYPE, LevelUpStructurePacket.CODEC, ModNetwork::handleLevelUpStructure);
-        registrar.playToServer(SetWorkAreaCenterPacket.TYPE, SetWorkAreaCenterPacket.CODEC, ModNetwork::handleSetWorkAreaCenter);
-        registrar.playToServer(SetWorkAreaRadiusPacket.TYPE, SetWorkAreaRadiusPacket.CODEC, ModNetwork::handleSetWorkAreaRadius);
         registrar.playToServer(RefreshInhabitantScreenPacket.TYPE, RefreshInhabitantScreenPacket.CODEC, ModNetwork::handleRefreshInhabitantScreen);
         registrar.playToServer(RefreshStructureScreenPacket.TYPE, RefreshStructureScreenPacket.CODEC, ModNetwork::handleRefreshStructureScreen);
         registrar.playToServer(RequestRequestsScreenPacket.TYPE, RequestRequestsScreenPacket.CODEC, ModNetwork::handleRequestRequestsScreen);
@@ -256,42 +254,6 @@ public class ModNetwork {
         sendOpenStructureScreen(player, dominion, structure);
     }
 
-    private static void handleSetWorkAreaCenter(SetWorkAreaCenterPacket msg, IPayloadContext ctx) {
-        var player = (ServerPlayer) ctx.player();
-        var level = player.level();
-        var data = DominionSavedData.get(level);
-        var dominion = data.findDominionContaining(msg.markerPos());
-        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
-        var structure = dominion.getStructureAt(msg.markerPos());
-        if (structure == null || !structure.getType().getJobType().map(t -> t.hasWorkArea()).orElse(false)) return;
-        if (!isWithinStructureRange(structure, msg.markerPos(), msg.center())) return;
-
-        structure.setWorkAreaCenter(msg.center());
-        data.setDirty();
-        if (level.getBlockEntity(msg.markerPos()) instanceof StructureMarkerBlockEntity be) {
-            be.setWorkArea(structure.getWorkAreaCenter(), structure.getWorkAreaRadius());
-        }
-        var center = structure.getWorkAreaCenter();
-        player.displayClientMessage(Component.literal(structure.getName() + "'s work area centered on "
-                + center.getX() + ", " + center.getY() + ", " + center.getZ()), false);
-    }
-
-    private static void handleSetWorkAreaRadius(SetWorkAreaRadiusPacket msg, IPayloadContext ctx) {
-        var player = (ServerPlayer) ctx.player();
-        var level = player.level();
-        var data = DominionSavedData.get(level);
-        var dominion = data.findDominionContaining(msg.markerPos());
-        if (dominion == null || !dominion.getOwnerUuid().equals(player.getUUID())) return;
-        var structure = dominion.getStructureAt(msg.markerPos());
-        if (structure == null || !structure.getType().getJobType().map(t -> t.hasWorkArea()).orElse(false)) return;
-
-        structure.setWorkAreaRadius(msg.radius());
-        data.setDirty();
-        if (level.getBlockEntity(msg.markerPos()) instanceof StructureMarkerBlockEntity be) {
-            be.setWorkArea(structure.getWorkAreaCenter(), structure.getWorkAreaRadius());
-        }
-    }
-
     private static void handleRefreshInhabitantScreen(RefreshInhabitantScreenPacket msg, IPayloadContext ctx) {
         var player = (ServerPlayer) ctx.player();
         var level = player.level();
@@ -475,6 +437,10 @@ public class ModNetwork {
 
     public static void sendOpenStructureScreen(ServerPlayer player, Dominion dominion,
                                                 DominionStructure structure) {
+        // Keep the marker's mirrored data (range statuses + territory box) current whenever the screen opens.
+        if (player.level().getBlockEntity(structure.getMarkerPos()) instanceof StructureMarkerBlockEntity be) {
+            be.refreshStatuses(structure, player.level());
+        }
         var inhabitants = dominion.getInhabitants().stream()
                 .map(i -> {
                     String jobLabel = "";
@@ -497,7 +463,6 @@ public class ModNetwork {
                 structure.getName(), structure.getType().name(), structure.getMarkerPos(),
                 inhabitants, assignedResidentData,
                 assignedWorkerData,
-                structure.getWorkAreaCenter(), structure.getWorkAreaRadius(),
                 new StructureLevelInfo(structure.getLevel(), dominion.getStructureLevelCap(structure.getId()),
                         requirementData, levelUpData,
                         structure.getInhabitantSlots(), structure.getFunctioningInhabitantSlots(player.level(), dominion))
@@ -520,26 +485,6 @@ public class ModNetwork {
 
     public static void sendAssignWorker(BlockPos markerPos, String inhabitantId) {
         ClientPacketDistributor.sendToServer(new AssignWorkerPacket(markerPos, inhabitantId));
-    }
-
-    public static void sendSetWorkAreaCenter(BlockPos markerPos, BlockPos center) {
-        ClientPacketDistributor.sendToServer(new SetWorkAreaCenterPacket(markerPos, center));
-    }
-
-    public static void sendSetWorkAreaRadius(BlockPos markerPos, int radius) {
-        ClientPacketDistributor.sendToServer(new SetWorkAreaRadiusPacket(markerPos, radius));
-    }
-
-    /**
-     * The work area center must stay within the structure's fixed horizontal range around its marker
-     * (not the work area itself). Height is intentionally unbounded - a marker placed high up (e.g. in a
-     * building's roof) should still be able to center on ground level far below, or vice versa.
-     */
-    private static boolean isWithinStructureRange(DominionStructure structure, BlockPos markerPos, BlockPos candidate) {
-        int radius = structure.getType().getRangeRadius();
-        int dx = candidate.getX() - markerPos.getX();
-        int dz = candidate.getZ() - markerPos.getZ();
-        return dx * dx + dz * dz <= radius * radius;
     }
 
     public static void sendRefreshInhabitantScreen(int entityId) {
@@ -717,26 +662,6 @@ public class ModNetwork {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record SetWorkAreaCenterPacket(BlockPos markerPos, BlockPos center) implements CustomPacketPayload {
-        public static final Type<SetWorkAreaCenterPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "set_work_area_center"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, SetWorkAreaCenterPacket> CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC, SetWorkAreaCenterPacket::markerPos,
-                BlockPos.STREAM_CODEC, SetWorkAreaCenterPacket::center,
-                SetWorkAreaCenterPacket::new
-        );
-        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    }
-
-    public record SetWorkAreaRadiusPacket(BlockPos markerPos, int radius) implements CustomPacketPayload {
-        public static final Type<SetWorkAreaRadiusPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "set_work_area_radius"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, SetWorkAreaRadiusPacket> CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC, SetWorkAreaRadiusPacket::markerPos,
-                ByteBufCodecs.VAR_INT, SetWorkAreaRadiusPacket::radius,
-                SetWorkAreaRadiusPacket::new
-        );
-        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    }
-
     public record TreeScanClearPacket() implements CustomPacketPayload {
         public static final Type<TreeScanClearPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "tree_scan_clear"));
         public static final StreamCodec<RegistryFriendlyByteBuf, TreeScanClearPacket> CODEC =
@@ -782,7 +707,6 @@ public class ModNetwork {
 
     public record OpenStructureScreenPacket(String structureName, String structureType, BlockPos markerPos,
                                             String inhabitantData, String assignedResidentData, String assignedWorkerData,
-                                            BlockPos workAreaCenter, int workAreaRadius,
                                             StructureLevelInfo levelInfo) implements CustomPacketPayload {
         public static final Type<OpenStructureScreenPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "open_structure_screen"));
         public static final StreamCodec<RegistryFriendlyByteBuf, OpenStructureScreenPacket> CODEC = StreamCodec.composite(
@@ -792,8 +716,6 @@ public class ModNetwork {
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::inhabitantData,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedResidentData,
                 ByteBufCodecs.STRING_UTF8, OpenStructureScreenPacket::assignedWorkerData,
-                BlockPos.STREAM_CODEC, OpenStructureScreenPacket::workAreaCenter,
-                ByteBufCodecs.VAR_INT, OpenStructureScreenPacket::workAreaRadius,
                 StructureLevelInfo.CODEC, OpenStructureScreenPacket::levelInfo,
                 OpenStructureScreenPacket::new
         );

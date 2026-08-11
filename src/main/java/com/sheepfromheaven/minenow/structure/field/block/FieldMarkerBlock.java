@@ -39,17 +39,16 @@ public class FieldMarkerBlock extends Block {
             return;
         }
         var data = DominionSavedData.get(serverLevel);
-        var dominion = data.findDominionContaining(pos);
-        if (dominion == null) {
-            player.displayClientMessage(Component.literal("No dominion nearby! Place a Town Banner first."), false);
+        // The field attaches to a Farm whose territory covers this spot; the territory may reach beyond the
+        // dominion's own bounds, so the field need not be inside the dominion - only the Farm is.
+        var match = data.findStructureWithTerritoryContaining(pos, StructureType.FARM, player.getUUID());
+        if (match == null) {
+            player.displayClientMessage(Component.literal("Place this within one of your Farms' territory."), false);
             level.destroyBlock(pos, true);
             return;
         }
-        if (!dominion.getOwnerUuid().equals(player.getUUID())) {
-            player.displayClientMessage(Component.literal("This is not your dominion!"), false);
-            level.destroyBlock(pos, true);
-            return;
-        }
+        var dominion = match.dominion();
+        var farm = match.structure();
 
         var below = pos.below();
         var result = FieldAreaDetector.detect(level, below, Config.maxRoomSize);
@@ -72,17 +71,12 @@ public class FieldMarkerBlock extends Block {
                 }
 
                 var field = new Field(pos, blocks);
-                var farm = dominion.findNearestStructureOfType(StructureType.FARM, pos, s -> true).orElse(null);
-                if (farm != null) {
-                    field.setAssignedStructureId(farm.getId());
-                }
+                field.setAssignedStructureId(farm.getId());
                 dominion.addField(field);
                 data.setDirty();
 
-                var message = farm != null
-                        ? "Field registered with " + blocks.size() + " farmland tiles, assigned to " + farm.getName() + "."
-                        : "Field registered with " + blocks.size() + " farmland tiles. No Farm nearby to assign it to yet.";
-                player.displayClientMessage(Component.literal(message), false);
+                player.displayClientMessage(Component.literal(
+                        "Field registered with " + blocks.size() + " farmland tiles, assigned to " + farm.getName() + "."), false);
             }
         }
     }

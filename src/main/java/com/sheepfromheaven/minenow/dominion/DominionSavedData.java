@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
+
+import javax.annotation.Nullable;
 import com.sheepfromheaven.minenow.structure.field.CropKind;
 import com.sheepfromheaven.minenow.structure.field.Field;
 import com.sheepfromheaven.minenow.structure.mine.MineClaim;
@@ -61,8 +63,6 @@ public class DominionSavedData extends SavedData {
                             .forGetter(s -> s.getAssignedResidentIds().stream().map(UUID::toString).collect(java.util.stream.Collectors.toList())),
                     Codec.STRING.listOf().optionalFieldOf("assignedWorkerIds", List.of())
                             .forGetter(s -> s.getAssignedWorkerIds().stream().map(UUID::toString).collect(java.util.stream.Collectors.toList())),
-                    BlockPos.CODEC.optionalFieldOf("workAreaOffset", BlockPos.ZERO).forGetter(DominionStructure::getWorkAreaOffset),
-                    Codec.INT.optionalFieldOf("workAreaRadius", DominionStructure.DEFAULT_WORK_AREA_RADIUS).forGetter(DominionStructure::getWorkAreaRadius),
                     REQUEST_CODEC.listOf().optionalFieldOf("requests", List.of()).forGetter(s -> new ArrayList<>(s.getRequests().values())),
                     DESIRED_STOCK_ENTRY_CODEC.listOf().optionalFieldOf("desiredStock", List.of())
                             .forGetter(s -> s.getDesiredStock().entrySet().stream()
@@ -74,12 +74,11 @@ public class DominionSavedData extends SavedData {
                     Codec.BOOL.optionalFieldOf("filterMatchMetadata", false).forGetter(DominionStructure::isFilterMatchMetadata),
                     Codec.BOOL.optionalFieldOf("placeSupportBeams", false).forGetter(DominionStructure::isPlaceSupportBeams),
                     Codec.INT.optionalFieldOf("level", 1).forGetter(DominionStructure::getLevel)
-            ).apply(instance, (id, name, type, markerPos, roomBlocks, residentIds, workerIds, workAreaOffset, workAreaRadius, requests, desiredStock, filterTemplates, filterWhitelist, filterMatchMetadata, placeSupportBeams, level) -> {
+            ).apply(instance, (id, name, type, markerPos, roomBlocks, residentIds, workerIds, requests, desiredStock, filterTemplates, filterWhitelist, filterMatchMetadata, placeSupportBeams, level) -> {
                 var structure = new DominionStructure(UUID.fromString(id), name, StructureType.valueOf(type),
                         markerPos, new HashSet<>(roomBlocks),
                         residentIds.stream().map(UUID::fromString).toList(),
-                        workerIds.stream().map(UUID::fromString).toList(),
-                        workAreaOffset, workAreaRadius);
+                        workerIds.stream().map(UUID::fromString).toList());
                 for (var req : requests) {
                     structure.restoreRequest(req);
                 }
@@ -259,6 +258,35 @@ public class DominionSavedData extends SavedData {
             }
         }
         return null;
+    }
+
+    /** A structure matched by a territory query, plus the dominion that owns it (and stores its markers). */
+    public record StructureMatch(Dominion dominion, DominionStructure structure) {}
+
+    /**
+     * The nearest structure of {@code type} whose {@link DominionStructure#getTerritory() territory}
+     * contains {@code pos}, among dominions owned by {@code owner}. A structure's territory may extend
+     * beyond its dominion's own bounds, so work-area markers are placed against territory rather than
+     * against which dominion contains the marker (only the structure itself must sit inside the dominion).
+     */
+    @Nullable
+    public StructureMatch findStructureWithTerritoryContaining(BlockPos pos, StructureType type, UUID owner) {
+        StructureMatch best = null;
+        double bestDistSq = Double.MAX_VALUE;
+        for (var dominion : dominions.values()) {
+            if (!dominion.getOwnerUuid().equals(owner)) continue;
+            for (var structure : dominion.getStructures()) {
+                if (structure.getType() != type) continue;
+                var territory = structure.getTerritory();
+                if (territory == null || !territory.contains(pos)) continue;
+                double distSq = structure.getMarkerPos().distSqr(pos);
+                if (distSq < bestDistSq) {
+                    bestDistSq = distSq;
+                    best = new StructureMatch(dominion, structure);
+                }
+            }
+        }
+        return best;
     }
 
     public Collection<Dominion> getDominionsForPlayer(UUID playerUuid) {

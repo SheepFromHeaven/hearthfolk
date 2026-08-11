@@ -1,10 +1,9 @@
 package com.sheepfromheaven.minenow.structure.client;
 
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
-import com.sheepfromheaven.minenow.jobs.JobType;
+import com.sheepfromheaven.minenow.structure.MarkerKind;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.network.ModNetwork;
-import com.sheepfromheaven.minenow.client.WorldPickMode;
 import com.sheepfromheaven.minenow.pathfinding.client.RangeTracker;
 import com.sheepfromheaven.minenow.requirement.RequirementStatus;
 import net.minecraft.client.Minecraft;
@@ -38,8 +37,6 @@ public class StructureMarkerScreen extends SpecScreen {
     private final List<InhabitantEntry> inhabitants;
     private List<String> assignedResidentIds;
     private List<String> assignedWorkerIds;
-    private BlockPos workAreaCenter;
-    private int workAreaRadius;
     private int level;
     private int levelCap;
     private List<RequirementStatus> currentRequirementStatuses;
@@ -56,7 +53,6 @@ public class StructureMarkerScreen extends SpecScreen {
 
     public StructureMarkerScreen(String structureName, StructureType structureType, BlockPos markerPos,
                                  String inhabitantData, String assignedResidentData, String assignedWorkerData,
-                                 BlockPos workAreaCenter, int workAreaRadius,
                                  int level, int levelCap, String requirementData, String levelUpRequirementData,
                                  int inhabitantSlots, int functioningInhabitantSlots) {
         super(Component.literal("Structure"), loadSpec(structureType));
@@ -66,8 +62,6 @@ public class StructureMarkerScreen extends SpecScreen {
         this.inhabitants = parseInhabitants(inhabitantData);
         this.assignedResidentIds = parseIdList(assignedResidentData);
         this.assignedWorkerIds = parseIdList(assignedWorkerData);
-        this.workAreaCenter = workAreaCenter;
-        this.workAreaRadius = workAreaRadius;
         this.level = level;
         this.levelCap = levelCap;
         this.currentRequirementStatuses = parseStatusList(requirementData);
@@ -89,16 +83,6 @@ public class StructureMarkerScreen extends SpecScreen {
         on("minenow.assign_resident", (id, s, v) -> openResidentPicker());
         on("minenow.assign_worker",   (id, s, v) -> openWorkerPicker());
 
-        on("minenow.set_work_center", (id, s, v) -> {
-            WorldPickMode.activate(markerPos, this.structureName, this.structureType.getRangeRadius());
-            onClose();
-        });
-
-        on("minenow.toggle_workarea", (id, s, v) -> {
-            WorkAreaTracker.toggleWorkArea(markerPos);
-            rebuildWidgets();
-        });
-
         on("minenow.recalculate", (id, s, v) -> {
             ModNetwork.sendRecalculateStructure(markerPos);
             onClose();
@@ -106,6 +90,11 @@ public class StructureMarkerScreen extends SpecScreen {
 
         on("minenow.toggle_range", (id, s, v) -> {
             RangeTracker.toggleRange(markerPos);
+            rebuildWidgets();
+        });
+
+        on("minenow.toggle_territory", (id, s, v) -> {
+            TerritoryTracker.toggle(markerPos);
             rebuildWidgets();
         });
 
@@ -190,24 +179,12 @@ public class StructureMarkerScreen extends SpecScreen {
         AbstractWidget reqTab = getWidget("tab_requirements");
         if (reqTab != null) reqTab.setMessage(BeveledBox.withAlertMark("Requirements", hasUnmetRequirement()));
 
-        // --- work area tab ---
+        // The editable work area was removed - hide its (now defunct) tab if the layout still declares one.
         AbstractWidget workAreaTab = getWidget("tab_work_area");
-        if (workAreaTab != null) workAreaTab.visible = hasWorkArea();
-
-        if ("tab_work_area".equals(activeTab("tabs_main"))) {
-            addRenderableWidget(new WorkAreaRadiusSlider(ox + 10, contentY + 18, spec().width - 20, 20,
-                    workAreaRadius, radius -> {
-                workAreaRadius = radius;
-                ModNetwork.sendSetWorkAreaRadius(markerPos, radius);
-            }));
-        }
+        if (workAreaTab != null) workAreaTab.visible = false;
 
         AbstractWidget filterTab = getWidget("tab_filter");
         if (filterTab != null) filterTab.visible = isStorehouse();
-
-        AbstractWidget toggleWorkarea = getWidget("btn_toggle_workarea");
-        if (toggleWorkarea != null) toggleWorkarea.setMessage(
-                Component.literal(WorkAreaTracker.isShowingWorkArea(markerPos) ? "Hide Workarea" : "Show Workarea"));
 
         AbstractWidget levelUpBtn = getWidget("btn_level_up");
         if (levelUpBtn != null) {
@@ -230,6 +207,13 @@ public class StructureMarkerScreen extends SpecScreen {
             toggleRange.setMessage(
                     Component.literal(RangeTracker.isShowingRange(markerPos) ? "Hide Range" : "Show Range"));
         }
+
+        AbstractWidget toggleTerritory = getWidget("btn_toggle_territory");
+        if (toggleTerritory != null) {
+            toggleTerritory.visible = MarkerKind.acceptedBy(structureType);
+            toggleTerritory.setMessage(
+                    Component.literal(TerritoryTracker.isShowing(markerPos) ? "Hide Territory" : "Show Territory"));
+        }
     }
 
     @Override
@@ -241,8 +225,6 @@ public class StructureMarkerScreen extends SpecScreen {
         bindText("label_name", structureName);
         bindText("label_type", structureType.getDisplayName());
         bindText("btn_type", "Type: " + structureType.getDisplayName());
-        bindText("label_center", "Center: " + workAreaCenter.getX() + ", "
-                + workAreaCenter.getY() + ", " + workAreaCenter.getZ());
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
@@ -330,7 +312,6 @@ public class StructureMarkerScreen extends SpecScreen {
     private boolean isHouse()       { return structureType == StructureType.HOUSE; }
     private boolean isStorehouse()  { return structureType == StructureType.STOREHOUSE; }
     private boolean hasJob()        { return structureType.getJobType().isPresent(); }
-    private boolean hasWorkArea()   { return structureType.getJobType().map(JobType::hasWorkArea).orElse(false); }
     private boolean hasRangeRequirement()  { return structureType.getRangeRadius() > 0; }
 
     private boolean hasUnmetRequirement() {

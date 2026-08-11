@@ -155,8 +155,6 @@ public class MinerJobTests {
 
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
         var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
-        structure.setWorkAreaCenter(markerPos);
-        structure.setWorkAreaRadius(6);
         dominion.addStructure(structure);
 
         var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(claimPos);
@@ -204,14 +202,30 @@ public class MinerJobTests {
         // Give the miner an iron pickaxe up front - this test is about tunneling/depositing mechanics,
         // not tool-tier gating (see minerWithWoodenPickaxeLeavesIronOreUntouched for that), so it needs
         // a tool sufficient to mine the iron ore embedded in its path.
-        return setUpMine(helper, new ItemStack(Items.IRON_PICKAXE), false);
+        return setUpMine(helper, new ItemStack(Items.IRON_PICKAXE), false, true);
     }
 
     private static MineSetup setUpMineWithRockCoalAndIron(GameTestHelper helper, ItemStack heldPickaxe) {
-        return setUpMine(helper, heldPickaxe, true);
+        return setUpMine(helper, heldPickaxe, true, true);
     }
 
-    private static MineSetup setUpMine(GameTestHelper helper, ItemStack heldPickaxe, boolean withCoalToo) {
+    /** A Mine with no claim placed in its territory has nothing to work - the miner should mine nothing. */
+    public static void minerWithNoClaimDoesNotMine(GameTestHelper helper) {
+        var setup = setUpMine(helper, new ItemStack(Items.IRON_PICKAXE), false, false);
+
+        driveTicks(setup.workGoal(), setup.inhabitant(), setup.markerPos(), 400);
+
+        helper.succeedWhen(() -> {
+            var barrel = (Container) helper.getLevel().getBlockEntity(setup.barrelPos());
+            helper.assertTrue(barrel != null, "Barrel should still be present");
+            for (int i = 0; i < barrel.getContainerSize(); i++) {
+                helper.assertTrue(barrel.getItem(i).isEmpty(),
+                        "A Mine with no claim placed should not mine or deposit anything");
+            }
+        });
+    }
+
+    private static MineSetup setUpMine(GameTestHelper helper, ItemStack heldPickaxe, boolean withCoalToo, boolean withClaim) {
         GameTestHelpers.makeFloor(helper);
 
         // The marker sits well above the local floor so the stairway has room to descend the full
@@ -249,9 +263,14 @@ public class MinerJobTests {
 
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
         var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
-        structure.setWorkAreaCenter(markerPos);
-        structure.setWorkAreaRadius(6);
         dominion.addStructure(structure);
+        if (withClaim) {
+            // The Mine needs a claim within its territory as a work condition; put one on the marker so the
+            // miner works the same rock volume (dug south+down from here) these tests build around it.
+            var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(markerPos);
+            claim.setAssignedStructureId(structure.getId());
+            dominion.addMineClaim(claim);
+        }
 
         var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
         inhabitant.setDominionId(dominion.getId());

@@ -45,8 +45,12 @@ public class FarmerJobTests {
 
         var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
         var structure = new DominionStructure("Farm", StructureType.FARM, markerPos, Set.of(markerPos, barrelPos));
-        structure.setWorkAreaRadius(6);
         dominion.addStructure(structure);
+        // A field marker over the farmland is now the farmer's work condition (replaces the old base work area).
+        var fieldPos = helper.absolutePos(farmlandRelPos);
+        var field = new Field(fieldPos, Set.of(fieldPos));
+        field.setAssignedStructureId(structure.getId());
+        dominion.addField(field);
 
         var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
         inhabitant.setDominionId(dominion.getId());

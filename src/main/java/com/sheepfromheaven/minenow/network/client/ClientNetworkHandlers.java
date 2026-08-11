@@ -61,7 +61,6 @@ public class ClientNetworkHandlers {
                 mc.setScreen(new StructureMarkerScreen(
                         msg.structureName(), StructureType.valueOf(msg.structureType()), msg.markerPos(),
                         msg.inhabitantData(), msg.assignedResidentData(), msg.assignedWorkerData(),
-                        msg.workAreaCenter(), msg.workAreaRadius(),
                         info.level(), info.levelCap(), info.requirementData(), info.levelUpRequirementData(),
                         info.inhabitantSlots(), info.functioningInhabitantSlots()));
             }

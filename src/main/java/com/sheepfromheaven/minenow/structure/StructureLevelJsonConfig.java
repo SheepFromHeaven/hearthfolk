@@ -3,12 +3,12 @@ package com.sheepfromheaven.minenow.structure;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.mojang.logging.LogUtils;
-import com.sheepfromheaven.minenow.effect.ProductivityMultiplierEffect;
 import com.sheepfromheaven.minenow.effect.StructureEffect;
-import com.sheepfromheaven.minenow.effect.InhabitantSlotsEffect;
+import com.sheepfromheaven.minenow.effect.StructureEffects;
 import com.sheepfromheaven.minenow.requirement.BlockCountRequirement;
 import com.sheepfromheaven.minenow.requirement.Requirement;
 import com.sheepfromheaven.minenow.requirement.RoomSizeRequirement;
+import com.sheepfromheaven.minenow.requirement.WorkAreaMarkerRequirement;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -53,6 +53,7 @@ public final class StructureLevelJsonConfig {
     private StructureLevelJsonConfig() {}
 
     public static void load(Path configDir) {
+        StructureEffects.bootstrap();
         var path = configDir.resolve(FILE_NAME);
         if (!Files.exists(path)) {
             copyBundledDefaultsTo(path);
@@ -153,6 +154,17 @@ public final class StructureLevelJsonConfig {
                 list.add(new RoomSizeRequirement(obj.get("space").getAsInt()));
                 continue;
             }
+            if (obj.has("marker")) {
+                var kind = MarkerKind.byId(obj.get("marker").getAsString());
+                if (kind == null) {
+                    LOGGER.warn("Unknown marker kind '{}' in {} level {} requirements, skipping", obj.get("marker").getAsString(), typeName, level);
+                    continue;
+                }
+                int markerCount = obj.has("count") ? obj.get("count").getAsInt() : 1;
+                String markerName = obj.has("name") ? obj.get("name").getAsString() : kind.getDisplayName();
+                list.add(new WorkAreaMarkerRequirement(kind, markerCount, markerName));
+                continue;
+            }
 
             String name = obj.has("name") ? obj.get("name").getAsString() : "Unknown";
             int count = obj.has("count") ? obj.get("count").getAsInt() : 1;
@@ -191,11 +203,12 @@ public final class StructureLevelJsonConfig {
         var list = new ArrayList<StructureEffect>();
         for (var element : arr) {
             var obj = element.getAsJsonObject();
-            String type = obj.has("type") ? obj.get("type").getAsString() : "";
-            switch (type) {
-                case "inhabitantSlots" -> list.add(new InhabitantSlotsEffect(obj.get("amount").getAsInt()));
-                case "productivity" -> list.add(new ProductivityMultiplierEffect(obj.get("multiplier").getAsDouble()));
-                default -> LOGGER.warn("Unknown effect type '{}' in {} level {}, skipping", type, typeName, level);
+            var effect = StructureEffects.parse(obj);
+            if (effect != null) {
+                list.add(effect);
+            } else {
+                String type = obj.has("type") ? obj.get("type").getAsString() : "";
+                LOGGER.warn("Unknown or malformed effect type '{}' in {} level {}, skipping", type, typeName, level);
             }
         }
         return List.copyOf(list);

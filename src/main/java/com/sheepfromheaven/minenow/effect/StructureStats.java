@@ -9,6 +9,9 @@ package com.sheepfromheaven.minenow.effect;
 public final class StructureStats {
     private int inhabitantSlots = 0;
     private double productivityMultiplier = 1.0;
+    private int territorySizeX = 0;
+    private int territorySizeY = 0;
+    private int territorySizeZ = 0;
 
     public int getInhabitantSlots() {
         return inhabitantSlots;
@@ -18,11 +21,30 @@ public final class StructureStats {
         return productivityMultiplier;
     }
 
+    /** Accumulated territory extent along each axis (raw sum before odd-centring). 0 = no territory. */
+    public int getTerritorySizeX() {
+        return territorySizeX;
+    }
+
+    public int getTerritorySizeY() {
+        return territorySizeY;
+    }
+
+    public int getTerritorySizeZ() {
+        return territorySizeZ;
+    }
+
     public void addInhabitantSlots(int amount) {
         inhabitantSlots += amount;
     }
 
     public void multiplyProductivity(double factor) {
         productivityMultiplier *= factor;
+    }
+
+    public void addTerritory(int x, int y, int z) {
+        territorySizeX += x;
+        territorySizeY += y;
+        territorySizeZ += z;
     }
 }
