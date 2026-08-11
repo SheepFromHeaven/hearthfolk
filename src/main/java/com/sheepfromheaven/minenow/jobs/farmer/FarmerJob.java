@@ -91,8 +91,9 @@ public class FarmerJob implements Job {
             }
             var dominion = DominionSavedData.get(level).getDominionById(inhabitant.getDominionId());
             var fields = dominion != null ? dominion.getFieldsAssignedTo(workplace.getId()) : java.util.List.<com.sheepfromheaven.minenow.structure.field.Field>of();
+            // A field marker is a level-1 work condition; with none assigned there's nothing to tend.
             var found = fields.isEmpty()
-                    ? CropScanner.findMatureCropInRange(level, workplace.getWorkAreaCenter(), workplace.getWorkAreaRadius(), workplace.getWorkAreaRadius(), skippedCrops).orElse(null)
+                    ? null
                     : CropScanner.findMatureCropInFields(level, fields, skippedCrops).orElse(null);
             if (found == null) {
                 skippedCrops.clear();

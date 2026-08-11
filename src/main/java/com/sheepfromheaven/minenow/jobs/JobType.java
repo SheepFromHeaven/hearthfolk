@@ -13,23 +13,21 @@ import com.sheepfromheaven.minenow.jobs.miner.MinerJob;
 import java.util.function.Supplier;
 
 public enum JobType {
-    FISHER("Fisher", FisherJob::new, false),
-    LUMBERJACK("Lumberjack", LumberjackJob::new, true),
-    COOK("Cook", CookJob::new, false),
-    COURIER("Courier", CourierJob::new, false),
-    MINER("Miner", MinerJob::new, true),
-    FORESTER("Forester", ForesterJob::new, true),
-    CHARCOAL_BURNER("Charcoal Burner", CharcoalBurnerJob::new, false),
-    FARMER("Farmer", FarmerJob::new, true);
+    FISHER("Fisher", FisherJob::new),
+    LUMBERJACK("Lumberjack", LumberjackJob::new),
+    COOK("Cook", CookJob::new),
+    COURIER("Courier", CourierJob::new),
+    MINER("Miner", MinerJob::new),
+    FORESTER("Forester", ForesterJob::new),
+    CHARCOAL_BURNER("Charcoal Burner", CharcoalBurnerJob::new),
+    FARMER("Farmer", FarmerJob::new);
 
     private final String displayName;
     private final Supplier<Job> factory;
-    private final boolean hasWorkArea;
 
-    JobType(String displayName, Supplier<Job> factory, boolean hasWorkArea) {
+    JobType(String displayName, Supplier<Job> factory) {
         this.displayName = displayName;
         this.factory = factory;
-        this.hasWorkArea = hasWorkArea;
     }
 
     public String getDisplayName() {
@@ -38,10 +36,5 @@ public enum JobType {
 
     public Job createJob() {
         return factory.get();
-    }
-
-    /** Whether this job scans a player-configurable work area (center + radius) for its own targets, rather than a fixed structure range. */
-    public boolean hasWorkArea() {
-        return hasWorkArea;
     }
 }

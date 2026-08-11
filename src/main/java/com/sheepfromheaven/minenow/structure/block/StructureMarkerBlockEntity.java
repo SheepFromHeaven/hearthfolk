@@ -22,8 +22,10 @@ public class StructureMarkerBlockEntity extends BlockEntity {
     private UUID dominionId = null;
     private UUID structureId = null;
     private List<RequirementStatus> rangeRequirementStatuses = new ArrayList<>();
-    private BlockPos workAreaCenter = null;
-    private int workAreaRadius = 0;
+    /** Half-extents of this structure's placement territory box, mirrored for client rendering. 0 = none. */
+    private int territoryHalfX = 0;
+    private int territoryHalfY = 0;
+    private int territoryHalfZ = 0;
 
     public StructureMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(StructureBlocks.STRUCTURE_MARKER_BE.get(), pos, state);
@@ -57,27 +59,29 @@ public class StructureMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    public BlockPos getWorkAreaCenter() {
-        return workAreaCenter;
+    public int getTerritoryHalfX() {
+        return territoryHalfX;
     }
 
-    public int getWorkAreaRadius() {
-        return workAreaRadius;
+    public int getTerritoryHalfY() {
+        return territoryHalfY;
     }
 
-    public void setWorkArea(BlockPos center, int radius) {
-        this.workAreaCenter = center;
-        this.workAreaRadius = radius;
-        setChanged();
-        if (level != null) {
-            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
-        }
+    public int getTerritoryHalfZ() {
+        return territoryHalfZ;
     }
 
-    /** Build/level requirement statuses are no longer mirrored here - they flow to the screen live via {@code OpenStructureScreenPacket} instead (see {@link com.sheepfromheaven.minenow.network.ModNetwork#sendOpenStructureScreen}). */
+    public boolean hasTerritory() {
+        return territoryHalfX > 0 && territoryHalfY > 0 && territoryHalfZ > 0;
+    }
+
+    /** Build/level requirement statuses are no longer mirrored here - they flow to the screen live via {@code OpenStructureScreenPacket} instead (see {@link com.sheepfromheaven.minenow.network.ModNetwork#sendOpenStructureScreen}). The placement territory box, however, is mirrored so the marker can render it client-side. */
     public void refreshStatuses(DominionStructure structure, Level level) {
         setRangeRequirementStatuses(structure.checkRangeRequirements(level));
-        setWorkArea(structure.getWorkAreaCenter(), structure.getWorkAreaRadius());
+        var territory = structure.getTerritory();
+        territoryHalfX = territory != null ? territory.halfX() : 0;
+        territoryHalfY = territory != null ? territory.halfY() : 0;
+        territoryHalfZ = territory != null ? territory.halfZ() : 0;
     }
 
     public void setStructureData(String name, StructureType type, UUID dominionId, UUID structureId) {
@@ -107,11 +111,10 @@ public class StructureMarkerBlockEntity extends BlockEntity {
                 child.putInt("Found", rs.found());
             }
         }
-        if (workAreaCenter != null) {
-            output.putInt("WorkAreaCenterX", workAreaCenter.getX());
-            output.putInt("WorkAreaCenterY", workAreaCenter.getY());
-            output.putInt("WorkAreaCenterZ", workAreaCenter.getZ());
-            output.putInt("WorkAreaRadius", workAreaRadius);
+        if (hasTerritory()) {
+            output.putInt("TerritoryHalfX", territoryHalfX);
+            output.putInt("TerritoryHalfY", territoryHalfY);
+            output.putInt("TerritoryHalfZ", territoryHalfZ);
         }
     }
 
@@ -129,30 +132,28 @@ public class StructureMarkerBlockEntity extends BlockEntity {
                     child.getIntOr("Required", 0),
                     child.getIntOr("Found", 0)));
         }
-        workAreaCenter = input.getInt("WorkAreaRadius").isPresent()
-                ? new BlockPos(input.getIntOr("WorkAreaCenterX", 0), input.getIntOr("WorkAreaCenterY", 0), input.getIntOr("WorkAreaCenterZ", 0))
-                : null;
-        workAreaRadius = input.getIntOr("WorkAreaRadius", 0);
+        territoryHalfX = input.getIntOr("TerritoryHalfX", 0);
+        territoryHalfY = input.getIntOr("TerritoryHalfY", 0);
+        territoryHalfZ = input.getIntOr("TerritoryHalfZ", 0);
     }
 
     public AABB getRenderBoundingBox() {
         var box = new AABB(getBlockPos());
+        var pos = getBlockPos();
 
         int radius = structureType.getRangeRadius();
         if (radius > 0) {
             int height = structureType.getRangeHeight();
-            var pos = getBlockPos();
             box = box.minmax(new AABB(
                     pos.getX() - radius, pos.getY() - height, pos.getZ() - radius,
                     pos.getX() + radius + 1, pos.getY() + height + 1, pos.getZ() + radius + 1
             ));
         }
 
-        if (workAreaCenter != null && workAreaRadius > 0) {
-            int height = structureType.getRangeHeight();
+        if (hasTerritory()) {
             box = box.minmax(new AABB(
-                    workAreaCenter.getX() - workAreaRadius, workAreaCenter.getY() - height, workAreaCenter.getZ() - workAreaRadius,
-                    workAreaCenter.getX() + workAreaRadius + 1, workAreaCenter.getY() + height + 1, workAreaCenter.getZ() + workAreaRadius + 1
+                    pos.getX() - territoryHalfX, pos.getY() - territoryHalfY, pos.getZ() - territoryHalfZ,
+                    pos.getX() + territoryHalfX + 1, pos.getY() + territoryHalfY + 1, pos.getZ() + territoryHalfZ + 1
             ));
         }
 

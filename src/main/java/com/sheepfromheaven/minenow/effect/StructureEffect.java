@@ -10,4 +10,15 @@ import com.sheepfromheaven.minenow.structure.DominionStructure;
  */
 public interface StructureEffect {
     void apply(DominionStructure structure, StructureStats stats);
+
+    /**
+     * Contributes any {@link com.sheepfromheaven.minenow.structure.workarea.WorkArea}s this effect grants
+     * (a static area around the structure, its interior, ...). Kept separate from {@link #apply} so the
+     * scalar fold in {@link DominionStructure#getStats()} stays cheap - area geometry is only materialised
+     * off that hot path (see the foraging-area resolution in {@link DominionStructure}). No-op by default;
+     * only area-granting effects override it.
+     */
+    default void contributeWorkAreas(DominionStructure structure,
+                                     java.util.List<com.sheepfromheaven.minenow.structure.workarea.WorkArea> out) {
+    }
 }

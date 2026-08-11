@@ -172,16 +172,6 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.fisher.gametest.FisherJobShoreTests::findShorePositionPrefersSameLevelRingOverRim);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "lumberjack_clears_decayable_leaves_blocking_trunk_access"),
                             com.sheepfromheaven.minenow.jobs.gametest.LumberjackLeafHarvestTests::lumberjackClearsDecayableLeavesBlockingTrunkAccess);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "default_work_area_is_centered_on_marker_with_default_radius"),
-                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaTests::defaultWorkAreaIsCenteredOnMarkerWithDefaultRadius);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "setting_work_area_center_and_radius_is_respected"),
-                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaTests::settingWorkAreaCenterAndRadiusIsRespected);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "work_area_radius_is_clamped_to_valid_range"),
-                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaTests::workAreaRadiusIsClampedToValidRange);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_tree_in_range_ignores_tree_outside_moved_work_area"),
-                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaTests::findTreeInRangeIgnoresTreeOutsideMovedWorkArea);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_tree_in_range_finds_tree_after_moving_work_area_center"),
-                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaTests::findTreeInRangeFindsTreeAfterMovingWorkAreaCenter);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_smoking_recipe_returns_cooked_result_for_raw_beef"),
                             com.sheepfromheaven.minenow.jobs.gametest.CookingRecipesTests::findSmokingRecipeReturnsCookedResultForRawBeef);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "find_smoking_recipe_is_empty_for_cooked_beef"),
@@ -310,12 +300,21 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::losingALevelUpRequirementOnlyDisablesTheSlotItUnlocked);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "json_override_replaces_compiled_in_level_data"),
                             com.sheepfromheaven.minenow.structure.gametest.StructureLevelJsonConfigTests::jsonOverrideReplacesCompiledInLevelData);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "mine_claim_marker_is_a_level_one_work_condition"),
+                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaMarkerRequirementTests::mineClaimMarkerIsALevelOneWorkCondition);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "territory_placement_query_respects_territory_owner_and_bounds"),
+                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaMarkerRequirementTests::territoryPlacementQueryRespectsTerritoryOwnerAndBounds);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "even_territory_size_rounds_up_to_keep_center"),
+                            com.sheepfromheaven.minenow.structure.gametest.WorkAreaMarkerRequirementTests::evenTerritorySizeRoundsUpToKeepCenter);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "static_work_area_effect_radius_bounds_foraging"),
+                            com.sheepfromheaven.minenow.jobs.gametest.LumberyardTests::staticWorkAreaEffectRadiusBoundsForaging);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_with_no_claim_does_not_mine"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithNoClaimDoesNotMine);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             registerRenderers(modBus);
             com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(modContainer);
-            com.sheepfromheaven.minenow.client.WorldPickMode.register(modBus);
             com.sheepfromheaven.minenow.dev.client.DevWorldBootstrap.register();
             NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.ClientTickEvent.Post.class, event -> {
                 com.sheepfromheaven.minenow.jobs.lumberjack.client.TreeScanGizmoRenderer.onClientTick();

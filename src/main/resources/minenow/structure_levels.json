@@ -38,7 +38,7 @@
   "LUMBERYARD": {
     "1": {
       "requirements": [ { "block": "minecraft:barrel", "name": "Barrel", "count": 1 } ],
-      "effects": [ { "type": "inhabitantSlots", "amount": 1 } ]
+      "effects": [ { "type": "inhabitantSlots", "amount": 1 }, { "type": "staticWorkArea", "radius": 6 } ]
     },
     "2": {
       "requirements": [ { "space": 8 }, { "block": "minecraft:barrel", "name": "Barrel", "count": 2 } ],
@@ -91,8 +91,8 @@
   },
   "MINE": {
     "1": {
-      "requirements": [ { "block": "minecraft:barrel", "name": "Barrel", "count": 1 } ],
-      "effects": [ { "type": "inhabitantSlots", "amount": 1 } ]
+      "requirements": [ { "block": "minecraft:barrel", "name": "Barrel", "count": 1 }, { "marker": "mineClaim", "name": "Mine Claim", "count": 1 } ],
+      "effects": [ { "type": "inhabitantSlots", "amount": 1 }, { "type": "territory", "x": 21, "y": 21, "z": 21 } ]
     },
     "2": {
       "requirements": [ { "block": "minecraft:barrel", "name": "Barrel", "count": 2 } ],
@@ -110,7 +110,7 @@
   "NURSERY": {
     "1": {
       "requirements": [ { "block": "minecraft:barrel", "name": "Barrel", "count": 1 } ],
-      "effects": [ { "type": "inhabitantSlots", "amount": 1 } ]
+      "effects": [ { "type": "inhabitantSlots", "amount": 1 }, { "type": "staticWorkArea", "radius": 6 } ]
     },
     "2": {
       "requirements": [ { "block": "minecraft:barrel", "name": "Barrel", "count": 2 } ],
@@ -145,8 +145,8 @@
   },
   "FARM": {
     "1": {
-      "requirements": [ { "block": "minecraft:composter", "name": "Composter", "count": 1 }, { "block": "minecraft:carved_pumpkin", "name": "Carved Pumpkin", "count": 1 }, { "block": "minecraft:barrel", "name": "Barrel", "count": 1 } ],
-      "effects": [ { "type": "inhabitantSlots", "amount": 1 } ]
+      "requirements": [ { "block": "minecraft:composter", "name": "Composter", "count": 1 }, { "block": "minecraft:carved_pumpkin", "name": "Carved Pumpkin", "count": 1 }, { "block": "minecraft:barrel", "name": "Barrel", "count": 1 }, { "marker": "field", "name": "Field", "count": 1 } ],
+      "effects": [ { "type": "inhabitantSlots", "amount": 1 }, { "type": "territory", "x": 21, "y": 21, "z": 21 } ]
     },
     "2": {
       "requirements": [ { "space": 24 }, { "block": "minecraft:composter", "name": "Composter", "count": 2 } ],

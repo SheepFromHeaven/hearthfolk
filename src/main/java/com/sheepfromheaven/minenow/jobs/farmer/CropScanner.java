@@ -36,25 +36,6 @@ public final class CropScanner {
         return Optional.empty();
     }
 
-    /** Legacy fallback: scans a plain sphere around {@code center} for any mature vanilla crop. */
-    public static Optional<BlockPos> findMatureCropInRange(Level level, BlockPos center, int radius, int height, Set<BlockPos> excluded) {
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                if (dx * dx + dz * dz > radius * radius) continue;
-                for (int dy = -height; dy <= height; dy++) {
-                    var pos = center.offset(dx, dy, dz);
-                    if (excluded.contains(pos)) continue;
-                    var state = level.getBlockState(pos);
-                    var kind = CropKind.fromState(state).orElse(null);
-                    if (kind != null && kind.isMature(state)) {
-                        return Optional.of(pos);
-                    }
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
     @Nullable
     public static Item seedItemFor(net.minecraft.world.level.block.state.BlockState state) {
         return CropKind.fromState(state).map(CropKind::getSeedItem).orElse(null);

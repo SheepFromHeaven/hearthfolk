@@ -7,12 +7,11 @@
     "rename",
     "assign_resident",
     "assign_worker",
-    "set_work_center",
-    "toggle_workarea",
     "recalculate",
     "toggle_range",
     "open_filter",
-    "level_up"
+    "level_up",
+    "toggle_territory"
   ],
   "bindingsSchema": {
     "structure_name": {
@@ -35,14 +34,6 @@
       "type": "string",
       "previewValue": "Worker: Bob"
     },
-    "work_area_center": {
-      "type": "string",
-      "previewValue": "Center: 0, 64, 0"
-    },
-    "toggle_workarea_label": {
-      "type": "string",
-      "previewValue": "Show Workarea"
-    },
     "toggle_range_label": {
       "type": "string",
       "previewValue": "Show Range"
@@ -56,10 +47,6 @@
       "previewValue": true
     },
     "show_range_toggle": {
-      "type": "boolean",
-      "previewValue": true
-    },
-    "has_work_area": {
       "type": "boolean",
       "previewValue": true
     },
@@ -161,21 +148,6 @@
       "parentId": "tabs_main"
     },
     {
-      "id": "tab_work_area",
-      "type": "tab",
-      "x": 0,
-      "y": 0,
-      "w": 0,
-      "h": 0,
-      "text": "Work Area",
-      "icon": null,
-      "props": {},
-      "parentId": "tabs_main",
-      "bindings": {
-        "visible": "has_work_area"
-      }
-    },
-    {
       "id": "tab_filter",
       "type": "tab",
       "x": 0,
@@ -262,54 +234,6 @@
       }
     },
     {
-      "id": "label_center",
-      "type": "label",
-      "x": 0,
-      "y": 4,
-      "w": 220,
-      "h": 10,
-      "text": "Center: 0, 64, 0",
-      "icon": null,
-      "props": {
-        "color": "-12566464",
-        "shadow": "false",
-        "align": "center"
-      },
-      "parentId": "tab_work_area",
-      "bindings": {
-        "text": "work_area_center"
-      }
-    },
-    {
-      "id": "btn_set_center",
-      "type": "button",
-      "x": 10,
-      "y": 44,
-      "w": 200,
-      "h": 20,
-      "text": "Set Center of Workarea",
-      "icon": null,
-      "props": {},
-      "parentId": "tab_work_area",
-      "action": "set_work_center"
-    },
-    {
-      "id": "btn_toggle_workarea",
-      "type": "button",
-      "x": 10,
-      "y": 70,
-      "w": 200,
-      "h": 20,
-      "text": "Show Workarea",
-      "icon": null,
-      "props": {},
-      "parentId": "tab_work_area",
-      "action": "toggle_workarea",
-      "bindings": {
-        "text": "toggle_workarea_label"
-      }
-    },
-    {
       "id": "label_filter_hint",
       "type": "label",
       "x": 0,
@@ -367,6 +291,19 @@
         "text": "toggle_range_label",
         "visible": "show_range_toggle"
       }
+    },
+    {
+      "id": "btn_toggle_territory",
+      "type": "button",
+      "x": 10,
+      "y": 56,
+      "w": 200,
+      "h": 20,
+      "text": "Show Territory",
+      "icon": null,
+      "props": {},
+      "parentId": "tab_debug",
+      "action": "toggle_territory"
     },
     {
       "id": "btn_level_up",

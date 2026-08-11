@@ -23,8 +23,11 @@ public class StructureMarkerRenderer implements BlockEntityRenderer<StructureMar
     private static final GizmoStyle RANGE_STYLE = GizmoStyle.fill(
             ARGB.colorFromFloat(0.45F, 0.2F, 0.7F, 0.9F)
     );
-    private static final GizmoStyle WORK_AREA_STYLE = GizmoStyle.fill(
-            ARGB.colorFromFloat(0.45F, 1.0F, 0.3F, 0.7F)
+    /** Stroke + translucent fill box for the placement territory - matches the town banner's border look. */
+    private static final GizmoStyle TERRITORY_STYLE = GizmoStyle.strokeAndFill(
+            ARGB.colorFromFloat(0.8F, 0.3F, 0.85F, 0.4F),
+            2.0F,
+            ARGB.colorFromFloat(0.12F, 0.3F, 0.85F, 0.4F)
     );
 
     public StructureMarkerRenderer(BlockEntityRendererProvider.Context context) {
@@ -46,8 +49,9 @@ public class StructureMarkerRenderer implements BlockEntityRenderer<StructureMar
         BlockEntityRenderState.extractBase(blockEntity, renderState, breakProgress);
         renderState.rangeRadius = blockEntity.getStructureType().getRangeRadius();
         renderState.rangeHeight = blockEntity.getStructureType().getRangeHeight();
-        renderState.workAreaCenter = blockEntity.getWorkAreaCenter();
-        renderState.workAreaRadius = blockEntity.getWorkAreaRadius();
+        renderState.territoryHalfX = blockEntity.getTerritoryHalfX();
+        renderState.territoryHalfY = blockEntity.getTerritoryHalfY();
+        renderState.territoryHalfZ = blockEntity.getTerritoryHalfZ();
     }
 
     @Override
@@ -55,9 +59,20 @@ public class StructureMarkerRenderer implements BlockEntityRenderer<StructureMar
         if (renderState.rangeRadius > 0 && RangeTracker.isShowingRange(renderState.blockPos)) {
             emitBox(renderState.blockPos, renderState.rangeRadius, renderState.rangeHeight, RANGE_STYLE);
         }
-        if (renderState.workAreaCenter != null && renderState.workAreaRadius > 0
-                && WorkAreaTracker.isShowingWorkArea(renderState.blockPos)) {
-            emitBox(renderState.workAreaCenter, renderState.workAreaRadius, renderState.rangeHeight, WORK_AREA_STYLE);
+        if (renderState.territoryHalfX > 0 && TerritoryTracker.isShowing(renderState.blockPos)) {
+            emitTerritoryBox(renderState.blockPos, renderState.territoryHalfX, renderState.territoryHalfY,
+                    renderState.territoryHalfZ, TERRITORY_STYLE);
+        }
+    }
+
+    /** Draws the territory as an axis-aligned box, each face double-sided so it's visible from inside too. */
+    private void emitTerritoryBox(BlockPos center, int halfX, int halfY, int halfZ, GizmoStyle style) {
+        var min = new Vec3(center.getX() - halfX, center.getY() - halfY, center.getZ() - halfZ);
+        var max = new Vec3(center.getX() + halfX + 1, center.getY() + halfY + 1, center.getZ() + halfZ + 1);
+        for (var face : Direction.values()) {
+            var quad = RectGizmo.fromCuboidFace(min, max, face, style);
+            Gizmos.rect(quad.a(), quad.b(), quad.c(), quad.d(), style);
+            Gizmos.rect(quad.d(), quad.c(), quad.b(), quad.a(), style);
         }
     }
 

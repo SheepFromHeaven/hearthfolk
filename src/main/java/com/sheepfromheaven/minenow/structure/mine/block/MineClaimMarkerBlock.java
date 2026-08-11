@@ -33,17 +33,16 @@ public class MineClaimMarkerBlock extends Block {
             return;
         }
         var data = DominionSavedData.get(serverLevel);
-        var dominion = data.findDominionContaining(pos);
-        if (dominion == null) {
-            player.displayClientMessage(Component.literal("No dominion nearby! Place a Town Banner first."), false);
+        // A claim attaches to a Mine whose territory covers this spot. The territory can reach beyond the
+        // dominion's own bounds, so the claim itself need not be inside the dominion - only the Mine is.
+        var match = data.findStructureWithTerritoryContaining(pos, StructureType.MINE, player.getUUID());
+        if (match == null) {
+            player.displayClientMessage(Component.literal("Place this within one of your Mines' territory."), false);
             level.destroyBlock(pos, true);
             return;
         }
-        if (!dominion.getOwnerUuid().equals(player.getUUID())) {
-            player.displayClientMessage(Component.literal("This is not your dominion!"), false);
-            level.destroyBlock(pos, true);
-            return;
-        }
+        var dominion = match.dominion();
+        var mine = match.structure();
         if (dominion.getMineClaimAt(pos) != null) {
             player.displayClientMessage(Component.literal("This spot is already claimed by another mine claim!"), false);
             level.destroyBlock(pos, true);
@@ -51,17 +50,10 @@ public class MineClaimMarkerBlock extends Block {
         }
 
         var claim = new MineClaim(pos);
-        var mine = dominion.findNearestStructureOfType(StructureType.MINE, pos, s -> true).orElse(null);
-        if (mine != null) {
-            claim.setAssignedStructureId(mine.getId());
-        }
+        claim.setAssignedStructureId(mine.getId());
         dominion.addMineClaim(claim);
         data.setDirty();
-
-        var message = mine != null
-                ? "Mine claim registered, assigned to " + mine.getName() + "."
-                : "Mine claim registered. No Mine nearby to assign it to yet.";
-        player.displayClientMessage(Component.literal(message), false);
+        player.displayClientMessage(Component.literal("Mine claim registered, assigned to " + mine.getName() + "."), false);
     }
 
     @Override
