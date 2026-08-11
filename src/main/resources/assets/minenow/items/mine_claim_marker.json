@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "minenow:item/mine_claim_marker"
+  }
+}

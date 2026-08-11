@@ -16,6 +16,7 @@ import com.sheepfromheaven.minenow.pathfinding.DominionPathNode;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import com.sheepfromheaven.minenow.structure.field.Field;
+import com.sheepfromheaven.minenow.structure.mine.MineClaim;
 
 public class Dominion {
     private final UUID id;
@@ -29,6 +30,7 @@ public class Dominion {
     private final Map<UUID, DominionInhabitant> inhabitants = new HashMap<>();
     private final Map<UUID, DominionPathNode> pathNodes = new HashMap<>();
     private final Map<UUID, Field> fields = new HashMap<>();
+    private final Map<UUID, MineClaim> mineClaims = new HashMap<>();
     /** The single immigrant candidate currently walking to (or awaiting a decision at) the banner, if any. */
     @Nullable
     private UUID pendingImmigrantId;
@@ -111,7 +113,45 @@ public class Dominion {
                     field.setAssignedStructureId(null);
                 }
             }
+            for (var claim : mineClaims.values()) {
+                if (structureId.equals(claim.getAssignedStructureId())) {
+                    claim.setAssignedStructureId(null);
+                }
+            }
         }
+    }
+
+    public void addMineClaim(MineClaim claim) {
+        mineClaims.put(claim.getId(), claim);
+    }
+
+    public void removeMineClaim(UUID claimId) {
+        mineClaims.remove(claimId);
+    }
+
+    public MineClaim getMineClaimById(UUID claimId) {
+        return mineClaims.get(claimId);
+    }
+
+    /** The claim whose marker sits exactly at {@code markerPos}, if any. */
+    public MineClaim getMineClaimAt(BlockPos markerPos) {
+        for (var c : mineClaims.values()) {
+            if (c.getMarkerPos().equals(markerPos)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    public Collection<MineClaim> getMineClaims() {
+        return Collections.unmodifiableCollection(mineClaims.values());
+    }
+
+    /** All mine claims currently assigned to the given structure (typically a MINE), e.g. for a miner to tunnel at. */
+    public List<MineClaim> getMineClaimsAssignedTo(UUID structureId) {
+        return mineClaims.values().stream()
+                .filter(c -> structureId.equals(c.getAssignedStructureId()))
+                .collect(Collectors.toList());
     }
 
     public void addField(Field field) {
@@ -592,5 +632,6 @@ public class Dominion {
         structures.clear();
         pathNodes.clear();
         fields.clear();
+        mineClaims.clear();
     }
 }

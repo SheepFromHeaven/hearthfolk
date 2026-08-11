@@ -4,6 +4,7 @@ import com.sheepfromheaven.minenow.core.MineNow;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.structure.field.block.FieldMarkerBlock;
+import com.sheepfromheaven.minenow.structure.mine.block.MineClaimMarkerBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -68,6 +69,9 @@ public class StructureBlocks {
 
     public static final DeferredHolder<net.minecraft.world.level.block.Block, FieldMarkerBlock> FIELD_MARKER =
             BLOCKS.register("field_marker", () -> new FieldMarkerBlock(markerProps("field_marker")));
+
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, MineClaimMarkerBlock> MINE_CLAIM_MARKER =
+            BLOCKS.register("mine_claim_marker", () -> new MineClaimMarkerBlock(markerProps("mine_claim_marker")));
 
     public static StructureMarkerBlock getMarkerBlock(StructureType type) {
         return switch (type) {

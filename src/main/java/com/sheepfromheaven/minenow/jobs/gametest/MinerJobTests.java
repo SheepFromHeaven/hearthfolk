@@ -124,6 +124,79 @@ public class MinerJobTests {
         });
     }
 
+    /**
+     * A mine claim marker placed well outside the structure's own work-area radius should extend
+     * the mineable area to (also) surround it, rather than the miner staying confined to a circle
+     * around the Mine's own marker.
+     */
+    public static void minerTunnelsAroundAPlacedMineClaimOutsideTheStructuresOwnWorkArea(GameTestHelper helper) {
+        var markerRelPos = new BlockPos(2, MinerJob.MAX_DEPTH + 3, 2);
+        var barrelRelPos = markerRelPos.offset(-1, 0, -1);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+
+        // The claim sits far outside the structure's own (radius 6) work area - nothing to mine there
+        // at all, so if the miner ever fell back to the marker's own circle it would find no rock and
+        // never produce ore.
+        var claimRelPos = markerRelPos.offset(8, 0, 0);
+        for (int x = -2; x <= 2; x++) {
+            for (int z = 0; z <= 20; z++) {
+                for (int y = -MinerJob.MAX_DEPTH - 2; y <= 1; y++) {
+                    helper.setBlock(claimRelPos.offset(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+        var oreRelPos = claimRelPos.offset(1, -MinerJob.MAX_DEPTH, 3);
+        helper.setBlock(oreRelPos, Blocks.IRON_ORE);
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+        var claimPos = helper.absolutePos(claimRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
+        structure.setWorkAreaCenter(markerPos);
+        structure.setWorkAreaRadius(6);
+        dominion.addStructure(structure);
+
+        var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(claimPos);
+        claim.setAssignedStructureId(structure.getId());
+        dominion.addMineClaim(claim);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+        inhabitant.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_PICKAXE));
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+
+        // GameTest mobs don't actually walk along their path just from calling tick() - mirror the
+        // other jobs' tests (e.g. FarmerJobTests) by snapping straight to the claim once the job has
+        // picked it, rather than relying on real pathfinding movement to cross the gap to it.
+        workGoal.tick();
+        inhabitant.snapTo(claimPos.getX() + 0.5, claimPos.getY(), claimPos.getZ() + 0.5);
+
+        for (int i = 0; i < 3000 && !carriesOreDrop(inhabitant); i++) {
+            workGoal.tick();
+        }
+
+        helper.succeedWhen(() ->
+                helper.assertTrue(carriesOreDrop(inhabitant),
+                        "Ore near the placed claim should have been mined and picked up"));
+    }
+
+    private static boolean carriesOreDrop(com.sheepfromheaven.minenow.inhabitant.InhabitantEntity inhabitant) {
+        var inv = inhabitant.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            var stack = inv.getItem(i);
+            if (stack.is(Items.RAW_IRON) || stack.is(Items.IRON_ORE)) return true;
+        }
+        return false;
+    }
+
     private record MineSetup(com.sheepfromheaven.minenow.inhabitant.InhabitantEntity inhabitant, WorkGoal workGoal,
                               DominionStructure structure, BlockPos markerPos, BlockPos barrelPos, BlockPos oreOrIronPos) {}
 
