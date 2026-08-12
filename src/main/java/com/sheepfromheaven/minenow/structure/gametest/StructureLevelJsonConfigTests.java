@@ -23,6 +23,7 @@ public class StructureLevelJsonConfigTests {
             var overrideDir = Files.createTempDirectory("minenow-test-override");
             Files.writeString(overrideDir.resolve("minenow-structure-levels.json"), """
                     {
+                      "_version": 999,
                       "LUMBERYARD": {
                         "1": {
                           "requirements": [ { "block": "minecraft:barrel", "name": "Barrel", "count": 5 } ],

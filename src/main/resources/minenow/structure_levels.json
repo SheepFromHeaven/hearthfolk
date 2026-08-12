@@ -1,4 +1,5 @@
 {
+  "_version": 1,
   "HOUSE": {
     "1": {
       "requirements": [ { "space": 32 }, { "tag": "minecraft:beds", "icon": "minecraft:red_bed", "name": "Bed", "count": 1 } ],

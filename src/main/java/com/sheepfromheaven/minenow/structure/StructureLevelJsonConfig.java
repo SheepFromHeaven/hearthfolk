@@ -39,7 +39,9 @@ import java.util.function.Supplier;
  * scratch. Editing that file and calling {@link #load} again (e.g. via the {@code /minenow reloadconfig}
  * command) picks up changes without restarting the server. If the config-folder file is ever missing or
  * broken, {@link #load} falls back to re-reading the bundled resource directly rather than leaving
- * structures with no requirements at all.
+ * structures with no requirements at all. If the bundled defaults ship a newer {@code _version} than the
+ * on-disk file, {@link #load} backs up the old file and overwrites it with the new defaults (see
+ * {@link #upgradeIfOutdated}), so mod updates that add requirements/effects actually reach existing worlds.
  */
 public final class StructureLevelJsonConfig {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -57,6 +59,8 @@ public final class StructureLevelJsonConfig {
         var path = configDir.resolve(FILE_NAME);
         if (!Files.exists(path)) {
             copyBundledDefaultsTo(path);
+        } else {
+            upgradeIfOutdated(path);
         }
         try {
             parseInto(Files.readString(path));
@@ -110,6 +114,38 @@ public final class StructureLevelJsonConfig {
                 throw new IOException("Bundled resource " + BUNDLED_RESOURCE + " is missing from the mod jar");
             }
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
+     * The config-folder file is only ever written once (see {@link #copyBundledDefaultsTo}), so a mod update
+     * that changes the bundled defaults (new requirements/effects on existing levels) would otherwise never
+     * reach worlds that already have a config file on disk. {@code _version} in the bundled JSON tracks that;
+     * when the on-disk file is behind, back it up and replace it with the current bundled defaults rather than
+     * silently leaving structures on stale, potentially broken data.
+     */
+    private static void upgradeIfOutdated(Path path) {
+        try {
+            var bundled = readBundledDefaults();
+            var current = Files.readString(path);
+            if (extractVersion(current) >= extractVersion(bundled)) {
+                return;
+            }
+            var backup = path.resolveSibling(FILE_NAME + ".bak");
+            Files.writeString(backup, current, StandardCharsets.UTF_8);
+            Files.writeString(path, bundled, StandardCharsets.UTF_8);
+            LOGGER.warn("{} was out of date; backed up your copy to {} and replaced it with the latest bundled defaults", FILE_NAME, backup.getFileName());
+        } catch (IOException e) {
+            LOGGER.error("Failed to check {} for updates", FILE_NAME, e);
+        }
+    }
+
+    private static int extractVersion(String json) {
+        try {
+            var root = JsonParser.parseString(json).getAsJsonObject();
+            return root.has("_version") ? root.get("_version").getAsInt() : 0;
+        } catch (Exception e) {
+            return 0;
         }
     }
 

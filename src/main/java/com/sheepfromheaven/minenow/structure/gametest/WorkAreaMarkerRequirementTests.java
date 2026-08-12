@@ -29,6 +29,7 @@ public class WorkAreaMarkerRequirementTests {
             var overrideDir = Files.createTempDirectory("minenow-marker-req-override");
             Files.writeString(overrideDir.resolve("minenow-structure-levels.json"), """
                     {
+                      "_version": 999,
                       "MINE": {
                         "1": {
                           "requirements": [ { "marker": "mineClaim", "name": "Mine Claim", "count": 1 } ],
@@ -94,7 +95,7 @@ public class WorkAreaMarkerRequirementTests {
         try {
             var overrideDir = Files.createTempDirectory("minenow-territory-query");
             Files.writeString(overrideDir.resolve("minenow-structure-levels.json"),
-                    "{ \"MINE\": { \"1\": { \"effects\": [ { \"type\": \"territory\", \"x\": 21, \"y\": 21, \"z\": 21 } ] } } }");
+                    "{ \"_version\": 999, \"MINE\": { \"1\": { \"effects\": [ { \"type\": \"territory\", \"x\": 21, \"y\": 21, \"z\": 21 } ] } } }");
             StructureLevelJsonConfig.load(overrideDir);
 
             var level = helper.getLevel();
@@ -132,7 +133,7 @@ public class WorkAreaMarkerRequirementTests {
         try {
             var overrideDir = Files.createTempDirectory("minenow-territory-even");
             Files.writeString(overrideDir.resolve("minenow-structure-levels.json"),
-                    "{ \"MINE\": { \"1\": { \"effects\": [ { \"type\": \"territory\", \"x\": 20, \"y\": 20, \"z\": 20 } ] } } }");
+                    "{ \"_version\": 999, \"MINE\": { \"1\": { \"effects\": [ { \"type\": \"territory\", \"x\": 20, \"y\": 20, \"z\": 20 } ] } } }");
             StructureLevelJsonConfig.load(overrideDir);
 
             var level = helper.getLevel();

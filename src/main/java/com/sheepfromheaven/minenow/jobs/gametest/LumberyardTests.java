@@ -100,7 +100,7 @@ public class LumberyardTests {
         try {
             var overrideDir = Files.createTempDirectory("minenow-static-area");
             Files.writeString(overrideDir.resolve("minenow-structure-levels.json"),
-                    "{ \"LUMBERYARD\": { \"1\": { \"effects\": [ { \"type\": \"staticWorkArea\", \"radius\": 2 } ] } } }");
+                    "{ \"_version\": 999, \"LUMBERYARD\": { \"1\": { \"effects\": [ { \"type\": \"staticWorkArea\", \"radius\": 2 } ] } } }");
             StructureLevelJsonConfig.load(overrideDir);
 
             GameTestHelpers.makeFloor(helper);
@@ -120,7 +120,7 @@ public class LumberyardTests {
             // Widen the static work area to radius 6 - the same tree is now in range.
             var wideDir = Files.createTempDirectory("minenow-static-area-wide");
             Files.writeString(wideDir.resolve("minenow-structure-levels.json"),
-                    "{ \"LUMBERYARD\": { \"1\": { \"effects\": [ { \"type\": \"staticWorkArea\", \"radius\": 6 } ] } } }");
+                    "{ \"_version\": 999, \"LUMBERYARD\": { \"1\": { \"effects\": [ { \"type\": \"staticWorkArea\", \"radius\": 6 } ] } } }");
             StructureLevelJsonConfig.load(wideDir);
             var foundAtRadius6 = structure.findTreeInRange(helper.getLevel());
 
