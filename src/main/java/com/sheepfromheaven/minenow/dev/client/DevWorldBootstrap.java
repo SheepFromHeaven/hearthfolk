@@ -16,7 +16,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Dev-only convenience enabled by {@code -Dminenow.devWorld=true} (set on the {@code playtest}
- * Gradle run): as soon as the title screen appears, jumps straight into a fixed superflat
+ * Gradle run): as soon as the title screen appears, jumps straight into a fixed normal-overworld
  * playtest world instead of making you click through "Singleplayer" -> "Create New World" every
  * time. If the world already exists it's simply reopened, so in-progress villages persist across
  * runs instead of being recreated.
@@ -52,7 +52,7 @@ public final class DevWorldBootstrap {
                         WorldDataConfiguration.DEFAULT);
                 var options = new WorldOptions(0L, false, false);
                 minecraft.createWorldOpenFlows().createFreshLevel(
-                        LEVEL_ID, levelSettings, options, WorldPresets::createFlatWorldDimensions, titleScreen);
+                        LEVEL_ID, levelSettings, options, WorldPresets::createNormalWorldDimensions, titleScreen);
             }
         });
     }
