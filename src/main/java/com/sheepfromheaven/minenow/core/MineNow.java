@@ -310,6 +310,10 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.LumberyardTests::staticWorkAreaEffectRadiusBoundsForaging);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_with_no_claim_does_not_mine"),
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithNoClaimDoesNotMine);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_without_pickaxe_leaves_stone_untouched"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithoutPickaxeLeavesStoneUntouched);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_never_breaks_bedrock_even_with_a_pickaxe"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerNeverBreaksBedrockEvenWithAPickaxe);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {

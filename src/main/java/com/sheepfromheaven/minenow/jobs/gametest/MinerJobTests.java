@@ -9,6 +9,7 @@ import com.sheepfromheaven.minenow.jobs.miner.MinerJob;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -207,6 +208,76 @@ public class MinerJobTests {
 
     private static MineSetup setUpMineWithRockCoalAndIron(GameTestHelper helper, ItemStack heldPickaxe) {
         return setUpMine(helper, heldPickaxe, true, true);
+    }
+
+    /** A miner with no pickaxe at all should not carve through solid rock bare-handed. */
+    public static void minerWithoutPickaxeLeavesStoneUntouched(GameTestHelper helper) {
+        var setup = setUpMine(helper, null, false, true);
+
+        driveTicks(setup.workGoal(), setup.inhabitant(), setup.markerPos(), 400);
+
+        helper.succeedWhen(() -> {
+            var level = helper.getLevel();
+            boolean stoneStillPresent = false;
+            for (int x = -2; x <= 2; x++) {
+                for (int z = 0; z <= 5; z++) {
+                    for (int y = -MinerJob.MAX_DEPTH - 2; y <= 1; y++) {
+                        if (level.getBlockState(setup.markerPos().offset(x, y, z)).is(Blocks.STONE)) {
+                            stoneStillPresent = true;
+                        }
+                    }
+                }
+            }
+            helper.assertTrue(stoneStillPresent, "Bare-handed miner should not have broken any stone");
+        });
+    }
+
+    /**
+     * Bedrock sitting directly in the stairway's very first dig step must survive even when the miner
+     * holds a pickaxe good enough to mine everything else around it.
+     */
+    public static void minerNeverBreaksBedrockEvenWithAPickaxe(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+        var markerRelPos = new BlockPos(2, 4, 2);
+        for (int x = -2; x <= 2; x++) {
+            for (int z = 0; z <= 3; z++) {
+                for (int y = 0; y <= 3; y++) {
+                    helper.setBlock(markerRelPos.offset(x, -y, z), Blocks.STONE);
+                }
+            }
+        }
+        // The first stairway step (depthDug=0, direction SOUTH) targets exactly this cell.
+        helper.setBlock(markerRelPos.below().relative(Direction.SOUTH), Blocks.BEDROCK);
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(markerRelPos.offset(-1, 0, -1));
+        helper.setBlock(markerRelPos.offset(-1, 0, -1), Blocks.BARREL);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
+        dominion.addStructure(structure);
+        var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(markerPos);
+        claim.setAssignedStructureId(structure.getId());
+        dominion.addMineClaim(claim);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+        inhabitant.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_PICKAXE));
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+
+        for (int i = 0; i < 200; i++) {
+            workGoal.tick();
+        }
+
+        var bedrockPos = markerPos.below().relative(Direction.SOUTH);
+        helper.succeedWhen(() -> helper.assertTrue(level.getBlockState(bedrockPos).is(Blocks.BEDROCK),
+                "Bedrock should never be broken, even by a diamond pickaxe"));
     }
 
     /** A Mine with no claim placed in its territory has nothing to work - the miner should mine nothing. */

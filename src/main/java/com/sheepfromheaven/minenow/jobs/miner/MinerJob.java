@@ -269,25 +269,26 @@ public class MinerJob implements Job {
     /**
      * Breaks {@code pos} using whatever pickaxe the miner actually holds (fetched in
      * {@link #tickFindPickaxe}, mirroring how the lumberjack wields a fetched axe), rather than an
-     * implicit best-in-class tool. Ore blocks ({@link #ORES_TAG}) that vanilla gates behind a tool
-     * tier (via {@code minecraft:incorrect_for_*_tool} tags, surfaced on the block state through
-     * {@code requiresCorrectToolForDrops}/{@code ItemStack#isCorrectToolForDrops}) are left completely
-     * untouched - not even broken - when the held tool isn't sufficient, so the ore stays in place for
-     * a future, better-equipped pass instead of vanishing without a drop.
-     * <p>
-     * Plain stone/dirt are always broken regardless of tool - matching vanilla, where those blocks are
-     * gated on {@code requiresCorrectToolForDrops} too, but only for the *drop*, not for whether the
-     * block can be destroyed at all (bare-handed stone mining still clears the block, it just yields no
-     * cobblestone). Only {@link #ORES_TAG} blocks get the stronger "don't even break it" treatment.
+     * implicit best-in-class tool. Any block that vanilla gates behind a tool tier (via
+     * {@code minecraft:incorrect_for_*_tool} tags, surfaced on the block state through
+     * {@code requiresCorrectToolForDrops}/{@code ItemStack#isCorrectToolForDrops}) - stone, deepslate,
+     * ores, obsidian, ... - is left completely untouched, not even broken, when the held tool isn't
+     * sufficient, so it stays in place for a future, better-equipped pass instead of an inhabitant
+     * carving through solid rock bare-handed. Blocks with negative destroy speed (bedrock) are never
+     * breakable at all, regardless of tool.
      */
     private void breakAndCollect(InhabitantEntity inhabitant, ServerLevel level, BlockPos pos) {
         var state = level.getBlockState(pos);
         if (state.isAir()) {
             return;
         }
+        if (state.getDestroySpeed(level, pos) < 0) {
+            // Unbreakable in survival (bedrock, etc.) - no tool makes this minable.
+            return;
+        }
         var tool = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
-        if (state.is(ORES_TAG) && state.requiresCorrectToolForDrops() && !tool.isCorrectToolForDrops(state)) {
-            // Not equipped to harvest this ore yet - skip it and leave it in place.
+        if (state.requiresCorrectToolForDrops() && !tool.isCorrectToolForDrops(state)) {
+            // Not equipped to break this block yet - skip it and leave it in place.
             return;
         }
         var soundType = state.getSoundType();
