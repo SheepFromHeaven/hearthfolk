@@ -2,11 +2,10 @@ package com.sheepfromheaven.minenow.structure.field.block;
 
 import com.sheepfromheaven.minenow.structure.StructureBlocks;
 import com.sheepfromheaven.minenow.structure.field.CropKind;
+import com.sheepfromheaven.minenow.structure.field.inventory.FieldMarkerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
-import com.sheepfromheaven.minenow.structure.field.inventory.FieldMarkerMenu;
-import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,18 +19,22 @@ import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 /**
- * Holds the field marker's 2x2 seed-template slots: whichever crop seeds a player places here are
+ * Holds the field marker's 2x2 seed-template slots: whichever crop seeds a player templates here are
  * the crops a farmer is allowed to plant on this field, replacing the old right-click-to-toggle
- * mechanic. Not a real storage container - the farmer never draws seeds from here, it's read-only
- * configuration (see {@code FieldWorkScanner#findPlantTarget}).
+ * mechanic. These are templates, not a real storage container - see {@link FieldMarkerMenu}, which
+ * only ever copies a clicked stack's identity in, the same way {@code FilterMenu} does for a
+ * {@code FilterItem} - the actual seeds a player places here are never consumed, and the farmer never
+ * draws seeds from here either, it's read-only configuration (see
+ * {@code FieldWorkScanner#findPlantTarget}).
  */
-public class FieldMarkerBlockEntity extends BlockEntity implements Container, MenuProvider {
+public class FieldMarkerBlockEntity extends BlockEntity implements MenuProvider {
     public static final int SLOT_COUNT = 4;
 
-    private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+    private final NonNullList<ItemStack> templates = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
 
     public FieldMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(StructureBlocks.FIELD_MARKER_BE.get(), pos, state);
@@ -40,71 +43,39 @@ public class FieldMarkerBlockEntity extends BlockEntity implements Container, Me
     /** The distinct crop kinds currently templated into the seed slots. */
     public Set<CropKind> getAllowedCrops() {
         var allowed = EnumSet.noneOf(CropKind.class);
-        for (var stack : items) {
+        for (var stack : templates) {
             if (stack.isEmpty()) continue;
             CropKind.fromSeedItem(stack.getItem()).ifPresent(allowed::add);
         }
         return allowed;
     }
 
-    @Override
-    public int getContainerSize() {
-        return SLOT_COUNT;
+    public ItemStack getTemplate(int slot) {
+        return templates.get(slot);
     }
 
-    @Override
-    public boolean isEmpty() {
-        return items.stream().allMatch(ItemStack::isEmpty);
-    }
-
-    @Override
-    public ItemStack getItem(int slot) {
-        return items.get(slot);
-    }
-
-    @Override
-    public ItemStack removeItem(int slot, int count) {
-        var result = net.minecraft.world.ContainerHelper.removeItem(items, slot, count);
-        if (!result.isEmpty()) setChanged();
-        return result;
-    }
-
-    @Override
-    public ItemStack removeItemNoUpdate(int slot) {
-        return net.minecraft.world.ContainerHelper.takeItem(items, slot);
-    }
-
-    @Override
-    public void setItem(int slot, ItemStack stack) {
-        items.set(slot, stack);
-        if (stack.getCount() > getMaxStackSize()) {
-            stack.setCount(getMaxStackSize());
+    /** Replaces all templates at once (see {@code FieldMarkerMenu#removed}) - each entry is expected to
+     * already be identity-only (count 1, no extra data), not a real carried stack. */
+    public void setTemplates(List<ItemStack> newTemplates) {
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            templates.set(i, i < newTemplates.size() ? newTemplates.get(i) : ItemStack.EMPTY);
         }
         setChanged();
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return level != null && level.getBlockEntity(worldPosition) == this
-                && player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= 64.0;
-    }
-
-    @Override
-    public void clearContent() {
-        items.clear();
-        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        ContainerHelper.saveAllItems(output, items);
+        ContainerHelper.saveAllItems(output, templates);
     }
 
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        ContainerHelper.loadAllItems(input, items);
+        ContainerHelper.loadAllItems(input, templates);
     }
 
     @Override

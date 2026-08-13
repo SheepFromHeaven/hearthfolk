@@ -444,7 +444,7 @@ public class FarmerJobTests {
         farm.dominion().addField(field);
 
         if (level.getBlockEntity(markerPos) instanceof FieldMarkerBlockEntity be) {
-            be.setItem(0, new ItemStack(Items.WHEAT_SEEDS));
+            be.setTemplates(java.util.List.of(new ItemStack(Items.WHEAT_SEEDS)));
         }
 
         var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
