@@ -38,6 +38,7 @@ public final class MineNow {
         PathfindingItems.register(modBus);
         LumberjackItems.register(modBus);
         StorageItems.register(modBus);
+        ModConditions.register(modBus);
         com.sheepfromheaven.minenow.core.ModDataComponents.register(modBus);
         ModCreativeTabs.register(modBus);
         com.sheepfromheaven.minenow.inhabitant.ModEntities.register(modBus);
