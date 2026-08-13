@@ -16,7 +16,6 @@ import com.sheepfromheaven.minenow.structure.DominionStructure;
 import com.sheepfromheaven.minenow.structure.StructureType;
 
 import javax.annotation.Nullable;
-import com.sheepfromheaven.minenow.structure.field.CropKind;
 import com.sheepfromheaven.minenow.structure.field.Field;
 import com.sheepfromheaven.minenow.structure.mine.MineClaim;
 
@@ -113,13 +112,9 @@ public class DominionSavedData extends SavedData {
                     Codec.STRING.fieldOf("id").forGetter(f -> f.getId().toString()),
                     BlockPos.CODEC.fieldOf("markerPos").forGetter(Field::getMarkerPos),
                     BlockPos.CODEC.listOf().fieldOf("area").forGetter(f -> new ArrayList<>(f.getArea())),
-                    Codec.STRING.listOf().fieldOf("allowedCrops").forGetter(f -> f.getAllowedCrops().stream().map(Enum::name).collect(Collectors.toList())),
                     Codec.STRING.optionalFieldOf("assignedStructureId", "").forGetter(f -> f.getAssignedStructureId() != null ? f.getAssignedStructureId().toString() : "")
-            ).apply(instance, (id, markerPos, area, allowedCrops, assignedStructureId) -> {
-                var crops = allowedCrops.stream()
-                        .map(CropKind::valueOf)
-                        .collect(Collectors.toCollection(() -> java.util.EnumSet.noneOf(CropKind.class)));
-                return new Field(UUID.fromString(id), markerPos, new HashSet<>(area), crops,
+            ).apply(instance, (id, markerPos, area, assignedStructureId) -> {
+                return new Field(UUID.fromString(id), markerPos, new HashSet<>(area),
                         assignedStructureId.isEmpty() ? null : UUID.fromString(assignedStructureId));
             })
     );

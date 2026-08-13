@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:inhabitant_with_active_job_opens_spruce_gate_when_told_home",
+  "structure": "minenow:room_9x5x9",
+  "max_ticks": 600
+}

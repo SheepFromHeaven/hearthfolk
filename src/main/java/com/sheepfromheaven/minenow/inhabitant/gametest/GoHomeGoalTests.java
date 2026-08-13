@@ -197,6 +197,173 @@ public class GoHomeGoalTests {
                 .setValue(BedBlock.PART, BedPart.HEAD));
     }
 
+    /**
+     * Reproduces a reported case: the inhabitant is already standing inside a fenced yard (having
+     * walked in through a gate a player then closed behind it), told to go home via
+     * {@link com.sheepfromheaven.minenow.inhabitant.InhabitantEntity#goHome()} (the same production
+     * trigger the "go home" UI action uses), and must open the SPRUCE gate - explicitly placed with
+     * {@code in_wall=true} the way real placement between two fence posts actually results in, unlike
+     * the other fixtures here which use a fresh {@code defaultBlockState()} - to get back out and
+     * reach its bed outside.
+     */
+    public static void inhabitantRequestedHomeOpensSpruceGateToLeaveYard(GameTestHelper helper) {
+        clearVolumeAndFloor(helper);
+
+        for (int x = 2; x <= 6; x++) {
+            helper.setBlock(new BlockPos(x, 1, 2), x == 4
+                    ? Blocks.SPRUCE_FENCE_GATE.defaultBlockState()
+                            .setValue(FenceGateBlock.FACING, Direction.NORTH)
+                            .setValue(FenceGateBlock.IN_WALL, true)
+                    : Blocks.SPRUCE_FENCE.defaultBlockState());
+            helper.setBlock(new BlockPos(x, 1, 6), Blocks.SPRUCE_FENCE.defaultBlockState());
+        }
+        for (int z = 2; z <= 6; z++) {
+            helper.setBlock(new BlockPos(2, 1, z), Blocks.SPRUCE_FENCE.defaultBlockState());
+            helper.setBlock(new BlockPos(6, 1, z), Blocks.SPRUCE_FENCE.defaultBlockState());
+        }
+
+        // Bed is OUTSIDE the yard (south of the gate), so reaching it requires leaving through the gate.
+        var bedRelPos = new BlockPos(4, 1, 0);
+        helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.NORTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+
+        var level = helper.getLevel();
+        var bedPos = helper.absolutePos(bedRelPos);
+        var bannerPos = helper.absolutePos(bedRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+        var structure = new DominionStructure("Home", StructureType.HOUSE, bedPos, Set.of(bedPos));
+        dominion.addStructure(structure);
+
+        // Spawned inside the yard, already past the gate.
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(4, 1, 4));
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setHomeStructureId(structure.getId());
+        inhabitant.goHome();
+
+        // goHome() (not a night trigger) never puts it to sleep - GoHomeGoal only calls startSleeping
+        // when nightTriggered is set (see GoHomeGoal#tick) - so success here is just reaching the bed.
+        helper.succeedWhen(() -> {
+            var distSq = inhabitant.distanceToSqr(bedPos.getX() + 0.5, bedPos.getY(), bedPos.getZ() + 0.5);
+            helper.assertTrue(distSq <= 4.0,
+                    "Inhabitant told to go home should open the spruce gate to leave the yard and reach its bed");
+        });
+    }
+
+    /**
+     * Same as {@link #inhabitantRequestedHomeOpensSpruceGateToLeaveYard}, but the perimeter is
+     * ANDESITE WALL (a {@link net.minecraft.world.level.block.WallBlock}) rather than fence - a
+     * reported real-world case used stone walls around the gate instead of matching fence, and wall
+     * blocks compute their own connection shape from neighbors (unlike a freshly-placed fence's fixed
+     * shape), which could plausibly behave differently around a gate.
+     */
+    public static void inhabitantRequestedHomeOpensGateFlankedByWallsToLeaveYard(GameTestHelper helper) {
+        clearVolumeAndFloor(helper);
+
+        for (int x = 2; x <= 6; x++) {
+            helper.setBlock(new BlockPos(x, 1, 2), x == 4
+                    ? Blocks.SPRUCE_FENCE_GATE.defaultBlockState().setValue(FenceGateBlock.FACING, Direction.NORTH)
+                    : Blocks.ANDESITE_WALL.defaultBlockState());
+            helper.setBlock(new BlockPos(x, 1, 6), Blocks.ANDESITE_WALL.defaultBlockState());
+        }
+        for (int z = 2; z <= 6; z++) {
+            helper.setBlock(new BlockPos(2, 1, z), Blocks.ANDESITE_WALL.defaultBlockState());
+            helper.setBlock(new BlockPos(6, 1, z), Blocks.ANDESITE_WALL.defaultBlockState());
+        }
+        // Force a neighbor-shape recompute now that the whole perimeter exists, same as real placement
+        // triggers connection updates as each block goes in - a lone setBlock call doesn't see its
+        // not-yet-placed neighbors.
+        for (int x = 2; x <= 6; x++) {
+            helper.getLevel().updateNeighborsAt(helper.absolutePos(new BlockPos(x, 1, 2)), Blocks.AIR);
+            helper.getLevel().updateNeighborsAt(helper.absolutePos(new BlockPos(x, 1, 6)), Blocks.AIR);
+        }
+        for (int z = 2; z <= 6; z++) {
+            helper.getLevel().updateNeighborsAt(helper.absolutePos(new BlockPos(2, 1, z)), Blocks.AIR);
+            helper.getLevel().updateNeighborsAt(helper.absolutePos(new BlockPos(6, 1, z)), Blocks.AIR);
+        }
+
+        var bedRelPos = new BlockPos(4, 1, 0);
+        helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.NORTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+
+        var level = helper.getLevel();
+        var bedPos = helper.absolutePos(bedRelPos);
+        var bannerPos = helper.absolutePos(bedRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+        var structure = new DominionStructure("Home", StructureType.HOUSE, bedPos, Set.of(bedPos));
+        dominion.addStructure(structure);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(4, 1, 4));
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setHomeStructureId(structure.getId());
+        inhabitant.goHome();
+
+        helper.succeedWhen(() -> {
+            var distSq = inhabitant.distanceToSqr(bedPos.getX() + 0.5, bedPos.getY(), bedPos.getZ() + 0.5);
+            helper.assertTrue(distSq <= 4.0,
+                    "Inhabitant told to go home should open the gate flanked by walls to leave the yard and reach its bed");
+        });
+    }
+
+    /**
+     * Same as {@link #inhabitantRequestedHomeOpensSpruceGateToLeaveYard}, but the inhabitant is
+     * actively assigned to a job (a farm) INSIDE the fenced yard and its real internal {@code WorkGoal}
+     * is engaged (not just present) at the moment {@code goHome()} is called - covering the case where
+     * a farmer is mid-shift when told to go home, rather than idle with no job at all.
+     */
+    public static void inhabitantWithActiveJobOpensSpruceGateWhenToldHome(GameTestHelper helper) {
+        clearVolumeAndFloor(helper);
+
+        for (int x = 2; x <= 6; x++) {
+            helper.setBlock(new BlockPos(x, 1, 2), x == 4
+                    ? Blocks.SPRUCE_FENCE_GATE.defaultBlockState()
+                            .setValue(FenceGateBlock.FACING, Direction.NORTH)
+                            .setValue(FenceGateBlock.IN_WALL, true)
+                    : Blocks.SPRUCE_FENCE.defaultBlockState());
+            helper.setBlock(new BlockPos(x, 1, 6), Blocks.SPRUCE_FENCE.defaultBlockState());
+        }
+        for (int z = 2; z <= 6; z++) {
+            helper.setBlock(new BlockPos(2, 1, z), Blocks.SPRUCE_FENCE.defaultBlockState());
+            helper.setBlock(new BlockPos(6, 1, z), Blocks.SPRUCE_FENCE.defaultBlockState());
+        }
+        helper.setBlock(new BlockPos(4, 1, 4), Blocks.BARREL);
+
+        var bedRelPos = new BlockPos(4, 1, 0);
+        helper.setBlock(bedRelPos, Blocks.RED_BED.defaultBlockState()
+                .setValue(BedBlock.FACING, Direction.NORTH)
+                .setValue(BedBlock.PART, BedPart.HEAD));
+
+        var level = helper.getLevel();
+        var bedPos = helper.absolutePos(bedRelPos);
+        var barrelPos = helper.absolutePos(new BlockPos(4, 1, 4));
+        var bannerPos = helper.absolutePos(bedRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", bannerPos);
+        var home = new DominionStructure("Home", StructureType.HOUSE, bedPos, Set.of(bedPos));
+        dominion.addStructure(home);
+        var farm = new DominionStructure("Farm", StructureType.FARM, barrelPos, Set.of(barrelPos));
+        dominion.addStructure(farm);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), new BlockPos(4, 1, 4));
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setHomeStructureId(home.getId());
+
+        var dominionInhabitant = new com.sheepfromheaven.minenow.dominion.DominionInhabitant(inhabitant.getUUID(), "Test Farmer");
+        dominion.addInhabitant(dominionInhabitant);
+        dominion.assignWorker(farm, dominionInhabitant.getId(), level);
+
+        inhabitant.goHome();
+
+        helper.succeedWhen(() -> {
+            var distSq = inhabitant.distanceToSqr(bedPos.getX() + 0.5, bedPos.getY(), bedPos.getZ() + 0.5);
+            helper.assertTrue(distSq <= 4.0,
+                    "Inhabitant with an active job should still open the spruce gate and reach its bed when told to go home");
+        });
+    }
+
     private static void clearVolumeAndFloor(GameTestHelper helper) {
         for (int x = 0; x <= 8; x++) {
             for (int z = 0; z <= 8; z++) {

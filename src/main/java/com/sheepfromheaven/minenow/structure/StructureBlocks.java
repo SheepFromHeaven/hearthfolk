@@ -4,6 +4,7 @@ import com.sheepfromheaven.minenow.core.MineNow;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlock;
 import com.sheepfromheaven.minenow.structure.block.StructureMarkerBlockEntity;
 import com.sheepfromheaven.minenow.structure.field.block.FieldMarkerBlock;
+import com.sheepfromheaven.minenow.structure.field.block.FieldMarkerBlockEntity;
 import com.sheepfromheaven.minenow.structure.mine.block.MineClaimMarkerBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -93,6 +94,10 @@ public class StructureBlocks {
                             Set.of(STRUCTURE_MARKER.get(), FISHERY_MARKER.get(), LUMBERYARD_MARKER.get(),
                                     TAVERN_MARKER.get(), STOREHOUSE_MARKER.get(), MINE_MARKER.get(),
                                     NURSERY_MARKER.get(), CHARCOAL_KILN_MARKER.get(), FARM_MARKER.get())));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FieldMarkerBlockEntity>> FIELD_MARKER_BE =
+            BLOCK_ENTITIES.register("field_marker",
+                    () -> new BlockEntityType<>(FieldMarkerBlockEntity::new, Set.of(FIELD_MARKER.get())));
 
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);

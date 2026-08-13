@@ -6,43 +6,82 @@ import com.sheepfromheaven.minenow.jobs.ContainerActionPacer;
 import com.sheepfromheaven.minenow.jobs.ContainerUtil;
 import com.sheepfromheaven.minenow.jobs.Job;
 import com.sheepfromheaven.minenow.jobs.JobActions;
+import com.sheepfromheaven.minenow.jobs.fisher.ShoreScanner;
 import com.sheepfromheaven.minenow.structure.DominionStructure;
+import com.sheepfromheaven.minenow.structure.field.CropKind;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BucketPickup;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Goes to the farm, finds a mature vanilla crop within the structure's work area (see
- * {@link CropScanner}), harvests it, immediately replants it from a seed taken out of its own
- * inventory (drops from the harvest itself, or restocked from the farm's storage), and deposits
- * everything else it's carrying back at the hut before heading home at night.
+ * Goes to the farm and works its assigned fields (see {@link FieldWorkScanner}) in priority order:
+ * first irrigating any tillable/farmland ground that isn't within range of a water source, then
+ * tilling irrigated bare ground into farmland, then planting bare farmland with whichever crop the
+ * field's seed template allows, and only once there's no upkeep left does it harvest mature crops
+ * (see {@link CropScanner}). One action is taken per trip to the field before returning to the hut to
+ * deposit whatever was collected.
  */
 public class FarmerJob implements Job {
-    /** ~0.5s at 20 TPS - fast, but the harvest still reads as a distinct visible action. */
-    private static final int HARVEST_TICKS = 10;
-    private static final int NO_CROP_RETRY_TICKS = 100;
+    /** ~0.5s at 20 TPS - fast, but the action still reads as a distinct visible action. */
+    private static final int WORK_TICKS = 10;
+    private static final int NO_WORK_RETRY_TICKS = 100;
+    /** Matches vanilla's hoe durability cost per till. */
+    private static final int HOE_DAMAGE_PER_TILL = 1;
 
-    private enum Phase { GOTO_HUT, GOTO_FIELD, HARVESTING, RETURN_TO_HUT, DEPOSIT }
+    private enum Phase { GOTO_HUT, SCAN, FETCH_HOE, FETCH_BUCKET, REFILL_BUCKET, ACTING, RETURN_TO_HUT, DEPOSIT }
+    private enum ActionType { IRRIGATE, TILL, PLANT, HARVEST }
 
     private Phase phase = Phase.GOTO_HUT;
     @Nullable
-    private BlockPos targetCrop;
+    private ActionType actionType;
+    @Nullable
+    private BlockPos targetPos;
+    @Nullable
+    private CropKind plantKind;
+    @Nullable
+    private Item missingItem;
     private int waitTicks;
-    private int noCropCooldown;
+    private int noWorkCooldown;
+    /** Set once a hut-storage search turns up no hoe/bucket anywhere, so that action is skipped in
+     * favor of lower-priority work instead of blocking the whole cycle on a fruitless retry every
+     * tick; cleared on the next hut trip (or once nothing else is found either) so newly-stocked
+     * supplies get noticed again. */
+    private boolean hoeUnavailable;
+    private boolean bucketUnavailable;
+    /** The farm's own "Water" range requirement source and the dry tile to stand on to reach it, used
+     * to refill an empty bucket (see {@link #tickRefillBucket}) - same approach pattern as the fisher
+     * uses to reach its fishing spot. */
+    @Nullable
+    private BlockPos refillWaterPos;
+    @Nullable
+    private BlockPos refillStandPos;
+    private final Set<BlockPos> unreachableRefillWater = new HashSet<>();
     private final ContainerActionPacer actionPacer = new ContainerActionPacer();
     private final JobActions.Nav nav = new JobActions.Nav();
     private final JobActions.ContainerTarget containerTarget = new JobActions.ContainerTarget();
-    /** Crop positions found to have no valid replant this cycle, so they're skipped in future scans until harvested. */
-    private final Set<BlockPos> skippedCrops = new HashSet<>();
+    /** Positions that couldn't be worked this cycle (missing tool/item), skipped until the next hut trip. */
+    private final Set<BlockPos> skippedPositions = new HashSet<>();
 
     @Override
     public boolean canStart(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -63,15 +102,22 @@ public class FarmerJob implements Job {
     public void onInterrupted(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         phase = Phase.GOTO_HUT;
         containerTarget.pos = null;
-        targetCrop = null;
+        targetPos = null;
+        actionType = null;
+        plantKind = null;
+        refillWaterPos = null;
+        refillStandPos = null;
     }
 
     @Override
     public boolean tick(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         return switch (phase) {
             case GOTO_HUT -> tickGotoHut(inhabitant, level, workplace);
-            case GOTO_FIELD -> tickGotoField(inhabitant, level, workplace);
-            case HARVESTING -> tickHarvesting(inhabitant, level, workplace);
+            case SCAN -> tickScan(inhabitant, level, workplace);
+            case FETCH_HOE -> tickFetchHoe(inhabitant, level, workplace);
+            case FETCH_BUCKET -> tickFetchBucket(inhabitant, level, workplace);
+            case REFILL_BUCKET -> tickRefillBucket(inhabitant, level, workplace);
+            case ACTING -> tickActing(inhabitant, level, workplace);
             case RETURN_TO_HUT -> tickReturnToHut(inhabitant, level, workplace);
             case DEPOSIT -> tickDeposit(inhabitant, level, workplace);
         };
@@ -79,80 +125,329 @@ public class FarmerJob implements Job {
 
     private boolean tickGotoHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
         if (JobActions.goToJobsite(inhabitant, level, workplace, nav)) {
-            phase = Phase.GOTO_FIELD;
+            phase = Phase.SCAN;
         }
         return true;
     }
 
-    private boolean tickGotoField(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (targetCrop == null) {
-            if (--noCropCooldown > 0) {
+    private boolean tickScan(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (targetPos == null) {
+            if (--noWorkCooldown > 0) {
                 return true;
             }
             var dominion = DominionSavedData.get(level).getDominionById(inhabitant.getDominionId());
-            var fields = dominion != null ? dominion.getFieldsAssignedTo(workplace.getId()) : java.util.List.<com.sheepfromheaven.minenow.structure.field.Field>of();
+            var fields = dominion != null ? dominion.getFieldsAssignedTo(workplace.getId()) : List.<com.sheepfromheaven.minenow.structure.field.Field>of();
             // A field marker is a level-1 work condition; with none assigned there's nothing to tend.
-            var found = fields.isEmpty()
-                    ? null
-                    : CropScanner.findMatureCropInFields(level, fields, skippedCrops).orElse(null);
-            if (found == null) {
-                skippedCrops.clear();
-                noCropCooldown = NO_CROP_RETRY_TICKS;
+            if (fields.isEmpty()) {
+                noWorkCooldown = NO_WORK_RETRY_TICKS;
                 inhabitant.playGoalSwitchSound();
                 return true;
             }
-            targetCrop = found;
+
+            var irrigate = bucketUnavailable ? Optional.<BlockPos>empty() : FieldWorkScanner.findIrrigationTarget(level, fields, skippedPositions);
+            var till = irrigate.isEmpty() && !hoeUnavailable
+                    ? FieldWorkScanner.findTillTarget(level, fields, skippedPositions) : Optional.<BlockPos>empty();
+            var plant = irrigate.isEmpty() && till.isEmpty()
+                    ? FieldWorkScanner.findPlantTarget(level, fields, skippedPositions) : Optional.<FieldWorkScanner.PlantTarget>empty();
+            var harvest = irrigate.isEmpty() && till.isEmpty() && plant.isEmpty()
+                    ? CropScanner.findMatureCropInFields(level, fields, skippedPositions) : Optional.<BlockPos>empty();
+
+            if (irrigate.isPresent()) {
+                targetPos = irrigate.get();
+                actionType = ActionType.IRRIGATE;
+                if (!hasBucket(inhabitant)) {
+                    // An empty bucket just needs refilling at the farm's required water source, not a
+                    // whole new full one from storage.
+                    phase = hasEmptyBucket(inhabitant) ? Phase.REFILL_BUCKET : Phase.FETCH_BUCKET;
+                    return true;
+                }
+                missingItem = null;
+            } else if (till.isPresent()) {
+                targetPos = till.get();
+                actionType = ActionType.TILL;
+                if (!hasHoe(inhabitant)) {
+                    phase = Phase.FETCH_HOE;
+                    return true;
+                }
+                missingItem = null;
+            } else if (plant.isPresent()) {
+                targetPos = plant.get().pos();
+                plantKind = plant.get().kind();
+                actionType = ActionType.PLANT;
+            } else if (harvest.isPresent()) {
+                targetPos = harvest.get();
+                actionType = ActionType.HARVEST;
+            } else {
+                skippedPositions.clear();
+                hoeUnavailable = false;
+                bucketUnavailable = false;
+                noWorkCooldown = NO_WORK_RETRY_TICKS;
+                inhabitant.playGoalSwitchSound();
+                return true;
+            }
         }
-        if (JobActions.walkTo(inhabitant, targetCrop, nav)) {
-            inhabitant.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
-            phase = Phase.HARVESTING;
-            waitTicks = HARVEST_TICKS;
+        if (JobActions.walkTo(inhabitant, targetPos, nav)) {
+            inhabitant.setDeltaMovement(Vec3.ZERO);
+            phase = Phase.ACTING;
+            waitTicks = WORK_TICKS;
         }
         return true;
     }
 
-    private boolean tickHarvesting(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
-        if (targetCrop == null) {
+    /** Mirrors {@code LumberjackJob}'s axe-fetching: search the hut's storage for a hoe and equip it
+     * to the mainhand slot, same as any other job tool - {@link #doTill} never draws from the
+     * farmer's carried inventory, only the equipped tool. */
+    private boolean tickFetchHoe(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (hasHoe(inhabitant)) {
+            missingItem = null;
+            phase = Phase.SCAN;
+            return true;
+        }
+        boolean wasSearching = containerTarget.pos == null;
+        var hoe = JobActions.takeFromContainer(inhabitant, level, workplace, actionPacer, nav, containerTarget,
+                stack -> stack.getItem() instanceof HoeItem, true);
+        if (!hoe.isEmpty()) {
+            inhabitant.setItemSlot(EquipmentSlot.MAINHAND, hoe);
+            missingItem = null;
+            phase = Phase.SCAN;
+            return true;
+        }
+        if (wasSearching && containerTarget.pos == null) {
+            // No hoe anywhere in storage - skip tilling this trip rather than retrying every tick
+            // and blocking irrigation/planting/harvesting from ever getting a turn.
+            missingItem = Items.WOODEN_HOE;
+            hoeUnavailable = true;
+            targetPos = null;
+            actionType = null;
+            phase = Phase.SCAN;
+        }
+        return true;
+    }
+
+    /** Same idea as {@link #tickFetchHoe}, but a water bucket is a consumable, not an equipped tool -
+     * it goes into the farmer's carried inventory, same as seeds. */
+    private boolean tickFetchBucket(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (hasBucket(inhabitant)) {
+            missingItem = null;
+            phase = Phase.SCAN;
+            return true;
+        }
+        boolean wasSearching = containerTarget.pos == null;
+        var bucket = JobActions.takeFromContainer(inhabitant, level, workplace, actionPacer, nav, containerTarget,
+                stack -> stack.is(Items.WATER_BUCKET), true);
+        if (!bucket.isEmpty()) {
+            inhabitant.getInventory().addItem(bucket);
+            missingItem = null;
+            phase = Phase.SCAN;
+            return true;
+        }
+        if (wasSearching && containerTarget.pos == null) {
+            missingItem = Items.WATER_BUCKET;
+            bucketUnavailable = true;
+            targetPos = null;
+            actionType = null;
+            phase = Phase.SCAN;
+        }
+        return true;
+    }
+
+    /** Walks to the farm's required nearby water source (see
+     * {@code StructureRequirementsConfig}'s FARM "Water" range requirement) and fills an empty
+     * bucket from it, mirroring how the fisher
+     * reaches its own fishing spot - refilling is always preferred over fetching a whole new full
+     * bucket from storage (see {@link #tickScan}). */
+    private boolean tickRefillBucket(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (hasBucket(inhabitant)) {
+            missingItem = null;
+            phase = Phase.SCAN;
+            return true;
+        }
+        if (!hasEmptyBucket(inhabitant)) {
+            // Lost its empty bucket somehow since this phase started - fall back to buying a full one.
+            phase = Phase.FETCH_BUCKET;
+            return true;
+        }
+        if (refillWaterPos == null) {
+            var waterReq = workplace.getType().getRangeRequirements().stream()
+                    .filter(r -> r.displayName().equals("Water")).findFirst().orElse(null);
+            // Prefer a self-refilling source (a still water block with 2+ still water neighbors, like
+            // an infinite water pool or a natural spring) over a lone decorative puddle - scooping from
+            // one of those just leaves a permanent hole instead of refilling itself.
+            refillWaterPos = waterReq != null
+                    ? workplace.findRangeRequirementPosition(level, waterReq, unreachableRefillWater, FarmerJob::isSelfRefillingSource)
+                            .orElse(null)
+                    : null;
+            if (refillWaterPos == null) {
+                // No water in the farm's range at all - shouldn't normally happen once the level-1
+                // requirement is met, but don't get stuck here if it somehow dried up.
+                missingItem = Items.WATER_BUCKET;
+                bucketUnavailable = true;
+                targetPos = null;
+                actionType = null;
+                phase = Phase.SCAN;
+                return true;
+            }
+            refillStandPos = ShoreScanner.findShorePosition(level, refillWaterPos).orElse(null);
+            if (refillStandPos == null) {
+                unreachableRefillWater.add(refillWaterPos);
+                refillWaterPos = null;
+                return true;
+            }
+        }
+        if (JobActions.walkTo(inhabitant, refillStandPos, nav)) {
+            var state = level.getBlockState(refillWaterPos);
+            if (state.getBlock() instanceof BucketPickup pickup) {
+                var emptyBucket = ContainerUtil.extractOne(inhabitant.getInventory(), inhabitant, stack -> stack.is(Items.BUCKET));
+                if (!emptyBucket.isEmpty()) {
+                    var filled = pickup.pickupBlock(inhabitant, level, refillWaterPos, state);
+                    inhabitant.getInventory().addItem(!filled.isEmpty() ? filled : new ItemStack(Items.WATER_BUCKET));
+                }
+            } else {
+                // Water's gone since we found it (drained, frozen, ...) - try a different source next tick.
+                unreachableRefillWater.add(refillWaterPos);
+            }
+            refillWaterPos = null;
+            refillStandPos = null;
+            missingItem = null;
+            phase = Phase.SCAN;
+        }
+        return true;
+    }
+
+    private boolean tickActing(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
+        if (targetPos == null || actionType == null) {
             phase = Phase.RETURN_TO_HUT;
             return true;
         }
-        lookAtBlock(inhabitant, targetCrop);
+        lookAtBlock(inhabitant, targetPos);
         if (--waitTicks > 0) {
             return true;
         }
 
-        var pos = targetCrop;
+        // Irrigating/tilling/planting only ever consume from the farmer's own inventory or equipped
+        // tool - no need to haul anything home for those, so only a successful harvest sends it back
+        // to the hut to deposit; everything else goes straight back to scanning for the
+        // next-highest-priority task.
+        boolean shouldReturnHome = switch (actionType) {
+            case IRRIGATE -> { doIrrigate(inhabitant, level, targetPos); yield false; }
+            case TILL -> { doTill(inhabitant, level, targetPos); yield false; }
+            case PLANT -> { doPlant(inhabitant, level, targetPos, plantKind); yield false; }
+            case HARVEST -> doHarvest(inhabitant, level, targetPos);
+        };
+
+        targetPos = null;
+        actionType = null;
+        plantKind = null;
+        phase = shouldReturnHome ? Phase.RETURN_TO_HUT : Phase.SCAN;
+        return true;
+    }
+
+    private void doIrrigate(InhabitantEntity inhabitant, ServerLevel level, BlockPos pos) {
+        if (!FieldWorkScanner.isTillableOrBareFarmland(level, pos)) {
+            return; // Already handled by a player or another worker since the scan.
+        }
+        var bucket = ContainerUtil.extractOne(inhabitant.getInventory(), inhabitant, stack -> stack.is(Items.WATER_BUCKET));
+        if (bucket.isEmpty()) {
+            missingItem = Items.WATER_BUCKET;
+            bucketUnavailable = true;
+            skippedPositions.add(pos);
+            return;
+        }
+        level.setBlockAndUpdate(pos, Blocks.WATER.defaultBlockState());
+        inhabitant.getInventory().addItem(new ItemStack(Items.BUCKET));
+    }
+
+    private void doTill(InhabitantEntity inhabitant, ServerLevel level, BlockPos pos) {
+        var state = level.getBlockState(pos);
+        if (!isTillable(state)) {
+            return; // Already handled by a player or another worker since the scan.
+        }
+        // Defensive re-check - FETCH_HOE should already guarantee this, but the tool could have broken
+        // or been unequipped by a player in the meantime.
+        var tool = inhabitant.getItemBySlot(EquipmentSlot.MAINHAND);
+        if (!(tool.getItem() instanceof HoeItem)) {
+            missingItem = Items.WOODEN_HOE;
+            hoeUnavailable = true;
+            skippedPositions.add(pos);
+            return;
+        }
+        var soundType = state.getSoundType();
+        level.playSound(null, pos, soundType.getPlaceSound(), SoundSource.BLOCKS, soundType.getVolume(), soundType.getPitch());
+        level.setBlockAndUpdate(pos, Blocks.FARMLAND.defaultBlockState());
+        tool.hurtAndBreak(HOE_DAMAGE_PER_TILL, inhabitant, EquipmentSlot.MAINHAND);
+    }
+
+    private void doPlant(InhabitantEntity inhabitant, ServerLevel level, BlockPos pos, @Nullable CropKind kind) {
+        if (kind == null || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.below()).is(Blocks.FARMLAND)) {
+            return; // Already handled since the scan.
+        }
+        var seed = ContainerUtil.extractOne(inhabitant.getInventory(), inhabitant, stack -> stack.is(kind.getSeedItem()));
+        if (seed.isEmpty()) {
+            missingItem = kind.getSeedItem();
+            skippedPositions.add(pos);
+            return;
+        }
+        level.setBlockAndUpdate(pos, kind.getCropBlock().defaultBlockState());
+    }
+
+    private boolean doHarvest(InhabitantEntity inhabitant, ServerLevel level, BlockPos pos) {
         var state = level.getBlockState(pos);
         if (!(state.getBlock() instanceof net.minecraft.world.level.block.CropBlock cropBlock) || !cropBlock.isMaxAge(state)) {
-            // Already harvested by a player or another worker since the scan - just move on.
-            targetCrop = null;
-            phase = Phase.RETURN_TO_HUT;
-            return true;
+            return false; // Already harvested by a player or another worker since the scan.
         }
-
         var soundType = state.getSoundType();
-        level.playSound(null, pos, soundType.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS,
-                soundType.getVolume(), soundType.getPitch());
-        for (var drop : Block.getDrops(state, level, pos, level.getBlockEntity(pos), inhabitant, net.minecraft.world.item.ItemStack.EMPTY)) {
+        level.playSound(null, pos, soundType.getBreakSound(), SoundSource.BLOCKS, soundType.getVolume(), soundType.getPitch());
+        for (var drop : Block.getDrops(state, level, pos, level.getBlockEntity(pos), inhabitant, ItemStack.EMPTY)) {
             inhabitant.getInventory().addItem(drop);
         }
-        level.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        return true;
+    }
 
-        var seedItem = CropScanner.seedItemFor(state);
-        if (seedItem != null) {
-            var seed = ContainerUtil.extractOne(inhabitant.getInventory(), inhabitant, stack -> stack.is(seedItem));
-            if (!seed.isEmpty()) {
-                level.setBlockAndUpdate(pos, cropBlock.defaultBlockState());
-            } else {
-                // No seed on hand to replant with right now - leave the farmland bare and skip this
-                // tile on future scans until it's been walked past again (cleared with skippedCrops).
-                skippedCrops.add(pos);
+    private static boolean isTillable(net.minecraft.world.level.block.state.BlockState state) {
+        return state.is(Blocks.DIRT) || state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT_PATH) || state.is(Blocks.COARSE_DIRT);
+    }
+
+    /** Like every other job's tool, the hoe lives in the equipped mainhand slot (see
+     * {@link #tickFetchHoe}), not the farmer's carried inventory. Any hoe material works. */
+    private static boolean hasHoe(InhabitantEntity inhabitant) {
+        return inhabitant.getItemBySlot(EquipmentSlot.MAINHAND).getItem() instanceof HoeItem;
+    }
+
+    /** A bucket is a consumable material, carried the same way seeds are - not an equipped tool. */
+    private static boolean hasBucket(InhabitantEntity inhabitant) {
+        var inventory = inhabitant.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).is(Items.WATER_BUCKET)) return true;
+        }
+        return false;
+    }
+
+    /** An empty bucket just needs a refill (see {@link #tickRefillBucket}), not a whole new one. */
+    private static boolean hasEmptyBucket(InhabitantEntity inhabitant) {
+        var inventory = inhabitant.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).is(Items.BUCKET)) return true;
+        }
+        return false;
+    }
+
+    /** A still water source with 2 or more still water sources orthogonally next to it - scooping one
+     * out of a pool like this (an "infinite" water source, or a natural spring) leaves the hole
+     * immediately refilled by its neighbors, unlike a single decorative puddle that would just vanish. */
+    private static boolean isSelfRefillingSource(Level level, BlockPos pos) {
+        var state = level.getBlockState(pos);
+        if (!state.is(Blocks.WATER) || !state.getFluidState().isSource()) {
+            return false;
+        }
+        int sourceNeighbors = 0;
+        for (var dir : Direction.Plane.HORIZONTAL) {
+            var neighbor = level.getBlockState(pos.relative(dir));
+            if (neighbor.is(Blocks.WATER) && neighbor.getFluidState().isSource()) {
+                sourceNeighbors++;
             }
         }
-
-        targetCrop = null;
-        phase = Phase.RETURN_TO_HUT;
-        return true;
+        return sourceNeighbors >= 2;
     }
 
     private boolean tickReturnToHut(InhabitantEntity inhabitant, ServerLevel level, DominionStructure workplace) {
@@ -166,8 +461,10 @@ public class FarmerJob implements Job {
         if (!JobActions.depositCarriedItems(inhabitant, level, workplace, actionPacer, nav, containerTarget)) {
             return true;
         }
-        phase = Phase.GOTO_FIELD;
-        skippedCrops.clear();
+        phase = Phase.SCAN;
+        missingItem = null;
+        hoeUnavailable = false;
+        bucketUnavailable = false;
         return false;
     }
 
@@ -180,8 +477,16 @@ public class FarmerJob implements Job {
     public String getStatusDescription() {
         return switch (phase) {
             case GOTO_HUT -> "Heading to work";
-            case GOTO_FIELD -> "Tending the field";
-            case HARVESTING -> "Harvesting crops";
+            case SCAN -> "Tending the field";
+            case FETCH_HOE -> "Fetching a hoe";
+            case FETCH_BUCKET -> "Fetching a water bucket";
+            case REFILL_BUCKET -> "Refilling water bucket";
+            case ACTING -> switch (actionType == null ? ActionType.HARVEST : actionType) {
+                case IRRIGATE -> "Irrigating field";
+                case TILL -> "Tilling soil";
+                case PLANT -> "Planting seeds";
+                case HARVEST -> "Harvesting crops";
+            };
             case RETURN_TO_HUT -> "Returning to hut";
             case DEPOSIT -> "Storing harvest";
         };
@@ -189,39 +494,44 @@ public class FarmerJob implements Job {
 
     @Override
     @Nullable
-    public net.minecraft.world.item.Item getMissingItem() {
-        return null;
+    public Item getMissingItem() {
+        return missingItem;
     }
 
-    /** True while parked in {@link Phase#GOTO_FIELD} with nothing found yet - see {@link #tickGotoField}. */
-    private boolean noCropFound() {
-        return targetCrop == null && noCropCooldown > 0 && phase == Phase.GOTO_FIELD;
+    /** True while parked in {@link Phase#SCAN} with nothing found yet - see {@link #tickScan}. */
+    private boolean noWorkFound() {
+        return targetPos == null && noWorkCooldown > 0 && phase == Phase.SCAN;
     }
 
     @Override
     public List<String> getWarnings() {
-        return noCropFound() ? List.of("I can't find any mature crop") : List.of();
+        return noWorkFound() ? List.of("I can't find any work in my fields") : List.of();
     }
 
     @Override
     public List<String> getDebugLines() {
         var lines = new ArrayList<String>();
         lines.add("Phase: " + phase);
-        lines.add("Target crop: " + targetCrop);
-        lines.add("Wait ticks: " + waitTicks + " / " + HARVEST_TICKS);
-        lines.add("No-crop: " + noCropCooldown);
-        lines.add("Skipped crops: " + skippedCrops.size());
+        lines.add("Action: " + actionType);
+        lines.add("Target: " + targetPos);
+        lines.add("Wait ticks: " + waitTicks + " / " + WORK_TICKS);
+        lines.add("No-work: " + noWorkCooldown);
+        lines.add("Skipped: " + skippedPositions.size());
+        lines.add("Hoe unavailable: " + hoeUnavailable);
+        lines.add("Bucket unavailable: " + bucketUnavailable);
         return lines;
     }
 
     @Override
     public void save(CompoundTag tag) {
         tag.putString("Phase", phase.name());
+        if (actionType != null) tag.putString("ActionType", actionType.name());
+        if (plantKind != null) tag.putString("PlantKind", plantKind.name());
         tag.putInt("WaitTicks", waitTicks);
         actionPacer.save(tag, "Action");
-        if (targetCrop != null) tag.putLong("TargetCrop", targetCrop.asLong());
+        if (targetPos != null) tag.putLong("TargetPos", targetPos.asLong());
         if (containerTarget.pos != null) tag.putLong("ContainerTarget", containerTarget.pos.asLong());
-        tag.putLongArray("SkippedCrops", skippedCrops.stream().mapToLong(BlockPos::asLong).toArray());
+        tag.putLongArray("SkippedPositions", skippedPositions.stream().mapToLong(BlockPos::asLong).toArray());
     }
 
     @Override
@@ -231,12 +541,22 @@ public class FarmerJob implements Job {
         } catch (IllegalArgumentException e) {
             phase = Phase.GOTO_HUT;
         }
+        try {
+            actionType = tag.contains("ActionType") ? ActionType.valueOf(tag.getStringOr("ActionType", "")) : null;
+        } catch (IllegalArgumentException e) {
+            actionType = null;
+        }
+        try {
+            plantKind = tag.contains("PlantKind") ? CropKind.valueOf(tag.getStringOr("PlantKind", "")) : null;
+        } catch (IllegalArgumentException e) {
+            plantKind = null;
+        }
         waitTicks = tag.getIntOr("WaitTicks", 0);
         actionPacer.load(tag, "Action");
-        targetCrop = tag.contains("TargetCrop") ? BlockPos.of(tag.getLongOr("TargetCrop", 0)) : null;
+        targetPos = tag.contains("TargetPos") ? BlockPos.of(tag.getLongOr("TargetPos", 0)) : null;
         containerTarget.pos = tag.contains("ContainerTarget") ? BlockPos.of(tag.getLongOr("ContainerTarget", 0)) : null;
-        skippedCrops.clear();
-        tag.getLongArray("SkippedCrops")
-                .ifPresent(arr -> skippedCrops.addAll(Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toList())));
+        skippedPositions.clear();
+        tag.getLongArray("SkippedPositions")
+                .ifPresent(arr -> skippedPositions.addAll(Arrays.stream(arr).mapToObj(BlockPos::of).collect(Collectors.toList())));
     }
 }
