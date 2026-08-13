@@ -63,6 +63,7 @@ public final class MineNow {
             if (server.getTickCount() % 100 == 0) {
                 var overworld = server.overworld();
                 com.sheepfromheaven.minenow.dominion.DominionSavedData.get(overworld).tickGrowth(overworld);
+                com.sheepfromheaven.minenow.dominion.DominionSavedData.get(overworld).tickFieldRescan(overworld);
             }
         });
 
@@ -242,6 +243,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerHarvestsMatureCrop);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_tills_bare_ground_in_field"),
                             com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerTillsBareGroundInField);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_clears_grass_before_tilling_grass_block"),
+                            com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerClearsGrassBeforeTillingGrassBlock);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_fetches_hoe_from_storage_before_tilling"),
                             com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerFetchesHoeFromStorageBeforeTilling);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_irrigates_before_tilling_unwatered_field"),
@@ -252,10 +255,14 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerPrefersSelfRefillingWaterSourceOverPuddle);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_plants_templated_seed_on_bare_farmland"),
                             com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerPlantsTemplatedSeedOnBareFarmland);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "farmer_fetches_seed_from_storage_before_planting"),
+                            com.sheepfromheaven.minenow.jobs.gametest.FarmerJobTests::farmerFetchesSeedFromStorageBeforePlanting);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "field_area_detector_detects_flat_3x3_pit"),
                             com.sheepfromheaven.minenow.structure.field.gametest.FieldAreaDetectorTests::detectsFlat3x3Pit);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "field_area_detector_detects_flat_3x3_pit_with_deeper_center"),
                             com.sheepfromheaven.minenow.structure.field.gametest.FieldAreaDetectorTests::detectsFlat3x3PitWithDeeperCenter);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "periodic_rescan_grows_field_after_wall_removed"),
+                            com.sheepfromheaven.minenow.structure.field.gametest.FieldRescanTests::periodicRescanGrowsFieldAfterWallRemoved);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_lumberyard_barrel_is_stocked_with_an_axe"),
                             com.sheepfromheaven.minenow.command.gametest.DebugCommandsTests::debugLumberyardBarrelIsStockedWithAnAxe);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "debug_fishery_barrel_is_stocked_with_a_fishing_rod"),

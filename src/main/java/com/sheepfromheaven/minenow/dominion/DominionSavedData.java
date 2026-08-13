@@ -311,6 +311,30 @@ public class DominionSavedData extends SavedData {
     }
 
     /**
+     * Periodic (every ~100 ticks, i.e. ~5 seconds) re-scan of every field's claimed area: a player may
+     * have placed or removed blocks since the field was last computed (adding/removing tillable ground,
+     * or opening up a bigger hole for the flood-fill to spread into), so re-run
+     * {@link com.sheepfromheaven.minenow.structure.field.FieldAreaDetector#detect} from the marker the
+     * same way placement does. Only a successful re-scan replaces the field's area - a marker that's
+     * momentarily not enclosed (mid-edit) or whose flood-fill temporarily exceeds the cap just keeps
+     * its last-known-good area rather than shrinking/clearing it.
+     */
+    public void tickFieldRescan(ServerLevel level) {
+        for (var dominion : dominions.values()) {
+            for (var field : dominion.getFields()) {
+                var below = field.getMarkerPos().below();
+                var result = com.sheepfromheaven.minenow.structure.field.FieldAreaDetector.detect(
+                        level, below, field.getMarkerPos(), com.sheepfromheaven.minenow.core.Config.maxRoomSize);
+                if (result instanceof com.sheepfromheaven.minenow.structure.field.FieldAreaDetector.Result.Success(var blocks)
+                        && !blocks.equals(field.getArea())) {
+                    field.setArea(blocks);
+                    setDirty();
+                }
+            }
+        }
+    }
+
+    /**
      * Periodic (every ~100 ticks) growth pass for every dominion: recomputes tier level-up and, for
      * attractive dominions off cooldown with room, rolls a 10% chance to spawn an immigration candidate.
      * Shares one tick hook with level-up rather than adding a second redundant loop.
