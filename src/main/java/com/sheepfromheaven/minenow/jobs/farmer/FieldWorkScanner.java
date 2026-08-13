@@ -25,6 +25,10 @@ public final class FieldWorkScanner {
     private FieldWorkScanner() {}
 
     private static final Set<Block> TILLABLE = Set.of(Blocks.DIRT, Blocks.GRASS_BLOCK, Blocks.DIRT_PATH, Blocks.COARSE_DIRT);
+    /** Vegetation that has to be cleared off a tillable tile before it counts as ready to till -
+     * vanilla's hoe refuses to till when the block above isn't air. */
+    private static final Set<Block> VEGETATION = Set.of(Blocks.SHORT_GRASS, Blocks.TALL_GRASS, Blocks.FERN,
+            Blocks.LARGE_FERN, Blocks.DEAD_BUSH, Blocks.SHORT_DRY_GRASS, Blocks.TALL_DRY_GRASS);
     private static final Direction[] HORIZONTAL = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
     /** How far (chebyshev distance) a tillable/farmland tile may be from a water source and still count as irrigated. */
     private static final int WATER_RANGE = 4;
@@ -71,7 +75,9 @@ public final class FieldWorkScanner {
         return Optional.empty();
     }
 
-    /** First irrigated, non-farmland ground tile in any assigned field that still needs tilling. */
+    /** First irrigated, non-farmland ground tile in any assigned field that still needs tilling - a
+     * tile with grass/fern/etc. still growing on top isn't offered until {@link #findVegetationClearTarget}
+     * has it cleared, since vanilla's hoe refuses to till under standing vegetation. */
     public static Optional<BlockPos> findTillTarget(Level level, List<Field> fields, Set<BlockPos> excluded) {
         for (var field : fields) {
             var area = field.getArea();
@@ -79,6 +85,7 @@ public final class FieldWorkScanner {
             for (var pos : area) {
                 if (excluded.contains(pos)) continue;
                 if (!TILLABLE.contains(level.getBlockState(pos).getBlock())) continue;
+                if (VEGETATION.contains(level.getBlockState(pos.above()).getBlock())) continue;
                 if (!isIrrigated(pos, waterPositions)) continue;
                 return Optional.of(pos);
             }
@@ -86,8 +93,26 @@ public final class FieldWorkScanner {
         return Optional.empty();
     }
 
-    /** First bare farmland tile (no crop growing) in a field, paired with a crop kind its marker allows. */
-    public static Optional<PlantTarget> findPlantTarget(Level level, List<Field> fields, Set<BlockPos> excluded) {
+    /** First tillable ground tile in any assigned field that still has grass/fern/etc. growing on top
+     * of it - takes priority over {@link #findTillTarget} since that vegetation has to be broken
+     * first. */
+    public static Optional<BlockPos> findVegetationClearTarget(Level level, List<Field> fields, Set<BlockPos> excluded) {
+        for (var field : fields) {
+            for (var pos : field.getArea()) {
+                if (excluded.contains(pos)) continue;
+                if (!TILLABLE.contains(level.getBlockState(pos).getBlock())) continue;
+                if (!VEGETATION.contains(level.getBlockState(pos.above()).getBlock())) continue;
+                return Optional.of(pos);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** First bare farmland tile (no crop growing) in a field, paired with a crop kind its marker
+     * allows whose seed hasn't already turned up missing from storage this trip (see
+     * {@code FarmerJob#tickFetchSeed}). */
+    public static Optional<PlantTarget> findPlantTarget(Level level, List<Field> fields, Set<BlockPos> excluded,
+            Set<CropKind> unavailableSeeds) {
         for (var field : fields) {
             if (!(level.getBlockEntity(field.getMarkerPos()) instanceof FieldMarkerBlockEntity be)) continue;
             var allowedCrops = be.getAllowedCrops();
@@ -98,6 +123,7 @@ public final class FieldWorkScanner {
                 if (excluded.contains(above)) continue;
                 if (!level.getBlockState(above).isAir()) continue;
                 for (var kind : allowedCrops) {
+                    if (unavailableSeeds.contains(kind)) continue;
                     return Optional.of(new PlantTarget(above, kind));
                 }
             }
@@ -111,6 +137,12 @@ public final class FieldWorkScanner {
         var state = level.getBlockState(pos);
         if (TILLABLE.contains(state.getBlock())) return true;
         return state.is(Blocks.FARMLAND) && level.getBlockState(pos.above()).isAir();
+    }
+
+    /** Whether {@code block} is grass/fern/etc. that has to be cleared before the tile beneath it
+     * counts as ready to till - see {@code FarmerJob#doClearVegetation}. */
+    public static boolean isVegetation(Block block) {
+        return VEGETATION.contains(block);
     }
 
     private static boolean isIrrigated(BlockPos pos, List<BlockPos> waterPositions) {

@@ -150,6 +150,56 @@ public class FarmerJobTests {
     }
 
     /**
+     * A grass block with tall grass (or fern, etc.) still growing on top of it isn't ready to till
+     * yet - vanilla's hoe refuses to till under standing vegetation, so the farmer has to break it
+     * first (see {@code FieldWorkScanner#findVegetationClearTarget}), then till the same tile on a
+     * later scan.
+     */
+    public static void farmerClearsGrassBeforeTillingGrassBlock(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        var markerRelPos = new BlockPos(2, 1, 2);
+        var barrelRelPos = new BlockPos(1, 1, 1);
+        var grassRelPos = new BlockPos(4, 1, 2);
+        var tallGrassRelPos = new BlockPos(4, 2, 2);
+        var waterRelPos = new BlockPos(5, 1, 2);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+        helper.setBlock(grassRelPos, Blocks.GRASS_BLOCK);
+        helper.setBlock(tallGrassRelPos, Blocks.SHORT_GRASS);
+        helper.setBlock(waterRelPos, Blocks.WATER);
+
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+        var grassPos = helper.absolutePos(grassRelPos);
+        var waterPos = helper.absolutePos(waterRelPos);
+
+        var farm = setUpFarm(helper, markerPos, barrelPos);
+        // The water tile is already irrigating the grass block (within range) so tilling can proceed
+        // once the grass on top of it is cleared.
+        var field = new Field(grassPos, Set.of(grassPos, waterPos));
+        field.setAssignedStructureId(farm.structure().getId());
+        farm.dominion().addField(field);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(farm.dominion().getId());
+        inhabitant.setWorkStructureId(farm.structure().getId());
+        inhabitant.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_HOE));
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        runUntilReturning(helper, inhabitant, workGoal, markerPos, grassPos);
+
+        helper.succeedWhen(() -> {
+            var level = helper.getLevel();
+            helper.assertTrue(level.getBlockState(grassPos).is(Blocks.FARMLAND),
+                    "Grass block should have been tilled into farmland once the grass on top was cleared");
+            helper.assertTrue(level.getBlockState(grassPos.above()).isAir(),
+                    "Tall grass on top should have been broken before tilling");
+        });
+    }
+
+    /**
      * With no hoe equipped, the farmer should fetch one from the hut's storage (a barrel) before
      * tilling, mirroring how every other job equips its tool - not from its own carried inventory.
      */
@@ -461,6 +511,66 @@ public class FarmerJobTests {
             var state = helper.getLevel().getBlockState(cropPos);
             helper.assertTrue(state.is(Blocks.WHEAT) && state.getValue(CropBlock.AGE) == 0,
                     "Bare farmland should have been planted with the templated seed");
+        });
+    }
+
+    /**
+     * With no seed carried, the farmer should fetch the templated crop's seed from the hut's storage
+     * (a barrel) before planting - mirroring how it fetches a missing hoe/bucket - rather than
+     * reporting the seed missing while it's sitting right there in storage.
+     */
+    public static void farmerFetchesSeedFromStorageBeforePlanting(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+
+        var markerRelPos = new BlockPos(2, 1, 2);
+        var barrelRelPos = new BlockPos(1, 1, 1);
+        var farmlandRelPos = new BlockPos(4, 1, 2);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+        helper.setBlock(markerRelPos, StructureBlocks.FIELD_MARKER.get());
+        helper.setBlock(farmlandRelPos, Blocks.FARMLAND);
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+        var farmlandPos = helper.absolutePos(farmlandRelPos);
+        var cropPos = farmlandPos.above();
+
+        var farm = setUpFarm(helper, markerPos, barrelPos);
+        var field = new Field(markerPos, Set.of(farmlandPos));
+        field.setAssignedStructureId(farm.structure().getId());
+        farm.dominion().addField(field);
+
+        if (level.getBlockEntity(markerPos) instanceof FieldMarkerBlockEntity be) {
+            be.setTemplates(java.util.List.of(new ItemStack(Items.CARROT)));
+        }
+        if (level.getBlockEntity(barrelPos) instanceof net.minecraft.world.Container barrel) {
+            barrel.setItem(0, new ItemStack(Items.CARROT, 4));
+        }
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(farm.dominion().getId());
+        inhabitant.setWorkStructureId(farm.structure().getId());
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        // Same snap-driven approach as runUntilReturning (real navigation isn't the point of this
+        // test): settle into FETCH_SEED first, snap onto the barrel so the extraction happens
+        // immediately, then snap onto the plant target for the rest of the cycle.
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+        workGoal.tick();
+        workGoal.tick();
+        inhabitant.snapTo(barrelPos.getX() + 0.5, barrelPos.getY(), barrelPos.getZ() + 0.5);
+        workGoal.tick();
+        inhabitant.snapTo(cropPos.getX() + 0.5, cropPos.getY(), cropPos.getZ() + 0.5);
+        for (int i = 0; i < 30 && !"Returning to hut".equals(workGoal.getStatusDescription()); i++) {
+            workGoal.tick();
+        }
+
+        helper.succeedWhen(() -> {
+            var state = helper.getLevel().getBlockState(cropPos);
+            helper.assertTrue(state.is(Blocks.CARROTS) && state.getValue(CropBlock.AGE) == 0,
+                    "Bare farmland should have been planted with the seed fetched from storage");
         });
     }
 }
