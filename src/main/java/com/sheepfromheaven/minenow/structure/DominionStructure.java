@@ -899,11 +899,23 @@ public class DominionStructure {
      * the same one back forever.
      */
     public Optional<BlockPos> findRangeRequirementPosition(Level level, StructureType.Requirement requirement, Set<BlockPos> excluded) {
+        return findRangeRequirementPosition(level, requirement, excluded, (lvl, pos) -> true);
+    }
+
+    /**
+     * Same scan, but positions satisfying {@code preferred} win over merely-matching ones (e.g. a
+     * farmer would rather scoop from a self-refilling water tile than a decorative single-block pond
+     * that would just leave a hole) - only falls back to the first plain match if nothing in range
+     * satisfies both.
+     */
+    public Optional<BlockPos> findRangeRequirementPosition(Level level, StructureType.Requirement requirement,
+            Set<BlockPos> excluded, java.util.function.BiPredicate<Level, BlockPos> preferred) {
         int radius = type.getRangeRadius();
         int height = type.getRangeHeight();
         if (radius <= 0) {
             return Optional.empty();
         }
+        BlockPos fallback = null;
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (dx * dx + dz * dz > radius * radius) continue;
@@ -912,12 +924,17 @@ public class DominionStructure {
                     if (excluded.contains(pos)) continue;
                     var state = level.getBlockState(pos);
                     if (requirement.matcher().test(state) && hasOpenAirAbove(level, pos, requirement.airAbove())) {
-                        return Optional.of(pos);
+                        if (preferred.test(level, pos)) {
+                            return Optional.of(pos);
+                        }
+                        if (fallback == null) {
+                            fallback = pos;
+                        }
                     }
                 }
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(fallback);
     }
 
     private boolean hasOpenAirAbove(Level level, BlockPos pos, int required) {

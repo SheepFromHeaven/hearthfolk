@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +40,25 @@ public class StructureRequirementsConfig {
         }
         try {
             var json = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
+            // A config file from before a given structure type had bundled defaults (e.g. FARM's water
+            // requirement) would otherwise leave that type stuck with zero requirements forever - the
+            // file only ever gets written from scratch when it's missing entirely, not per-key. Backfill
+            // any type absent from an existing file with its bundled default and persist the merge, so
+            // upgrading players pick up new requirements without deleting their customized config.
+            boolean backfilled = false;
+            for (var type : StructureType.values()) {
+                if (!json.has(type.name())) {
+                    var bundled = buildDefaultEntry(type);
+                    if (bundled != null) {
+                        json.add(type.name(), bundled);
+                        backfilled = true;
+                    }
+                }
+            }
+            if (backfilled) {
+                writeJson(path, json);
+            }
+
             RANGE_RADII.clear();
             RANGE_HEIGHTS.clear();
             RANGE_REQUIREMENTS.clear();
@@ -129,53 +149,88 @@ public class StructureRequirementsConfig {
 
     private static void writeDefaults(Path path) {
         var root = new JsonObject();
+        for (var type : StructureType.values()) {
+            var entry = buildDefaultEntry(type);
+            if (entry != null) {
+                root.add(type.name(), entry);
+            }
+        }
+        writeJson(path, root);
+    }
 
-        var fishery = new JsonObject();
-        fishery.addProperty("rangeRadius", 8);
-        fishery.addProperty("rangeHeight", 8);
-        var fishRangeReqs = new JsonArray();
-        var water = new JsonObject();
-        water.addProperty("block", "minecraft:water");
-        water.addProperty("icon", "minecraft:water_bucket");
-        water.addProperty("name", "Water");
-        water.addProperty("count", 1);
-        water.addProperty("airAbove", 2);
-        fishRangeReqs.add(water);
-        fishery.add("rangeRequirements", fishRangeReqs);
-        root.add("FISHERY", fishery);
+    /** The bundled default JSON entry for a structure type, or null if it has no range requirements
+     * by default (in which case it's simply omitted, matching {@link #load}'s "absent = zero" rule). */
+    @Nullable
+    private static JsonObject buildDefaultEntry(StructureType type) {
+        return switch (type) {
+            case FISHERY -> {
+                var fishery = new JsonObject();
+                fishery.addProperty("rangeRadius", 8);
+                fishery.addProperty("rangeHeight", 8);
+                var fishRangeReqs = new JsonArray();
+                var water = new JsonObject();
+                water.addProperty("block", "minecraft:water");
+                water.addProperty("icon", "minecraft:water_bucket");
+                water.addProperty("name", "Water");
+                water.addProperty("count", 1);
+                water.addProperty("airAbove", 2);
+                fishRangeReqs.add(water);
+                fishery.add("rangeRequirements", fishRangeReqs);
+                yield fishery;
+            }
+            case LUMBERYARD -> {
+                var lumberyard = new JsonObject();
+                lumberyard.addProperty("rangeRadius", 8);
+                lumberyard.addProperty("rangeHeight", 4);
+                var lumberRangeReqs = new JsonArray();
+                var logs = new JsonObject();
+                logs.addProperty("tag", "minecraft:logs");
+                logs.addProperty("icon", "minecraft:oak_log");
+                logs.addProperty("name", "Tree");
+                logs.addProperty("count", 1);
+                lumberRangeReqs.add(logs);
+                lumberyard.add("rangeRequirements", lumberRangeReqs);
+                yield lumberyard;
+            }
+            case FARM -> {
+                var farm = new JsonObject();
+                farm.addProperty("rangeRadius", 8);
+                farm.addProperty("rangeHeight", 4);
+                var farmRangeReqs = new JsonArray();
+                var farmWater = new JsonObject();
+                farmWater.addProperty("block", "minecraft:water");
+                farmWater.addProperty("icon", "minecraft:water_bucket");
+                farmWater.addProperty("name", "Water");
+                farmWater.addProperty("count", 1);
+                farmRangeReqs.add(farmWater);
+                farm.add("rangeRequirements", farmRangeReqs);
+                yield farm;
+            }
+            case NURSERY -> {
+                var nursery = new JsonObject();
+                nursery.addProperty("rangeRadius", 8);
+                nursery.addProperty("rangeHeight", 2);
+                var nurseryRangeReqs = new JsonArray();
+                var soil = new JsonObject();
+                soil.addProperty("tag", "minecraft:dirt");
+                soil.addProperty("icon", "minecraft:oak_sapling");
+                soil.addProperty("name", "Plantable Ground");
+                soil.addProperty("count", 1);
+                soil.addProperty("airAbove", 1);
+                nurseryRangeReqs.add(soil);
+                nursery.add("rangeRequirements", nurseryRangeReqs);
+                yield nursery;
+            }
+            default -> null;
+        };
+    }
 
-        var lumberyard = new JsonObject();
-        lumberyard.addProperty("rangeRadius", 8);
-        lumberyard.addProperty("rangeHeight", 4);
-        var lumberRangeReqs = new JsonArray();
-        var logs = new JsonObject();
-        logs.addProperty("tag", "minecraft:logs");
-        logs.addProperty("icon", "minecraft:oak_log");
-        logs.addProperty("name", "Tree");
-        logs.addProperty("count", 1);
-        lumberRangeReqs.add(logs);
-        lumberyard.add("rangeRequirements", lumberRangeReqs);
-        root.add("LUMBERYARD", lumberyard);
-
-        var nursery = new JsonObject();
-        nursery.addProperty("rangeRadius", 8);
-        nursery.addProperty("rangeHeight", 2);
-        var nurseryRangeReqs = new JsonArray();
-        var soil = new JsonObject();
-        soil.addProperty("tag", "minecraft:dirt");
-        soil.addProperty("icon", "minecraft:oak_sapling");
-        soil.addProperty("name", "Plantable Ground");
-        soil.addProperty("count", 1);
-        soil.addProperty("airAbove", 1);
-        nurseryRangeReqs.add(soil);
-        nursery.add("rangeRequirements", nurseryRangeReqs);
-        root.add("NURSERY", nursery);
-
+    private static void writeJson(Path path, JsonObject root) {
         try {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(root));
         } catch (IOException e) {
-            LOGGER.error("Failed to write default minenow-structures.json", e);
+            LOGGER.error("Failed to write minenow-structures.json", e);
         }
     }
 
@@ -189,7 +244,7 @@ public class StructureRequirementsConfig {
         RANGE_RADII.put(StructureType.MINE, 0);
         RANGE_RADII.put(StructureType.NURSERY, 8);
         RANGE_RADII.put(StructureType.CHARCOAL_KILN, 0);
-        RANGE_RADII.put(StructureType.FARM, 0);
+        RANGE_RADII.put(StructureType.FARM, 8);
 
         RANGE_HEIGHTS.clear();
         RANGE_HEIGHTS.put(StructureType.HOUSE, 0);
@@ -200,7 +255,7 @@ public class StructureRequirementsConfig {
         RANGE_HEIGHTS.put(StructureType.MINE, 0);
         RANGE_HEIGHTS.put(StructureType.NURSERY, 2);
         RANGE_HEIGHTS.put(StructureType.CHARCOAL_KILN, 0);
-        RANGE_HEIGHTS.put(StructureType.FARM, 0);
+        RANGE_HEIGHTS.put(StructureType.FARM, 4);
 
         RANGE_REQUIREMENTS.clear();
         RANGE_REQUIREMENTS.put(StructureType.HOUSE, List.of());
@@ -227,6 +282,10 @@ public class StructureRequirementsConfig {
                         () -> new ItemStack(net.minecraft.world.item.Items.OAK_SAPLING), 1)
         ));
         RANGE_REQUIREMENTS.put(StructureType.CHARCOAL_KILN, List.of());
-        RANGE_REQUIREMENTS.put(StructureType.FARM, List.of());
+        RANGE_REQUIREMENTS.put(StructureType.FARM, List.of(
+                new StructureType.Requirement("Water", 1,
+                        s -> s.is(net.minecraft.world.level.block.Blocks.WATER),
+                        () -> new ItemStack(net.minecraft.world.item.Items.WATER_BUCKET))
+        ));
     }
 }

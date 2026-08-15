@@ -38,22 +38,41 @@ public class OpenFenceGateGoal extends Goal {
             return false;
         }
         Path path = mob.getNavigation().getPath();
-        if (path == null || path.notStarted()) {
-            return false;
-        }
-        for (int i = 0; i < Math.min(path.getNextNodeIndex() + 2, path.getNodeCount()); i++) {
-            var node = path.getNode(i);
-            gatePos = new BlockPos(node.x, node.y + 1, node.z);
-            if (mob.distanceToSqr(gatePos.getX(), mob.getY(), gatePos.getZ()) <= 2.25) {
-                hasGate = isClosedFenceGate(gatePos);
-                if (hasGate) {
+        if (path != null && !path.notStarted()) {
+            for (int i = 0; i < Math.min(path.getNextNodeIndex() + 2, path.getNodeCount()); i++) {
+                var node = path.getNode(i);
+                if (findGateAboveNode(node.x, node.y, node.z)) {
                     return true;
                 }
             }
         }
-        gatePos = mob.blockPosition().above();
-        hasGate = isClosedFenceGate(gatePos);
-        return hasGate;
+        // Fall back to whatever the mob is physically bumping into, independent of the path - covers
+        // both the tile directly ahead of it (in whichever direction it's facing) and its own tile,
+        // for cases where the path doesn't have a node lined up with the gate at all (no path could be
+        // computed, or the "next" node has already advanced past the collision point).
+        var aheadPos = mob.blockPosition().relative(mob.getDirection());
+        if (findGateAboveNode(aheadPos.getX(), aheadPos.getY() - 1, aheadPos.getZ())) {
+            return true;
+        }
+        return findGateAboveNode(mob.getBlockX(), mob.getBlockY() - 1, mob.getBlockZ());
+    }
+
+    /**
+     * Checks for a closed gate one block above the given ground position (the usual case, matching
+     * vanilla door placement) or two blocks above it - real terrain often has the fence/gate row
+     * standing a block taller than the tile the mob is currently walking on (a step up right at the
+     * wall), which a plain "ground + 1" check misses entirely.
+     */
+    private boolean findGateAboveNode(int x, int groundY, int z) {
+        for (int dy = 1; dy <= 2; dy++) {
+            var candidate = new BlockPos(x, groundY + dy, z);
+            if (mob.distanceToSqr(candidate.getX(), mob.getY(), candidate.getZ()) <= 2.25 && isClosedFenceGate(candidate)) {
+                gatePos = candidate;
+                hasGate = true;
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

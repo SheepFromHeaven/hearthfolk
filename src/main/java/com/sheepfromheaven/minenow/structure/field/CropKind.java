@@ -51,6 +51,15 @@ public enum CropKind {
         return Optional.empty();
     }
 
+    public static Optional<CropKind> fromSeedItem(Item item) {
+        for (var kind : values()) {
+            if (kind.seedItem == item) {
+                return Optional.of(kind);
+            }
+        }
+        return Optional.empty();
+    }
+
     public boolean isMature(BlockState state) {
         return state.getBlock() instanceof CropBlock cropBlock && cropBlock.isMaxAge(state);
     }

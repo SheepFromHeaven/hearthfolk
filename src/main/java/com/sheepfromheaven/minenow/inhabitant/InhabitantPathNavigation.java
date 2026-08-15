@@ -15,6 +15,10 @@ public class InhabitantPathNavigation extends GroundPathNavigation {
     @Override
     protected PathFinder createPathFinder(int maxVisitedNodes) {
         nodeEvaluator = new InhabitantNodeEvaluator();
+        // Vanilla GroundPathNavigation sets this too - without it, a closed fence gate's DOOR_WOOD_CLOSED
+        // path type never resolves to the walkable WALKABLE_DOOR type, so the pathfinder routes around
+        // closed gates entirely and OpenFenceGateGoal never gets a path node next to one to react to.
+        nodeEvaluator.setCanPassDoors(true);
         return new PathFinder(nodeEvaluator, maxVisitedNodes);
     }
 }
