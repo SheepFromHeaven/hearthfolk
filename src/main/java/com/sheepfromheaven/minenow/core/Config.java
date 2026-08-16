@@ -28,12 +28,18 @@ public class Config {
                     "and pathfinding info, and visualizes the active path with particles")
             .define("debugInhabitantView", false);
 
+    public static final ModConfigSpec.BooleanValue ADD_BELL_RECIPE = BUILDER
+            .comment("Adds a crafting recipe for the vanilla bell (3 sticks, a gold ingot, and a golden " +
+                    "nugget), since bells are normally not craftable and are needed for the dominion banner")
+            .define("addBellRecipe", false);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     public static int defaultDominionRadius;
     public static int maxRoomSize;
     public static int maxTrunkSize;
     public static boolean debugInhabitantView;
+    public static boolean addBellRecipe;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
@@ -41,5 +47,6 @@ public class Config {
         maxRoomSize = MAX_ROOM_SIZE.get();
         maxTrunkSize = MAX_TRUNK_SIZE.get();
         debugInhabitantView = DEBUG_INHABITANT_VIEW.get();
+        addBellRecipe = ADD_BELL_RECIPE.get();
     }
 }
