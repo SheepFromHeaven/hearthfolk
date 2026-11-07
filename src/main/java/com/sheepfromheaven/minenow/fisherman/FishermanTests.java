@@ -45,6 +45,26 @@ public final class FishermanTests {
         });
     }
 
+    public static void fishermanCastsABobberAndAFishBites(GameTestHelper helper) {
+        Villager fisherman = spawnFisherman(helper);
+        digPool(helper, 7, 10);
+        fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
+        java.util.Set<VillagerBobber.State> seen = java.util.EnumSet.noneOf(VillagerBobber.State.class);
+        int[] mostAtOnce = {0};
+        helper.onEachTick(() -> {
+            var bobbers = helper.getLevel().getEntitiesOfClass(VillagerBobber.class, helper.getBounds(), bobber -> bobber.getOwner() == fisherman);
+            mostAtOnce[0] = Math.max(mostAtOnce[0], bobbers.size());
+            bobbers.forEach(bobber -> seen.add(bobber.state()));
+        });
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(seen.containsAll(java.util.EnumSet.allOf(VillagerBobber.State.class)),
+                    "The bobber should fly, float, have a fish approach and bite; saw " + seen);
+            helper.assertTrue(catchCount(fisherman) >= 1, "Reeling in after the bite should land a catch");
+            helper.assertTrue(mostAtOnce[0] == 1, "A fisherman has at most one bobber out, saw " + mostAtOnce[0]);
+        });
+    }
+
     public static void fishermanWithoutARodCatchesNothing(GameTestHelper helper) {
         Villager fisherman = spawnFisherman(helper);
         digPool(helper, 7, 10);

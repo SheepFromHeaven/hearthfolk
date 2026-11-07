@@ -4,6 +4,7 @@ import com.sheepfromheaven.minenow.dev.GametestPlayground;
 import com.sheepfromheaven.minenow.farmer.FarmerReport;
 import com.sheepfromheaven.minenow.farmer.FarmerRules;
 import com.sheepfromheaven.minenow.farmer.FarmerTests;
+import com.sheepfromheaven.minenow.fisherman.FishermanEntities;
 import com.sheepfromheaven.minenow.fisherman.FishermanTests;
 import com.sheepfromheaven.minenow.gametest.TestGroup;
 import com.sheepfromheaven.minenow.farmer.FarmerTradeTests;
@@ -37,6 +38,7 @@ public final class MineNow {
 
     public MineNow(IEventBus modBus) {
         ModVillagers.register(modBus);
+        FishermanEntities.register(modBus);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onServerTick);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onRegisterCommands);
@@ -97,6 +99,7 @@ public final class MineNow {
             test(helper, TestGroup.FISHERMAN, "fisherman_without_a_rod_offers_to_buy_one", FishermanTests::fishermanWithoutARodOffersToBuyOne);
             test(helper, TestGroup.FISHERMAN, "fisherman_catches_fish_from_water_touching_its_barrel", FishermanTests::fishermanCatchesFishFromWaterTouchingItsBarrel);
             test(helper, TestGroup.FISHERMAN, "fisherman_without_a_rod_catches_nothing", FishermanTests::fishermanWithoutARodCatchesNothing);
+            test(helper, TestGroup.FISHERMAN, "fisherman_casts_a_bobber_and_a_fish_bites", FishermanTests::fishermanCastsABobberAndAFishBites);
             test(helper, TestGroup.FISHERMAN, "fisherman_ignores_water_not_touching_its_barrel", FishermanTests::fishermanIgnoresWaterNotTouchingItsBarrel);
             test(helper, TestGroup.FISHERMAN, "fisherman_unloads_its_catch_at_home", FishermanTests::fishermanUnloadsItsCatchAtHome);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);

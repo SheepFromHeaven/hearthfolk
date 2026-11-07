@@ -13,6 +13,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -37,14 +38,13 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The fisherman walks to the shore of the water touching its barrel ({@link FishingWater}), casts with its rod, waits
- * for a bite (5 to 15 seconds, less with Lure) and reels in a catch from vanilla's fishing loot table, wearing the rod.
+ * The fisherman walks to the shore of the water touching its barrel ({@link FishingWater}), casts a
+ * {@link VillagerBobber}, waits for a fish to bite and reels in a catch from vanilla's fishing loot table, wearing the rod.
  * When the catch piles up it carries it to its home chest. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class GoFishing extends Behavior<Villager> {
     private static final float SPEED = 0.5F;
-    private static final int MIN_WAIT = 100;
-    private static final int MAX_WAIT = 300;
+    private static final int RECAST_DELAY = 20;
     private static final int GIVE_UP_AFTER_TICKS = 200;
     private static final int UNREACHABLE_COOLDOWN = 600;
     private static final int IDLE_RESCAN_DELAY = 100;
@@ -57,7 +57,9 @@ public class GoFishing extends Behavior<Villager> {
     private @Nullable Task task;
     private long targetSince;
     private long nextStartAllowed;
-    private int biteIn = -1;
+    private @Nullable VillagerBobber bobber;
+    private long recastAt;
+    private int reactAfter;
 
     public GoFishing() {
         super(ImmutableMap.of(
@@ -116,7 +118,7 @@ public class GoFishing extends Behavior<Villager> {
         target = null;
         water = null;
         task = null;
-        biteIn = -1;
+        reelOut();
         body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         body.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
         Tools.showInHand(body, false);
@@ -130,24 +132,53 @@ public class GoFishing extends Behavior<Villager> {
             advance(level, body, timestamp);
             return;
         }
-        if (biteIn < 0) {
-            body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
-            level.playSound(null, body.blockPosition(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F);
-            ItemStack rod = body.getInventory().getItem(Tools.slot(body));
-            int lure = Math.round(EnchantmentHelper.getFishingTimeReduction(level, rod, body) * 20.0F);
-            biteIn = Math.max(20, MIN_WAIT + body.getRandom().nextInt(MAX_WAIT - MIN_WAIT) - lure);
+        if (bobber == null || bobber.isRemoved()) {
+            bobber = null;
+            if (timestamp >= recastAt) cast(level, body, timestamp);
             return;
         }
-        if (biteIn-- > 0) return;
-        reelIn(level, body);
-        biteIn = -1;
+        bobber.tend();
+        body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(bobber, false));
+        if (bobber.bitingFor() < reactAfter) return;
+        reelIn(level, body, bobber.position());
+        reelOut();
+        recastAt = timestamp + RECAST_DELAY / 2;
         if (Unloading.shouldUnload(body) && HomeStorage.storageIn(level, body).isPresent()) advance(level, body, timestamp);
     }
 
-    private void reelIn(ServerLevel level, Villager body) {
+    private void cast(ServerLevel level, Villager body, long timestamp) {
+        body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        level.playSound(null, body.blockPosition(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F);
+        ItemStack rod = body.getInventory().getItem(Tools.slot(body));
+        int lure = Math.round(EnchantmentHelper.getFishingTimeReduction(level, rod, body) * 20.0F);
+        bobber = VillagerBobber.cast(level, body, castTarget(level, body), lure);
+        reactAfter = 4 + body.getRandom().nextInt(8);
+        recastAt = timestamp + RECAST_DELAY;
+    }
+
+    private Vec3 castTarget(ServerLevel level, Villager body) {
+        int dx = Integer.signum(water.getX() - target.getX());
+        int dz = Integer.signum(water.getZ() - target.getZ());
+        BlockPos landing = water;
+        for (int out = 1 + body.getRandom().nextInt(3); out > 0; out--) {
+            BlockPos candidate = water.offset(dx * out, 0, dz * out);
+            if (FishingWater.isOpenWater(level, candidate)) {
+                landing = candidate;
+                break;
+            }
+        }
+        return new Vec3(landing.getX() + 0.3 + body.getRandom().nextDouble() * 0.4, landing.getY() + 0.9, landing.getZ() + 0.3 + body.getRandom().nextDouble() * 0.4);
+    }
+
+    private void reelOut() {
+        if (bobber != null) bobber.discard();
+        bobber = null;
+    }
+
+    private void reelIn(ServerLevel level, Villager body, Vec3 at) {
         ItemStack rod = body.getInventory().getItem(Tools.slot(body));
         LootParams params = new LootParams.Builder(level)
-                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(water))
+                .withParameter(LootContextParams.ORIGIN, at)
                 .withParameter(LootContextParams.TOOL, rod)
                 .withParameter(LootContextParams.THIS_ENTITY, body)
                 .withLuck(EnchantmentHelper.getFishingLuckBonus(level, rod, body))
@@ -157,13 +188,13 @@ public class GoFishing extends Behavior<Villager> {
             if (!rest.isEmpty()) Block.popResource(level, body.blockPosition(), rest);
         }
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
-        level.playSound(null, water, SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 1.0F);
-        level.sendParticles(ParticleTypes.FISHING, water.getX() + 0.5, water.getY() + 1.0, water.getZ() + 0.5, 6, 0.2, 0.0, 0.2, 0.05);
+        level.playSound(null, BlockPos.containing(at), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 1.0F);
+        level.sendParticles(ParticleTypes.FISHING, at.x, at.y + 0.2, at.z, 6, 0.2, 0.0, 0.2, 0.05);
         Tools.wear(level, body);
     }
 
     private void advance(ServerLevel level, Villager body, long timestamp) {
-        biteIn = -1;
+        reelOut();
         if (pickTarget(level, body)) {
             targetSince = timestamp;
             walkTo(body);
