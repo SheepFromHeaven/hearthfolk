@@ -69,8 +69,11 @@ public class VillagerBobberRenderer extends EntityRenderer<VillagerBobber, Fishi
             return;
         }
         float bodyYaw = Mth.lerp(partialTicks, owner.yBodyRotO, owner.yBodyRot) * Mth.DEG_TO_RAD;
-        double forward = 0.3 * owner.getScale();
-        Vec3 rodTip = owner.getPosition(partialTicks).add(-Mth.sin(bodyYaw) * forward, 1.45 * owner.getScale(), Mth.cos(bodyYaw) * forward);
+        double forward = 0.5 * owner.getScale();
+        double left = 0.2 * owner.getScale();
+        double sin = Mth.sin(bodyYaw);
+        double cos = Mth.cos(bodyYaw);
+        Vec3 rodTip = owner.getPosition(partialTicks).add(-sin * forward + cos * left, 1.45 * owner.getScale(), cos * forward + sin * left);
         state.lineOriginOffset = rodTip.subtract(entity.getPosition(partialTicks).add(0.0, 0.25, 0.0));
     }
 

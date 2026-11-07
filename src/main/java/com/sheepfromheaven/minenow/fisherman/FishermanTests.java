@@ -77,11 +77,12 @@ public final class FishermanTests {
 
     public static void fishermanIgnoresWaterBeyondItsRange(GameTestHelper helper) {
         Villager fisherman = spawnFisherman(helper);
+        fisherman.setVillagerData(fisherman.getVillagerData().withLevel(5));
         digPool(helper, 15, 10);
         fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
 
         helper.runAfterDelay(900, () -> {
-            helper.assertTrue(catchCount(fisherman) == 0, "A pond more than 8 blocks from the barrel is out of a novice fisherman's range");
+            helper.assertTrue(catchCount(fisherman) == 0, "A pond more than 8 blocks from the barrel is out of range, even for a master");
             helper.succeed();
         });
     }

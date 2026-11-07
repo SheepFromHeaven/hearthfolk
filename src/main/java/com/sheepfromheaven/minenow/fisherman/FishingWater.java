@@ -11,24 +11,20 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A fisherman's water is any open surface water within a range of its barrel that grows with its level, so a barrel
- * can stand on a dock or in a hut near the water. It fishes from dry spots on that water's shore.
+ * A fisherman's water is any open surface water within {@link #RANGE} blocks of its barrel, so a barrel can stand on a
+ * dock or in a hut near the water. It fishes from dry spots on that water's shore.
  */
 final class FishingWater {
-    private static final int[] RADIUS_BY_LEVEL = {8, 10, 12, 14, 16};
+    static final int RANGE = 8;
     private static final int HEIGHT = 3;
 
     record Spot(BlockPos feet, BlockPos water) {}
 
     private FishingWater() {}
 
-    static int radiusFor(int villagerLevel) {
-        return RADIUS_BY_LEVEL[Math.clamp(villagerLevel, 1, RADIUS_BY_LEVEL.length) - 1];
-    }
-
-    static List<BlockPos> water(ServerLevel level, BlockPos barrel, int radius) {
+    static List<BlockPos> water(ServerLevel level, BlockPos barrel) {
         List<BlockPos> water = new ArrayList<>();
-        for (BlockPos pos : BlockPos.betweenClosed(barrel.offset(-radius, -HEIGHT, -radius), barrel.offset(radius, HEIGHT, radius))) {
+        for (BlockPos pos : BlockPos.betweenClosed(barrel.offset(-RANGE, -HEIGHT, -RANGE), barrel.offset(RANGE, HEIGHT, RANGE))) {
             if (isOpenWater(level, pos)) water.add(pos.immutable());
         }
         return water;
