@@ -16,10 +16,10 @@ import sheepfromheaven.screenspec.runtime.ScreenSpecLoader;
 import sheepfromheaven.screenspec.runtime.SpecSlots;
 
 /**
- * Real drag-and-drop menu for an inhabitant's own 2-slot inventory plus their main-hand equipment
- * slot, laid out at the coordinates {@code inhabitant_screen.json} declares (see {@link
- * com.sheepfromheaven.minenow.inhabitant.client.InhabitantScreen}). No hotbar area is included -
- * only the player's own main inventory grid, per the current spec.
+ * Real drag-and-drop menu for an inhabitant's own 2-slot inventory plus their main-hand and off-hand
+ * equipment slots (the pickaxe/axe/... and the off-hand torch stack a miner carries - see {@link
+ * com.sheepfromheaven.minenow.jobs.miner.MinerJob}), laid out at the coordinates {@code
+ * inhabitant_screen.json} declares (see {@link com.sheepfromheaven.minenow.inhabitant.client.InhabitantScreen}).
  */
 public class InhabitantInventoryMenu extends AbstractContainerMenu {
 
@@ -29,6 +29,7 @@ public class InhabitantInventoryMenu extends AbstractContainerMenu {
     private final int entityId;
     private final int inhabitantInventoryEnd;
     private final int mainHandEnd;
+    private final int offHandEnd;
 
     /** Server-side: opened for {@code inhabitant}'s own containers. */
     public InhabitantInventoryMenu(int containerId, Inventory playerInventory, InhabitantEntity inhabitant) {
@@ -36,9 +37,11 @@ public class InhabitantInventoryMenu extends AbstractContainerMenu {
         this.entityId = inhabitant.getId();
         Container inventory = inhabitant.getInventory();
         Container mainHand = new EquipmentSlotContainer(inhabitant, EquipmentSlot.MAINHAND);
+        Container offHand = new EquipmentSlotContainer(inhabitant, EquipmentSlot.OFFHAND);
         this.inhabitantInventoryEnd = inventory.getContainerSize();
         this.mainHandEnd = inhabitantInventoryEnd + mainHand.getContainerSize();
-        addSlots(playerInventory, inventory, mainHand);
+        this.offHandEnd = mainHandEnd + offHand.getContainerSize();
+        addSlots(playerInventory, inventory, mainHand, offHand);
     }
 
     /** Client-side reconstruction: only the entity id arrives via extra data; slot contents sync afterward as usual. */
@@ -47,16 +50,20 @@ public class InhabitantInventoryMenu extends AbstractContainerMenu {
         this.entityId = extraData.readVarInt();
         Container inventory = new SimpleContainer(InhabitantEntity.INVENTORY_SIZE);
         Container mainHand = new SimpleContainer(1);
+        Container offHand = new SimpleContainer(1);
         this.inhabitantInventoryEnd = inventory.getContainerSize();
         this.mainHandEnd = inhabitantInventoryEnd + mainHand.getContainerSize();
-        addSlots(playerInventory, inventory, mainHand);
+        this.offHandEnd = mainHandEnd + offHand.getContainerSize();
+        addSlots(playerInventory, inventory, mainHand, offHand);
     }
 
-    private void addSlots(Inventory playerInventory, Container inventory, Container mainHand) {
+    private void addSlots(Inventory playerInventory, Container inventory, Container mainHand, Container offHand) {
         var container = SPEC.container;
         SpecSlots.forArea(container.area("inventory"), inventory).forEach(this::addSlot);
         SpecSlots.forArea(container.area("inventory_main_hand"), mainHand).forEach(this::addSlot);
+        SpecSlots.forArea(container.area("inventory_off_hand"), offHand).forEach(this::addSlot);
         SpecSlots.forPlayerInventory(container.area("inventory_player"), playerInventory).forEach(this::addSlot);
+        SpecSlots.forPlayerHotbar(container.area("player_hotbar"), playerInventory).forEach(this::addSlot);
     }
 
     public int entityId() {
@@ -75,11 +82,11 @@ public class InhabitantInventoryMenu extends AbstractContainerMenu {
 
         var stack = slot.getItem();
         var result = stack.copy();
-        if (index < mainHandEnd) {
-            if (!moveItemStackTo(stack, mainHandEnd, slots.size(), true)) {
+        if (index < offHandEnd) {
+            if (!moveItemStackTo(stack, offHandEnd, slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(stack, 0, mainHandEnd, false)) {
+        } else if (!moveItemStackTo(stack, 0, offHandEnd, false)) {
             return ItemStack.EMPTY;
         }
 
