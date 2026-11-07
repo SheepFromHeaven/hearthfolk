@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:miner_strip_mines_ribs_off_the_south_branch",
+  "structure": "minenow:room_14x20x26",
+  "max_ticks": 60
+}

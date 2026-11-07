@@ -2,7 +2,7 @@
   "id": "inhabitant_screen",
   "modId": "minenow",
   "width": 250,
-  "height": 220,
+  "height": 231,
   "actions": [
     "go_home",
     "issues"
@@ -44,7 +44,7 @@
       "x": 1,
       "y": 2,
       "w": 192,
-      "h": 216,
+      "h": 227,
       "text": "",
       "icon": null,
       "props": {
@@ -300,13 +300,21 @@
         "id": "inventory",
         "x": 16,
         "y": 98,
-        "cols": 9,
+        "cols": 2,
         "slot_size": 18,
-        "viewport_rows": 2
+        "viewport_rows": 1
       },
       {
         "id": "inventory_main_hand",
         "x": 88,
+        "y": 73,
+        "cols": 1,
+        "slot_size": 18,
+        "viewport_rows": 1
+      },
+      {
+        "id": "inventory_off_hand",
+        "x": 110,
         "y": 73,
         "cols": 1,
         "slot_size": 18,
@@ -320,6 +328,15 @@
         "slot_size": 18,
         "viewport_rows": 3,
         "source": "player"
+      },
+      {
+        "id": "player_hotbar",
+        "x": 16,
+        "y": 203,
+        "cols": 9,
+        "slot_size": 18,
+        "viewport_rows": 1,
+        "source": "player_hotbar"
       }
     ]
   }
