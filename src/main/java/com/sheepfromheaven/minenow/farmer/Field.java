@@ -18,43 +18,49 @@ import java.util.Set;
 
 /**
  * A farmer's field is the ground connected to its composter: farmland, plus tillable ground (vanilla's
- * {@code turns_into_farmland} tag) within vanilla's 4-block watering range, joined through the water itself.
+ * {@code turns_into_farmland} tag) within vanilla's 4-block watering range, joined through the water itself, up to
+ * {@link #radiusFor} blocks from the composter.
  * Water is the boundary the player builds with, so a composter on a meadow doesn't claim the whole meadow.
  */
 final class Field {
-    static final int RADIUS = 24;
+    private static final int[] RADIUS_BY_LEVEL = {10, 13, 16, 20, 24};
     static final int HEIGHT = 3;
     private static final int WATER_RANGE = 4;
-    private static final int MAX_GROUND = (2 * RADIUS + 1) * (2 * RADIUS + 1);
+
+    /** How far from the composter a field may reach, by villager level (novice 10 ... master 24). */
+    static int radiusFor(int villagerLevel) {
+        return RADIUS_BY_LEVEL[Math.clamp(villagerLevel, 1, RADIUS_BY_LEVEL.length) - 1];
+    }
 
     private Field() {}
 
     /** Ground blocks of the field; the farmer works the block above each. */
-    static List<BlockPos> ground(ServerLevel level, BlockPos composter) {
+    static List<BlockPos> ground(ServerLevel level, BlockPos composter, int radius) {
+        int maxGround = (2 * radius + 1) * (2 * radius + 1);
         Set<BlockPos> visited = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
         List<BlockPos> ground = new ArrayList<>();
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 for (int dy = -1; dy <= 0; dy++) {
-                    if (dx != 0 || dz != 0) visit(level, composter, composter.offset(dx, dy, dz), visited, queue, ground);
+                    if (dx != 0 || dz != 0) visit(level, composter, radius, composter.offset(dx, dy, dz), visited, queue, ground);
                 }
             }
         }
-        while (!queue.isEmpty() && ground.size() < MAX_GROUND) {
+        while (!queue.isEmpty() && ground.size() < maxGround) {
             BlockPos current = queue.poll();
             for (Direction side : Direction.Plane.HORIZONTAL) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    visit(level, composter, current.relative(side).above(dy), visited, queue, ground);
+                    visit(level, composter, radius, current.relative(side).above(dy), visited, queue, ground);
                 }
             }
         }
         return ground;
     }
 
-    private static void visit(ServerLevel level, BlockPos composter, BlockPos pos, Set<BlockPos> visited,
+    private static void visit(ServerLevel level, BlockPos composter, int radius, BlockPos pos, Set<BlockPos> visited,
                               ArrayDeque<BlockPos> queue, List<BlockPos> ground) {
-        if (Math.abs(pos.getX() - composter.getX()) > RADIUS || Math.abs(pos.getZ() - composter.getZ()) > RADIUS
+        if (Math.abs(pos.getX() - composter.getX()) > radius || Math.abs(pos.getZ() - composter.getZ()) > radius
                 || Math.abs(pos.getY() - composter.getY()) > HEIGHT || !visited.add(pos) || !isOpenAbove(level, pos)) {
             return;
         }

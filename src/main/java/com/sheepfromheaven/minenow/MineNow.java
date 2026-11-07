@@ -54,6 +54,8 @@ public final class MineNow {
             test(helper, "farmer_without_hoe_leaves_ripe_crops_alone", FarmerTests::farmerWithoutHoeLeavesRipeCropsAlone);
             test(helper, "only_the_field_connected_to_the_composter_is_farmed", FarmerTests::onlyTheFieldConnectedToTheComposterIsFarmed);
             test(helper, "farmer_tills_connected_ground_near_water", FarmerTests::farmerTillsConnectedGroundNearWater);
+            test(helper, "novice_farmer_only_works_ten_blocks_out", FarmerTests::noviceFarmerOnlyWorksTenBlocksOut);
+            test(helper, "master_farmer_works_further_out", FarmerTests::masterFarmerWorksFurtherOut);
             test(helper, "harvesting_takes_time_and_swings_the_hoe", FarmerTests::harvestingTakesTimeAndSwingsTheHoe);
             test(helper, "better_hoes_reap_faster", FarmerTests::betterHoesReapFaster);
             test(helper, "farmer_holds_its_hoe_while_working_with_a_player_watching", FarmerTests::farmerHoldsItsHoeWhileWorkingWithAPlayerWatching);

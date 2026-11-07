@@ -172,7 +172,7 @@ public class TendFields extends Behavior<Villager> {
     }
 
     private @Nullable BlockPos nearestFieldWork(ServerLevel level, Villager body, BlockPos jobSite) {
-        if (candidates.isEmpty()) scanField(level, jobSite);
+        if (candidates.isEmpty()) scanField(level, body, jobSite);
         candidates.removeIf(pos -> unreachable.containsKey(pos) || !isFieldWork(level, body, pos));
         if (candidates.isEmpty()) return null;
         BlockPos nearest = null;
@@ -188,8 +188,9 @@ public class TendFields extends Behavior<Villager> {
         return nearest;
     }
 
-    private void scanField(ServerLevel level, BlockPos jobSite) {
-        for (BlockPos ground : Field.ground(level, jobSite)) candidates.add(ground.above());
+    private void scanField(ServerLevel level, Villager body, BlockPos jobSite) {
+        int radius = Field.radiusFor(body.getVillagerData().level());
+        for (BlockPos ground : Field.ground(level, jobSite, radius)) candidates.add(ground.above());
     }
 
     private boolean isFieldWork(ServerLevel level, Villager body, BlockPos pos) {

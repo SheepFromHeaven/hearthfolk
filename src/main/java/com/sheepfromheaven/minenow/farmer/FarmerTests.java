@@ -165,6 +165,56 @@ public final class FarmerTests {
         });
     }
 
+    public static void noviceFarmerOnlyWorksTenBlocksOut(GameTestHelper helper) {
+        setUpFarmWithFarStrip(helper);
+        Villager farmer = spawnFarmer(helper);
+        GameTestHelpers.giveHome(helper, farmer, BED);
+        boolean[] checking = {false};
+
+        helper.onEachTick(() -> {
+            if (checking[0] || !anyRipeLeftExcept(helper, new BlockPos(22, 1, 12))) {
+                if (checking[0]) return;
+                checking[0] = true;
+                helper.runAfterDelay(300, () -> {
+                    assertHarvested(helper, new BlockPos(22, 1, 12), false, "11 blocks out is beyond a novice's reach");
+                    helper.succeed();
+                });
+            }
+        });
+    }
+
+    public static void masterFarmerWorksFurtherOut(GameTestHelper helper) {
+        setUpFarmWithFarStrip(helper);
+        Villager farmer = spawnFarmer(helper);
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(5));
+        GameTestHelpers.giveHome(helper, farmer, BED);
+
+        helper.succeedWhen(() -> assertHarvested(helper, new BlockPos(22, 1, 12), true, "A master should reach 11 blocks out"));
+    }
+
+    private static boolean anyRipeLeftExcept(GameTestHelper helper, BlockPos ignored) {
+        boolean[] ripe = {false};
+        forEachFieldCrop(helper, (pos, state) -> ripe[0] |= ((CropBlock) state.getBlock()).isMaxAge(state));
+        BlockState near = helper.getBlockState(new BlockPos(21, 1, 12));
+        return ripe[0] || (near.getBlock() instanceof CropBlock crop && crop.isMaxAge(near));
+    }
+
+    private static void setUpFarmWithFarStrip(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        helper.setBlock(HOME_CHEST, Blocks.CHEST);
+        BlockState ripeWheat = ((CropBlock) Blocks.WHEAT).getStateForAge(((CropBlock) Blocks.WHEAT).getMaxAge());
+        for (int x = 21; x <= 22; x++) {
+            helper.setBlock(x, 0, 12, Blocks.FARMLAND);
+            helper.setBlock(x, 1, 12, ripeWheat);
+        }
+    }
+
+    private static void assertHarvested(GameTestHelper helper, BlockPos pos, boolean expected, String message) {
+        BlockState state = helper.getBlockState(pos);
+        boolean harvested = !(state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state));
+        helper.assertTrue(harvested == expected, message + " (" + pos + ")");
+    }
+
     public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
