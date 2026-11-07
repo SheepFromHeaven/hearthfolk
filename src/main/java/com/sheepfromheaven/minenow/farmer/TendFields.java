@@ -26,12 +26,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.CropBlock;
-import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.Tags;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -41,8 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 
 public class TendFields extends Behavior<Villager> {
-    static final int FIELD_RADIUS = 24;
-    static final int FIELD_HEIGHT = 3;
     static final int KEEP_PER_ITEM = 16;
     static final int UNLOAD_AT = 64;
     private static final float SPEED = 0.5F;
@@ -52,7 +48,7 @@ public class TendFields extends Behavior<Villager> {
     private static final int IDLE_RESCAN_DELAY = 100;
     private static final int SWING_INTERVAL = 10;
 
-    private enum Task { HARVEST, PLANT, DEPOSIT, FETCH_HOE }
+    private enum Task { HARVEST, PLANT, TILL, DEPOSIT, FETCH_HOE }
 
     private final List<BlockPos> candidates = new ArrayList<>();
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
@@ -98,7 +94,7 @@ public class TendFields extends Behavior<Villager> {
         if (target == null || task == null) return;
         keepHoeInHand(body);
         if (inReach(body)) {
-            if (task == Task.HARVEST && isRipeCrop(level.getBlockState(target)) && !finishedReaping(level, body)) return;
+            if (needsHoeWork(level) && !finishedReaping(level, body)) return;
             act(level, body);
             workLeft = -1;
             advance(level, body, timestamp);
@@ -125,7 +121,12 @@ public class TendFields extends Behavior<Villager> {
         nextStartAllowed = timestamp + 40;
     }
 
-    /** Reaping takes as long as the hoe is slow; the farmer stands at the crop and swings while it works. */
+    private boolean needsHoeWork(ServerLevel level) {
+        return (task == Task.HARVEST && isRipeCrop(level.getBlockState(target)))
+                || (task == Task.TILL && Field.isTillable(level, target.below()));
+    }
+
+    /** Reaping and tilling take as long as the hoe is slow; the farmer stands at the crop and swings while it works. */
     private boolean finishedReaping(ServerLevel level, Villager body) {
         if (workLeft < 0) workLeft = Hoes.harvestTicks(level, body);
         if (workLeft % SWING_INTERVAL == 0) body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
@@ -164,7 +165,7 @@ public class TendFields extends Behavior<Villager> {
         BlockPos field = nearestFieldWork(level, body, jobSite.get());
         if (field != null) {
             target = field;
-            task = isRipeCrop(level.getBlockState(field)) ? Task.HARVEST : Task.PLANT;
+            task = taskAt(level, field);
             return true;
         }
         return depositableCount(body.getInventory()) > 0 && targetHomeChest(level, body, Task.DEPOSIT);
@@ -188,21 +189,31 @@ public class TendFields extends Behavior<Villager> {
     }
 
     private void scanField(ServerLevel level, BlockPos jobSite) {
-        for (BlockPos pos : BlockPos.betweenClosed(
-                jobSite.offset(-FIELD_RADIUS, -FIELD_HEIGHT, -FIELD_RADIUS),
-                jobSite.offset(FIELD_RADIUS, FIELD_HEIGHT, FIELD_RADIUS))) {
-            BlockState state = level.getBlockState(pos);
-            if (isRipeCrop(state) || (state.isAir() && isFarmland(level.getBlockState(pos.below())))) {
-                candidates.add(pos.immutable());
-            }
-        }
+        for (BlockPos ground : Field.ground(level, jobSite)) candidates.add(ground.above());
     }
 
     private boolean isFieldWork(ServerLevel level, Villager body, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (!Hoes.has(body)) return false;
         if (isRipeCrop(state)) return hasEmptySlot(body);
-        return state.isAir() && isFarmland(level.getBlockState(pos.below())) && body.hasFarmSeeds();
+        if (isFarmland(level.getBlockState(pos.below()))) return state.isAir() && body.hasFarmSeeds();
+        return Field.isClearable(state) && Field.isTillable(level, pos.below());
+    }
+
+    private Task taskAt(ServerLevel level, BlockPos pos) {
+        if (isRipeCrop(level.getBlockState(pos))) return Task.HARVEST;
+        return isFarmland(level.getBlockState(pos.below())) ? Task.PLANT : Task.TILL;
+    }
+
+    private static void till(ServerLevel level, Villager body, BlockPos pos) {
+        if (!Field.isClearable(level.getBlockState(pos)) || !Field.isTillable(level, pos.below())) return;
+        if (!level.getBlockState(pos).isAir()) level.destroyBlock(pos, false, body);
+        BlockState farmland = net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState();
+        level.setBlockAndUpdate(pos.below(), farmland);
+        level.gameEvent(GameEvent.BLOCK_CHANGE, pos.below(), GameEvent.Context.of(body, farmland));
+        level.playSound(null, pos.below(), SoundEvents.HOE_TILL.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        Hoes.wear(level, body);
+        plant(level, body, pos, null);
     }
 
     static boolean homeChestHasHoe(ServerLevel level, Villager body) {
@@ -234,6 +245,7 @@ public class TendFields extends Behavior<Villager> {
                 Hoes.showInHand(body, true);
             }
             case PLANT -> plant(level, body, target, null);
+            case TILL -> till(level, body, target);
             case DEPOSIT -> {
                 int before = depositableCount(body.getInventory());
                 StorageTheft.check(level, body, target);
@@ -377,6 +389,6 @@ public class TendFields extends Behavior<Villager> {
     }
 
     private static boolean isFarmland(BlockState state) {
-        return state.getBlock() instanceof FarmlandBlock || state.is(Tags.Blocks.VILLAGER_FARMLANDS);
+        return Field.isFarmland(state);
     }
 }

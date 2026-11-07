@@ -14,8 +14,8 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class FarmerTests {
-    private static final BlockPos COMPOSTER = new BlockPos(2, 1, 2);
-    private static final BlockPos CHEST_NEAR_COMPOSTER = new BlockPos(2, 1, 4);
+    private static final BlockPos COMPOSTER = new BlockPos(11, 1, 12);
+    private static final BlockPos CHEST_NEAR_COMPOSTER = new BlockPos(11, 1, 8);
     private static final BlockPos BED = new BlockPos(6, 1, 18);
     private static final BlockPos HOME_CHEST = new BlockPos(5, 1, 20);
     private static final int FIELD_MIN = 12;
@@ -136,13 +136,63 @@ public final class FarmerTests {
         });
     }
 
+    public static void onlyTheFieldConnectedToTheComposterIsFarmed(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        helper.setBlock(HOME_CHEST, Blocks.CHEST);
+        BlockState ripeWheat = ((CropBlock) Blocks.WHEAT).getStateForAge(((CropBlock) Blocks.WHEAT).getMaxAge());
+        helper.setBlock(4, 0, 4, Blocks.WATER);
+        for (int x = 2; x <= 6; x++) {
+            for (int z = 2; z <= 6; z++) {
+                if (x == 4 && z == 4) continue;
+                helper.setBlock(x, 0, z, Blocks.FARMLAND);
+                helper.setBlock(x, 1, z, ripeWheat);
+            }
+        }
+        Villager farmer = spawnFarmer(helper);
+        GameTestHelpers.giveHome(helper, farmer, BED);
+
+        helper.succeedWhen(() -> {
+            forEachFieldCrop(helper, (pos, state) ->
+                    helper.assertTrue(!((CropBlock) state.getBlock()).isMaxAge(state), "Connected field not finished yet at " + pos));
+            for (int x = 2; x <= 6; x++) {
+                for (int z = 2; z <= 6; z++) {
+                    if (x == 4 && z == 4) continue;
+                    BlockState state = helper.getBlockState(new BlockPos(x, 1, z));
+                    helper.assertTrue(state.getBlock() instanceof CropBlock c && c.isMaxAge(state),
+                            "A separate farm that doesn't touch the composter must be left alone, but (" + x + ", 1, " + z + ") was harvested");
+                }
+            }
+        });
+    }
+
+    public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        helper.setBlock(15, 0, 11, Blocks.WATER);
+        for (int x = 12; x <= 14; x++) helper.setBlock(x, 0, 12, Blocks.FARMLAND);
+        for (int x = 15; x <= 21; x++) helper.setBlock(x, 0, 12, Blocks.DIRT);
+        for (int x = 12; x <= 14; x++) helper.setBlock(x, 0, 13, Blocks.GRASS_BLOCK);
+        helper.setBlock(13, 1, 13, Blocks.SHORT_GRASS);
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 32));
+
+        helper.succeedWhen(() -> {
+            for (int x = 15; x <= 19; x++) helper.assertBlockPresent(Blocks.FARMLAND, new BlockPos(x, 0, 12));
+            for (int x = 12; x <= 14; x++) helper.assertBlockPresent(Blocks.FARMLAND, new BlockPos(x, 0, 13));
+            helper.assertBlockPresent(Blocks.DIRT, new BlockPos(20, 0, 12));
+            helper.assertBlockPresent(Blocks.DIRT, new BlockPos(21, 0, 12));
+            helper.assertTrue(helper.getBlockState(new BlockPos(16, 1, 12)).getBlock() instanceof CropBlock, "Tilled ground should be planted");
+        });
+    }
+
     public static void farmerWithoutHoeLeavesRipeCropsAlone(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
         BlockState ripeWheat = ((CropBlock) Blocks.WHEAT).getStateForAge(((CropBlock) Blocks.WHEAT).getMaxAge());
-        for (int x = 3; x <= 5; x++) {
-            for (int z = 3; z <= 5; z++) {
+        for (int x = 12; x <= 14; x++) {
+            for (int z = 11; z <= 13; z++) {
                 helper.setBlock(x, 0, z, Blocks.FARMLAND);
                 helper.setBlock(x, 1, z, ripeWheat);
             }
@@ -151,8 +201,8 @@ public final class FarmerTests {
         farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 8));
 
         helper.runAfterDelay(400, () -> {
-            for (int x = 3; x <= 5; x++) {
-                for (int z = 3; z <= 5; z++) {
+            for (int x = 12; x <= 14; x++) {
+                for (int z = 11; z <= 13; z++) {
                     BlockState state = helper.getBlockState(new BlockPos(x, 1, z));
                     helper.assertTrue(state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state),
                             "A farmer without a hoe must not harvest, but (" + x + ", 1, " + z + ") was touched");
