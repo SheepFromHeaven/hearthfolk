@@ -42,6 +42,11 @@ public final class ModVillagers {
                     .serialize(Codec.BOOL.fieldOf("granted"))
                     .build());
 
+    public static final Supplier<AttachmentType<Long>> LAST_MEAL = ATTACHMENT_TYPES.register("last_meal",
+            () -> AttachmentType.builder(() -> 0L)
+                    .serialize(Codec.LONG.fieldOf("time"))
+                    .build());
+
     public static final TagKey<Item> NO_KEY = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "villager_storage_key"));
 
     private ModVillagers() {}

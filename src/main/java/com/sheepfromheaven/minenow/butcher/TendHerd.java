@@ -240,7 +240,8 @@ public class TendHerd extends Behavior<Villager> {
             int adults = (int) herd.stream().filter(member -> !member.isBaby()).count();
             int young = herd.size() - adults;
             if (Tools.has(body) && ButcherHerd.toCull(adults, young) > 0) {
-                Optional<Animal> victim = herd.stream().filter(member -> !member.isBaby() && !isPet(member) && reachable(member)).min(nearest);
+                Comparator<Animal> woundedFirst = Comparator.<Animal, Boolean>comparing(member -> !swingsLanded.containsKey(member.getUUID())).thenComparing(nearest);
+                Optional<Animal> victim = herd.stream().filter(member -> !member.isBaby() && !isPet(member) && reachable(member)).min(woundedFirst);
                 if (victim.isPresent()) return target(Task.CULL, victim.get(), null);
             }
             if (ButcherHerd.wantsOffspring(adults, young)) {

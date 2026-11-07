@@ -23,8 +23,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
- * A villager that runs low on a supply of its trade (fewer than one batch in its inventory) and has emeralds walks to
- * the nearest villager that sells it and buys it at that villager's price, the same price a player pays. It buys as
+ * A hungry villager without a meal ({@link Meals}), or a working one that runs low on a supply of its trade (fewer than
+ * one batch in its inventory), walks to the nearest villager that sells what it needs and buys it at that villager's price, the same price a player pays. It buys as
  * many emeralds' worth as it can afford, the seller can spare and still fit under the supply's {@code max}.
  */
 public class BuyFromVillagers extends Behavior<Villager> {
@@ -46,7 +46,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager buyer) {
-        if (level.getGameTime() < nextStartAllowed || buyer.isBaby() || buyer.isTrading() || !buyer.getBrain().isActive(Activity.WORK)) return false;
+        if (level.getGameTime() < nextStartAllowed || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
         nextStartAllowed = level.getGameTime() + RETRY_DELAY;
         deal = findDeal(level, buyer).orElse(null);
         return deal != null;
@@ -70,7 +70,13 @@ public class BuyFromVillagers extends Behavior<Villager> {
             deal = null;
             return;
         }
-        if (!buyer.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) walk(buyer);
+        if (!walkingToSeller(buyer)) walk(buyer);
+    }
+
+    private boolean walkingToSeller(Villager buyer) {
+        return buyer.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                .filter(walk -> walk.getTarget() instanceof EntityTracker tracker && tracker.getEntity() == deal.seller())
+                .isPresent();
     }
 
     @Override
@@ -98,20 +104,33 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private static Optional<Deal> findDeal(ServerLevel level, Villager buyer) {
         if (Economy.emeralds(level, buyer) <= 0) return Optional.empty();
+        if (Meals.isHungry(buyer) && !Meals.hasAMeal(level, buyer)) {
+            Optional<Deal> meal = sellers(level, buyer).stream()
+                    .flatMap(seller -> Economy.items(level, seller).stream()
+                            .filter(item -> Meals.isMeal(new ItemStack(item)))
+                            .flatMap(item -> offer(level, seller, item, 0).stream()))
+                    .findFirst();
+            if (meal.isPresent()) return meal;
+        }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
-        if (table.isEmpty()) return Optional.empty();
+        if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return Optional.empty();
         for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
             int held = buyer.getInventory().countItem(supply.item());
             if (held >= supply.count()) continue;
-            Optional<Deal> deal = level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(SEARCH_RANGE),
-                            seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading() && !seller.isSleeping())
-                    .stream()
-                    .sorted(Comparator.comparingDouble(buyer::distanceToSqr))
+            Optional<Deal> deal = sellers(level, buyer).stream()
                     .flatMap(seller -> offer(level, seller, supply.item(), supply.max() - held).stream())
                     .findFirst();
             if (deal.isPresent()) return deal;
         }
         return Optional.empty();
+    }
+
+    private static java.util.List<Villager> sellers(ServerLevel level, Villager buyer) {
+        return level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(SEARCH_RANGE),
+                        seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading() && !seller.isSleeping())
+                .stream()
+                .sorted(Comparator.comparingDouble(buyer::distanceToSqr))
+                .toList();
     }
 
     private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room) {

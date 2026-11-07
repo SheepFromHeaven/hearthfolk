@@ -127,7 +127,9 @@ public final class ShepherdTests {
         }));
 
         helper.succeedWhen(() -> {
-            helper.assertTrue(shornAt.size() == flock.size(), "The novice should shear the whole flock, sheared " + shornAt.size());
+            helper.assertTrue(shornAt.size() == flock.size(), "The novice should shear the whole flock, sheared " + shornAt.size()
+                    + "; unshorn at " + flock.stream().filter(sheep -> !sheep.isSheared()).map(sheep -> helper.relativePos(sheep.blockPosition()).toShortString()).toList()
+                    + ", shepherd at " + helper.relativePos(shepherd.blockPosition()).toShortString());
             helper.assertTrue(shears(shepherd).getDamageValue() >= flock.size(), "Every sheep a novice shears wears its shears");
             List<Long> times = new ArrayList<>(shornAt.values());
             times.sort(Long::compare);
