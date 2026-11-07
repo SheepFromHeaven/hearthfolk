@@ -36,6 +36,8 @@ public final class MineNow {
     public MineNow(IEventBus modBus) {
         ModVillagers.register(modBus);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(GametestPlayground::onServerTick);
+        NeoForge.EVENT_BUS.addListener(GametestPlayground::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
         NeoForge.EVENT_BUS.addListener(Roads::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(Roads::onAddReloadListeners);
