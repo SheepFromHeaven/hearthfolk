@@ -41,6 +41,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(Roads::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(FarmerReport::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onFarmlandTrample);
+        NeoForge.EVENT_BUS.addListener(FarmerRules::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onTrade);
         NeoForge.EVENT_BUS.addListener(TradeTable::onAddReloadListeners);
@@ -65,6 +66,7 @@ public final class MineNow {
             test(helper, "composter_walled_in_on_four_sides_has_no_field", FarmerTests::composterWalledInOnFourSidesHasNoField);
             test(helper, "a_line_of_string_ends_the_field", FarmerTests::aLineOfStringEndsTheField);
             test(helper, "crops_and_seeds_are_recognized_beyond_vanilla_wheat", FarmerTests::cropsAndSeedsAreRecognizedBeyondVanillaWheat);
+            test(helper, "farmer_harvests_by_right_click_when_a_mod_provides_it", FarmerTests::farmerHarvestsByRightClickWhenAModProvidesIt);
             test(helper, "crops_without_a_price_sell_at_the_default_rate", FarmerTradeTests::cropsWithoutAPriceSellAtTheDefaultRate);
             test(helper, "farmer_retills_farmland_that_was_trampled", FarmerTests::farmerRetillsFarmlandThatWasTrampled);
             test(helper, "farmer_with_a_full_inventory_still_harvests", FarmerTests::farmerWithAFullInventoryStillHarvests);

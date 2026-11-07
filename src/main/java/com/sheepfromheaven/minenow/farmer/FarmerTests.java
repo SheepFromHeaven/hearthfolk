@@ -367,6 +367,23 @@ public final class FarmerTests {
         helper.succeed();
     }
 
+    public static void farmerHarvestsByRightClickWhenAModProvidesIt(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        com.sheepfromheaven.minenow.gametest.SimulatedRightClickHarvest.enableIn(helper);
+        Villager farmer = spawnFarmer(helper);
+
+        helper.succeedWhen(() -> {
+            forEachFieldCrop(helper, (pos, state) -> helper.assertTrue(state.getBlock() instanceof CropBlock crop && !crop.isMaxAge(state),
+                    "Field not finished at " + pos));
+            int viaRightClick = com.sheepfromheaven.minenow.gametest.SimulatedRightClickHarvest.harvestsIn(helper);
+            helper.assertTrue(viaRightClick >= 75, "The farmer should harvest by right-clicking when a mod handles it, did so " + viaRightClick + " times");
+            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT) >= 60, "The yield should end up in the farmer's inventory, has "
+                    + farmer.getInventory().countItem(Items.WHEAT));
+            helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds()).isEmpty(),
+                    "Nothing should be left lying on the ground");
+        });
+    }
+
     public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

@@ -252,6 +252,12 @@ public class TendFields extends Behavior<Villager> {
     private void act(ServerLevel level, Villager body) {
         switch (task) {
             case HARVEST -> {
+                Block ripe = level.getBlockState(target).getBlock();
+                if (RightClickHarvest.tryHarvest(level, body, target)) {
+                    Hoes.wear(level, body);
+                    plant(level, body, target, ripe);
+                    break;
+                }
                 Block crop = harvest(level, body, target);
                 if (crop != null) {
                     Hoes.wear(level, body);

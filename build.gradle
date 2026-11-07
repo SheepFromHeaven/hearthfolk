@@ -73,8 +73,17 @@ repositories {
     }
 }
 
-dependencies {
+configurations {
+    // Mods loaded only in runClient, for trying compatibility by hand; not in gametests and not shipped.
+    clientDevMods
 }
+
+dependencies {
+    clientDevMods 'maven.modrinth:rightclickharvest:OPZ0mGdB'
+    clientDevMods 'maven.modrinth:jamlib:Rj4DDcb2'
+}
+
+neoForge.runs.client.additionalRuntimeClasspathConfiguration.extendsFrom configurations.clientDevMods
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'

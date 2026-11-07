@@ -13,6 +13,10 @@ public final class FarmerRules {
         return villager.getVillagerData().profession().is(VillagerProfession.FARMER);
     }
 
+    public static void onEntityJoin(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
+        RightClickHarvest.onEntityJoin(event);
+    }
+
     public static void onFarmlandTrample(BlockEvent.FarmlandTrampleEvent event) {
         if (event.getEntity() instanceof Villager villager && isFarmer(villager)) event.setCanceled(true);
     }
