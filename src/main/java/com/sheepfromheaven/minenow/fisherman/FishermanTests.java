@@ -34,6 +34,75 @@ public final class FishermanTests {
         helper.succeed();
     }
 
+    public static void fishermanCatchesFishFromWaterTouchingItsBarrel(GameTestHelper helper) {
+        Villager fisherman = spawnFisherman(helper);
+        digPool(helper, 7, 10);
+        fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(catchCount(fisherman) >= 2, "The fisherman should catch something from its water, caught " + catchCount(fisherman));
+            helper.assertTrue(rod(fisherman).getDamageValue() >= 2, "Each catch should wear the rod");
+        });
+    }
+
+    public static void fishermanWithoutARodCatchesNothing(GameTestHelper helper) {
+        Villager fisherman = spawnFisherman(helper);
+        digPool(helper, 7, 10);
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(catchCount(fisherman) == 0, "Without a rod the fisherman cannot fish");
+            helper.succeed();
+        });
+    }
+
+    public static void fishermanIgnoresWaterNotTouchingItsBarrel(GameTestHelper helper) {
+        Villager fisherman = spawnFisherman(helper);
+        digPool(helper, 14, 10);
+        fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(catchCount(fisherman) == 0, "A pond that doesn't touch the barrel is not the fisherman's water");
+            helper.succeed();
+        });
+    }
+
+    public static void fishermanUnloadsItsCatchAtHome(GameTestHelper helper) {
+        Villager fisherman = spawnFisherman(helper);
+        digPool(helper, 7, 10);
+        fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
+        fisherman.getInventory().addItem(new ItemStack(Items.COD, 64));
+        BlockPos chest = new BlockPos(4, 1, 18);
+        helper.setBlock(chest, Blocks.CHEST);
+        GameTestHelpers.giveHome(helper, fisherman, new BlockPos(4, 1, 15));
+
+        helper.succeedWhen(() -> {
+            var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
+            int cod = 0;
+            for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(Items.COD)) cod += container.getItem(i).getCount();
+            helper.assertTrue(cod >= 64, "The fisherman should carry its catch to its home chest, chest has " + cod + " cod");
+            helper.assertTrue(rod(fisherman).is(Items.FISHING_ROD), "It keeps its rod");
+        });
+    }
+
+    /** A 5x5 pond, one block deep, whose west edge starts at {@code x}. */
+    private static void digPool(GameTestHelper helper, int x, int z) {
+        for (int dx = 0; dx < 5; dx++) {
+            for (int dz = 0; dz < 5; dz++) helper.setBlock(x + dx, 0, z + dz, Blocks.WATER);
+        }
+    }
+
+    private static int catchCount(Villager fisherman) {
+        int count = 0;
+        for (ItemStack stack : fisherman.getInventory().getItems()) {
+            if (!stack.isEmpty() && !stack.is(Items.FISHING_ROD)) count += stack.getCount();
+        }
+        return count;
+    }
+
+    private static ItemStack rod(Villager fisherman) {
+        return fisherman.getInventory().getItems().stream().filter(stack -> stack.is(Items.FISHING_ROD)).findFirst().orElse(ItemStack.EMPTY);
+    }
+
     static Villager spawnFisherman(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

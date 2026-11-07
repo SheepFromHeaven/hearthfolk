@@ -95,6 +95,10 @@ public final class MineNow {
             test(helper, TestGroup.TRADING, "journeyman_farmer_buys_up_to_iron_hoes", FarmerTradeTests::journeymanFarmerBuysUpToIronHoes);
             test(helper, TestGroup.TRADING, "farmer_keeps_the_enchantments_of_a_hoe_it_buys", FarmerTradeTests::farmerKeepsTheEnchantmentsOfAHoeItBuys);
             test(helper, TestGroup.FISHERMAN, "fisherman_without_a_rod_offers_to_buy_one", FishermanTests::fishermanWithoutARodOffersToBuyOne);
+            test(helper, TestGroup.FISHERMAN, "fisherman_catches_fish_from_water_touching_its_barrel", FishermanTests::fishermanCatchesFishFromWaterTouchingItsBarrel);
+            test(helper, TestGroup.FISHERMAN, "fisherman_without_a_rod_catches_nothing", FishermanTests::fishermanWithoutARodCatchesNothing);
+            test(helper, TestGroup.FISHERMAN, "fisherman_ignores_water_not_touching_its_barrel", FishermanTests::fishermanIgnoresWaterNotTouchingItsBarrel);
+            test(helper, TestGroup.FISHERMAN, "fisherman_unloads_its_catch_at_home", FishermanTests::fishermanUnloadsItsCatchAtHome);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);
