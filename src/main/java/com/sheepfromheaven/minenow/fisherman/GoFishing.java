@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.fisherman;
 
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
+import com.sheepfromheaven.minenow.villager.ToolCare;
 import com.sheepfromheaven.minenow.villager.Tools;
 import com.sheepfromheaven.minenow.villager.Unloading;
 import net.minecraft.core.BlockPos;
@@ -192,7 +193,7 @@ public class GoFishing extends Behavior<Villager> {
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         level.playSound(null, BlockPos.containing(at), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 1.0F);
         level.sendParticles(ParticleTypes.FISHING, at.x, at.y + 0.2, at.z, 6, 0.2, 0.0, 0.2, 0.05);
-        if (body.getRandom().nextFloat() < FishermanSkill.rodWearChance(body.getVillagerData().level())) Tools.wear(level, body);
+        if (body.getRandom().nextFloat() < ToolCare.wearChance(body.getVillagerData().level())) Tools.wear(level, body);
     }
 
     private void advance(ServerLevel level, Villager body, long timestamp) {

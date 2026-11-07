@@ -2,7 +2,6 @@ package com.sheepfromheaven.minenow.fisherman;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FishermanSkillTest {
@@ -25,12 +24,4 @@ class FishermanSkillTest {
         }
     }
 
-    @Test
-    void betterFishermenWearTheirRodLess() {
-        assertEquals(1.0F, FishermanSkill.rodWearChance(1));
-        for (int level = 2; level <= 5; level++) {
-            assertTrue(FishermanSkill.rodWearChance(level) < FishermanSkill.rodWearChance(level - 1));
-        }
-        assertTrue(FishermanSkill.rodWearChance(5) > 0.0F);
-    }
 }

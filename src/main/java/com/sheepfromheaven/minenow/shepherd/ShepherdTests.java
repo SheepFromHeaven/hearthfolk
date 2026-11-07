@@ -1,0 +1,146 @@
+package com.sheepfromheaven.minenow.shepherd;
+
+import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
+import net.minecraft.core.BlockPos;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.sheep.Sheep;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public final class ShepherdTests {
+    static final BlockPos LOOM = new BlockPos(6, 1, 12);
+
+    private ShepherdTests() {}
+
+    public static void shepherdWithoutShearsOffersToBuyThem(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.interactOn(shepherd, InteractionHand.MAIN_HAND, shepherd.position());
+
+        Optional<MerchantOffer> buyShears = shepherd.getOffers().stream().filter(o -> o.getCostA().is(Items.SHEARS)).findFirst();
+        helper.assertTrue(buyShears.isPresent() && buyShears.get().getResult().is(Items.EMERALD),
+                "A shepherd without shears should offer emeralds for them, offers: " + shepherd.getOffers().size());
+        helper.succeed();
+    }
+
+    public static void shepherdShearsTheSheepPennedNearItsLoom(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.setVillagerData(shepherd.getVillagerData().withLevel(5));
+        shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
+        buildPen(helper, 9);
+        Sheep white = sheep(helper, 12, 11, DyeColor.WHITE);
+        Sheep red = sheep(helper, 12, 13, DyeColor.RED);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(white.isSheared() && red.isSheared(), "Both penned sheep should be sheared");
+            helper.assertTrue(count(shepherd, Items.WOOL.white()) >= 1 && count(shepherd, Items.WOOL.red()) >= 1,
+                    "The wool goes into the shepherd's inventory in the sheep's colour");
+        });
+    }
+
+    public static void shepherdIgnoresSheepFarFromItsLoom(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
+        buildPen(helper, 16);
+        Sheep far = sheep(helper, 19, 12, DyeColor.WHITE);
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertFalse(far.isSheared(), "Sheep more than 8 blocks from the loom are not the shepherd's flock");
+            helper.succeed();
+        });
+    }
+
+    public static void shearingASheepTakesTime(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
+        buildPen(helper, 9);
+        List<Sheep> flock = List.of(sheep(helper, 11, 11, DyeColor.WHITE), sheep(helper, 13, 12, DyeColor.WHITE), sheep(helper, 11, 13, DyeColor.WHITE));
+        Map<Sheep, Long> shornAt = new HashMap<>();
+        helper.onEachTick(() -> flock.forEach(sheep -> {
+            if (sheep.isSheared()) shornAt.putIfAbsent(sheep, helper.getTick());
+        }));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(shornAt.size() == flock.size(), "The novice should shear the whole flock, sheared " + shornAt.size());
+            helper.assertTrue(shears(shepherd).getDamageValue() >= flock.size(), "Every sheep a novice shears wears its shears");
+            List<Long> times = new ArrayList<>(shornAt.values());
+            times.sort(Long::compare);
+            for (int i = 1; i < times.size(); i++) {
+                long gap = times.get(i) - times.get(i - 1);
+                helper.assertTrue(gap >= ShepherdSkill.shearTicks(1), "A novice needs " + ShepherdSkill.shearTicks(1) + " ticks per sheep, took " + gap);
+            }
+        });
+    }
+
+    public static void shepherdUnloadsItsWoolAtHome(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
+        shepherd.getInventory().addItem(new ItemStack(Items.WOOL.white(), 64));
+        BlockPos chest = new BlockPos(4, 1, 18);
+        helper.setBlock(chest, Blocks.CHEST);
+        GameTestHelpers.giveHome(helper, shepherd, new BlockPos(4, 1, 15));
+
+        helper.succeedWhen(() -> {
+            var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
+            int wool = 0;
+            for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(Items.WOOL.white())) wool += container.getItem(i).getCount();
+            helper.assertTrue(wool >= 64, "The shepherd should carry its wool to its home chest, chest has " + wool);
+            helper.assertTrue(shears(shepherd).is(Items.SHEARS), "It keeps its shears");
+        });
+    }
+
+    /** A 7x7 oak fence pen whose west side is at {@code x}, with an oak door in the middle of that side. */
+    private static void buildPen(GameTestHelper helper, int x) {
+        for (int i = 0; i < 7; i++) {
+            helper.setBlock(x + i, 1, 9, Blocks.OAK_FENCE);
+            helper.setBlock(x + i, 1, 15, Blocks.OAK_FENCE);
+            helper.setBlock(x, 1, 9 + i, Blocks.OAK_FENCE);
+            helper.setBlock(x + 6, 1, 9 + i, Blocks.OAK_FENCE);
+        }
+        helper.setBlock(new BlockPos(x, 1, 12), Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+        helper.setBlock(new BlockPos(x, 2, 12), Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+    }
+
+    private static Sheep sheep(GameTestHelper helper, int x, int z, DyeColor color) {
+        Sheep sheep = helper.spawn(EntityTypes.SHEEP, new BlockPos(x, 1, z));
+        sheep.setColor(color);
+        return sheep;
+    }
+
+    private static int count(Villager villager, net.minecraft.world.item.Item item) {
+        int count = 0;
+        for (ItemStack stack : villager.getInventory().getItems()) if (stack.is(item)) count += stack.getCount();
+        return count;
+    }
+
+    private static ItemStack shears(Villager shepherd) {
+        return shepherd.getInventory().getItems().stream().filter(stack -> stack.is(Items.SHEARS)).findFirst().orElse(ItemStack.EMPTY);
+    }
+
+    static Villager spawnShepherd(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(LOOM, Blocks.LOOM);
+        return GameTestHelpers.spawnEmployed(helper, LOOM.east(), LOOM, VillagerProfession.SHEPHERD, PoiTypes.SHEPHERD);
+    }
+}

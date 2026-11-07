@@ -1,0 +1,15 @@
+{
+  "profession": "minecraft:shepherd",
+  "tool_tag": "#c:tools/shear",
+  "tools": [
+    {
+      "item": "minecraft:shears",
+      "price": 2,
+      "level": 1
+    }
+  ],
+  "default_produce": {
+    "items": "#minecraft:wool",
+    "per_emerald": 18
+  }
+}
