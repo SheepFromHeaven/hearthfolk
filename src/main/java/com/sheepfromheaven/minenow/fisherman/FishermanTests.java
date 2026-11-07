@@ -34,9 +34,9 @@ public final class FishermanTests {
         helper.succeed();
     }
 
-    public static void fishermanCatchesFishFromWaterTouchingItsBarrel(GameTestHelper helper) {
+    public static void fishermanFishesWaterNearItsBarrel(GameTestHelper helper) {
         Villager fisherman = spawnFisherman(helper);
-        digPool(helper, 7, 10);
+        digPool(helper, 11, 10);
         fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
 
         helper.succeedWhen(() -> {
@@ -75,13 +75,13 @@ public final class FishermanTests {
         });
     }
 
-    public static void fishermanIgnoresWaterNotTouchingItsBarrel(GameTestHelper helper) {
+    public static void fishermanIgnoresWaterBeyondItsRange(GameTestHelper helper) {
         Villager fisherman = spawnFisherman(helper);
-        digPool(helper, 14, 10);
+        digPool(helper, 15, 10);
         fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
 
         helper.runAfterDelay(900, () -> {
-            helper.assertTrue(catchCount(fisherman) == 0, "A pond that doesn't touch the barrel is not the fisherman's water");
+            helper.assertTrue(catchCount(fisherman) == 0, "A pond more than 8 blocks from the barrel is out of a novice fisherman's range");
             helper.succeed();
         });
     }

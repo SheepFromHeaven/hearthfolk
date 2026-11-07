@@ -5,15 +5,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
- * A fisherman's water is the open water touching a side of its barrel (corners don't count) and all surface water
- * connected to it, within a range that grows with its level. It fishes from dry spots on that water's shore.
+ * A fisherman's water is any open surface water within a range of its barrel that grows with its level, so a barrel
+ * can stand on a dock or in a hut near the water. It fishes from dry spots on that water's shore.
  */
 final class FishingWater {
     private static final int[] RADIUS_BY_LEVEL = {8, 10, 12, 14, 16};
@@ -28,15 +27,9 @@ final class FishingWater {
     }
 
     static List<BlockPos> water(ServerLevel level, BlockPos barrel, int radius) {
-        Set<BlockPos> visited = new HashSet<>();
-        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
         List<BlockPos> water = new ArrayList<>();
-        for (Direction side : Direction.Plane.HORIZONTAL) {
-            for (int dy = -1; dy <= 0; dy++) visit(level, barrel, radius, barrel.relative(side).above(dy), visited, queue, water);
-        }
-        while (!queue.isEmpty() && water.size() < (2 * radius + 1) * (2 * radius + 1)) {
-            BlockPos current = queue.poll();
-            for (Direction side : Direction.Plane.HORIZONTAL) visit(level, barrel, radius, current.relative(side), visited, queue, water);
+        for (BlockPos pos : BlockPos.betweenClosed(barrel.offset(-radius, -HEIGHT, -radius), barrel.offset(radius, HEIGHT, radius))) {
+            if (isOpenWater(level, pos)) water.add(pos.immutable());
         }
         return water;
     }
@@ -64,15 +57,5 @@ final class FishingWater {
                 && level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
                 && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()
                 && level.getFluidState(feet).isEmpty();
-    }
-
-    private static void visit(ServerLevel level, BlockPos barrel, int radius, BlockPos pos, Set<BlockPos> visited,
-                              ArrayDeque<BlockPos> queue, List<BlockPos> water) {
-        if (Math.abs(pos.getX() - barrel.getX()) > radius || Math.abs(pos.getZ() - barrel.getZ()) > radius
-                || Math.abs(pos.getY() - barrel.getY()) > HEIGHT || !visited.add(pos) || !isOpenWater(level, pos)) {
-            return;
-        }
-        queue.add(pos);
-        water.add(pos);
     }
 }
