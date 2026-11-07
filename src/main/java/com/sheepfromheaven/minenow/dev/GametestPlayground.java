@@ -15,7 +15,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Display;
 import com.sheepfromheaven.minenow.gametest.TestGroup;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.commands.FillBiomeCommand;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.TestInstanceBlockEntity;
@@ -34,7 +33,7 @@ import java.util.Optional;
 
 /**
  * Dev tooling for the {@code gametestPlayground} run ({@code -Dminenow.gametestPlayground=true}): on every login, lays
- * out every {@code minenow:*} test instance in a district per {@link TestGroup} (own floor, biome and sign), idle, each with a floating label (readable name,
+ * out every {@code minenow:*} test instance in a district per {@link TestGroup} (coloured wool floor, matching wall and sign), idle, each with a floating label (readable name,
  * and the failure message once it fails; the block's beacon shows the status), plus an overview board at the start. {@code /minenow playground runall} starts them all.
  */
 public final class GametestPlayground {
@@ -48,8 +47,7 @@ public final class GametestPlayground {
     private static final List<Display.TextDisplay> DISTRICT_SIGNS = new ArrayList<>();
     private static final int DISTRICT_GAP = 16;
     private static final int DISTRICT_MARGIN = 3;
-    private static final int BIOME_HEIGHT = 24;
-    private static final int BIOME_CHUNK = 32;
+    private static final int WALL_HEIGHT = 2;
     private static Display.TextDisplay board;
     private static final Map<Display.TextDisplay, Component> SHOWN = new java.util.IdentityHashMap<>();
 
@@ -127,19 +125,19 @@ public final class GametestPlayground {
         }))));
     }
 
-    /** Floor in the group's block and its biome (for grass and sky colour), so districts read apart at a glance. */
+    /** Wool floor in the group's colour and a low matching wall around it, open at the front, so districts read apart at a glance. */
     private static void paintDistrict(ServerLevel level, BlockPos origin, PlaygroundLayout.District district, TestGroup group) {
         int minX = origin.getX() + district.minX() - DISTRICT_MARGIN, maxX = origin.getX() + district.maxX() + DISTRICT_MARGIN;
         int minZ = origin.getZ() + district.minZ() - DISTRICT_MARGIN, maxZ = origin.getZ() + district.maxZ() + DISTRICT_MARGIN;
+        int doorX = (minX + maxX) / 2;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int x = minX; x <= maxX; x++) {
-            for (int z = minZ; z <= maxZ; z++) level.setBlock(pos.set(x, origin.getY() - 1, z), group.floor.defaultBlockState(), 2);
-        }
-        var biome = level.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(group.biome);
-        for (int x = minX; x <= maxX; x += BIOME_CHUNK) {
-            for (int z = minZ; z <= maxZ; z += BIOME_CHUNK) {
-                FillBiomeCommand.fill(level, new BlockPos(x, origin.getY() - 4, z),
-                        new BlockPos(Math.min(x + BIOME_CHUNK - 1, maxX), origin.getY() + BIOME_HEIGHT, Math.min(z + BIOME_CHUNK - 1, maxZ)), biome);
+            for (int z = minZ; z <= maxZ; z++) {
+                level.setBlock(pos.set(x, origin.getY() - 1, z), group.floor.defaultBlockState(), 2);
+                boolean edge = x == minX || x == maxX || z == minZ || z == maxZ;
+                boolean door = z == minZ && Math.abs(x - doorX) <= 1;
+                if (!edge || door) continue;
+                for (int y = 0; y < WALL_HEIGHT; y++) level.setBlock(pos.set(x, origin.getY() + y, z), group.wall.defaultBlockState(), 2);
             }
         }
     }
