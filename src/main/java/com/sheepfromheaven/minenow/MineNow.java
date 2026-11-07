@@ -98,6 +98,7 @@ public final class MineNow {
             test(helper, TestGroup.TRADING, "farmer_keeps_the_enchantments_of_a_hoe_it_buys", FarmerTradeTests::farmerKeepsTheEnchantmentsOfAHoeItBuys);
             test(helper, TestGroup.FISHERMAN, "fisherman_without_a_rod_offers_to_buy_one", FishermanTests::fishermanWithoutARodOffersToBuyOne);
             test(helper, TestGroup.FISHERMAN, "fisherman_fishes_water_near_its_barrel", FishermanTests::fishermanFishesWaterNearItsBarrel);
+            test(helper, TestGroup.FISHERMAN, "master_fisherman_wears_its_rod_less_than_once_per_catch", FishermanTests::masterFishermanWearsItsRodLessThanOncePerCatch);
             test(helper, TestGroup.FISHERMAN, "fisherman_without_a_rod_catches_nothing", FishermanTests::fishermanWithoutARodCatchesNothing);
             test(helper, TestGroup.FISHERMAN, "fisherman_casts_a_bobber_and_a_fish_bites", FishermanTests::fishermanCastsABobberAndAFishBites);
             test(helper, TestGroup.FISHERMAN, "fisherman_ignores_water_beyond_its_range", FishermanTests::fishermanIgnoresWaterBeyondItsRange);

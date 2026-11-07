@@ -32,6 +32,7 @@ public class VillagerBobber extends Projectile {
     private static final EntityDataAccessor<Integer> DATA_STATE = SynchedEntityData.defineId(VillagerBobber.class, EntityDataSerializers.INT);
     private static final double GRAVITY = 0.03;
     private static final int FLIGHT_TICKS = 12;
+    static final int SHORTEST_BITE = 20;
     private static final int UNTENDED_LIMIT = 20;
     private static final int MAX_FLIGHT = 60;
 
@@ -194,7 +195,7 @@ public class VillagerBobber extends Projectile {
         int count = (int) (1.0F + getBbWidth() * 20.0F);
         level.sendParticles(ParticleTypes.BUBBLE, getX(), y, getZ(), count, getBbWidth(), 0.0, getBbWidth(), 0.2);
         level.sendParticles(ParticleTypes.FISHING, getX(), y, getZ(), count, getBbWidth(), 0.0, getBbWidth(), 0.2);
-        nibble = Mth.nextInt(random, 20, 40);
+        nibble = Mth.nextInt(random, SHORTEST_BITE, 40);
         bitingFor = 0;
         setState(State.BITING);
     }

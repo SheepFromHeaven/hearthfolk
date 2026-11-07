@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:master_fisherman_wears_its_rod_less_than_once_per_catch",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 4800
+}

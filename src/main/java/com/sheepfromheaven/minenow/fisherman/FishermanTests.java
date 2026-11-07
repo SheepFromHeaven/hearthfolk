@@ -65,6 +65,19 @@ public final class FishermanTests {
         });
     }
 
+    public static void masterFishermanWearsItsRodLessThanOncePerCatch(GameTestHelper helper) {
+        Villager fisherman = spawnFisherman(helper);
+        fisherman.setVillagerData(fisherman.getVillagerData().withLevel(5));
+        digPool(helper, 7, 10);
+        fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(catchCount(fisherman) >= 8, "The master should land 8 fish, caught " + catchCount(fisherman));
+            helper.assertTrue(rod(fisherman).getDamageValue() < catchCount(fisherman),
+                    "A master handles its rod well enough to spare it, " + rod(fisherman).getDamageValue() + " damage for " + catchCount(fisherman) + " fish");
+        });
+    }
+
     public static void fishermanWithoutARodCatchesNothing(GameTestHelper helper) {
         Villager fisherman = spawnFisherman(helper);
         digPool(helper, 7, 10);

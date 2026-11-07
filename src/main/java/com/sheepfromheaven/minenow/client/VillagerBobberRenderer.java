@@ -69,7 +69,7 @@ public class VillagerBobberRenderer extends EntityRenderer<VillagerBobber, Fishi
             return;
         }
         float bodyYaw = Mth.lerp(partialTicks, owner.yBodyRotO, owner.yBodyRot) * Mth.DEG_TO_RAD;
-        double forward = 0.5 * owner.getScale();
+        double forward = 0.4 * owner.getScale();
         double left = 0.2 * owner.getScale();
         double sin = Mth.sin(bodyYaw);
         double cos = Mth.cos(bodyYaw);

@@ -152,7 +152,9 @@ public class GoFishing extends Behavior<Villager> {
         ItemStack rod = body.getInventory().getItem(Tools.slot(body));
         int lure = Math.round(EnchantmentHelper.getFishingTimeReduction(level, rod, body) * 20.0F);
         bobber = VillagerBobber.cast(level, body, castTarget(level, body), lure);
-        reactAfter = 4 + body.getRandom().nextInt(8);
+        int villagerLevel = body.getVillagerData().level();
+        int fastest = FishermanSkill.fastestReaction(villagerLevel);
+        reactAfter = fastest + body.getRandom().nextInt(FishermanSkill.slowestReaction(villagerLevel) - fastest + 1);
         recastAt = timestamp + RECAST_DELAY;
     }
 
@@ -190,7 +192,7 @@ public class GoFishing extends Behavior<Villager> {
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         level.playSound(null, BlockPos.containing(at), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 1.0F);
         level.sendParticles(ParticleTypes.FISHING, at.x, at.y + 0.2, at.z, 6, 0.2, 0.0, 0.2, 0.05);
-        Tools.wear(level, body);
+        if (body.getRandom().nextFloat() < FishermanSkill.rodWearChance(body.getVillagerData().level())) Tools.wear(level, body);
     }
 
     private void advance(ServerLevel level, Villager body, long timestamp) {
