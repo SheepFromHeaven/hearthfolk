@@ -28,17 +28,6 @@ public class StructureLevelingTests {
         return blocks;
     }
 
-    public static void freshStructureStartsAtLevelOne(GameTestHelper helper) {
-        GameTestHelpers.makeFloor(helper);
-        var markerPos = helper.absolutePos(new BlockPos(1, 1, 1));
-        var structure = new DominionStructure("Lumberyard", StructureType.LUMBERYARD, markerPos, Set.of(markerPos));
-
-        helper.succeedWhen(() -> {
-            helper.assertTrue(structure.getLevel() == 1, "A freshly created structure should start at level 1");
-            helper.assertFalse(structure.isMaxLevel(), "A level-1 structure should not already be at its max level");
-        });
-    }
-
     public static void levelUpFailsWithoutMeetingNextLevelRequirements(GameTestHelper helper) {
         GameTestHelpers.makeFloor(helper);
         var level = helper.getLevel();
@@ -101,29 +90,6 @@ public class StructureLevelingTests {
             helper.assertTrue(structure.getLevel() == 1, "The structure should remain at level 1 when capped by the dominion's tier");
             helper.assertTrue(dominion.getStructureLevelCap(structure.getId()) == 1,
                     "A SETTLEMENT-tier dominion should cap structure level at 1");
-        });
-    }
-
-    public static void levelEffectsGrantWorkSlotsAndProductivityStacking(GameTestHelper helper) {
-        GameTestHelpers.makeFloor(helper);
-        var markerPos = helper.absolutePos(new BlockPos(1, 1, 1));
-        var structure = new DominionStructure("Lumberyard", StructureType.LUMBERYARD, markerPos, Set.of(markerPos));
-
-        var level1Stats = structure.getStats();
-        structure.setLevel(3);
-        var level3Stats = structure.getStats();
-
-        helper.succeedWhen(() -> {
-            helper.assertTrue(level1Stats.getInhabitantSlots() == 1, "A level-1 lumberyard should grant exactly its base work slot");
-            helper.assertTrue(level1Stats.getProductivityMultiplier() == 1.0, "A level-1 structure should have no productivity bonus");
-            helper.assertTrue(level3Stats.getInhabitantSlots() == 3,
-                    "A level-3 structure should have gained +1 slot at level 2 and another at level 3, on top of its base slot");
-            helper.assertTrue(Math.abs(level3Stats.getProductivityMultiplier() - 1.25 * 1.25) < 0.0001,
-                    "Productivity bonuses from level 2 and level 3 should stack multiplicatively");
-            helper.assertTrue(structure.getInhabitantSlots() == level3Stats.getInhabitantSlots(),
-                    "DominionStructure.getInhabitantSlots() should match the folded stats");
-            helper.assertTrue(structure.getProductivityMultiplier() == level3Stats.getProductivityMultiplier(),
-                    "DominionStructure.getProductivityMultiplier() should match the folded stats");
         });
     }
 

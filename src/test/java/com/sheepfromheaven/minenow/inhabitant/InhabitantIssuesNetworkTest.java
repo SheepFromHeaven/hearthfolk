@@ -1,14 +1,14 @@
-package com.sheepfromheaven.minenow.inhabitant.gametest;
+package com.sheepfromheaven.minenow.inhabitant;
 
 import com.sheepfromheaven.minenow.network.ModNetwork;
-import net.minecraft.gametest.framework.GameTestHelper;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
-// Registered into the vanilla test_function registry by MineNow's RegisterEvent listener;
-// the matching data/minenow/test_instance/*.json files supply the structure and tick budget.
-public class InhabitantIssuesNetworkTests {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class InhabitantIssuesNetworkTest {
 
     /**
      * Reproduces the "issues button always shows red !" bug: {@code INHABITANT_FIELD_SEP} is the
@@ -16,15 +16,14 @@ public class InhabitantIssuesNetworkTests {
      * non-empty issues payload apart into individual characters instead of the original entries -
      * the round trip must preserve the original list, not shred it.
      */
-    public static void issuesListSurvivesNetworkRoundTrip(GameTestHelper helper) {
+    @Test
+    void issuesListSurvivesNetworkRoundTrip() {
         var original = List.of("Needs Axe", "There is no Bed in my house");
 
         var encoded = String.join(ModNetwork.INHABITANT_FIELD_SEP, original);
         var decoded = encoded.isEmpty() ? List.<String>of()
                 : List.of(encoded.split(Pattern.quote(ModNetwork.INHABITANT_FIELD_SEP), -1));
 
-        helper.assertTrue(decoded.equals(original),
-                "Issues list should survive the network round trip unchanged, but got " + decoded);
-        helper.succeed();
+        assertEquals(original, decoded, "Issues list should survive the network round trip unchanged");
     }
 }

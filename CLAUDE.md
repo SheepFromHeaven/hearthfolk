@@ -16,11 +16,18 @@ Player-built villages with NPC workers ("inhabitants") who take jobs and work cl
 - `storage/` — storage blocks/inventory
 - `effect/`, `requirement/`, `pathfinding/`, `network/`, `command/`, `dev/` — supporting systems
 - `*/gametest/` — in-game integration tests per feature area; `*/client/` — client-only rendering/screens
+- `src/test/java/` — plain JUnit 5 tests for logic that doesn't need a live `Level`/`ServerLevel` (pure
+  calculations, config parsing, string/network round-trips). Runs via `./gradlew test`, using NeoForge
+  ModDevGradle's `unitTest` integration (`build.gradle`'s `neoForge { unitTest { ... } }` block), which loads
+  the mod so registries (`Items`, `Blocks`, MineNow's own registries) are populated — but there's no live
+  `ServerLevel`, so anything touching `SavedData`/`RecipeManager`/a real world still needs a gametest instead.
 
 ## Workflow
 
-- **TDD**: write a failing GameTest first, then implement. See `feedback_tdd_workflow` memory.
-- **Verify with GameTests, not just compile**: `./gradlew runGameTestServer` — a green compile can still hide a broken tag/behavior. Don't declare a task done on compile alone.
+- **TDD**: write a failing test first, then implement — a GameTest if the behavior needs a live `Level`
+  (blocks, entities, ticking), a plain JUnit test under `src/test/java` if it's pure logic. See
+  `feedback_tdd_workflow` memory.
+- **Verify with GameTests, not just compile**: `./gradlew runGameTestServer` — a green compile can still hide a broken tag/behavior. Don't declare a task done on compile alone. For pure-logic changes covered by `src/test/java`, `./gradlew test` is the equivalent gate.
 - `@GameTest` annotations don't register on this build; tests are wired via `RegisterEvent` + JSON (see `reference_forge_gametest_setup` memory).
 - Custom block tags live in `tags/block/` (singular), not `tags/blocks/` — wrong folder fails silently.
 - New registered items must be added to `ModCreativeTabs`' `displayItems`.
