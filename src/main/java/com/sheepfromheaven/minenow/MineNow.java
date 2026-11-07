@@ -129,6 +129,8 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "hungry_villager_eats_from_its_inventory", MealsTests::hungryVillagerEatsFromItsInventory);
             test(helper, TestGroup.VILLAGER_TRADING, "fed_villager_leaves_its_food_alone", MealsTests::fedVillagerLeavesItsFoodAlone);
             test(helper, TestGroup.VILLAGER_TRADING, "hungry_villager_without_food_buys_a_meal", MealsTests::hungryVillagerWithoutFoodBuysAMeal);
+            test(helper, TestGroup.VILLAGER_TRADING, "wealthy_villager_buys_food_to_start_a_family", MealsTests::wealthyVillagerBuysFoodToStartAFamily);
+            test(helper, TestGroup.VILLAGER_TRADING, "poor_villager_keeps_its_emeralds", MealsTests::poorVillagerKeepsItsEmeralds);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);

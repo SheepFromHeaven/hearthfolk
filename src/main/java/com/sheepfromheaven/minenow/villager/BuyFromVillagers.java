@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
- * A hungry villager without a meal ({@link Meals}), or a working one that runs low on a supply of its trade (fewer than
+ * A hungry villager without a meal ({@link Meals}), a wealthy one without food to breed ({@link Wealth}), or a working one that runs low on a supply of its trade (fewer than
  * one batch in its inventory), walks to the nearest villager that sells what it needs and buys it at that villager's price, the same price a player pays. It buys as
  * many emeralds' worth as it can afford, the seller can spare and still fit under the supply's {@code max}.
  */
@@ -111,6 +111,14 @@ public class BuyFromVillagers extends Behavior<Villager> {
                             .flatMap(item -> offer(level, seller, item, 0).stream()))
                     .findFirst();
             if (meal.isPresent()) return meal;
+        }
+        if (Wealth.wantsFoodForAFamily(level, buyer)) {
+            Optional<Deal> food = sellers(level, buyer).stream()
+                    .flatMap(seller -> Economy.items(level, seller).stream()
+                            .filter(item -> Wealth.isBreedingFood(new ItemStack(item)))
+                            .flatMap(item -> offer(level, seller, item, 0).stream()))
+                    .findFirst();
+            if (food.isPresent()) return food;
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return Optional.empty();

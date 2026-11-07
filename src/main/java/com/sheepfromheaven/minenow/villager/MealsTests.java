@@ -65,4 +65,35 @@ public final class MealsTests {
             helper.assertTrue(farmer.getInventory().countItem(Items.EMERALD) == 1, "The farmer gets the emerald");
         });
     }
+
+    public static void wealthyVillagerBuysFoodToStartAFamily(GameTestHelper helper) {
+        Villager villager = villagerNextToAFarmerWithPotatoes(helper);
+        villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.WEALTHY));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(villager.getInventory().countItem(Items.POTATO) >= Villager.BREEDING_FOOD_THRESHOLD,
+                    "A villager with emeralds to spare should buy enough food to be willing to breed, has " + villager.getInventory().countItem(Items.POTATO) + " potatoes");
+            helper.assertTrue(villager.getInventory().countItem(Items.EMERALD) == Wealth.WEALTHY - 1, "It spends one emerald");
+        });
+    }
+
+    public static void poorVillagerKeepsItsEmeralds(GameTestHelper helper) {
+        Villager villager = villagerNextToAFarmerWithPotatoes(helper);
+        villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.WEALTHY - 1));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(villager.getInventory().countItem(Items.EMERALD) == Wealth.WEALTHY - 1, "A villager without emeralds to spare doesn't buy food for a family");
+            helper.succeed();
+        });
+    }
+
+    private static Villager villagerNextToAFarmerWithPotatoes(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.POTATO, 64));
+        return helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+    }
 }
