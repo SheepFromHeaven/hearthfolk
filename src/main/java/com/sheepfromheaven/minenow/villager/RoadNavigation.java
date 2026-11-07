@@ -6,6 +6,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.level.pathfinder.PathfindingContext;
+import net.minecraft.core.BlockPos;
+import com.sheepfromheaven.minenow.shepherd.OpenFenceGates;
 
 /**
  * Vanilla ground navigation where each step costs extra by road tier ({@link Roads#stepCost}), so villagers keep to the
@@ -28,6 +32,14 @@ public class RoadNavigation extends GroundPathNavigation {
     }
 
     private static class RoadNodeEvaluator extends WalkNodeEvaluator {
+        @Override
+        public PathType getPathType(PathfindingContext context, int x, int y, int z) {
+            if (OpenFenceGates.canOpen(this.mob) && OpenFenceGates.isClosedGate(context.getBlockState(new BlockPos(x, y, z)))) {
+                return PathType.WALKABLE_DOOR;
+            }
+            return super.getPathType(context, x, y, z);
+        }
+
         @Override
         public int getNeighbors(Node[] neighbors, Node pos) {
             int count = super.getNeighbors(neighbors, pos);

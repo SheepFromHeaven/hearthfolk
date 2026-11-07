@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.shepherd;
 
 import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -16,6 +17,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 import java.util.ArrayList;
@@ -55,6 +57,50 @@ public final class ShepherdTests {
             helper.assertTrue(white.isSheared() && red.isSheared(), "Both penned sheep should be sheared");
             helper.assertTrue(count(shepherd, Items.WOOL.white()) >= 1 && count(shepherd, Items.WOOL.red()) >= 1,
                     "The wool goes into the shepherd's inventory in the sheep's colour");
+        });
+    }
+
+    public static void shepherdOpensTheFenceGateIntoThePenAndClosesIt(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.setVillagerData(shepherd.getVillagerData().withLevel(5));
+        shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
+        buildPen(helper, 9);
+        BlockPos gate = new BlockPos(9, 1, 12);
+        helper.setBlock(gate.above(), Blocks.AIR);
+        helper.setBlock(gate, Blocks.OAK_FENCE_GATE.defaultBlockState().setValue(FenceGateBlock.FACING, Direction.EAST));
+        List<Sheep> flock = List.of(sheep(helper, 13, 10, DyeColor.WHITE), sheep(helper, 14, 14, DyeColor.WHITE));
+        boolean[] wasOpened = {false};
+        helper.onEachTick(() -> wasOpened[0] |= helper.getBlockState(gate).getValue(FenceGateBlock.OPEN));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(flock.stream().allMatch(Sheep::isSheared), "The shepherd should get into the pen through the gate and shear the flock");
+            helper.assertTrue(wasOpened[0], "It opens the gate");
+            helper.assertFalse(helper.getBlockState(gate).getValue(FenceGateBlock.OPEN), "It closes the gate behind it");
+            helper.assertTrue(shepherd.blockPosition().getX() != helper.absolutePos(gate).getX() || shepherd.blockPosition().getZ() != helper.absolutePos(gate).getZ(),
+                    "It is not standing in the gateway");
+            for (Sheep sheep : flock) {
+                BlockPos at = helper.relativePos(sheep.blockPosition());
+                helper.assertTrue(at.getX() > 9 && at.getX() < 15 && at.getZ() > 9 && at.getZ() < 15, "No sheep escaped through the gate, one is at " + at);
+            }
+        });
+    }
+
+    public static void otherVillagersLeaveFenceGatesShut(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        buildPen(helper, 9);
+        BlockPos gate = new BlockPos(9, 1, 12);
+        helper.setBlock(gate.above(), Blocks.AIR);
+        helper.setBlock(gate, Blocks.OAK_FENCE_GATE.defaultBlockState().setValue(FenceGateBlock.FACING, Direction.EAST));
+        Villager farmer = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        helper.runAfterDelay(20, () -> farmer.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET,
+                new net.minecraft.world.entity.ai.memory.WalkTarget(helper.absolutePos(new BlockPos(12, 1, 12)), 0.5F, 0)));
+        boolean[] wasOpened = {false};
+        helper.onEachTick(() -> wasOpened[0] |= helper.getBlockState(gate).getValue(FenceGateBlock.OPEN));
+
+        helper.runAfterDelay(300, () -> {
+            helper.assertFalse(wasOpened[0], "Only shepherds open fence gates");
+            helper.succeed();
         });
     }
 

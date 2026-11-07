@@ -106,6 +106,8 @@ public final class MineNow {
             test(helper, TestGroup.FISHERMAN, "fisherman_unloads_its_catch_at_home", FishermanTests::fishermanUnloadsItsCatchAtHome);
             test(helper, TestGroup.SHEPHERD, "shepherd_without_shears_offers_to_buy_them", ShepherdTests::shepherdWithoutShearsOffersToBuyThem);
             test(helper, TestGroup.SHEPHERD, "shepherd_shears_the_sheep_penned_near_its_loom", ShepherdTests::shepherdShearsTheSheepPennedNearItsLoom);
+            test(helper, TestGroup.SHEPHERD, "shepherd_opens_the_fence_gate_into_the_pen_and_closes_it", ShepherdTests::shepherdOpensTheFenceGateIntoThePenAndClosesIt);
+            test(helper, TestGroup.SHEPHERD, "other_villagers_leave_fence_gates_shut", ShepherdTests::otherVillagersLeaveFenceGatesShut);
             test(helper, TestGroup.SHEPHERD, "shepherd_ignores_sheep_far_from_its_loom", ShepherdTests::shepherdIgnoresSheepFarFromItsLoom);
             test(helper, TestGroup.SHEPHERD, "shearing_a_sheep_takes_time", ShepherdTests::shearingASheepTakesTime);
             test(helper, TestGroup.SHEPHERD, "shepherd_unloads_its_wool_at_home", ShepherdTests::shepherdUnloadsItsWoolAtHome);

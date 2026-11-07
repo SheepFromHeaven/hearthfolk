@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import com.sheepfromheaven.minenow.farmer.TendFields;
 import com.sheepfromheaven.minenow.fisherman.GoFishing;
+import com.sheepfromheaven.minenow.shepherd.OpenFenceGates;
 import com.sheepfromheaven.minenow.shepherd.ShearSheep;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -31,7 +32,7 @@ public final class BrainHook {
         // runs after the walk target was cleared on arrival and before WORK's walk-back-to-job-site can claim it.
         brain.addActivity(
                 Activity.CORE,
-                ImmutableList.of(Pair.of(1, new TendFields()), Pair.of(1, new GoFishing()), Pair.of(1, new ShearSheep()), Pair.of(1, new FollowEmeraldHolder()), Pair.of(6, new PickUpGiftedTool()),
+                ImmutableList.of(Pair.of(1, new TendFields()), Pair.of(1, new GoFishing()), Pair.of(1, new ShearSheep()), Pair.of(1, new OpenFenceGates()), Pair.of(1, new FollowEmeraldHolder()), Pair.of(6, new PickUpGiftedTool()),
                         Pair.of(10, new ChooseMeetingPoint())),
                 ImmutableSet.of(),
                 Set.of());
