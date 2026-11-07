@@ -19,7 +19,9 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
@@ -48,6 +50,7 @@ public class TendFields extends Behavior<Villager> {
     private static final int STUCK_COOLDOWN = 100;
     private static final int UNREACHABLE_COOLDOWN = 600;
     private static final int IDLE_RESCAN_DELAY = 100;
+    private static final int SWING_INTERVAL = 10;
 
     private enum Task { HARVEST, PLANT, DEPOSIT, FETCH_HOE }
 
@@ -57,6 +60,7 @@ public class TendFields extends Behavior<Villager> {
     private @Nullable Task task;
     private long targetSince;
     private long nextStartAllowed;
+    private int workLeft = -1;
 
     public TendFields() {
         super(ImmutableMap.of(
@@ -70,6 +74,7 @@ public class TendFields extends Behavior<Villager> {
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed) return false;
         if (!FarmerRules.isFarmer(body) || !FarmerRules.griefingAllowed(level) || body.isTrading()) return false;
+        if (!body.getBrain().isActive(Activity.WORK)) return false;
         candidates.clear();
         if (pickNextTarget(level, body)) return true;
         nextStartAllowed = level.getGameTime() + IDLE_RESCAN_DELAY;
@@ -91,8 +96,11 @@ public class TendFields extends Behavior<Villager> {
     @Override
     protected void tick(ServerLevel level, Villager body, long timestamp) {
         if (target == null || task == null) return;
+        keepHoeInHand(body);
         if (inReach(body)) {
+            if (task == Task.HARVEST && isRipeCrop(level.getBlockState(target)) && !finishedReaping(level, body)) return;
             act(level, body);
+            workLeft = -1;
             advance(level, body, timestamp);
         } else if (pathCannotReachTarget(body) || couldNotReach(body)) {
             unreachable.put(target, timestamp + UNREACHABLE_COOLDOWN);
@@ -109,11 +117,27 @@ public class TendFields extends Behavior<Villager> {
     protected void stop(ServerLevel level, Villager body, long timestamp) {
         target = null;
         task = null;
+        workLeft = -1;
         candidates.clear();
         body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         body.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
         Hoes.showInHand(body, false);
         nextStartAllowed = timestamp + 40;
+    }
+
+    /** Reaping takes as long as the hoe is slow; the farmer stands at the crop and swings while it works. */
+    private boolean finishedReaping(ServerLevel level, Villager body) {
+        if (workLeft < 0) workLeft = Hoes.harvestTicks(level, body);
+        if (workLeft % SWING_INTERVAL == 0) body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target));
+        if (!isWalkingToTarget(body)) walkTo(body);
+        return workLeft-- <= 0;
+    }
+
+    /** Vanilla's ShowTradesToPlayer empties the main hand whenever a player is close; keep it from starting while working. */
+    private static void keepHoeInHand(Villager body) {
+        body.getBrain().eraseMemory(MemoryModuleType.INTERACTION_TARGET);
+        if (!Hoes.isHoe(body.getMainHandItem())) Hoes.showInHand(body, true);
     }
 
     private void advance(ServerLevel level, Villager body, long timestamp) {

@@ -17,14 +17,17 @@ and schedules; we only add behaviours to the villager brain. Professions are add
 - `villager/TradeTable` — per-profession prices and level unlocks from `data/<ns>/villager_trades/<profession>.json` (reloads with `/reload`); `tools` are bought when the villager has none, `produce` is sold per emerald; a level unlocks its entries and keeps earlier ones
 - `villager/VillagerNames` — every villager without a custom name gets one from `data/<ns>/villager_names/*.json` (all files merged) when it joins the world; vanilla then shows it on hover and in the trade title ("Jim - Novice")
 - `villager/StorageTheft` — any unexplained drop in an owned chest's contents is theft, blamed on whoever placed the hopper or hopper minecart under it. Code that takes items out of a villager's chest must call `StorageTheft.check` before and `recordContents` after, or it will be counted as theft
-- `farmer/` — `TendFields` behaviour (harvest/replant fields around the composter, unload into the farmer's own home chest; needs a hoe, wears it down, fetches a spare from the home chest), `PickUpGiftedHoe` (picks up a hoe thrown to a hoe-less farmer), `FarmerTrades` (offers rebuilt from needs, goods and villager level on every right-click: buys an undamaged hoe when it has none, sells crops beyond what it keeps; real items move on `TradeWithVillagerEvent`, and a bought hoe arrives with its enchantments), `FarmerRules` (denies farmers mob-griefing, which switches off vanilla's tool-free `HarvestFarmland` and their vanilla loot pickup) and its gametests
+- `farmer/` — `TendFields` behaviour (harvest/replant fields around the composter, unload into the farmer's own home chest; needs a hoe, holds it, swings it while reaping for as long as the hoe's mining speed dictates, wears it down, fetches a spare from the home chest; lives in CORE right after `MoveToTargetSink` so standing still to reap isn't undone by WORK's walk back to the job site), `PickUpGiftedHoe` (picks up a hoe thrown to a hoe-less farmer), `FarmerTrades` (offers rebuilt from needs, goods and villager level on every right-click: buys an undamaged hoe when it has none, sells crops beyond what it keeps; real items move on `TradeWithVillagerEvent`, and a bought hoe arrives with its enchantments), `FarmerRules` (denies farmers mob-griefing, which switches off vanilla's tool-free `HarvestFarmland` and their vanilla loot pickup) and its gametests
+- `client/` — `SwingingVillagerRenderer` replaces vanilla's villager renderer so the crossed arms (and held tool) move with swings; registered in `MineNowClient`
 - `gametest/` — shared gametest helpers (`fence` lays the stone floor and barrier walls; spawning employed/housed villagers). The test structure's own floor doesn't load, so every test must call `fence` first
 - `src/main/resources/data/minenow/test_instance/` — one JSON per gametest; `structure/field_24x6x24.nbt` is the empty stone-floored test space
 
 ## Workflow
 
 - **TDD**: write a failing test first, then implement — a GameTest if the behavior needs a live `Level`
-  (blocks, entities, ticking), a plain JUnit test under `src/test/java` if it's pure logic. See
+  (blocks, entities, ticking), a plain JUnit test under `src/test/java` only if it's pure logic that touches no
+  items: on 26.3 item components are bound when datapacks load, so `new ItemStack(...)` throws "Components not bound
+  yet" in unit tests. Anything with items is a gametest (they can be instant, see `better_hoes_reap_faster`). See
   `feedback_tdd_workflow` memory.
 - **Verify with GameTests, not just compile**: `./gradlew runGameTestServer` — a green compile can still hide a broken tag/behavior. Don't declare a task done on compile alone. For pure-logic changes covered by `src/test/java`, `./gradlew test` is the equivalent gate.
 - `@GameTest` annotations don't register on this build; tests are wired via `RegisterEvent` + JSON (see `reference_forge_gametest_setup` memory).

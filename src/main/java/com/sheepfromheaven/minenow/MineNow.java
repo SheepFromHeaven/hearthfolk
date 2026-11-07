@@ -49,6 +49,9 @@ public final class MineNow {
             test(helper, "farmer_keeps_tending_after_brain_is_rebuilt", FarmerTests::farmerKeepsTendingAfterBrainIsRebuilt);
             test(helper, "farmer_deposits_harvest_in_own_chest_at_home", FarmerTests::farmerDepositsHarvestInOwnChestAtHome);
             test(helper, "farmer_without_hoe_leaves_ripe_crops_alone", FarmerTests::farmerWithoutHoeLeavesRipeCropsAlone);
+            test(helper, "harvesting_takes_time_and_swings_the_hoe", FarmerTests::harvestingTakesTimeAndSwingsTheHoe);
+            test(helper, "better_hoes_reap_faster", FarmerTests::betterHoesReapFaster);
+            test(helper, "farmer_holds_its_hoe_while_working_with_a_player_watching", FarmerTests::farmerHoldsItsHoeWhileWorkingWithAPlayerWatching);
             test(helper, "harvesting_wears_out_the_hoe", FarmerTests::harvestingWearsOutTheHoe);
             test(helper, "farmer_picks_up_a_hoe_thrown_to_it", FarmerTests::farmerPicksUpAHoeThrownToIt);
             test(helper, "farmer_fetches_a_spare_hoe_from_its_home_chest", FarmerTests::farmerFetchesASpareHoeFromItsHomeChest);

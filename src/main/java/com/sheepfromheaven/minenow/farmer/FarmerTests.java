@@ -78,6 +78,64 @@ public final class FarmerTests {
         return GameTestHelpers.spawnEmployed(helper, COMPOSTER.east(), COMPOSTER, VillagerProfession.FARMER, PoiTypes.FARMER);
     }
 
+    public static void betterHoesReapFaster(GameTestHelper helper) {
+        java.util.function.ToIntFunction<net.minecraft.world.item.Item> ticks = hoe -> Hoes.harvestTicks(new ItemStack(hoe), 0);
+        helper.assertTrue(ticks.applyAsInt(Items.WOODEN_HOE) > ticks.applyAsInt(Items.STONE_HOE), "stone should beat wood");
+        helper.assertTrue(ticks.applyAsInt(Items.STONE_HOE) > ticks.applyAsInt(Items.IRON_HOE), "iron should beat stone");
+        helper.assertTrue(ticks.applyAsInt(Items.IRON_HOE) > ticks.applyAsInt(Items.DIAMOND_HOE), "diamond should beat iron");
+        helper.assertTrue(ticks.applyAsInt(Items.DIAMOND_HOE) > ticks.applyAsInt(Items.NETHERITE_HOE), "netherite should beat diamond");
+        helper.assertTrue(ticks.applyAsInt(Items.GOLDEN_HOE) >= 5, "even the fastest hoe takes a moment");
+        ItemStack iron = new ItemStack(Items.IRON_HOE);
+        helper.assertTrue(Hoes.harvestTicks(iron, 3) < Hoes.harvestTicks(iron, 0), "Efficiency III should reap faster");
+        helper.succeed();
+    }
+
+    public static void harvestingTakesTimeAndSwingsTheHoe(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        BlockPos crop = COMPOSTER.east().south();
+        helper.setBlock(crop.below(), Blocks.FARMLAND);
+        helper.setBlock(crop, ((CropBlock) Blocks.WHEAT).getStateForAge(((CropBlock) Blocks.WHEAT).getMaxAge()));
+        Villager farmer = spawnFarmerWithoutHoe(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WOODEN_HOE));
+        boolean[] swung = {false};
+        helper.onEachTick(() -> swung[0] |= farmer.getCurrentSwing() != null);
+
+        helper.runAfterDelay(20, () -> {
+            BlockState state = helper.getBlockState(crop);
+            helper.assertTrue(state.getBlock() instanceof CropBlock c && c.isMaxAge(state), "A wooden hoe should not reap a crop within a second");
+        });
+        helper.runAfterDelay(200, () -> {
+            BlockState state = helper.getBlockState(crop);
+            helper.assertTrue(!(state.getBlock() instanceof CropBlock c && c.isMaxAge(state)), "The crop should be reaped eventually");
+            helper.assertTrue(swung[0], "The farmer should swing its hoe while reaping");
+            helper.succeed();
+        });
+    }
+
+    public static void farmerHoldsItsHoeWhileWorkingWithAPlayerWatching(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        Villager farmer = spawnFarmer(helper);
+        @SuppressWarnings("removal")
+        net.minecraft.server.level.ServerPlayer watcher = helper.makeMockServerPlayerInLevel();
+        int[] working = {0};
+        int[] emptyHanded = {0};
+        helper.onEachTick(() -> {
+            watcher.snapTo(farmer.getX() + 2, farmer.getY(), farmer.getZ());
+            boolean tending = farmer.getBrain().getRunningBehaviors().stream().anyMatch(TendFields.class::isInstance);
+            if (!tending) return;
+            working[0]++;
+            if (!Hoes.isHoe(farmer.getMainHandItem())) emptyHanded[0]++;
+        });
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(working[0] > 100, "Farmer should have been working, ticks=" + working[0]);
+            helper.assertTrue(emptyHanded[0] <= 5, "Farmer should hold its hoe while working, empty-handed for " + emptyHanded[0] + " of " + working[0] + " ticks");
+            helper.succeed();
+        });
+    }
+
     public static void farmerWithoutHoeLeavesRipeCropsAlone(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
