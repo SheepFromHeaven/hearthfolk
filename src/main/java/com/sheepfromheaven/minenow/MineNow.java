@@ -36,6 +36,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
         NeoForge.EVENT_BUS.addListener(Roads::onEntityJoin);
+        NeoForge.EVENT_BUS.addListener(Roads::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(FarmerReport::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onFarmlandTrample);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onEntityInteract);
