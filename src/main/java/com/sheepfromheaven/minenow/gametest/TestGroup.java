@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.Blocks;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Which feature a gametest belongs to; the playground lays each group out as its own walled district in its colour. */
+/** Which feature a gametest belongs to; the playground gives each group its own district (wool floor) and a hub portal framed in {@link #wall}. */
 public enum TestGroup {
     VILLAGERS("Villagers", Blocks.WOOL.yellow(), Blocks.CONCRETE.yellow()),
     STORAGE("Home storage", Blocks.WOOL.red(), Blocks.CONCRETE.red()),
