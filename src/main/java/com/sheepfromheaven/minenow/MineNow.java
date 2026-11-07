@@ -9,6 +9,7 @@ import com.sheepfromheaven.minenow.farmer.FarmerTradeTests;
 import com.sheepfromheaven.minenow.villager.BrainHook;
 import com.sheepfromheaven.minenow.villager.FollowTests;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
+import com.sheepfromheaven.minenow.villager.MeetingTests;
 import com.sheepfromheaven.minenow.villager.HomeStorageTests;
 import com.sheepfromheaven.minenow.villager.ModVillagers;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
@@ -93,6 +94,8 @@ public final class MineNow {
             test(helper, "unemployed_villager_follows_a_player_holding_an_emerald", FollowTests::unemployedVillagerFollowsAPlayerHoldingAnEmerald);
             test(helper, "employed_villager_ignores_the_emerald", FollowTests::employedVillagerIgnoresTheEmerald);
             test(helper, "following_far_from_home_abandons_the_old_bed", FollowTests::followingFarFromHomeAbandonsTheOldBed);
+            test(helper, "villager_picks_the_nearest_bell_when_the_afternoon_starts", MeetingTests::villagerPicksTheNearestBellWhenTheAfternoonStarts);
+            test(helper, "villagers_do_not_hand_items_to_each_other", MeetingTests::villagersDoNotHandItemsToEachOther);
             test(helper, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
             test(helper, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);

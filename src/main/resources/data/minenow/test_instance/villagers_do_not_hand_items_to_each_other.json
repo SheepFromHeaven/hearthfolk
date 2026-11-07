@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:late_afternoon",
+  "function": "minenow:villagers_do_not_hand_items_to_each_other",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}
