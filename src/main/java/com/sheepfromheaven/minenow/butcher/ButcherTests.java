@@ -42,6 +42,64 @@ public final class ButcherTests {
         helper.succeed();
     }
 
+    public static void butcherNeverBuysMeat(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.interactOn(butcher, InteractionHand.MAIN_HAND, butcher.position());
+
+        List<String> meatBought = butcher.getOffers().stream()
+                .filter(o -> o.getResult().is(Items.EMERALD) && o.getCostA().is(net.minecraft.tags.ItemTags.MEAT))
+                .map(o -> o.getCostA().getItem().toString()).toList();
+        helper.assertTrue(meatBought.isEmpty(), "A butcher produces meat and never buys it, offers to buy " + meatBought);
+        helper.succeed();
+    }
+
+    public static void butcherKeepsItsRawMeatForTheSmoker(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.COOKED_PORKCHOP, 64));
+        butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 20));
+        BlockPos chest = new BlockPos(4, 1, 18);
+        helper.setBlock(chest, Blocks.CHEST);
+        GameTestHelpers.giveHome(helper, butcher, new BlockPos(4, 1, 15));
+
+        helper.succeedWhen(() -> {
+            var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
+            int cooked = 0;
+            for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(Items.COOKED_PORKCHOP)) cooked += container.getItem(i).getCount();
+            helper.assertTrue(cooked >= 64, "The butcher should unload its cooked meat, chest has " + cooked);
+            helper.assertTrue(count(butcher, Items.PORKCHOP) == 20, "It keeps the raw meat to smoke, holds " + count(butcher, Items.PORKCHOP));
+        });
+    }
+
+    public static void cullingTakesAsManySwingsAsTheAxeNeeds(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.WOODEN_AXE));
+        GameTestHelpers.gatedPen(helper, 9);
+        List<Animal> cows = herd(helper, EntityTypes.COW, ButcherHerd.HERD_SIZE + 2);
+        List<Long> killedAt = new ArrayList<>();
+        int[] aliveBefore = {cows.size()};
+        helper.onEachTick(() -> {
+            int now = alive(cows);
+            for (int i = now; i < aliveBefore[0]; i++) killedAt.add(helper.getTick());
+            aliveBefore[0] = now;
+        });
+        int swings = Butchering.swings(10.0F, 7.0);
+        int swingTicks = Butchering.swingTicks(0.8);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(killedAt.size() == 2, "The butcher should cull the two surplus cows, culled " + killedAt.size());
+            long gap = killedAt.get(1) - killedAt.get(0);
+            helper.assertTrue(gap >= (long) swings * swingTicks, "A wooden axe needs " + swings + " swings of " + swingTicks + " ticks per cow, took " + gap);
+            ItemStack axe = butcher.getInventory().getItems().stream().filter(stack -> stack.is(Items.WOODEN_AXE)).findFirst().orElse(ItemStack.EMPTY);
+            helper.assertTrue(axe.getDamageValue() == 2 * swings, "Every swing wears the axe, " + axe.getDamageValue() + " damage");
+        });
+    }
+
     public static void butcherCullsTheHerdDownToSix(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));

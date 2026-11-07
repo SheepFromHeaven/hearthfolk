@@ -44,6 +44,8 @@ public final class Unloading {
         if (isTool(villager, stack)) return 1;
         int supplyMax = TradeTable.forVillager(villager).flatMap(table -> table.supply(stack.getItem())).map(TradeTable.Supply::max).orElse(0);
         if (supplyMax > 0) return supplyMax;
+        int keepMax = TradeTable.forVillager(villager).map(table -> table.keepMax(stack)).orElse(0);
+        if (keepMax > 0) return keepMax;
         if (Crops.isSeed(stack) || stack.has(DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
         return 0;
     }

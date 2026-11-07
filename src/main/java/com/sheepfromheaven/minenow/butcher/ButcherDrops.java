@@ -1,7 +1,5 @@
 package com.sheepfromheaven.minenow.butcher;
 
-import com.sheepfromheaven.minenow.villager.ToolCare;
-import com.sheepfromheaven.minenow.villager.Tools;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -27,7 +25,4 @@ public final class ButcherDrops {
         event.setCanceled(true);
     }
 
-    static void wearAxe(ServerLevel level, Villager butcher) {
-        if (butcher.getRandom().nextFloat() < ToolCare.wearChance(butcher.getVillagerData().level())) Tools.wear(level, butcher);
-    }
 }

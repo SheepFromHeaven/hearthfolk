@@ -43,7 +43,7 @@ import java.util.UUID;
 
 /**
  * The butcher keeps the livestock ({@link #LIVESTOCK}) within {@link #RANGE} blocks of its smoker at a steady herd
- * ({@link ButcherHerd}): it culls surplus adults with its axe, breeds small herds with the food it holds, smokes raw
+ * ({@link ButcherHerd}): it culls surplus adults with its axe ({@link Butchering}), breeds small herds with the food it holds, smokes raw
  * meat in its smoker with the coal it holds and takes the cooked meat out, and carries its goods to its home chest.
  * Named or leashed animals are pets and never culled. Lives in CORE after MoveToTargetSink, like TendFields.
  */
@@ -53,7 +53,6 @@ public class TendHerd extends Behavior<Villager> {
     private static final int HEIGHT = 3;
     private static final float SPEED = 0.5F;
     private static final double REACH = 2.0;
-    private static final int WIND_UP = 15;
     private static final int GIVE_UP_AFTER_TICKS = 300;
     private static final int UNREACHABLE_COOLDOWN = 600;
     private static final int IDLE_RESCAN_DELAY = 100;
@@ -67,6 +66,7 @@ public class TendHerd extends Behavior<Villager> {
     private long targetSince;
     private long nextStartAllowed;
     private int windUp;
+    private int swings;
 
     public TendHerd() {
         super(ImmutableMap.of(
@@ -121,6 +121,7 @@ public class TendHerd extends Behavior<Villager> {
             return;
         }
         windUp = 0;
+        swings = 0;
         if (timestamp - targetSince > GIVE_UP_AFTER_TICKS || (animal != null && pathCannotReach(body))) {
             if (animal != null) unreachable.put(animal.getUUID(), timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
@@ -135,6 +136,7 @@ public class TendHerd extends Behavior<Villager> {
         animal = null;
         block = null;
         windUp = 0;
+        swings = 0;
         body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         body.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
         Tools.showInHand(body, false);
@@ -147,10 +149,13 @@ public class TendHerd extends Behavior<Villager> {
             advance(level, body, timestamp);
             return;
         }
-        if (windUp++ < WIND_UP) return;
+        ItemStack axe = body.getInventory().getItem(Tools.slot(body));
+        if (++windUp < Butchering.swingTicks(Butchering.attackSpeed(axe))) return;
+        windUp = 0;
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        Tools.wear(level, body);
+        if (++swings < Butchering.swings(animal.getHealth(), Butchering.attackDamage(axe))) return;
         animal.hurtServer(level, level.damageSources().mobAttack(body), Float.MAX_VALUE);
-        ButcherDrops.wearAxe(level, body);
         advance(level, body, timestamp);
     }
 
@@ -203,6 +208,7 @@ public class TendHerd extends Behavior<Villager> {
 
     private void advance(ServerLevel level, Villager body, long timestamp) {
         windUp = 0;
+        swings = 0;
         if (pickTarget(level, body)) {
             targetSince = timestamp;
             Tools.showInHand(body, task == Task.CULL);

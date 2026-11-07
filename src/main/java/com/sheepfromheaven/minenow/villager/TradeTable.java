@@ -28,7 +28,7 @@ import java.util.Optional;
 
 /** Loaded from {@code data/<namespace>/villager_trades/<profession>.json}. Levels unlock cumulatively. */
 public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<TagKey<Item>> toolTag, List<Tool> tools, List<Produce> produce,
-                         List<Supply> supplies, Optional<DefaultProduce> defaultProduce) {
+                         List<Supply> supplies, Optional<DefaultProduce> defaultProduce, List<Keep> keeps) {
     public record Tool(Item item, int price, int level) {
         static final Codec<Tool> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Tool::item),
@@ -65,13 +65,22 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         ).apply(i, DefaultProduce::new));
     }
 
+    /** Goods the villager makes itself and works on further (the butcher's raw meat for its smoker): kept up to {@code max} when unloading, never bought. */
+    public record Keep(HolderSet<Item> items, int max) {
+        static final Codec<Keep> CODEC = RecordCodecBuilder.create(i -> i.group(
+                RegistryCodecs.holderSet(Registries.ITEM).fieldOf("items").forGetter(Keep::items),
+                ExtraCodecs.POSITIVE_INT.fieldOf("max").forGetter(Keep::max)
+        ).apply(i, Keep::new));
+    }
+
     static final Codec<TradeTable> CODEC = RecordCodecBuilder.create(i -> i.group(
             ResourceKey.codec(Registries.VILLAGER_PROFESSION).fieldOf("profession").forGetter(TradeTable::profession),
             TagKey.hashedCodec(Registries.ITEM).optionalFieldOf("tool_tag").forGetter(TradeTable::toolTag),
             Tool.CODEC.listOf().optionalFieldOf("tools", List.of()).forGetter(TradeTable::tools),
             Produce.CODEC.listOf().optionalFieldOf("produce", List.of()).forGetter(TradeTable::produce),
             Supply.CODEC.listOf().optionalFieldOf("supplies", List.of()).forGetter(TradeTable::supplies),
-            DefaultProduce.CODEC.optionalFieldOf("default_produce").forGetter(TradeTable::defaultProduce)
+            DefaultProduce.CODEC.optionalFieldOf("default_produce").forGetter(TradeTable::defaultProduce),
+            Keep.CODEC.listOf().optionalFieldOf("keeps", List.of()).forGetter(TradeTable::keeps)
     ).apply(i, TradeTable::new));
 
     private static volatile Map<ResourceKey<VillagerProfession>, TradeTable> byProfession = Map.of();
@@ -99,6 +108,10 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
 
     public Optional<Supply> supply(Item item) {
         return supplies.stream().filter(supply -> supply.item() == item).findFirst();
+    }
+
+    public int keepMax(ItemStack stack) {
+        return keeps.stream().filter(keep -> stack.is(keep.items())).mapToInt(Keep::max).max().orElse(0);
     }
 
     public List<Supply> suppliesUpTo(int level) {
