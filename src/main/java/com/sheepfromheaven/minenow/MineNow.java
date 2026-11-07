@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow;
 
+import com.sheepfromheaven.minenow.dev.GametestPlayground;
 import com.sheepfromheaven.minenow.farmer.FarmerRules;
 import com.sheepfromheaven.minenow.farmer.FarmerTests;
 import com.sheepfromheaven.minenow.farmer.FarmerTrades;
@@ -29,6 +30,7 @@ public final class MineNow {
 
     public MineNow(IEventBus modBus) {
         ModVillagers.register(modBus);
+        NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onMobGriefing);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onEntityInteract);

@@ -23,6 +23,13 @@ neoForge {
                 jvmArguments.add('-XstartOnFirstThread')
         }
 
+        gametestPlayground {
+            client()
+            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX())
+                jvmArguments.add('-XstartOnFirstThread')
+            systemProperty 'minenow.gametestPlayground', 'true'
+        }
+
         server {
             server()
             programArguments.add('--nogui')
