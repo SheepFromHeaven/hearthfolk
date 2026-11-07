@@ -55,6 +55,7 @@ public final class MineNow {
             test(helper, "only_the_field_connected_to_the_composter_is_farmed", FarmerTests::onlyTheFieldConnectedToTheComposterIsFarmed);
             test(helper, "farmer_tills_connected_ground_near_water", FarmerTests::farmerTillsConnectedGroundNearWater);
             test(helper, "composter_walled_in_on_four_sides_has_no_field", FarmerTests::composterWalledInOnFourSidesHasNoField);
+            test(helper, "a_line_of_string_ends_the_field", FarmerTests::aLineOfStringEndsTheField);
             test(helper, "novice_farmer_only_works_ten_blocks_out", FarmerTests::noviceFarmerOnlyWorksTenBlocksOut);
             test(helper, "master_farmer_works_further_out", FarmerTests::masterFarmerWorksFurtherOut);
             test(helper, "harvesting_takes_time_and_swings_the_hoe", FarmerTests::harvestingTakesTimeAndSwingsTheHoe);

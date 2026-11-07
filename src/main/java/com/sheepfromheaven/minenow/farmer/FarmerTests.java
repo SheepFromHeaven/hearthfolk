@@ -243,6 +243,39 @@ public final class FarmerTests {
         });
     }
 
+    public static void aLineOfStringEndsTheField(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        for (int x = 12; x <= 20; x++) {
+            for (int z = 8; z <= 16; z++) helper.setBlock(x, 0, z, Blocks.GRASS_BLOCK);
+        }
+        helper.setBlock(16, 0, 12, Blocks.WATER);
+        for (int z = 8; z <= 16; z++) helper.setBlock(15, 1, z, Blocks.TRIPWIRE);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, new BlockPos(13, 1, 10), COMPOSTER, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+
+        boolean[] checking = {false};
+        helper.onEachTick(() -> {
+            if (checking[0]) return;
+            for (int x = 12; x <= 14; x++) {
+                for (int z = 8; z <= 16; z++) {
+                    if (!helper.getBlockState(new BlockPos(x, 0, z)).is(Blocks.FARMLAND)) return;
+                }
+            }
+            checking[0] = true;
+            helper.runAfterDelay(300, () -> {
+                for (int x = 15; x <= 20; x++) {
+                    for (int z = 8; z <= 16; z++) {
+                        helper.assertTrue(!helper.getBlockState(new BlockPos(x, 0, z)).is(Blocks.FARMLAND),
+                                "Ground under or beyond the string must stay out of the field, but (" + x + ", 0, " + z + ") was tilled");
+                    }
+                }
+                helper.succeed();
+            });
+        });
+    }
+
     public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
