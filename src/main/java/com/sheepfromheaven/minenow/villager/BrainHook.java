@@ -32,7 +32,7 @@ public final class BrainHook {
         // runs after the walk target was cleared on arrival and before WORK's walk-back-to-job-site can claim it.
         brain.addActivity(
                 Activity.CORE,
-                ImmutableList.of(Pair.of(1, new TendFields()), Pair.of(6, new PickUpGiftedHoe())),
+                ImmutableList.of(Pair.of(1, new TendFields()), Pair.of(1, new FollowEmeraldHolder()), Pair.of(6, new PickUpGiftedHoe())),
                 ImmutableSet.of(),
                 Set.of());
         brain.addActivity(Activity.IDLE, ImmutableList.of(Pair.of(1, new StrollAlongRoads())), ImmutableSet.of(), Set.of());

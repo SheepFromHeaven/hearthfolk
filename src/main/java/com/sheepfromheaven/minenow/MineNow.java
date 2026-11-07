@@ -7,6 +7,7 @@ import com.sheepfromheaven.minenow.farmer.FarmerTests;
 import com.sheepfromheaven.minenow.farmer.FarmerTrades;
 import com.sheepfromheaven.minenow.farmer.FarmerTradeTests;
 import com.sheepfromheaven.minenow.villager.BrainHook;
+import com.sheepfromheaven.minenow.villager.FollowTests;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.HomeStorageTests;
 import com.sheepfromheaven.minenow.villager.ModVillagers;
@@ -89,6 +90,9 @@ public final class MineNow {
             test(helper, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);
             test(helper, "idle_villagers_stroll_along_roads", RoadTests::idleVillagersStrollAlongRoads);
             test(helper, "a_paved_street_beats_a_straight_dirt_path", RoadTests::aPavedStreetBeatsAStraightDirtPath);
+            test(helper, "unemployed_villager_follows_a_player_holding_an_emerald", FollowTests::unemployedVillagerFollowsAPlayerHoldingAnEmerald);
+            test(helper, "employed_villager_ignores_the_emerald", FollowTests::employedVillagerIgnoresTheEmerald);
+            test(helper, "following_far_from_home_abandons_the_old_bed", FollowTests::followingFarFromHomeAbandonsTheOldBed);
             test(helper, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
             test(helper, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);
