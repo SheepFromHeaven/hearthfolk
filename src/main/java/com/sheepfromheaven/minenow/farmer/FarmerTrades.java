@@ -37,10 +37,18 @@ public final class FarmerTrades {
         if (!FarmerRules.isFarmer(farmer)) return;
         MerchantOffer offer = event.getMerchantOffer();
         ItemStack result = offer.getResult();
-        if (result.is(Items.EMERALD)) {
+        boolean boughtSupply = result.is(Items.EMERALD) && TradeTable.forVillager(farmer)
+                .map(table -> !table.isTool(offer.getCostA().getItem())).orElse(false);
+        if (boughtSupply) {
+            Economy.take(level, farmer, Items.EMERALD, result.getCount());
+            Economy.give(level, farmer, new ItemStack(offer.getCostA().getItem(), offer.getCostA().getCount()));
+        } else if (result.is(Items.EMERALD)) {
             Economy.take(level, farmer, Items.EMERALD, result.getCount());
             Economy.give(level, farmer, paidStack(event, offer));
-            farmer.getOffers().stream().filter(other -> other.getResult().is(Items.EMERALD)).forEach(MerchantOffer::setToOutOfStock);
+            TradeTable table = TradeTable.forVillager(farmer).orElse(null);
+            farmer.getOffers().stream()
+                    .filter(other -> other.getResult().is(Items.EMERALD) && table != null && table.isTool(other.getCostA().getItem()))
+                    .forEach(MerchantOffer::setToOutOfStock);
             if (event.getEntity().containerMenu instanceof MerchantMenu menu) {
                 event.getEntity().sendMerchantOffers(menu.containerId, farmer.getOffers(), farmer.getVillagerData().level(),
                         farmer.getVillagerXp(), farmer.showProgressBar(), farmer.canRestock());
@@ -81,6 +89,14 @@ public final class FarmerTrades {
                 if (tool.price() > wallet) continue;
                 ItemCost undamaged = new ItemCost(tool.item().builtInRegistryHolder(), 1, DataComponentExactPredicate.expect(DataComponents.DAMAGE, 0));
                 offers.add(new MerchantOffer(undamaged, new ItemStack(Items.EMERALD, tool.price()), 1, XP_PER_TRADE, 0.0F));
+            }
+        }
+        int purse = Economy.emeralds(level, farmer);
+        for (TradeTable.Supply supply : table.suppliesUpTo(villagerLevel)) {
+            int room = (supply.max() - Economy.count(level, farmer, supply.item())) / supply.count();
+            int trades = Math.min(room, purse / supply.price());
+            if (trades > 0) {
+                offers.add(new MerchantOffer(new ItemCost(supply.item(), supply.count()), new ItemStack(Items.EMERALD, supply.price()), trades, XP_PER_TRADE, 0.0F));
             }
         }
         for (TradeTable.Produce crop : table.produceUpTo(villagerLevel)) {

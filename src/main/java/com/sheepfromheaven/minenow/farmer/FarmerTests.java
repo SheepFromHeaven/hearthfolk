@@ -321,6 +321,38 @@ public final class FarmerTests {
         helper.succeed();
     }
 
+    public static void farmerDoesNotBakeBreadOrCompostSeedsAtTheComposter(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 30));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
+        helper.onEachTick(() -> {
+            BlockPos at = helper.absolutePos(COMPOSTER.east());
+            farmer.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+        });
+
+        helper.runAfterDelay(2300, () -> {
+            helper.assertTrue(farmer.getInventory().countItem(Items.BREAD) == 0, "The farmer should not bake its wheat into bread");
+            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT) == 30, "Wheat should stay sellable, has " + farmer.getInventory().countItem(Items.WHEAT));
+            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) == 64, "Seeds should not be composted, has " + farmer.getInventory().countItem(Items.WHEAT_SEEDS));
+            helper.assertTrue(helper.getBlockState(COMPOSTER).getValue(net.minecraft.world.level.block.ComposterBlock.LEVEL) == 0, "The composter should stay empty");
+            helper.succeed();
+        });
+    }
+
+    public static void farmerUsesBoneMealOnGrowingCrops(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        BlockState young = ((CropBlock) Blocks.WHEAT).getStateForAge(0);
+        forEachFieldCrop(helper, (pos, state) -> helper.setBlock(pos, young));
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 8));
+
+        helper.succeedWhen(() -> helper.assertTrue(farmer.getInventory().countItem(Items.BONE_MEAL) < 8,
+                "The farmer should use bone meal on its young crops"));
+    }
+
     public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
@@ -361,7 +393,8 @@ public final class FarmerTests {
                 for (int z = 11; z <= 13; z++) {
                     BlockState state = helper.getBlockState(new BlockPos(x, 1, z));
                     helper.assertTrue(state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state),
-                            "A farmer without a hoe must not harvest, but (" + x + ", 1, " + z + ") was touched");
+                            "A farmer without a hoe must not harvest, but (" + x + ", 1, " + z + ") was touched: now " + state
+                                    + " on " + helper.getBlockState(new BlockPos(x, 0, z)) + ", farmer holds " + farmer.getInventory().getItems());
                 }
             }
             helper.succeed();

@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.farmer;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
+import com.sheepfromheaven.minenow.villager.TradeTable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -21,6 +22,9 @@ import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.BoneMealItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -48,7 +52,7 @@ public class TendFields extends Behavior<Villager> {
     private static final int IDLE_RESCAN_DELAY = 100;
     private static final int SWING_INTERVAL = 10;
 
-    private enum Task { HARVEST, PLANT, TILL, DEPOSIT, FETCH_HOE }
+    private enum Task { HARVEST, PLANT, TILL, BONEMEAL, DEPOSIT, FETCH_HOE }
 
     private final List<BlockPos> candidates = new ArrayList<>();
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
@@ -197,13 +201,29 @@ public class TendFields extends Behavior<Villager> {
         BlockState state = level.getBlockState(pos);
         if (!Hoes.has(body)) return false;
         if (isRipeCrop(state)) return true;
+        if (state.getBlock() instanceof CropBlock crop) return body.getInventory().countItem(Items.BONE_MEAL) > 0 && !crop.isMaxAge(state);
         if (isFarmland(level.getBlockState(pos.below()))) return state.isAir() && body.hasFarmSeeds();
         return Field.isClearable(state) && Field.isTillable(level, pos.below());
     }
 
     private Task taskAt(ServerLevel level, BlockPos pos) {
         if (isRipeCrop(level.getBlockState(pos))) return Task.HARVEST;
+        if (level.getBlockState(pos).getBlock() instanceof CropBlock) return Task.BONEMEAL;
         return isFarmland(level.getBlockState(pos.below())) ? Task.PLANT : Task.TILL;
+    }
+
+    private static void bonemeal(ServerLevel level, Villager body, BlockPos pos) {
+        SimpleContainer inventory = body.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (!stack.is(Items.BONE_MEAL)) continue;
+            if (BoneMealItem.growCrop(stack, level, pos)) {
+                level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 15);
+                body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+            }
+            if (stack.isEmpty()) inventory.setItem(i, ItemStack.EMPTY);
+            return;
+        }
     }
 
     private static void till(ServerLevel level, Villager body, BlockPos pos) {
@@ -247,6 +267,7 @@ public class TendFields extends Behavior<Villager> {
             }
             case PLANT -> plant(level, body, target, null);
             case TILL -> till(level, body, target);
+            case BONEMEAL -> bonemeal(level, body, target);
             case DEPOSIT -> {
                 int before = depositableCount(body.getInventory());
                 StorageTheft.check(level, body, target);
@@ -321,6 +342,9 @@ public class TendFields extends Behavior<Villager> {
 
     static int keepLimit(ItemStack stack) {
         if (Hoes.isHoe(stack)) return 1;
+        int supplyMax = TradeTable.forProfession(VillagerProfession.FARMER)
+                .flatMap(table -> table.supply(stack.getItem())).map(TradeTable.Supply::max).orElse(0);
+        if (supplyMax > 0) return supplyMax;
         if (stack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) || stack.has(net.minecraft.core.component.DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
         return 0;
     }

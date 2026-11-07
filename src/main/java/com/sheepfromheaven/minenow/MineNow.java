@@ -33,8 +33,8 @@ public final class MineNow {
         ModVillagers.register(modBus);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
-        NeoForge.EVENT_BUS.addListener(FarmerRules::onMobGriefing);
         NeoForge.EVENT_BUS.addListener(FarmerReport::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(FarmerRules::onFarmlandTrample);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onTrade);
         NeoForge.EVENT_BUS.addListener(TradeTable::onAddReloadListeners);
@@ -61,6 +61,9 @@ public final class MineNow {
             test(helper, "farmer_retills_farmland_that_was_trampled", FarmerTests::farmerRetillsFarmlandThatWasTrampled);
             test(helper, "farmer_with_a_full_inventory_still_harvests", FarmerTests::farmerWithAFullInventoryStillHarvests);
             test(helper, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
+            test(helper, "farmer_does_not_bake_bread_or_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotBakeBreadOrCompostSeedsAtTheComposter);
+            test(helper, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);
+            test(helper, "farmer_buys_bone_meal_in_batches_of_eight_up_to_thirty_two", FarmerTradeTests::farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo);
             test(helper, "novice_farmer_only_works_ten_blocks_out", FarmerTests::noviceFarmerOnlyWorksTenBlocksOut);
             test(helper, "master_farmer_works_further_out", FarmerTests::masterFarmerWorksFurtherOut);
             test(helper, "harvesting_takes_time_and_swings_the_hoe", FarmerTests::harvestingTakesTimeAndSwingsTheHoe);

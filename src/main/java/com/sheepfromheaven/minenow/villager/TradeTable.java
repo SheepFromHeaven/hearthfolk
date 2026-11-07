@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /** Loaded from {@code data/<namespace>/villager_trades/<profession>.json}. Levels unlock cumulatively. */
-public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> tools, List<Produce> produce) {
+public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> tools, List<Produce> produce, List<Supply> supplies) {
     public record Tool(Item item, int price, int level) {
         static final Codec<Tool> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Tool::item),
@@ -40,16 +40,44 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> 
         ).apply(i, Produce::new));
     }
 
+    /** Bought from players in batches of {@code count} while the villager holds at most {@code max} afterwards. */
+    public record Supply(Item item, int count, int price, int max, int level) {
+        static final Codec<Supply> CODEC = RecordCodecBuilder.create(i -> i.group(
+                BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Supply::item),
+                ExtraCodecs.POSITIVE_INT.fieldOf("count").forGetter(Supply::count),
+                ExtraCodecs.POSITIVE_INT.fieldOf("price").forGetter(Supply::price),
+                ExtraCodecs.POSITIVE_INT.fieldOf("max").forGetter(Supply::max),
+                Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Supply::level)
+        ).apply(i, Supply::new));
+    }
+
     static final Codec<TradeTable> CODEC = RecordCodecBuilder.create(i -> i.group(
             ResourceKey.codec(Registries.VILLAGER_PROFESSION).fieldOf("profession").forGetter(TradeTable::profession),
             Tool.CODEC.listOf().optionalFieldOf("tools", List.of()).forGetter(TradeTable::tools),
-            Produce.CODEC.listOf().optionalFieldOf("produce", List.of()).forGetter(TradeTable::produce)
+            Produce.CODEC.listOf().optionalFieldOf("produce", List.of()).forGetter(TradeTable::produce),
+            Supply.CODEC.listOf().optionalFieldOf("supplies", List.of()).forGetter(TradeTable::supplies)
     ).apply(i, TradeTable::new));
 
     private static volatile Map<ResourceKey<VillagerProfession>, TradeTable> byProfession = Map.of();
 
     public static Optional<TradeTable> forVillager(Villager villager) {
         return villager.getVillagerData().profession().unwrapKey().map(byProfession::get);
+    }
+
+    public static Optional<TradeTable> forProfession(ResourceKey<VillagerProfession> profession) {
+        return Optional.ofNullable(byProfession.get(profession));
+    }
+
+    public boolean isTool(Item item) {
+        return tools.stream().anyMatch(tool -> tool.item() == item);
+    }
+
+    public Optional<Supply> supply(Item item) {
+        return supplies.stream().filter(supply -> supply.item() == item).findFirst();
+    }
+
+    public List<Supply> suppliesUpTo(int level) {
+        return supplies.stream().filter(supply -> supply.level() <= level).toList();
     }
 
     public List<Tool> toolsUpTo(int level) {

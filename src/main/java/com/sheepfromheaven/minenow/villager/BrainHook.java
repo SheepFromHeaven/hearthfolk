@@ -3,6 +3,8 @@ package com.sheepfromheaven.minenow.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import com.sheepfromheaven.minenow.farmer.FarmerRules;
+import com.sheepfromheaven.minenow.farmer.FarmerWork;
 import com.sheepfromheaven.minenow.farmer.PickUpGiftedHoe;
 import com.sheepfromheaven.minenow.farmer.TendFields;
 import net.minecraft.world.entity.ai.Brain;
@@ -25,6 +27,7 @@ public final class BrainHook {
         if (!(event.getEntity() instanceof Villager villager) || villager.level().isClientSide() || villager.isBaby()) return;
         Brain<Villager> brain = villager.getBrain();
         if (!AUGMENTED.add(brain)) return;
+        if (FarmerRules.isFarmer(villager)) FarmerWork.replaceVanillaWork(brain, villager);
         // TendFields sits in CORE right after vanilla's MoveToTargetSink (same priority, added later), so each tick it
         // runs after the walk target was cleared on arrival and before WORK's walk-back-to-job-site can claim it.
         brain.addActivity(

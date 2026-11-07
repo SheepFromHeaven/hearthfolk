@@ -69,7 +69,7 @@ public final class FarmerTradeTests {
         helper.assertTrue(paid.is(Items.EMERALD) && paid.getCount() == price, "Player should receive " + price + " emeralds, got " + paid);
         helper.assertTrue(Hoes.has(farmer), "Farmer should now own the hoe");
         helper.assertTrue(Economy.emeralds(helper.getLevel(), farmer) == Economy.STARTING_PURSE - price, "Farmer should have paid from its purse");
-        farmer.getOffers().stream().filter(o -> o.getResult().is(Items.EMERALD)).forEach(o ->
+        farmer.getOffers().stream().filter(o -> Hoes.isHoe(o.getCostA().getItem().getDefaultInstance())).forEach(o ->
                 helper.assertTrue(o.isOutOfStock(), "Once it owns a hoe the farmer should stop buying hoes in the same session"));
         helper.succeed();
     }
@@ -145,9 +145,36 @@ public final class FarmerTradeTests {
         helper.succeed();
     }
 
+    public static void farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo(GameTestHelper helper) {
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        ServerPlayer player = player(helper);
+
+        openTrades(player, farmer);
+        MerchantOffer boneMeal = offerFor(farmer, Items.BONE_MEAL).orElseThrow(() ->
+                helper.assertionException("A farmer should buy bone meal, offers: " + describe(farmer)));
+        helper.assertTrue(boneMeal.getCostA().getCount() == 8, "Bone meal is bought in batches of 8, not " + boneMeal.getCostA().getCount());
+        helper.assertTrue(boneMeal.getMaxUses() == 4, "With none in stock it can take 4 batches (32), maxUses=" + boneMeal.getMaxUses());
+
+        trade(player, new ItemStack(Items.BONE_MEAL, 8));
+        helper.assertTrue(farmer.getInventory().countItem(Items.BONE_MEAL) == 8, "The farmer should now have the 8 bone meal");
+        player.closeContainer();
+
+        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 16));
+        openTrades(player, farmer);
+        helper.assertTrue(offerFor(farmer, Items.BONE_MEAL).map(MerchantOffer::getMaxUses).orElse(0) == 1, "At 24 there is room for one more batch");
+        player.closeContainer();
+
+        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 6));
+        openTrades(player, farmer);
+        helper.assertTrue(offerFor(farmer, Items.BONE_MEAL).isEmpty(), "At 30 another batch would pass 32, offers: " + describe(farmer));
+        helper.succeed();
+    }
+
     public static void farmerWithNothingToTradeShakesItsHead(GameTestHelper helper) {
         Villager farmer = spawnFarmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 32));
         ServerPlayer player = player(helper);
 
         openTrades(player, farmer);
