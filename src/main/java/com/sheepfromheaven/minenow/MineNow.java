@@ -11,6 +11,8 @@ import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.HomeStorageTests;
 import com.sheepfromheaven.minenow.villager.ModVillagers;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
+import com.sheepfromheaven.minenow.villager.RoadTests;
+import com.sheepfromheaven.minenow.villager.Roads;
 import com.sheepfromheaven.minenow.villager.TradeTable;
 import com.sheepfromheaven.minenow.villager.VillagerNames;
 import com.sheepfromheaven.minenow.villager.VillagerNamesTests;
@@ -33,6 +35,7 @@ public final class MineNow {
         ModVillagers.register(modBus);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
+        NeoForge.EVENT_BUS.addListener(Roads::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(FarmerReport::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onFarmlandTrample);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onEntityInteract);
@@ -81,6 +84,10 @@ public final class MineNow {
             test(helper, "journeyman_farmer_buys_up_to_iron_hoes", FarmerTradeTests::journeymanFarmerBuysUpToIronHoes);
             test(helper, "farmer_keeps_the_enchantments_of_a_hoe_it_buys", FarmerTradeTests::farmerKeepsTheEnchantmentsOfAHoeItBuys);
             test(helper, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
+            test(helper, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
+            test(helper, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);
+            test(helper, "idle_villagers_stroll_along_roads", RoadTests::idleVillagersStrollAlongRoads);
+            test(helper, "a_paved_street_beats_a_straight_dirt_path", RoadTests::aPavedStreetBeatsAStraightDirtPath);
             test(helper, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
             test(helper, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);

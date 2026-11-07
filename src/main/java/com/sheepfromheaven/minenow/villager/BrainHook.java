@@ -35,5 +35,6 @@ public final class BrainHook {
                 ImmutableList.of(Pair.of(1, new TendFields()), Pair.of(6, new PickUpGiftedHoe())),
                 ImmutableSet.of(),
                 Set.of());
+        brain.addActivity(Activity.IDLE, ImmutableList.of(Pair.of(1, new StrollAlongRoads())), ImmutableSet.of(), Set.of());
     }
 }

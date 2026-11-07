@@ -22,3 +22,6 @@ description='''Villagers that work the farms and workshops you build.'''
     versionRange="[26.3]"
     ordering="NONE"
     side="BOTH"
+
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"

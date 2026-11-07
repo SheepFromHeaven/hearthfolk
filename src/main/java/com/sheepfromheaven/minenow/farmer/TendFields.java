@@ -102,7 +102,7 @@ public class TendFields extends Behavior<Villager> {
             act(level, body);
             workLeft = -1;
             advance(level, body, timestamp);
-        } else if (pathCannotReachTarget(body) || couldNotReach(body)) {
+        } else if (isFieldTask() && (pathCannotReachTarget(body) || couldNotReach(body))) {
             unreachable.put(target, timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
         } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
@@ -379,6 +379,11 @@ public class TendFields extends Behavior<Villager> {
         double dz = center.z - body.getZ();
         double horizontal = task == Task.DEPOSIT ? 2.0 : 1.5;
         return dx * dx + dz * dz <= horizontal * horizontal && Math.abs(center.y - body.getY()) <= 1.5;
+    }
+
+    /** A chest is solid, so a path to it never formally "reaches" it; only open field targets can be judged unreachable. */
+    private boolean isFieldTask() {
+        return task != Task.DEPOSIT && task != Task.FETCH_HOE;
     }
 
     private boolean pathCannotReachTarget(Villager body) {
