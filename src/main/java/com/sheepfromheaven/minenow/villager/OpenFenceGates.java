@@ -1,4 +1,4 @@
-package com.sheepfromheaven.minenow.shepherd;
+package com.sheepfromheaven.minenow.villager;
 
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
@@ -19,8 +19,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Shepherds open the fence gates on their path, like every villager opens doors, and close them once they're through
- * so the flock stays in. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
+ * Shepherds and butchers open the fence gates on their path, like every villager opens doors, and close them once
+ * they're through so the animals stay in. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
  */
 public class OpenFenceGates extends Behavior<Villager> {
     private static final double REACH = 2.0;
@@ -33,7 +33,8 @@ public class OpenFenceGates extends Behavior<Villager> {
     }
 
     public static boolean canOpen(Mob mob) {
-        return mob instanceof Villager villager && !villager.isBaby() && villager.getVillagerData().profession().is(VillagerProfession.SHEPHERD);
+        return mob instanceof Villager villager && !villager.isBaby()
+                && (villager.getVillagerData().profession().is(VillagerProfession.SHEPHERD) || villager.getVillagerData().profession().is(VillagerProfession.BUTCHER));
     }
 
     public static boolean isClosedGate(BlockState state) {

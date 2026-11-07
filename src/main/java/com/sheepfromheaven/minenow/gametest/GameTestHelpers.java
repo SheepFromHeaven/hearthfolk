@@ -79,4 +79,17 @@ public final class GameTestHelpers {
         villager.refreshBrain(level);
         return villager;
     }
+
+    /** A 7x7 oak fence pen whose west side is at {@code x} (z 9 to 15), with an oak fence gate in the middle of that side. */
+    public static BlockPos gatedPen(GameTestHelper helper, int x) {
+        for (int i = 0; i < 7; i++) {
+            helper.setBlock(x + i, 1, 9, Blocks.OAK_FENCE);
+            helper.setBlock(x + i, 1, 15, Blocks.OAK_FENCE);
+            helper.setBlock(x, 1, 9 + i, Blocks.OAK_FENCE);
+            helper.setBlock(x + 6, 1, 9 + i, Blocks.OAK_FENCE);
+        }
+        BlockPos gate = new BlockPos(x, 1, 12);
+        helper.setBlock(gate, Blocks.OAK_FENCE_GATE.defaultBlockState().setValue(net.minecraft.world.level.block.FenceGateBlock.FACING, Direction.EAST));
+        return gate;
+    }
 }

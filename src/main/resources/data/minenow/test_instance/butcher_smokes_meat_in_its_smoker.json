@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:butcher_smokes_meat_in_its_smoker",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 4800
+}

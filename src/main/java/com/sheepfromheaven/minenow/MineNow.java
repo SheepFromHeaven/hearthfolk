@@ -6,6 +6,8 @@ import com.sheepfromheaven.minenow.farmer.FarmerRules;
 import com.sheepfromheaven.minenow.farmer.FarmerTests;
 import com.sheepfromheaven.minenow.fisherman.FishermanEntities;
 import com.sheepfromheaven.minenow.fisherman.FishermanTests;
+import com.sheepfromheaven.minenow.butcher.ButcherDrops;
+import com.sheepfromheaven.minenow.butcher.ButcherTests;
 import com.sheepfromheaven.minenow.gametest.TestGroup;
 import com.sheepfromheaven.minenow.shepherd.ShepherdTests;
 import com.sheepfromheaven.minenow.farmer.FarmerTradeTests;
@@ -40,6 +42,7 @@ public final class MineNow {
     public MineNow(IEventBus modBus) {
         ModVillagers.register(modBus);
         FishermanEntities.register(modBus);
+        NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onServerTick);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onRegisterCommands);
@@ -111,6 +114,12 @@ public final class MineNow {
             test(helper, TestGroup.SHEPHERD, "shepherd_ignores_sheep_far_from_its_loom", ShepherdTests::shepherdIgnoresSheepFarFromItsLoom);
             test(helper, TestGroup.SHEPHERD, "shearing_a_sheep_takes_time", ShepherdTests::shearingASheepTakesTime);
             test(helper, TestGroup.SHEPHERD, "shepherd_unloads_its_wool_at_home", ShepherdTests::shepherdUnloadsItsWoolAtHome);
+            test(helper, TestGroup.BUTCHER, "butcher_without_an_axe_offers_to_buy_one", ButcherTests::butcherWithoutAnAxeOffersToBuyOne);
+            test(helper, TestGroup.BUTCHER, "butcher_culls_the_herd_down_to_six", ButcherTests::butcherCullsTheHerdDownToSix);
+            test(helper, TestGroup.BUTCHER, "butcher_breeds_a_small_herd", ButcherTests::butcherBreedsASmallHerd);
+            test(helper, TestGroup.BUTCHER, "butcher_leaves_sheep_and_named_animals_alone", ButcherTests::butcherLeavesSheepAndNamedAnimalsAlone);
+            test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
+            test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);

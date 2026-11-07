@@ -14,7 +14,8 @@ public enum TestGroup {
     FARMER("Farmer", Blocks.WOOL.lime(), Blocks.CONCRETE.lime()),
     TRADING("Farmer trading", Blocks.WOOL.purple(), Blocks.CONCRETE.purple()),
     FISHERMAN("Fisherman", Blocks.WOOL.cyan(), Blocks.CONCRETE.cyan()),
-    SHEPHERD("Shepherd", Blocks.WOOL.white(), Blocks.CONCRETE.white());
+    SHEPHERD("Shepherd", Blocks.WOOL.white(), Blocks.CONCRETE.white()),
+    BUTCHER("Butcher", Blocks.WOOL.brown(), Blocks.CONCRETE.brown());
 
     private static final Map<String, TestGroup> BY_TEST = new ConcurrentHashMap<>();
 
