@@ -53,6 +53,228 @@ public class MinerJobTests {
     }
 
     /**
+     * The branches dug from the junction must never go back toward the stairway (see {@code
+     * BRANCH_DIRECTIONS}, which excludes the stairway's approach direction entirely) - otherwise a
+     * branch, or one of its perpendicular strip-mining ribs, would tunnel through the immediate vicinity
+     * of the only way out, and could even carve away part of the exit path itself. A cell a couple of
+     * blocks behind the hub (north, for this {@code MAX_DEPTH}'s spiral - see {@code
+     * STAIRWAY_APPROACH_DIRECTION}) should stay solid rock even after the miner exhausts every branch
+     * and rib it can dig. Reaching a genuinely reintroduced 4th (backward) branch the "natural" way -
+     * walking all the way out to CLAIM_RADIUS on the first three - would take an impractically large
+     * tick budget (ribs alone add dozens of steps per branch), so this is a sanity check within a
+     * reasonable budget rather than an exhaustive one; the real guarantee is structural, since {@code
+     * BRANCH_DIRECTIONS} is a fixed 3-element array that the backward direction is never part of.
+     */
+    public static void minerNeverBranchesBackTowardTheStairway(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+        var markerRelPos = new BlockPos(10, MinerJob.MAX_DEPTH + 3, 10);
+        var barrelRelPos = markerRelPos.offset(-1, 0, -1);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+
+        // Deliberately minimal - just enough rock for the stairway and junction corridor. Once a branch
+        // steps past this into open space it has to bridge the missing floor with carried spoil (see
+        // ensureFloor); running out of that spoil abandons the branch and moves to the next one almost
+        // immediately, instead of needing to walk all the way out to CLAIM_RADIUS (10 blocks) - which
+        // would take an impractically large tick budget to actually reach a hypothetical 4th branch.
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 6; z++) {
+                for (int y = -MinerJob.MAX_DEPTH - 2; y <= 1; y++) {
+                    helper.setBlock(markerRelPos.offset(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
+        dominion.addStructure(structure);
+        var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(markerPos);
+        claim.setAssignedStructureId(structure.getId());
+        dominion.addMineClaim(claim);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+        inhabitant.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_PICKAXE));
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+
+        for (int i = 0; i < 30000; i++) {
+            workGoal.tick();
+        }
+
+        helper.succeedWhen(() -> {
+            var hubPos = markerPos.offset(0, -MinerJob.MAX_DEPTH, 1);
+            var behindHub = hubPos.relative(Direction.NORTH, 2);
+            helper.assertTrue(level.getBlockState(behindHub).is(Blocks.STONE),
+                    "A cell behind the hub (toward the stairway) should never be touched by any branch or rib");
+        });
+    }
+
+    /**
+     * From the far end of the junction corridor past the hub, the forward branch (the first of the
+     * three branch directions - see {@code BRANCH_DIRECTIONS}, which always starts with the direction
+     * continuing straight on from the stairway's last step) must dig perpendicular strip-mining ribs,
+     * not just march straight ahead. An ore block placed 2 blocks east of the spine's centerline -
+     * beyond the 1-block lateral reach of the ordinary ore-neighbor peek every spine step already does -
+     * can only be found if a genuine rib excursion (which reaches {@code RIB_LENGTH} blocks out) walks
+     * past it. Both the hub and the junction's far end are computed directly from the deterministic
+     * spiral stairway math (4-direction cycle, net +1 south after {@code MAX_DEPTH}=5 steps, so the
+     * approach/forward direction is south) so the ore can be placed precisely relative to them rather
+     * than guessed.
+     */
+    public static void minerStripMinesRibsOffTheSouthBranch(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+        var markerRelPos = new BlockPos(6, MinerJob.MAX_DEPTH + 3, 6);
+        var barrelRelPos = markerRelPos.offset(-1, 0, -1);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+
+        for (int x = -4; x <= 4; x++) {
+            for (int z = 0; z <= 12; z++) {
+                for (int y = -MinerJob.MAX_DEPTH - 2; y <= 1; y++) {
+                    helper.setBlock(markerRelPos.offset(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+        // hub = marker + (0, -MAX_DEPTH, +1) - the spiral stairway's four-direction cycle (S,W,N,E) nets
+        // +1 south (and 0 east/west) after 5 steps. Branching starts 3 more steps south of that, at the
+        // junction corridor's far end (marker offset (0, -MAX_DEPTH, 4)) - the branch's 4th spine step
+        // from there (where the first rib pair kicks in, see STRIP_INTERVAL) sits at marker offset
+        // (0, -MAX_DEPTH, 8). The rib's "left" (east) excursion reaches 2 blocks out on its second step.
+        var ribOreRelPos = markerRelPos.offset(2, -MinerJob.MAX_DEPTH, 8);
+        helper.setBlock(ribOreRelPos, Blocks.IRON_ORE);
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
+        dominion.addStructure(structure);
+        var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(markerPos);
+        claim.setAssignedStructureId(structure.getId());
+        dominion.addMineClaim(claim);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+        inhabitant.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_PICKAXE));
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+
+        driveUntil(workGoal, inhabitant, markerPos,
+                () -> helper.getLevel().getBlockEntity(barrelPos) instanceof Container barrel
+                        && containsOreDrop(barrel));
+
+        helper.succeedWhen(() -> {
+            var barrel = (Container) helper.getLevel().getBlockEntity(barrelPos);
+            helper.assertTrue(barrel != null && containsOreDrop(barrel),
+                    "The ore reachable only via a strip-mining rib (2 blocks off the spine) should have been mined");
+        });
+    }
+
+    /**
+     * A branch tunnel that opens into a pre-existing gap (a ravine/cave crossing its path) must bridge
+     * the missing floor with spoil from its own inventory and keep mining beyond it, instead of walking
+     * the inhabitant off the edge and getting the job stuck.
+     */
+    /**
+     * After a deposit trip triggered by a full carry inventory, the miner must resume exactly where
+     * digging left off - not restart the whole branch from the hub - otherwise it would spend every
+     * single trip re-walking (and, before this was fixed, re-processing as if redigging) ground it had
+     * already cleared. Tunnel-step count is a simple counter across the whole branch that's only ever
+     * reset when a brand new hub is dug (never per-resume), so it climbing well past what a single
+     * 2-slot-inventory trip could produce on its own proves progress survives across deposit trips.
+     */
+    public static void minerResumesDiggingWithoutRestartingTheBranch(GameTestHelper helper) {
+        var setup = setUpMineWithRockAndOre(helper);
+
+        boolean sawResumePhase = false;
+        for (int i = 0; i < 4000 && !sawResumePhase; i++) {
+            setup.workGoal().tick();
+            sawResumePhase = "Heading back to the dig site".equals(setup.workGoal().getStatusDescription());
+        }
+        boolean finalSawResumePhase = sawResumePhase;
+
+        helper.succeedWhen(() -> helper.assertTrue(finalSawResumePhase,
+                "After a deposit trip triggered by a full carry inventory, the miner should head straight "
+                        + "back to the dig site (the RESUME_DIGGING phase) instead of restarting the whole "
+                        + "claim-approach/stairway sequence from scratch"));
+    }
+
+    public static void minerBridgesARavineInBranchTunnelInsteadOfGettingStuck(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+        var markerRelPos = new BlockPos(6, MinerJob.MAX_DEPTH + 3, 6);
+        var barrelRelPos = markerRelPos.offset(-1, 0, -1);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+
+        for (int x = -2; x <= 2; x++) {
+            for (int z = 0; z <= 10; z++) {
+                for (int y = -MinerJob.MAX_DEPTH - 2; y <= 1; y++) {
+                    helper.setBlock(markerRelPos.offset(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+        // hub = marker offset (0, -MAX_DEPTH, +1); branching starts 3 more steps south of that, at the
+        // junction corridor's far end (marker offset (0, -MAX_DEPTH, 4)). The forward branch's step 2
+        // from there = marker offset (0, -MAX_DEPTH, 6). Carve that cell, its headroom, and - crucially -
+        // the floor beneath it open as a pre-existing ravine, so the branch tunnel arrives at an edge
+        // with nothing to stand on.
+        var gapRelPos = markerRelPos.offset(0, -MinerJob.MAX_DEPTH, 6);
+        helper.setBlock(gapRelPos, Blocks.AIR);
+        helper.setBlock(gapRelPos.above(), Blocks.AIR);
+        helper.setBlock(gapRelPos.below(), Blocks.AIR);
+        helper.setBlock(gapRelPos.below(2), Blocks.AIR);
+        // Ore just beyond the ravine, on the spine (step 4 from the junction's far end) - only reachable
+        // if mining continues past the gap.
+        var oreRelPos = markerRelPos.offset(1, -MinerJob.MAX_DEPTH, 8);
+        helper.setBlock(oreRelPos, Blocks.IRON_ORE);
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+        var gapFloorPos = helper.absolutePos(gapRelPos.below());
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
+        dominion.addStructure(structure);
+        var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(markerPos);
+        claim.setAssignedStructureId(structure.getId());
+        dominion.addMineClaim(claim);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+        inhabitant.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_PICKAXE));
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+
+        driveUntil(workGoal, inhabitant, markerPos,
+                () -> helper.getLevel().getBlockEntity(barrelPos) instanceof Container barrel
+                        && containsOreDrop(barrel));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(!level.getBlockState(gapFloorPos).getCollisionShape(level, gapFloorPos).isEmpty(),
+                    "The ravine's missing floor should have been bridged with spoil");
+            var barrel = (Container) helper.getLevel().getBlockEntity(barrelPos);
+            helper.assertTrue(barrel != null && containsOreDrop(barrel),
+                    "Mining should continue past the bridged ravine and reach the ore beyond it");
+        });
+    }
+
+    /**
      * When the per-structure support-beam toggle is enabled, the miner should place cosmetic wood
      * blocks (planks/fences) somewhere along the path it dug, without ever overwriting the walkable
      * tunnel/stairway blocks it just carved.
@@ -78,6 +300,69 @@ public class MinerJobTests {
                 }
             }
             helper.assertTrue(foundSupport, "A cosmetic support beam block should have been placed along the dug path");
+        });
+    }
+
+    /**
+     * The spiral stairway must carve a genuine two-block-tall passage the whole way down, even through
+     * plain dirt where no tool-tier gating is ever involved - not just at each resting cell, but at the
+     * "doorway" where the path steps down a level. GameTest mobs never actually walk their path (see the
+     * comment on {@link #minerTunnelsAroundAPlacedMineClaimOutsideTheStructuresOwnWorkArea}), so this
+     * replays the exact same step geometry {@code tickDigStairway} uses instead of relying on real
+     * pathfinding to notice a stair it can't physically descend.
+     */
+    public static void minerDigsAFullyWalkableStairwayThroughDirt(GameTestHelper helper) {
+        GameTestHelpers.makeFloor(helper);
+        var markerRelPos = new BlockPos(2, MinerJob.MAX_DEPTH + 3, 2);
+        var barrelRelPos = markerRelPos.offset(-1, 0, -1);
+        helper.setBlock(barrelRelPos, Blocks.BARREL);
+        for (int x = -2; x <= 2; x++) {
+            for (int z = 0; z <= 4; z++) {
+                for (int y = -MinerJob.MAX_DEPTH - 2; y <= 1; y++) {
+                    helper.setBlock(markerRelPos.offset(x, y, z), Blocks.DIRT);
+                }
+            }
+        }
+
+        var level = helper.getLevel();
+        var markerPos = helper.absolutePos(markerRelPos);
+        var barrelPos = helper.absolutePos(barrelRelPos);
+
+        var dominion = DominionSavedData.get(level).createDominion(UUID.randomUUID(), "Test Dominion", markerPos);
+        var structure = new DominionStructure("Mine", StructureType.MINE, markerPos, Set.of(markerPos, barrelPos));
+        dominion.addStructure(structure);
+        var claim = new com.sheepfromheaven.minenow.structure.mine.MineClaim(markerPos);
+        claim.setAssignedStructureId(structure.getId());
+        dominion.addMineClaim(claim);
+
+        var inhabitant = helper.spawn(ModEntities.INHABITANT.get(), markerPos);
+        inhabitant.setDominionId(dominion.getId());
+        inhabitant.setWorkStructureId(structure.getId());
+
+        var workGoal = new WorkGoal(inhabitant);
+        workGoal.canUse();
+        workGoal.start();
+        inhabitant.snapTo(markerPos.getX() + 0.5, markerPos.getY(), markerPos.getZ() + 0.5);
+
+        for (int i = 0; i < 400; i++) {
+            workGoal.tick();
+        }
+
+        helper.succeedWhen(() -> {
+            var spiralDirections = new Direction[]{Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.EAST};
+            var cursor = markerPos;
+            for (int depth = 0; depth < MinerJob.MAX_DEPTH; depth++) {
+                var dir = spiralDirections[depth % spiralDirections.length];
+                var next = cursor.below().relative(dir);
+                var newHead = next.above();
+                var doorwayTop = newHead.above();
+                helper.assertTrue(level.getBlockState(next).isAir(), "Stair step " + depth + " foot cell should be air");
+                helper.assertTrue(level.getBlockState(newHead).isAir(), "Stair step " + depth + " head cell should be air");
+                helper.assertTrue(level.getBlockState(doorwayTop).isAir(),
+                        "Stair step " + depth + " doorway-top cell should be air - a two-block-tall mob "
+                                + "can't descend a step whose ceiling is still hanging over the doorway");
+                cursor = next;
+            }
         });
     }
 
@@ -206,6 +491,72 @@ public class MinerJobTests {
         return setUpMine(helper, new ItemStack(Items.IRON_PICKAXE), false, true);
     }
 
+    /**
+     * Mining must take real time based on the block's hardness and the tool's actual mining speed - not
+     * an instant break regardless of pickaxe tier - and must cost the pickaxe durability, just like a
+     * player mining the same block would.
+     */
+    public static void minerMinesWithRealTimingAndSpendsDurability(GameTestHelper helper) {
+        var setup = setUpMine(helper, new ItemStack(Items.IRON_PICKAXE), false, true);
+
+        // GOTO_CLAIM/FIND_PICKAXE/FIND_TORCHES each resolve in a single tick (the inhabitant starts
+        // right on the marker, already holding a pickaxe, with no torches in storage), so mining on the
+        // first stairway riser (a stone block, hardness 1.5) starts around tick 3 - an iron pickaxe
+        // (speed 6, correct tool) needs ceil(1.5 * 30 / 6) = 8 ticks to break it, so it must still be
+        // solid well before that.
+        var riserPos = setup.markerPos().relative(Direction.SOUTH);
+        for (int i = 0; i < 6; i++) {
+            setup.workGoal().tick();
+        }
+        helper.assertTrue(helper.getLevel().getBlockState(riserPos).is(Blocks.STONE),
+                "An iron pickaxe should not instantly break stone - it should still be mid-swing this early");
+
+        for (int i = 0; i < 60; i++) {
+            setup.workGoal().tick();
+        }
+
+        helper.succeedWhen(() -> {
+            helper.assertFalse(helper.getLevel().getBlockState(riserPos).is(Blocks.STONE),
+                    "The riser should be broken by now");
+            helper.assertTrue(setup.inhabitant().getItemBySlot(EquipmentSlot.MAINHAND).getDamageValue() > 0,
+                    "Mining stone should have cost the pickaxe durability, same as a player mining it");
+        });
+    }
+
+    /**
+     * With torches available in storage, the miner should fetch some into its off-hand and place them
+     * along the branch tunnel at regular intervals, rather than leaving the whole thing dark.
+     */
+    public static void minerPlacesTorchesAlongTheBranchTunnel(GameTestHelper helper) {
+        var setup = setUpMineWithRockAndOre(helper);
+        if (helper.getLevel().getBlockEntity(setup.barrelPos()) instanceof Container container) {
+            container.setItem(1, new ItemStack(Items.TORCH, 16));
+        }
+
+        // The carry inventory is only 2 slots, so a single trip's worth of spine steps rarely reaches a
+        // full TORCH_INTERVAL before it fills up and heads back to deposit - drive several trips' worth
+        // of ticks (the counter survives across trips, see MinerJob#tickDigStairway) rather than
+        // stopping at the very first deposit. Each trip now also spends real ticks retracing its way
+        // back down to the resume point (see MinerJob#tickResumeDigging), so this needs a larger budget
+        // than a single dig-to-full-inventory cycle would.
+        driveTicks(setup.workGoal(), setup.inhabitant(), setup.markerPos(), 10000);
+
+        helper.succeedWhen(() -> {
+            var level = helper.getLevel();
+            boolean foundTorch = false;
+            for (int x = -3; x <= 3; x++) {
+                for (int z = 0; z <= 20; z++) {
+                    for (int y = -MinerJob.MAX_DEPTH - 2; y <= 2; y++) {
+                        if (level.getBlockState(setup.markerPos().offset(x, y, z)).is(Blocks.TORCH)) {
+                            foundTorch = true;
+                        }
+                    }
+                }
+            }
+            helper.assertTrue(foundTorch, "A torch fetched from storage should have been placed along the dug tunnel");
+        });
+    }
+
     private static MineSetup setUpMineWithRockCoalAndIron(GameTestHelper helper, ItemStack heldPickaxe) {
         return setUpMine(helper, heldPickaxe, true, true);
     }
@@ -230,6 +581,66 @@ public class MinerJobTests {
             }
             helper.assertTrue(stoneStillPresent, "Bare-handed miner should not have broken any stone");
         });
+    }
+
+    /**
+     * A bare-handed miner reaching solid stone should stop and report that it needs a pickaxe, instead
+     * of silently skipping the block while the tunnel/stairway state still advances past it - then,
+     * once a suitable pickaxe shows up in storage, it should equip it and actually carve through.
+     */
+    public static void minerWithoutPickaxeReportsNeedsPickaxeThenMinesOnceOneArrives(GameTestHelper helper) {
+        var setup = setUpMine(helper, null, false, true);
+
+        for (int i = 0; i < 150; i++) {
+            setup.workGoal().tick();
+        }
+
+        helper.assertTrue("Needs a better pickaxe".equals(setup.workGoal().getStatusDescription()),
+                "Miner should report needing a pickaxe once blocked by solid stone, got: "
+                        + setup.workGoal().getStatusDescription());
+        helper.assertTrue(setup.workGoal().getMissingItemLabel() != null,
+                "Missing item label should be set while blocked on a pickaxe-gated block");
+
+        if (helper.getLevel().getBlockEntity(setup.barrelPos()) instanceof Container container) {
+            container.setItem(0, new ItemStack(Items.STONE_PICKAXE));
+        }
+
+        driveUntil(setup.workGoal(), setup.inhabitant(), setup.markerPos(),
+                () -> helper.getLevel().getBlockEntity(setup.barrelPos()) instanceof Container barrel
+                        && containsOreDrop(barrel));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(!"Needs a better pickaxe".equals(setup.workGoal().getStatusDescription()),
+                    "Miner should no longer be blocked once it has fetched a suitable pickaxe");
+            var barrel = (Container) helper.getLevel().getBlockEntity(setup.barrelPos());
+            helper.assertTrue(barrel != null && containsOreDrop(barrel),
+                    "Once equipped, the miner should mine and deposit the iron ore it was previously blocked on");
+        });
+    }
+
+    /**
+     * A player handing the blocked miner a pickaxe directly (setting its main-hand slot rather than
+     * dropping the tool in the Mine's storage) must be noticed immediately - not just when a suitable
+     * pickaxe happens to be fetched from a container - since that's the natural way a player watching
+     * an inhabitant get stuck would try to help.
+     */
+    public static void minerHandedAPickaxeDirectlyResumesMiningImmediately(GameTestHelper helper) {
+        var setup = setUpMine(helper, null, false, true);
+
+        for (int i = 0; i < 150; i++) {
+            setup.workGoal().tick();
+        }
+        helper.assertTrue("Needs a better pickaxe".equals(setup.workGoal().getStatusDescription()),
+                "Miner should be blocked on solid stone before being handed a pickaxe, got: "
+                        + setup.workGoal().getStatusDescription());
+
+        setup.inhabitant().setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_PICKAXE));
+        setup.workGoal().tick();
+
+        helper.succeedWhen(() -> helper.assertTrue(
+                !"Needs a better pickaxe".equals(setup.workGoal().getStatusDescription()),
+                "Miner should resume mining on the very next tick once handed a pickaxe directly, got: "
+                        + setup.workGoal().getStatusDescription()));
     }
 
     /**

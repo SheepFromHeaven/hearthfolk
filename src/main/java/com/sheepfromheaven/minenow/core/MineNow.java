@@ -314,6 +314,24 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithoutPickaxeLeavesStoneUntouched);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_never_breaks_bedrock_even_with_a_pickaxe"),
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerNeverBreaksBedrockEvenWithAPickaxe);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_without_pickaxe_reports_needs_pickaxe_then_mines_once_one_arrives"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithoutPickaxeReportsNeedsPickaxeThenMinesOnceOneArrives);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_digs_a_fully_walkable_stairway_through_dirt"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerDigsAFullyWalkableStairwayThroughDirt);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_handed_a_pickaxe_directly_resumes_mining_immediately"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerHandedAPickaxeDirectlyResumesMiningImmediately);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_strip_mines_ribs_off_the_south_branch"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerStripMinesRibsOffTheSouthBranch);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_bridges_a_ravine_in_branch_tunnel_instead_of_getting_stuck"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerBridgesARavineInBranchTunnelInsteadOfGettingStuck);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_places_torches_along_the_branch_tunnel"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerPlacesTorchesAlongTheBranchTunnel);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_mines_with_real_timing_and_spends_durability"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerMinesWithRealTimingAndSpendsDurability);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_resumes_digging_without_restarting_the_branch"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerResumesDiggingWithoutRestartingTheBranch);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_never_branches_back_toward_the_stairway"),
+                            com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerNeverBranchesBackTowardTheStairway);
                 }));
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {

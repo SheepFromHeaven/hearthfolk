@@ -119,6 +119,64 @@ public final class JobActions {
     }
 
     /**
+     * How many ticks it should take to fully break {@code state} with {@code tool}, mirroring vanilla's
+     * {@code BlockBehaviour#getDestroyProgress} - block hardness divided by the tool's real mining speed
+     * for that block (its tier/material bonus, via {@link ItemStack#getDestroySpeed}), using the
+     * "correct tool" 30-tick divisor since callers are expected to have already gated out incorrect-tool
+     * blocks before ever reaching here. This is what makes a wooden pickaxe visibly slower than a
+     * diamond one on the same block, instead of every block taking one fixed animation length.
+     */
+    public static int breakTicksFor(ServerLevel level, BlockPos pos, BlockState state, ItemStack tool) {
+        float hardness = state.getDestroySpeed(level, pos);
+        if (hardness <= 0f) {
+            return 1;
+        }
+        float toolSpeed = tool.getDestroySpeed(state);
+        if (toolSpeed <= 0f) {
+            toolSpeed = 1.0f;
+        }
+        return Math.max(1, (int) Math.ceil(hardness * 30f / toolSpeed));
+    }
+
+    /**
+     * Like {@link #mineBlockWithTool} but times the swing to {@link #breakTicksFor} instead of a fixed
+     * animation length, and broadcasts vanilla-style crack-stage progress to nearby players via {@link
+     * ServerLevel#destroyBlockProgress} while swinging - so mining reads exactly like a player doing it:
+     * harder blocks and weaker tools take visibly longer, with cracks forming as the block gets closer
+     * to breaking, rather than every block instantly vanishing. Spends 1 durability point on {@code
+     * tool} per block broken, same as vanilla survival mining. {@code onBroken} fires exactly once
+     * whenever this returns true - whether {@code pos} just got mined, or was already open (e.g.
+     * revisiting an already-carved tunnel on a later trip) - so callers that advance a cursor/counter
+     * from it don't need to special-case "nothing to actually break here".
+     */
+    public static boolean mineBlockRealistically(InhabitantEntity inhabitant, ServerLevel level, BlockPos pos, ItemStack tool, SwingProgress progress, Runnable onBroken) {
+        var state = level.getBlockState(pos);
+        if (state.isAir()) {
+            onBroken.run();
+            return true;
+        }
+        int totalTicks = breakTicksFor(level, pos, state, tool);
+        boolean done = tickSwing(inhabitant, pos, progress, totalTicks, totalTicks, () -> {
+            level.destroyBlockProgress(inhabitant.getId(), pos, -1);
+            var soundType = state.getSoundType();
+            level.playSound(null, pos, soundType.getBreakSound(), SoundSource.BLOCKS, soundType.getVolume(), soundType.getPitch());
+            for (var drop : Block.getDrops(state, level, pos, level.getBlockEntity(pos), inhabitant, tool)) {
+                inhabitant.getInventory().addItem(drop);
+            }
+            level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+            if (!tool.isEmpty()) {
+                tool.hurtAndBreak(1, inhabitant, EquipmentSlot.MAINHAND);
+            }
+            onBroken.run();
+        });
+        if (!done) {
+            int stage = Math.min(9, (int) ((float) (totalTicks - progress.remainingTicks) / totalTicks * 10f));
+            level.destroyBlockProgress(inhabitant.getId(), pos, stage);
+        }
+        return done;
+    }
+
+    /**
      * Swings at {@code pos} over {@code totalTicks} and places {@code toPlace} there at the impact tick
      * (e.g. a sapling going into the ground). Returns true once the cycle has finished.
      */
