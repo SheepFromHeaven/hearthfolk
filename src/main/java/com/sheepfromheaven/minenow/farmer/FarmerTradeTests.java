@@ -171,6 +171,22 @@ public final class FarmerTradeTests {
         helper.succeed();
     }
 
+    public static void cropsWithoutAPriceSellAtTheDefaultRate(GameTestHelper helper) {
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 32));
+        farmer.getInventory().addItem(new ItemStack(Items.SUGAR_CANE, 40));
+        ServerPlayer player = player(helper);
+
+        openTrades(player, farmer);
+
+        MerchantOffer sugarCane = offerSelling(farmer, Items.SUGAR_CANE).orElseThrow(() ->
+                helper.assertionException("Sugar cane has no price of its own but is a crop, so it should sell at the default rate: " + describe(farmer)));
+        helper.assertTrue(sugarCane.getResult().getCount() == 20 && sugarCane.getMaxUses() == 2,
+                "Default rate is 20 per emerald, so 40 sugar cane is 2 trades: " + describe(farmer));
+        helper.succeed();
+    }
+
     public static void farmerWithNothingToTradeShakesItsHead(GameTestHelper helper) {
         Villager farmer = spawnFarmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));

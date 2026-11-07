@@ -9,7 +9,6 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.behavior.Behavior;
@@ -22,6 +21,7 @@ import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
+import net.neoforged.neoforge.common.SpecialPlantable;
 import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.LevelEvent;
@@ -29,7 +29,6 @@ import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
-import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -201,14 +200,14 @@ public class TendFields extends Behavior<Villager> {
         BlockState state = level.getBlockState(pos);
         if (!Hoes.has(body)) return false;
         if (isRipeCrop(state)) return true;
-        if (state.getBlock() instanceof CropBlock crop) return body.getInventory().countItem(Items.BONE_MEAL) > 0 && !crop.isMaxAge(state);
-        if (isFarmland(level.getBlockState(pos.below()))) return state.isAir() && body.hasFarmSeeds();
+        if (Crops.isGrowing(state)) return body.getInventory().countItem(Items.BONE_MEAL) > 0;
+        if (isFarmland(level.getBlockState(pos.below()))) return state.isAir() && Crops.hasSeeds(body);
         return Field.isClearable(state) && Field.isTillable(level, pos.below());
     }
 
     private Task taskAt(ServerLevel level, BlockPos pos) {
         if (isRipeCrop(level.getBlockState(pos))) return Task.HARVEST;
-        if (level.getBlockState(pos).getBlock() instanceof CropBlock) return Task.BONEMEAL;
+        if (Crops.isCrop(level.getBlockState(pos))) return Task.BONEMEAL;
         return isFarmland(level.getBlockState(pos.below())) ? Task.PLANT : Task.TILL;
     }
 
@@ -296,18 +295,30 @@ public class TendFields extends Behavior<Villager> {
         int slot = -1;
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
-            if (!stack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) || !(stack.getItem() instanceof BlockItem item)) continue;
-            if (slot < 0 || item.getBlock() == preferred) slot = i;
-            if (item.getBlock() == preferred) break;
+            if (!canPlant(level, body, pos, stack)) continue;
+            boolean isPreferred = stack.getItem() instanceof BlockItem item && item.getBlock() == preferred;
+            if (slot < 0 || isPreferred) slot = i;
+            if (isPreferred) break;
         }
         if (slot < 0) return;
         ItemStack seeds = inventory.getItem(slot);
-        BlockState planted = ((BlockItem) seeds.getItem()).getBlock().defaultBlockState();
-        level.setBlockAndUpdate(pos, planted);
-        level.gameEvent(GameEvent.BLOCK_PLACE, pos, GameEvent.Context.of(body, planted));
+        if (seeds.getItem() instanceof BlockItem item) {
+            BlockState planted = item.getBlock().defaultBlockState();
+            level.setBlockAndUpdate(pos, planted);
+            level.gameEvent(GameEvent.BLOCK_PLACE, pos, GameEvent.Context.of(body, planted));
+        } else if (seeds.getItem() instanceof SpecialPlantable plantable) {
+            plantable.spawnPlantAtPosition(seeds, level, pos, net.minecraft.core.Direction.DOWN);
+        }
         level.playSound(null, pos, SoundEvents.CROP_PLANTED, SoundSource.BLOCKS, 1.0F, 1.0F);
         seeds.shrink(1);
         if (seeds.isEmpty()) inventory.setItem(slot, ItemStack.EMPTY);
+    }
+
+    private static boolean canPlant(ServerLevel level, Villager body, BlockPos pos, ItemStack stack) {
+        if (!Crops.isSeed(stack)) return false;
+        if (stack.getItem() instanceof BlockItem item) return item.getBlock().defaultBlockState().canSurvive(level, pos);
+        return stack.getItem() instanceof SpecialPlantable plantable && plantable.villagerCanPlantItem(body)
+                && plantable.canPlacePlantAtPosition(stack, level, pos, net.minecraft.core.Direction.DOWN);
     }
 
     private static void takeHoe(ServerLevel level, Villager body, BlockPos pos) {
@@ -345,7 +356,7 @@ public class TendFields extends Behavior<Villager> {
         int supplyMax = TradeTable.forProfession(VillagerProfession.FARMER)
                 .flatMap(table -> table.supply(stack.getItem())).map(TradeTable.Supply::max).orElse(0);
         if (supplyMax > 0) return supplyMax;
-        if (stack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) || stack.has(net.minecraft.core.component.DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
+        if (Crops.isSeed(stack) || stack.has(net.minecraft.core.component.DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
         return 0;
     }
 
@@ -415,7 +426,7 @@ public class TendFields extends Behavior<Villager> {
     }
 
     private static boolean isRipeCrop(BlockState state) {
-        return state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state);
+        return Crops.isRipe(state);
     }
 
     private static boolean isFarmland(BlockState state) {

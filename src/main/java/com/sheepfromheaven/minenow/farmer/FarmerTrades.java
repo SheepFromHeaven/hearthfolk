@@ -99,6 +99,15 @@ public final class FarmerTrades {
                 offers.add(new MerchantOffer(new ItemCost(supply.item(), supply.count()), new ItemStack(Items.EMERALD, supply.price()), trades, XP_PER_TRADE, 0.0F));
             }
         }
+        table.defaultProduce().filter(fallback -> fallback.level() <= villagerLevel).ifPresent(fallback -> {
+            for (var item : Economy.items(level, farmer)) {
+                if (table.hasProduceEntry(item) || !fallback.items().contains(item.builtInRegistryHolder())) continue;
+                int trades = (Economy.count(level, farmer, item) - TendFields.keepLimit(new ItemStack(item))) / fallback.perEmerald();
+                if (trades > 0) {
+                    offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 1), new ItemStack(item, fallback.perEmerald()), trades, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                }
+            }
+        });
         for (TradeTable.Produce crop : table.produceUpTo(villagerLevel)) {
             int sellable = Economy.count(level, farmer, crop.item()) - TendFields.keepLimit(new ItemStack(crop.item()));
             int trades = sellable / crop.perEmerald();

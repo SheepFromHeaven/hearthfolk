@@ -5,7 +5,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
-import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.Tags;
@@ -80,12 +79,12 @@ final class Field {
 
     /** Short grass, flowers and the like are cleared when tilling; anything else on top blocks the ground. */
     static boolean isClearable(BlockState above) {
-        return above.isAir() || (above.canBeReplaced() && above.getFluidState().isEmpty() && !(above.getBlock() instanceof CropBlock));
+        return above.isAir() || (above.canBeReplaced() && above.getFluidState().isEmpty() && !Crops.isCrop(above));
     }
 
     private static boolean isOpenAbove(ServerLevel level, BlockPos pos) {
         BlockState above = level.getBlockState(pos.above());
-        return isClearable(above) || above.getBlock() instanceof CropBlock;
+        return isClearable(above) || Crops.isCrop(above);
     }
 
     private static boolean isWater(ServerLevel level, BlockPos pos) {

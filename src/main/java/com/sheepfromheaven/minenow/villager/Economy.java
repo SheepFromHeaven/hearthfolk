@@ -28,6 +28,18 @@ public final class Economy {
         return total;
     }
 
+    public static java.util.Set<Item> items(ServerLevel level, Villager villager) {
+        java.util.Set<Item> items = new java.util.LinkedHashSet<>();
+        villager.getInventory().getItems().stream().filter(stack -> !stack.isEmpty()).forEach(stack -> items.add(stack.getItem()));
+        Container chest = homeChest(level, villager);
+        if (chest != null) {
+            for (int i = 0; i < chest.getContainerSize(); i++) {
+                if (!chest.getItem(i).isEmpty()) items.add(chest.getItem(i).getItem());
+            }
+        }
+        return items;
+    }
+
     /** Called the first time a player opens trading, never earlier, so purses can't be farmed by employing villagers. */
     public static void grantStartingPurseOnce(ServerLevel level, Villager villager) {
         if (villager.getExistingData(ModVillagers.PURSE_GRANTED).orElse(false)) return;

@@ -13,7 +13,6 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -79,7 +78,7 @@ public final class FarmerReport {
             List<BlockPos> ground = Field.ground(level, composter.get(), radius);
             for (BlockPos pos : ground) {
                 BlockState above = level.getBlockState(pos.above());
-                if (above.getBlock() instanceof CropBlock crop && crop.isMaxAge(above)) ripe++;
+                if (Crops.isRipe(above)) ripe++;
                 else if (Field.isFarmland(level.getBlockState(pos))) { if (above.isAir()) empty++; }
                 else tillable++;
             }

@@ -4,7 +4,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.sheepfromheaven.minenow.MineNow;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.codec.RegistryCodecs;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -23,7 +25,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /** Loaded from {@code data/<namespace>/villager_trades/<profession>.json}. Levels unlock cumulatively. */
-public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> tools, List<Produce> produce, List<Supply> supplies) {
+public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> tools, List<Produce> produce, List<Supply> supplies,
+                         Optional<DefaultProduce> defaultProduce) {
     public record Tool(Item item, int price, int level) {
         static final Codec<Tool> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Tool::item),
@@ -51,11 +54,21 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> 
         ).apply(i, Supply::new));
     }
 
+    /** Price for anything in {@code items} that has no {@code produce} entry of its own. */
+    public record DefaultProduce(HolderSet<Item> items, int perEmerald, int level) {
+        static final Codec<DefaultProduce> CODEC = RecordCodecBuilder.create(i -> i.group(
+                RegistryCodecs.holderSet(Registries.ITEM).fieldOf("items").forGetter(DefaultProduce::items),
+                ExtraCodecs.POSITIVE_INT.fieldOf("per_emerald").forGetter(DefaultProduce::perEmerald),
+                Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(DefaultProduce::level)
+        ).apply(i, DefaultProduce::new));
+    }
+
     static final Codec<TradeTable> CODEC = RecordCodecBuilder.create(i -> i.group(
             ResourceKey.codec(Registries.VILLAGER_PROFESSION).fieldOf("profession").forGetter(TradeTable::profession),
             Tool.CODEC.listOf().optionalFieldOf("tools", List.of()).forGetter(TradeTable::tools),
             Produce.CODEC.listOf().optionalFieldOf("produce", List.of()).forGetter(TradeTable::produce),
-            Supply.CODEC.listOf().optionalFieldOf("supplies", List.of()).forGetter(TradeTable::supplies)
+            Supply.CODEC.listOf().optionalFieldOf("supplies", List.of()).forGetter(TradeTable::supplies),
+            DefaultProduce.CODEC.optionalFieldOf("default_produce").forGetter(TradeTable::defaultProduce)
     ).apply(i, TradeTable::new));
 
     private static volatile Map<ResourceKey<VillagerProfession>, TradeTable> byProfession = Map.of();
@@ -66,6 +79,10 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> 
 
     public static Optional<TradeTable> forProfession(ResourceKey<VillagerProfession> profession) {
         return Optional.ofNullable(byProfession.get(profession));
+    }
+
+    public boolean hasProduceEntry(Item item) {
+        return produce.stream().anyMatch(crop -> crop.item() == item);
     }
 
     public boolean isTool(Item item) {

@@ -353,6 +353,20 @@ public final class FarmerTests {
                 "The farmer should use bone meal on its young crops"));
     }
 
+    public static void cropsAndSeedsAreRecognizedBeyondVanillaWheat(GameTestHelper helper) {
+        BlockState ripePitcher = Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, 4);
+        BlockState youngPitcher = Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, 2);
+        helper.assertTrue(Crops.isCrop(Blocks.WHEAT.defaultBlockState()), "wheat is a crop");
+        helper.assertTrue(Crops.isCrop(youngPitcher), "a crop from #minecraft:crops counts even if it isn't a CropBlock");
+        helper.assertTrue(!Crops.isCrop(Blocks.MELON_STEM.defaultBlockState()), "stems grow fruit beside them and are not field crops");
+        helper.assertTrue(!Crops.isCrop(Blocks.SWEET_BERRY_BUSH.defaultBlockState()), "berry bushes are not in the crop tag");
+        helper.assertTrue(Crops.isRipe(ripePitcher) && !Crops.isRipe(youngPitcher), "ripeness is read from the age property when there is no CropBlock");
+        helper.assertTrue(Crops.isSeed(new ItemStack(Items.PITCHER_POD)), "an item that plants a crop is a seed");
+        helper.assertTrue(!Crops.isSeed(new ItemStack(Items.MELON_SEEDS)), "melon seeds plant a stem, not a field crop");
+        helper.assertTrue(!Crops.isSeed(new ItemStack(Items.WHEAT)), "wheat itself is produce, not a seed");
+        helper.succeed();
+    }
+
     public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
