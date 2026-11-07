@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:planting_a_sapling_consumes_only_one_from_the_stack",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 40
-}

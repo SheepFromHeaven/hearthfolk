@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:miner_never_branches_back_toward_the_stairway",
-  "structure": "minenow:room_14x20x26",
-  "max_ticks": 60
-}

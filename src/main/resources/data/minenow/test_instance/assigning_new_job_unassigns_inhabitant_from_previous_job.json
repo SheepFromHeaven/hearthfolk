@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:assigning_new_job_unassigns_inhabitant_from_previous_job",
-  "structure": "minenow:room_5x4x5",
-  "max_ticks": 400
-}

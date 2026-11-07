@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:is_ready_to_eat_true_for_bread_without_any_smoking_recipe",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 20
-}

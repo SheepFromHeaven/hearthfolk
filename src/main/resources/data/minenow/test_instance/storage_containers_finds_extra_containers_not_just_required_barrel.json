@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:storage_containers_finds_extra_containers_not_just_required_barrel",
-  "structure": "minenow:room_5x4x5",
-  "max_ticks": 20
-}

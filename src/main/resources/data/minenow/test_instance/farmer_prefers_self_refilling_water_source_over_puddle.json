@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:farmer_prefers_self_refilling_water_source_over_puddle",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 300
-}

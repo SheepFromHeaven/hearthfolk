@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:destroying_structure_removes_inhabitant_home_and_job",
-  "structure": "minenow:room_5x4x5",
-  "max_ticks": 400
-}

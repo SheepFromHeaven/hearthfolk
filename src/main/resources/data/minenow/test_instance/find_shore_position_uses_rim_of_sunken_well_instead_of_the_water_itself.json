@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:find_shore_position_uses_rim_of_sunken_well_instead_of_the_water_itself",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 20
-}

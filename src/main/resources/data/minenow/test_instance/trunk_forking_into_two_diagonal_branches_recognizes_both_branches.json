@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:trunk_forking_into_two_diagonal_branches_recognizes_both_branches",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 40
-}
