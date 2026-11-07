@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.farmer;
 
 import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -94,7 +95,7 @@ public final class FarmerTests {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
-        BlockPos crop = COMPOSTER.east().south();
+        BlockPos crop = COMPOSTER.east();
         helper.setBlock(crop.below(), Blocks.FARMLAND);
         helper.setBlock(crop, ((CropBlock) Blocks.WHEAT).getStateForAge(((CropBlock) Blocks.WHEAT).getMaxAge()));
         Villager farmer = spawnFarmerWithoutHoe(helper);
@@ -213,6 +214,33 @@ public final class FarmerTests {
         BlockState state = helper.getBlockState(pos);
         boolean harvested = !(state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state));
         helper.assertTrue(harvested == expected, message + " (" + pos + ")");
+    }
+
+    public static void composterWalledInOnFourSidesHasNoField(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        for (int x = 7; x <= 15; x++) {
+            for (int z = 8; z <= 16; z++) helper.setBlock(x, 0, z, Blocks.GRASS_BLOCK);
+        }
+        helper.setBlock(14, 0, 15, Blocks.WATER);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            helper.setBlock(COMPOSTER.relative(side), Blocks.OAK_STAIRS.defaultBlockState().setValue(
+                    net.minecraft.world.level.block.StairBlock.FACING, side.getOpposite()));
+        }
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, new BlockPos(14, 1, 9), COMPOSTER, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 16));
+
+        helper.runAfterDelay(400, () -> {
+            for (int x = 7; x <= 15; x++) {
+                for (int z = 8; z <= 16; z++) {
+                    helper.assertTrue(!helper.getBlockState(new BlockPos(x, 0, z)).is(Blocks.FARMLAND),
+                            "A composter walled in on all four sides has no field, but (" + x + ", 0, " + z + ") was tilled");
+                }
+            }
+            helper.succeed();
+        });
     }
 
     public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {

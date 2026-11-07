@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A farmer's field is the ground connected to its composter: farmland, plus tillable ground (vanilla's
+ * A farmer's field is the ground touching a side of its composter (not a corner) and everything connected to it: farmland, plus tillable ground (vanilla's
  * {@code turns_into_farmland} tag) within vanilla's 4-block watering range, joined through the water itself, up to
  * {@link #radiusFor} blocks from the composter.
  * Water is the boundary the player builds with, so a composter on a meadow doesn't claim the whole meadow.
@@ -40,11 +40,9 @@ final class Field {
         Set<BlockPos> visited = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
         List<BlockPos> ground = new ArrayList<>();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int dy = -1; dy <= 0; dy++) {
-                    if (dx != 0 || dz != 0) visit(level, composter, radius, composter.offset(dx, dy, dz), visited, queue, ground);
-                }
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            for (int dy = -1; dy <= 0; dy++) {
+                visit(level, composter, radius, composter.relative(side).above(dy), visited, queue, ground);
             }
         }
         while (!queue.isEmpty() && ground.size() < maxGround) {
