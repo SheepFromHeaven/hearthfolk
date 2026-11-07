@@ -89,6 +89,12 @@ public final class ProfessionTrades {
                 offers.add(new MerchantOffer(undamaged, new ItemStack(Items.EMERALD, tool.price()), 1, XP_PER_TRADE, 0.0F));
             }
         }
+        for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
+            int inStock = Economy.count(level, villager, craft.item());
+            if (inStock > 0) {
+                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, craft.price()), new ItemStack(craft.item()), inStock, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+            }
+        }
         int purse = Economy.emeralds(level, villager);
         for (TradeTable.Supply supply : table.suppliesUpTo(villagerLevel)) {
             int room = (supply.max() - Economy.count(level, villager, supply.item())) / supply.count();

@@ -9,6 +9,7 @@ import com.sheepfromheaven.minenow.fisherman.FishermanTests;
 import com.sheepfromheaven.minenow.butcher.ButcherDrops;
 import com.sheepfromheaven.minenow.butcher.ButcherTests;
 import com.sheepfromheaven.minenow.gametest.TestGroup;
+import com.sheepfromheaven.minenow.toolsmith.ToolsmithTests;
 import com.sheepfromheaven.minenow.shepherd.ShepherdTests;
 import com.sheepfromheaven.minenow.farmer.FarmerTradeTests;
 import com.sheepfromheaven.minenow.villager.BrainHook;
@@ -131,6 +132,10 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "hungry_villager_without_food_buys_a_meal", MealsTests::hungryVillagerWithoutFoodBuysAMeal);
             test(helper, TestGroup.VILLAGER_TRADING, "wealthy_villager_buys_food_to_start_a_family", MealsTests::wealthyVillagerBuysFoodToStartAFamily);
             test(helper, TestGroup.VILLAGER_TRADING, "poor_villager_keeps_its_emeralds", MealsTests::poorVillagerKeepsItsEmeralds);
+            test(helper, TestGroup.TOOLSMITH, "toolsmith_crafts_a_tool_at_its_smithing_table", ToolsmithTests::toolsmithCraftsAToolAtItsSmithingTable);
+            test(helper, TestGroup.TOOLSMITH, "toolsmith_keeps_one_of_each_tool_in_stock", ToolsmithTests::toolsmithKeepsOneOfEachToolInStock);
+            test(helper, TestGroup.TOOLSMITH, "toolsmith_sells_its_tools_to_players", ToolsmithTests::toolsmithSellsItsToolsToPlayers);
+            test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);

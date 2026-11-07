@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.sounds.SoundSource;
 
 import java.util.HashSet;
@@ -20,11 +21,10 @@ import java.util.Set;
 
 /**
  * Shepherds and butchers open the fence gates on their path, like every villager opens doors, and close them once
- * they're through so the animals stay in. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
+ * they're clear of the gateway so the animals stay in. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
  */
 public class OpenFenceGates extends Behavior<Villager> {
     private static final double REACH = 2.0;
-    private static final double PASSED = 1.8;
 
     private final Set<BlockPos> opened = new HashSet<>();
 
@@ -83,10 +83,26 @@ public class OpenFenceGates extends Behavior<Villager> {
         Iterator<BlockPos> gates = opened.iterator();
         while (gates.hasNext()) {
             BlockPos gate = gates.next();
-            if (gate.closerToCenterThan(body.position(), PASSED) && level.getBlockState(gate).getBlock() instanceof FenceGateBlock) continue;
+            if (level.getBlockState(gate).getBlock() instanceof FenceGateBlock && (inGateway(body, gate) || headingThrough(body, gate))) continue;
             close(level, body, gate);
             gates.remove();
         }
+    }
+
+    private static boolean inGateway(Villager body, BlockPos gate) {
+        return body.getBoundingBox().intersects(new AABB(gate).inflate(0.2));
+    }
+
+    private static boolean headingThrough(Villager body, BlockPos gate) {
+        return body.getBrain().getMemory(MemoryModuleType.PATH)
+                .filter(path -> !path.isDone())
+                .map(path -> {
+                    for (int i = path.getNextNodeIndex(); i < Math.min(path.getNodeCount(), path.getNextNodeIndex() + 2); i++) {
+                        if (path.getNodePos(i).equals(gate)) return true;
+                    }
+                    return false;
+                })
+                .orElse(false);
     }
 
     private static void close(ServerLevel level, Villager body, BlockPos gate) {

@@ -157,16 +157,8 @@ public final class ShepherdTests {
         });
     }
 
-    /** A 7x7 oak fence pen whose west side is at {@code x}, with an oak door in the middle of that side. */
     private static void buildPen(GameTestHelper helper, int x) {
-        for (int i = 0; i < 7; i++) {
-            helper.setBlock(x + i, 1, 9, Blocks.OAK_FENCE);
-            helper.setBlock(x + i, 1, 15, Blocks.OAK_FENCE);
-            helper.setBlock(x, 1, 9 + i, Blocks.OAK_FENCE);
-            helper.setBlock(x + 6, 1, 9 + i, Blocks.OAK_FENCE);
-        }
-        helper.setBlock(new BlockPos(x, 1, 12), Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
-        helper.setBlock(new BlockPos(x, 2, 12), Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+        GameTestHelpers.gatedPen(helper, x);
     }
 
     private static Sheep sheep(GameTestHelper helper, int x, int z, DyeColor color) {

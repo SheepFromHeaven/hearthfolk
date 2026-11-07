@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:toolsmith_crafts_a_tool_at_its_smithing_table",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

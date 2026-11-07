@@ -23,9 +23,11 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
- * A hungry villager without a meal ({@link Meals}), a wealthy one without food to breed ({@link Wealth}), or a working one that runs low on a supply of its trade (fewer than
- * one batch in its inventory), walks to the nearest villager that sells what it needs and buys it at that villager's price, the same price a player pays. It buys as
- * many emeralds' worth as it can afford, the seller can spare and still fit under the supply's {@code max}.
+ * A hungry villager without a meal ({@link Meals}), a wealthy one without food to breed ({@link Wealth}), or a working
+ * one that has no tool of its trade (the best one a crafting villager has in stock that it can afford) or runs low on a
+ * supply of its trade (fewer than one batch in its inventory), walks to the nearest villager that sells what it needs
+ * and buys it at that villager's price, the same price a player pays. Supplies come in as many emeralds' worth as it
+ * can afford, the seller can spare and still fit under the supply's {@code max}.
  */
 public class BuyFromVillagers extends Behavior<Villager> {
     static final int SEARCH_RANGE = 48;
@@ -34,7 +36,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static final int GIVE_UP_AFTER_TICKS = 600;
     private static final int RETRY_DELAY = 400;
 
-    private record Deal(Villager seller, Item item, int perEmerald, int room) {}
+    /** {@code perEmerald} of the item for one emerald, or (when {@code price} is set) one item for {@code price} emeralds. */
+    private record Deal(Villager seller, Item item, int perEmerald, int price, int room) {}
 
     private @Nullable Deal deal;
     private long startedAt;
@@ -88,13 +91,19 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private static void trade(ServerLevel level, Villager buyer, Deal deal) {
         Villager seller = deal.seller();
-        int spare = sellable(level, seller, deal.item());
-        int emeralds = Math.min(Economy.emeralds(level, buyer), Math.min(spare / deal.perEmerald(), Math.max(1, deal.room() / deal.perEmerald())));
-        if (emeralds <= 0) return;
-        int paid = Economy.take(level, buyer, Items.EMERALD, emeralds);
-        Economy.give(level, seller, new ItemStack(Items.EMERALD, paid));
-        int handed = Economy.take(level, seller, deal.item(), paid * deal.perEmerald());
-        Economy.give(level, buyer, new ItemStack(deal.item(), handed));
+        if (deal.price() > 0) {
+            if (Economy.count(level, seller, deal.item()) < 1 || Economy.emeralds(level, buyer) < deal.price()) return;
+            Economy.give(level, seller, new ItemStack(Items.EMERALD, Economy.take(level, buyer, Items.EMERALD, deal.price())));
+            Economy.give(level, buyer, new ItemStack(deal.item(), Economy.take(level, seller, deal.item(), 1)));
+        } else {
+            int spare = sellable(level, seller, deal.item());
+            int emeralds = Math.min(Economy.emeralds(level, buyer), Math.min(spare / deal.perEmerald(), Math.max(1, deal.room() / deal.perEmerald())));
+            if (emeralds <= 0) return;
+            int paid = Economy.take(level, buyer, Items.EMERALD, emeralds);
+            Economy.give(level, seller, new ItemStack(Items.EMERALD, paid));
+            int handed = Economy.take(level, seller, deal.item(), paid * deal.perEmerald());
+            Economy.give(level, buyer, new ItemStack(deal.item(), handed));
+        }
         buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(seller, true));
         seller.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(buyer, true));
         buyer.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
@@ -122,6 +131,19 @@ public class BuyFromVillagers extends Behavior<Villager> {
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return Optional.empty();
+        if (!Unloading.ownsTool(level, buyer) && (table.get().toolTag().isPresent() || !table.get().tools().isEmpty())) {
+            int wallet = Economy.emeralds(level, buyer);
+            Optional<Deal> tool = sellers(level, buyer).stream()
+                    .flatMap(seller -> TradeTable.forVillager(seller).stream()
+                            .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream())
+                            .filter(craft -> craft.price() <= wallet && table.get().isToolItem(new ItemStack(craft.item()))
+                                    && Economy.count(level, seller, craft.item()) > 0)
+                            .max(Comparator.comparingInt(TradeTable.Craft::price))
+                            .map(craft -> new Deal(seller, craft.item(), 1, craft.price(), 1))
+                            .stream())
+                    .findFirst();
+            if (tool.isPresent()) return tool;
+        }
         for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
             int held = buyer.getInventory().countItem(supply.item());
             if (held >= supply.count()) continue;
@@ -144,7 +166,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room) {
         OptionalInt perEmerald = TradeTable.forVillager(seller).map(table -> table.perEmerald(item, seller.getVillagerData().level())).orElse(OptionalInt.empty());
         if (perEmerald.isEmpty() || sellable(level, seller, item) < perEmerald.getAsInt()) return Optional.empty();
-        return Optional.of(new Deal(seller, item, perEmerald.getAsInt(), room));
+        return Optional.of(new Deal(seller, item, perEmerald.getAsInt(), 0, room));
     }
 
     private static int sellable(ServerLevel level, Villager seller, Item item) {

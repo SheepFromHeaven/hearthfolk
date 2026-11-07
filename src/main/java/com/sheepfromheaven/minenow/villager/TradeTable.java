@@ -28,7 +28,7 @@ import java.util.Optional;
 
 /** Loaded from {@code data/<namespace>/villager_trades/<profession>.json}. Levels unlock cumulatively. */
 public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<TagKey<Item>> toolTag, List<Tool> tools, List<Produce> produce,
-                         List<Supply> supplies, Optional<DefaultProduce> defaultProduce, List<Keep> keeps) {
+                         List<Supply> supplies, Optional<DefaultProduce> defaultProduce, List<Keep> keeps, List<Craft> crafts) {
     public record Tool(Item item, int price, int level) {
         static final Codec<Tool> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Tool::item),
@@ -73,6 +73,24 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         ).apply(i, Keep::new));
     }
 
+    public record Material(Item item, int count) {
+        static final Codec<Material> CODEC = RecordCodecBuilder.create(i -> i.group(
+                BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Material::item),
+                ExtraCodecs.POSITIVE_INT.fieldOf("count").forGetter(Material::count)
+        ).apply(i, Material::new));
+    }
+
+    /** Made at the villager's workstation from {@code materials}, kept {@code stock} in its goods, sold for {@code price} emeralds each. */
+    public record Craft(Item item, List<Material> materials, int price, int level, int stock) {
+        static final Codec<Craft> CODEC = RecordCodecBuilder.create(i -> i.group(
+                BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Craft::item),
+                Material.CODEC.listOf().fieldOf("materials").forGetter(Craft::materials),
+                ExtraCodecs.POSITIVE_INT.fieldOf("price").forGetter(Craft::price),
+                Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Craft::level),
+                ExtraCodecs.POSITIVE_INT.optionalFieldOf("stock", 1).forGetter(Craft::stock)
+        ).apply(i, Craft::new));
+    }
+
     static final Codec<TradeTable> CODEC = RecordCodecBuilder.create(i -> i.group(
             ResourceKey.codec(Registries.VILLAGER_PROFESSION).fieldOf("profession").forGetter(TradeTable::profession),
             TagKey.hashedCodec(Registries.ITEM).optionalFieldOf("tool_tag").forGetter(TradeTable::toolTag),
@@ -80,7 +98,8 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
             Produce.CODEC.listOf().optionalFieldOf("produce", List.of()).forGetter(TradeTable::produce),
             Supply.CODEC.listOf().optionalFieldOf("supplies", List.of()).forGetter(TradeTable::supplies),
             DefaultProduce.CODEC.optionalFieldOf("default_produce").forGetter(TradeTable::defaultProduce),
-            Keep.CODEC.listOf().optionalFieldOf("keeps", List.of()).forGetter(TradeTable::keeps)
+            Keep.CODEC.listOf().optionalFieldOf("keeps", List.of()).forGetter(TradeTable::keeps),
+            Craft.CODEC.listOf().optionalFieldOf("crafts", List.of()).forGetter(TradeTable::crafts)
     ).apply(i, TradeTable::new));
 
     private static volatile Map<ResourceKey<VillagerProfession>, TradeTable> byProfession = Map.of();
@@ -121,6 +140,10 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
 
     public int keepMax(ItemStack stack) {
         return keeps.stream().filter(keep -> stack.is(keep.items())).mapToInt(Keep::max).max().orElse(0);
+    }
+
+    public List<Craft> craftsUpTo(int level) {
+        return crafts.stream().filter(craft -> craft.level() <= level).toList();
     }
 
     public List<Supply> suppliesUpTo(int level) {
