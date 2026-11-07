@@ -10,6 +10,8 @@ import com.sheepfromheaven.minenow.villager.HomeStorageTests;
 import com.sheepfromheaven.minenow.villager.ModVillagers;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
 import com.sheepfromheaven.minenow.villager.TradeTable;
+import com.sheepfromheaven.minenow.villager.VillagerNames;
+import com.sheepfromheaven.minenow.villager.VillagerNamesTests;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -32,6 +34,8 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onTrade);
         NeoForge.EVENT_BUS.addListener(TradeTable::onAddReloadListeners);
+        NeoForge.EVENT_BUS.addListener(VillagerNames::onAddReloadListeners);
+        NeoForge.EVENT_BUS.addListener(VillagerNames::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onEntityTick);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onDeath);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onConversion);
@@ -56,6 +60,8 @@ public final class MineNow {
             test(helper, "novice_farmer_only_buys_wooden_hoes", FarmerTradeTests::noviceFarmerOnlyBuysWoodenHoes);
             test(helper, "journeyman_farmer_buys_up_to_iron_hoes", FarmerTradeTests::journeymanFarmerBuysUpToIronHoes);
             test(helper, "farmer_keeps_the_enchantments_of_a_hoe_it_buys", FarmerTradeTests::farmerKeepsTheEnchantmentsOfAHoeItBuys);
+            test(helper, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
+            test(helper, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
             test(helper, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);
             test(helper, "breaking_a_claimed_chest_is_theft", HomeStorageTests::breakingAClaimedChestIsTheft);
