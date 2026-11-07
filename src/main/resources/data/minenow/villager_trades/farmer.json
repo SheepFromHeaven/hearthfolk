@@ -1,5 +1,6 @@
 {
   "profession": "minecraft:farmer",
+  "tool_tag": "#minecraft:hoes",
   "tools": [
     {
       "item": "minecraft:wooden_hoe",

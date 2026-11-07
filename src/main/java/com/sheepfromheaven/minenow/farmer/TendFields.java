@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
 import com.sheepfromheaven.minenow.villager.TradeTable;
+import com.sheepfromheaven.minenow.villager.Unloading;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -42,8 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 
 public class TendFields extends Behavior<Villager> {
-    static final int KEEP_PER_ITEM = 16;
-    static final int UNLOAD_AT = 64;
     private static final float SPEED = 0.5F;
     private static final int GIVE_UP_AFTER_TICKS = 200;
     private static final int STUCK_COOLDOWN = 100;
@@ -159,10 +158,10 @@ public class TendFields extends Behavior<Villager> {
         long now = level.getGameTime();
         unreachable.values().removeIf(until -> until < now);
 
-        if (shouldUnload(body) && targetHomeChest(level, body, Task.DEPOSIT)) return true;
+        if (Unloading.shouldUnload(body) && targetHomeChest(level, body, Task.DEPOSIT)) return true;
         if (!Hoes.has(body)) {
             if (homeChestHasHoe(level, body) && targetHomeChest(level, body, Task.FETCH_HOE)) return true;
-            return depositableCount(body.getInventory()) > 0 && targetHomeChest(level, body, Task.DEPOSIT);
+            return Unloading.depositableCount(body) > 0 && targetHomeChest(level, body, Task.DEPOSIT);
         }
 
         BlockPos field = nearestFieldWork(level, body, jobSite.get());
@@ -171,7 +170,7 @@ public class TendFields extends Behavior<Villager> {
             task = taskAt(level, field);
             return true;
         }
-        return depositableCount(body.getInventory()) > 0 && targetHomeChest(level, body, Task.DEPOSIT);
+        return Unloading.depositableCount(body) > 0 && targetHomeChest(level, body, Task.DEPOSIT);
     }
 
     private @Nullable BlockPos nearestFieldWork(ServerLevel level, Villager body, BlockPos jobSite) {
@@ -274,11 +273,9 @@ public class TendFields extends Behavior<Villager> {
             case TILL -> till(level, body, target);
             case BONEMEAL -> bonemeal(level, body, target);
             case DEPOSIT -> {
-                int before = depositableCount(body.getInventory());
-                StorageTheft.check(level, body, target);
-                deposit(level, body, target);
-                StorageTheft.recordContents(level, target);
-                if (depositableCount(body.getInventory()) >= before) unreachable.put(target, level.getGameTime() + STUCK_COOLDOWN);
+                int before = Unloading.depositableCount(body);
+                Unloading.deposit(level, body, target);
+                if (Unloading.depositableCount(body) >= before) unreachable.put(target, level.getGameTime() + STUCK_COOLDOWN);
             }
         }
     }
@@ -337,58 +334,10 @@ public class TendFields extends Behavior<Villager> {
         chest.setChanged();
     }
 
-    private static void deposit(ServerLevel level, Villager body, BlockPos pos) {
-        Container chest = HomeStorage.chestContainer(level, pos);
-        if (chest == null) return;
-        SimpleContainer inventory = body.getInventory();
-        Map<net.minecraft.world.item.Item, Integer> kept = new HashMap<>();
-        for (int i = 0; i < inventory.getContainerSize(); i++) {
-            ItemStack stack = inventory.getItem(i);
-            if (stack.isEmpty()) continue;
-            int alreadyKept = kept.getOrDefault(stack.getItem(), 0);
-            int keep = Math.min(stack.getCount(), Math.max(0, keepLimit(stack) - alreadyKept));
-            kept.put(stack.getItem(), alreadyKept + keep);
-            int give = stack.getCount() - keep;
-            if (give <= 0) continue;
-            ItemStack rest = HopperBlockEntity.addItem(null, chest, stack.copyWithCount(give), null);
-            stack.setCount(keep + rest.getCount());
-            if (stack.isEmpty()) inventory.setItem(i, ItemStack.EMPTY);
-        }
-        level.playSound(null, pos, SoundEvents.CHEST_CLOSE, SoundSource.BLOCKS, 0.5F, 1.0F);
-    }
 
-    static int keepLimit(ItemStack stack) {
-        if (Hoes.isHoe(stack)) return 1;
-        int supplyMax = TradeTable.forProfession(VillagerProfession.FARMER)
-                .flatMap(table -> table.supply(stack.getItem())).map(TradeTable.Supply::max).orElse(0);
-        if (supplyMax > 0) return supplyMax;
-        if (Crops.isSeed(stack) || stack.has(net.minecraft.core.component.DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
-        return 0;
-    }
 
-    static int depositableCount(SimpleContainer inventory) {
-        Map<net.minecraft.world.item.Item, Integer> seen = new HashMap<>();
-        int total = 0;
-        for (ItemStack stack : inventory.getItems()) {
-            if (stack.isEmpty()) continue;
-            int limit = keepLimit(stack);
-            int before = seen.getOrDefault(stack.getItem(), 0);
-            seen.put(stack.getItem(), before + stack.getCount());
-            total += Math.max(0, before + stack.getCount() - Math.max(before, limit));
-        }
-        return total;
-    }
 
-    private static boolean shouldUnload(Villager body) {
-        SimpleContainer inventory = body.getInventory();
-        int depositable = depositableCount(inventory);
-        if (depositable == 0) return false;
-        return depositable >= UNLOAD_AT || !hasEmptySlot(body);
-    }
 
-    private static boolean hasEmptySlot(Villager body) {
-        return body.getInventory().getItems().stream().anyMatch(ItemStack::isEmpty);
-    }
 
     private boolean inReach(Villager body) {
         Vec3 center = Vec3.atBottomCenterOf(target);

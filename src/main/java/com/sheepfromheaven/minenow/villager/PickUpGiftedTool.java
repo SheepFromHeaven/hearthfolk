@@ -1,4 +1,4 @@
-package com.sheepfromheaven.minenow.farmer;
+package com.sheepfromheaven.minenow.villager;
 
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
@@ -14,23 +14,24 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 
-public class PickUpGiftedHoe extends Behavior<Villager> {
+/** A villager that has no tool of its trade picks one up when a player throws it nearby. */
+public class PickUpGiftedTool extends Behavior<Villager> {
     private static final int SEARCH_RADIUS = 10;
     private static final float SPEED = 0.6F;
 
     private @Nullable ItemEntity target;
     private long nextSearch;
 
-    public PickUpGiftedHoe() {
+    public PickUpGiftedTool() {
         super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT), 300);
     }
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
-        if (level.getGameTime() < nextSearch || !FarmerRules.isFarmer(body) || Hoes.has(body)) return false;
+        if (level.getGameTime() < nextSearch || TradeTable.forVillager(body).isEmpty() || hasTool(body)) return false;
         nextSearch = level.getGameTime() + 20;
         target = level.getEntitiesOfClass(ItemEntity.class, body.getBoundingBox().inflate(SEARCH_RADIUS),
-                        item -> item.isAlive() && !item.hasPickUpDelay() && Hoes.isHoe(item.getItem()))
+                        item -> item.isAlive() && !item.hasPickUpDelay() && Unloading.isTool(body, item.getItem()))
                 .stream()
                 .min(Comparator.comparingDouble(body::distanceToSqr))
                 .orElse(null);
@@ -44,7 +45,7 @@ public class PickUpGiftedHoe extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return target != null && target.isAlive() && !Hoes.has(body);
+        return target != null && target.isAlive() && !hasTool(body);
     }
 
     @Override
@@ -58,6 +59,10 @@ public class PickUpGiftedHoe extends Behavior<Villager> {
         if (!rest.isEmpty()) target.getItem().grow(rest.getCount());
         if (target.getItem().isEmpty()) target.discard();
         body.take(target, 1);
+    }
+
+    private static boolean hasTool(Villager body) {
+        return body.getInventory().hasAnyMatching(stack -> Unloading.isTool(body, stack));
     }
 
     @Override

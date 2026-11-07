@@ -16,7 +16,9 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 
 import java.util.HashMap;
@@ -25,8 +27,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /** Loaded from {@code data/<namespace>/villager_trades/<profession>.json}. Levels unlock cumulatively. */
-public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> tools, List<Produce> produce, List<Supply> supplies,
-                         Optional<DefaultProduce> defaultProduce) {
+public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<TagKey<Item>> toolTag, List<Tool> tools, List<Produce> produce,
+                         List<Supply> supplies, Optional<DefaultProduce> defaultProduce) {
     public record Tool(Item item, int price, int level) {
         static final Codec<Tool> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Tool::item),
@@ -65,6 +67,7 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> 
 
     static final Codec<TradeTable> CODEC = RecordCodecBuilder.create(i -> i.group(
             ResourceKey.codec(Registries.VILLAGER_PROFESSION).fieldOf("profession").forGetter(TradeTable::profession),
+            TagKey.hashedCodec(Registries.ITEM).optionalFieldOf("tool_tag").forGetter(TradeTable::toolTag),
             Tool.CODEC.listOf().optionalFieldOf("tools", List.of()).forGetter(TradeTable::tools),
             Produce.CODEC.listOf().optionalFieldOf("produce", List.of()).forGetter(TradeTable::produce),
             Supply.CODEC.listOf().optionalFieldOf("supplies", List.of()).forGetter(TradeTable::supplies),
@@ -83,6 +86,11 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, List<Tool> 
 
     public boolean hasProduceEntry(Item item) {
         return produce.stream().anyMatch(crop -> crop.item() == item);
+    }
+
+    /** A tool of this trade: anything in {@code tool_tag} (so modded tools count) or listed under {@code tools}. */
+    public boolean isToolItem(ItemStack stack) {
+        return toolTag.map(stack::is).orElse(false) || isTool(stack.getItem());
     }
 
     public boolean isTool(Item item) {
