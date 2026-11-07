@@ -18,6 +18,17 @@ gated behind a system property or a one-shot login flag.
   (`WorldPresets::createNormalWorldDimensions`) — not a superflat/void preset — creative mode, peaceful
   difficulty, so trees/ore/terrain the jobs interact with actually exist. Sets
   `DevWorldState.pendingStarterKit = true` only on fresh creation.
+- `client/GametestPlaygroundBootstrap.java` — gated on `-Dminenow.gametestPlayground=true` (set by the Gradle
+  `gametestPlayground` run task). Same title-screen hook, but opens/creates a separate `minenow_gametest_playground`
+  world — **superflat** (`WorldPresets::createFlatWorldDimensions`), creative, peaceful — kept independent of
+  `minenow_playtest` so bulk-running gametests never touches the normal-terrain playtest save.
+- `GametestPlaygroundRunner.java` — `onPlayerLoggedIn` (wired from `MineNow`'s `PlayerLoggedInEvent` listener,
+  alongside `DevStarterKit`): whenever `-Dminenow.gametestPlayground=true`, looks up every `minenow:*`
+  entry in `Registries.TEST_INSTANCE` and places a `TestInstanceBlockEntity` for each in a fixed-spacing
+  grid near the player, on **every** login (not one-shot like the starter kit). Unlike
+  `/test runmultiple`, this only calls `placeStructure()` - it does not start the test, so every
+  structure sits idle (`Status.CLEARED`) until a player walks up, right-clicks its test instance block,
+  and presses "Run Test" in the vanilla GUI.
 
 ## Playtest world setup
 
@@ -27,10 +38,22 @@ Singleplayer → Create New World click-through entirely: the title screen liste
 banner/wand/spawn eggs into the player's inventory. Reopening the same save on a later run just loads it as-is,
 so in-progress test villages persist across runs.
 
+## Gametest playground world setup
+
+Running `./gradlew gametestPlayground` (`-Dminenow.gametestPlayground=true`) opens/creates the separate
+superflat `minenow_gametest_playground` world and, on every login, lays out every MineNow gametest
+structure in a grid near the player, idle and not running — walk up to whichever one you want and
+right-click its test instance block to run it manually via the vanilla GUI, rather than every test
+firing at once. Barrier-walled test structures (`GameTestHelpers.barrierBounds`, see `gametest/CLAUDE.md`)
+keep spawned inhabitants from wandering into a neighboring test once one is actually run.
+
 ## How to extend
 
 - New one-shot dev convenience tied to world creation: extend `DevWorldBootstrap`'s fresh-creation branch and
   gate any server-side effect through a new `DevWorldState`-style flag (or reuse `pendingStarterKit` if it's
   part of the same "first login" moment).
-- Keep all of this behind the `minenow.devWorld` system property (or an equally explicit opt-in) — nothing
-  here should run for a normal player.
+- New every-login (not just first-creation) dev convenience: follow `GametestPlaygroundRunner`'s pattern —
+  gate directly on the run's system property in the `PlayerLoggedInEvent` handler rather than adding a
+  one-shot flag.
+- Keep all of this behind an explicit system property (`minenow.devWorld`, `minenow.gametestPlayground`, ...)
+  — nothing here should run for a normal player.

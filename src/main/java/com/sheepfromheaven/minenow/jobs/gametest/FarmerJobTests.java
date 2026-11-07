@@ -115,6 +115,11 @@ public class FarmerJobTests {
         var waterRelPos = new BlockPos(5, 1, 2);
         helper.setBlock(barrelRelPos, Blocks.BARREL);
         helper.setBlock(dirtRelPos, Blocks.DIRT);
+        // Walled on the sides not already blocked by the dirt tile, so the water can't flow out into
+        // the room and flood tiles the farmer needs to walk across.
+        helper.setBlock(waterRelPos.north(), Blocks.STONE);
+        helper.setBlock(waterRelPos.south(), Blocks.STONE);
+        helper.setBlock(waterRelPos.east(), Blocks.STONE);
         helper.setBlock(waterRelPos, Blocks.WATER);
 
         var markerPos = helper.absolutePos(markerRelPos);
@@ -166,6 +171,11 @@ public class FarmerJobTests {
         helper.setBlock(barrelRelPos, Blocks.BARREL);
         helper.setBlock(grassRelPos, Blocks.GRASS_BLOCK);
         helper.setBlock(tallGrassRelPos, Blocks.SHORT_GRASS);
+        // Walled on the sides not already blocked by the grass tile, so the water can't flow out into
+        // the room and flood tiles the farmer needs to walk across.
+        helper.setBlock(waterRelPos.north(), Blocks.STONE);
+        helper.setBlock(waterRelPos.south(), Blocks.STONE);
+        helper.setBlock(waterRelPos.east(), Blocks.STONE);
         helper.setBlock(waterRelPos, Blocks.WATER);
 
         var markerPos = helper.absolutePos(markerRelPos);
@@ -212,6 +222,11 @@ public class FarmerJobTests {
         var waterRelPos = new BlockPos(5, 1, 2);
         helper.setBlock(barrelRelPos, Blocks.BARREL);
         helper.setBlock(dirtRelPos, Blocks.DIRT);
+        // Walled on the sides not already blocked by the dirt tile, so the water can't flow out into
+        // the room and flood tiles the farmer needs to walk across.
+        helper.setBlock(waterRelPos.north(), Blocks.STONE);
+        helper.setBlock(waterRelPos.south(), Blocks.STONE);
+        helper.setBlock(waterRelPos.east(), Blocks.STONE);
         helper.setBlock(waterRelPos, Blocks.WATER);
 
         var markerPos = helper.absolutePos(markerRelPos);
@@ -344,6 +359,12 @@ public class FarmerJobTests {
         var barrelRelPos = new BlockPos(1, 1, 1);
         var waterRelPos = new BlockPos(1, 1, 3);
         helper.setBlock(barrelRelPos, Blocks.BARREL);
+        // Wall the water source in on every horizontal side so it can't flow out into the room and
+        // spawn flowing-water blocks that would confuse ShoreScanner's standable-ground check.
+        helper.setBlock(waterRelPos.north(), Blocks.STONE);
+        helper.setBlock(waterRelPos.south(), Blocks.STONE);
+        helper.setBlock(waterRelPos.east(), Blocks.STONE);
+        helper.setBlock(waterRelPos.west(), Blocks.STONE);
         helper.setBlock(waterRelPos, Blocks.WATER);
 
         var fieldPositions = new java.util.HashSet<BlockPos>();
@@ -409,16 +430,31 @@ public class FarmerJobTests {
         var barrelRelPos = new BlockPos(1, 1, 1);
         helper.setBlock(barrelRelPos, Blocks.BARREL);
 
-        // A lone puddle with no water neighbors - should be left untouched.
+        // A lone puddle with no water neighbors - should be left untouched. Walled in on every
+        // horizontal side (like a well) so it can't flow out into the room and flood the tiles a
+        // shore search would otherwise use to stand beside it.
         var puddleRelPos = new BlockPos(1, 1, 6);
+        helper.setBlock(puddleRelPos.north(), Blocks.STONE);
+        helper.setBlock(puddleRelPos.south(), Blocks.STONE);
+        helper.setBlock(puddleRelPos.east(), Blocks.STONE);
+        helper.setBlock(puddleRelPos.west(), Blocks.STONE);
         helper.setBlock(puddleRelPos, Blocks.WATER);
 
         // A 3-in-a-row pool; only the middle tile has 2 water-source neighbors and self-refills. Kept
         // well clear of the room's edge (x=8 is the wall) so placing water there doesn't punch a hole
-        // in the boundary and confuse pathfinding.
+        // in the boundary and confuse pathfinding. Walled on the north/south/outer-end sides - every
+        // side that isn't already another pool tile - so the pool can't flood outward either.
         var poolWestRelPos = new BlockPos(5, 1, 6);
         var poolMiddleRelPos = new BlockPos(6, 1, 6);
         var poolEastRelPos = new BlockPos(7, 1, 6);
+        helper.setBlock(poolWestRelPos.north(), Blocks.STONE);
+        helper.setBlock(poolWestRelPos.south(), Blocks.STONE);
+        helper.setBlock(poolWestRelPos.west(), Blocks.STONE);
+        helper.setBlock(poolMiddleRelPos.north(), Blocks.STONE);
+        helper.setBlock(poolMiddleRelPos.south(), Blocks.STONE);
+        helper.setBlock(poolEastRelPos.north(), Blocks.STONE);
+        helper.setBlock(poolEastRelPos.south(), Blocks.STONE);
+        helper.setBlock(poolEastRelPos.east(), Blocks.STONE);
         helper.setBlock(poolWestRelPos, Blocks.WATER);
         helper.setBlock(poolMiddleRelPos, Blocks.WATER);
         helper.setBlock(poolEastRelPos, Blocks.WATER);

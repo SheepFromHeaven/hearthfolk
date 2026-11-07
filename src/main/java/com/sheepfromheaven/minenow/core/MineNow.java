@@ -54,6 +54,9 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.class,
                 com.sheepfromheaven.minenow.dev.DevStarterKit::onPlayerLoggedIn);
 
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.class,
+                com.sheepfromheaven.minenow.dev.GametestPlaygroundRunner::onPlayerLoggedIn);
+
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.ServerTickEvent.Post.class, event -> {
             com.sheepfromheaven.minenow.jobs.lumberjack.TreeScannerDebugger.serverTick(event.getServer());
             var server = event.getServer();
@@ -214,8 +217,6 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.inhabitant.gametest.JobInterruptionTests::jobDoesNotStartWhenStructureRequirementsAreUnmet);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "reassigning_lumberjack_mid_chop_drops_stale_job"),
                             com.sheepfromheaven.minenow.inhabitant.gametest.JobInterruptionTests::reassigningLumberjackMidChopDropsStaleJob);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "issues_list_survives_network_round_trip"),
-                            com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantIssuesNetworkTests::issuesListSurvivesNetworkRoundTrip);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "bed_in_real_detected_room_satisfies_house_requirement"),
                             com.sheepfromheaven.minenow.dominion.gametest.DominionTests::bedInRealDetectedRoomSatisfiesHouseRequirement);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "handing_lumberjack_an_axe_clears_the_missing_axe_issue"),
@@ -308,6 +309,8 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantPickupTests::pickingUpAToolEquipsMainHandInsteadOfGeneralInventory);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "picking_up_non_tool_item_goes_to_general_inventory"),
                             com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantPickupTests::pickingUpNonToolItemGoesToGeneralInventory);
+                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "barrier_bounds_keeps_idle_inhabitant_inside_test_space"),
+                            com.sheepfromheaven.minenow.inhabitant.gametest.InhabitantConfinementTests::barrierBoundsKeepsIdleInhabitantInsideTestSpace);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_digs_stairway_tunnels_through_ore_and_deposits_at_the_mine"),
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerDigsStairwayTunnelsThroughOreAndDepositsAtTheMine);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_places_support_beams_when_toggle_is_enabled"),
@@ -318,20 +321,14 @@ public final class MineNow {
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerWithStonePickaxeMinesCoalAndIronOre);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "miner_tunnels_around_a_placed_mine_claim_outside_the_structures_own_work_area"),
                             com.sheepfromheaven.minenow.jobs.gametest.MinerJobTests::minerTunnelsAroundAPlacedMineClaimOutsideTheStructuresOwnWorkArea);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "fresh_structure_starts_at_level_one"),
-                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::freshStructureStartsAtLevelOne);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_up_fails_without_meeting_next_level_requirements"),
                             com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelUpFailsWithoutMeetingNextLevelRequirements);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_up_succeeds_once_next_level_requirements_are_met"),
                             com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelUpSucceedsOnceNextLevelRequirementsAreMet);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_up_is_capped_by_dominion_tier"),
                             com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelUpIsCappedByDominionTier);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "level_effects_grant_work_slots_and_productivity_stacking"),
-                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::levelEffectsGrantWorkSlotsAndProductivityStacking);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "losing_a_level_up_requirement_only_disables_the_slot_it_unlocked"),
                             com.sheepfromheaven.minenow.structure.gametest.StructureLevelingTests::losingALevelUpRequirementOnlyDisablesTheSlotItUnlocked);
-                    helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "json_override_replaces_compiled_in_level_data"),
-                            com.sheepfromheaven.minenow.structure.gametest.StructureLevelJsonConfigTests::jsonOverrideReplacesCompiledInLevelData);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "mine_claim_marker_is_a_level_one_work_condition"),
                             com.sheepfromheaven.minenow.structure.gametest.WorkAreaMarkerRequirementTests::mineClaimMarkerIsALevelOneWorkCondition);
                     helper.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minenow", "territory_placement_query_respects_territory_owner_and_bounds"),
@@ -352,6 +349,7 @@ public final class MineNow {
             registerRenderers(modBus);
             com.sheepfromheaven.minenow.client.ConfigScreen.registerExtensionPoint(modContainer);
             com.sheepfromheaven.minenow.dev.client.DevWorldBootstrap.register();
+            com.sheepfromheaven.minenow.dev.client.GametestPlaygroundBootstrap.register();
             NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.ClientTickEvent.Post.class, event -> {
                 com.sheepfromheaven.minenow.jobs.lumberjack.client.TreeScanGizmoRenderer.onClientTick();
                 com.sheepfromheaven.minenow.pathfinding.client.PathNodeGizmoRenderer.onClientTick();

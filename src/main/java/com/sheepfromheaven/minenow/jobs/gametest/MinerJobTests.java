@@ -32,9 +32,10 @@ public class MinerJobTests {
     public static void minerDigsStairwayTunnelsThroughOreAndDepositsAtTheMine(GameTestHelper helper) {
         var setup = setUpMineWithRockAndOre(helper);
 
-        driveUntil(setup.workGoal(), setup.inhabitant(), setup.markerPos(),
-                () -> helper.getLevel().getBlockEntity(setup.barrelPos()) instanceof Container barrel
-                        && containsOreDrop(barrel));
+        // Driven one real game tick at a time (instead of the other tests' synchronous drive
+        // loops) so this specific test is watchable in-game - the whole point of it is seeing
+        // the miner actually walk, dig, and mine over time rather than the result appearing instantly.
+        helper.onEachTick(() -> setup.workGoal().tick());
 
         helper.succeedWhen(() -> {
             var barrel = (Container) helper.getLevel().getBlockEntity(setup.barrelPos());

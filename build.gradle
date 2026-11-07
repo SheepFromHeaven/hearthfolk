@@ -32,6 +32,13 @@ neoForge {
             systemProperty 'minenow.devWorld', 'true'
         }
 
+        gametestPlayground {
+            client()
+            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX())
+                jvmArguments.add('-XstartOnFirstThread')
+            systemProperty 'minenow.gametestPlayground', 'true'
+        }
+
         server {
             server()
             programArguments.add('--nogui')
@@ -59,6 +66,19 @@ neoForge {
     mods {
         minenow {
             sourceSet sourceSets.main
+        }
+    }
+
+    unitTest {
+        testedMod = mods.minenow
+        enable()
+    }
+}
+
+testing {
+    suites {
+        test {
+            useJUnitJupiter()
         }
     }
 }
@@ -102,6 +122,7 @@ dependencies {
     implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.11:5.4.5'
     implementation 'maven.modrinth:screenspec:sByrxfE3'
     runtimeOnly 'maven.modrinth:jei:NfVKHhHa'
+    runtimeOnly 'maven.modrinth:jade:LDFqgwEA'
 }
 
 tasks.withType(JavaCompile).configureEach {
