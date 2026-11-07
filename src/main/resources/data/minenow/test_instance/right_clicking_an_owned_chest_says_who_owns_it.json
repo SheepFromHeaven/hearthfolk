@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:right_clicking_an_owned_chest_says_who_owns_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

@@ -9,6 +9,10 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.LockCode;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -22,6 +26,7 @@ import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
@@ -48,6 +53,29 @@ public final class HomeStorage {
 
     public static Optional<BlockPos> storageIn(ServerLevel level, Villager villager) {
         return storageOf(villager).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
+    }
+
+    public static Optional<Component> ownerMessage(ServerLevel level, BlockPos chest) {
+        return ownerOf(level, chest).map(owner ->
+                Component.translatableWithFallback("minenow.chest.owned_by", "This chest belongs to %s", owner.getDisplayName()));
+    }
+
+    /** Replaces vanilla's "Chest is locked!" with who owns it. */
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || !(level.getBlockState(event.getPos()).getBlock() instanceof ChestBlock)) return;
+        if (!(level.getBlockEntity(event.getPos()) instanceof BaseContainerBlockEntity container) || container.canOpen(event.getEntity())) return;
+        ownerMessage(level, event.getPos()).ifPresent(message -> {
+            event.getEntity().sendOverlayMessage(message);
+            level.playSound(null, event.getPos(), SoundEvents.CHEST_LOCKED, SoundSource.BLOCKS, 1.0F, 1.0F);
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+        });
+    }
+
+    private static Optional<Villager> ownerOf(ServerLevel level, BlockPos chest) {
+        List<BlockPos> halves = halves(level, chest);
+        return level.getEntitiesOfClass(Villager.class, new AABB(chest).inflate(OWNER_SEARCH_RADIUS),
+                villager -> storageIn(level, villager).filter(halves::contains).isPresent()).stream().findFirst();
     }
 
     public static void onEntityTick(EntityTickEvent.Pre event) {

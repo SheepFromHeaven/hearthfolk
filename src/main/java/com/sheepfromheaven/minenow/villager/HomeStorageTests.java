@@ -42,6 +42,25 @@ public final class HomeStorageTests {
         });
     }
 
+    public static void rightClickingAnOwnedChestSaysWhoOwnsIt(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.CHEST);
+        Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        owner.setCustomName(net.minecraft.network.chat.Component.literal("Jim"));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(HomeStorage.storageOf(owner).isPresent(), "Chest not claimed yet");
+            BlockPos abs = helper.absolutePos(CHEST);
+            var event = net.neoforged.neoforge.common.CommonHooks.onRightClickBlock(player, InteractionHand.MAIN_HAND, abs,
+                    new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
+            helper.assertTrue(event.isCanceled(), "Our message should replace vanilla's 'Chest is locked!'");
+            String message = HomeStorage.ownerMessage(helper.getLevel(), abs).map(net.minecraft.network.chat.Component::getString).orElse("");
+            helper.assertTrue(message.contains("Jim"), "Message should name the owner, got '" + message + "'");
+        });
+    }
+
     public static void twoVillagersDoNotShareOneChest(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);

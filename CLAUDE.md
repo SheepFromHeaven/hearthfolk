@@ -12,7 +12,7 @@ and schedules; we only add behaviours to the villager brain. Professions are add
 
 - `MineNow.java` — mod entry point, event wiring, gametest registration
 - `villager/BrainHook` — adds our behaviours to every adult villager's brain (re-applied whenever vanilla rebuilds it)
-- `villager/HomeStorage` — each adult villager claims one chest within 8 blocks of its bed (custom `home_storage` POI on chests), locks it for players, releases it on death/conversion; a player breaking it is theft (negative gossip). `ModVillagers` holds the POI type and the `storage`/`placed_by` data attachments
+- `villager/HomeStorage` — each adult villager claims one chest within 8 blocks of its bed (custom `home_storage` POI on chests), locks it for players, releases it on death/conversion; right-clicking it says whose it is; a player breaking it is theft (negative gossip). `ModVillagers` holds the POI type and the `storage`/`placed_by` data attachments
 - `villager/Economy` — a villager's goods are its inventory plus its home chest: counting, taking, giving, and the one-time starting purse granted the first time a player opens trading
 - `villager/TradeTable` — per-profession prices and level unlocks from `data/<ns>/villager_trades/<profession>.json` (reloads with `/reload`); `tools` are bought when the villager has none, `produce` is sold per emerald; a level unlocks its entries and keeps earlier ones
 - `villager/VillagerNames` — every villager without a custom name gets one from `data/<ns>/villager_names/*.json` (all files merged) when it joins the world; vanilla then shows it on hover and in the trade title ("Jim - Novice")

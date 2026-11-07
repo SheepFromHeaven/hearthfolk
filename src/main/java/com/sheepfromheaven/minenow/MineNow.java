@@ -38,6 +38,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(VillagerNames::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onEntityTick);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onDeath);
+        NeoForge.EVENT_BUS.addListener(HomeStorage::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onConversion);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, HomeStorage::onBreak);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, StorageTheft::onPlace);
@@ -67,6 +68,7 @@ public final class MineNow {
             test(helper, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
             test(helper, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);
+            test(helper, "right_clicking_an_owned_chest_says_who_owns_it", HomeStorageTests::rightClickingAnOwnedChestSaysWhoOwnsIt);
             test(helper, "breaking_a_claimed_chest_is_theft", HomeStorageTests::breakingAClaimedChestIsTheft);
             test(helper, "owner_dying_releases_and_unlocks_its_chest", HomeStorageTests::ownerDyingReleasesAndUnlocksItsChest);
             test(helper, "placing_a_chest_next_to_an_owned_chest_extends_the_claim", HomeStorageTests::placingAChestNextToAnOwnedChestExtendsTheClaim);
