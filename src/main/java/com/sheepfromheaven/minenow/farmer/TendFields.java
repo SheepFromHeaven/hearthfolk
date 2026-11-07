@@ -196,7 +196,7 @@ public class TendFields extends Behavior<Villager> {
     private boolean isFieldWork(ServerLevel level, Villager body, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (!Hoes.has(body)) return false;
-        if (isRipeCrop(state)) return hasEmptySlot(body);
+        if (isRipeCrop(state)) return true;
         if (isFarmland(level.getBlockState(pos.below()))) return state.isAir() && body.hasFarmSeeds();
         return Field.isClearable(state) && Field.isTillable(level, pos.below());
     }

@@ -276,6 +276,51 @@ public final class FarmerTests {
         });
     }
 
+    public static void farmerRetillsFarmlandThatWasTrampled(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        Villager farmer = spawnFarmer(helper);
+        BlockPos trampled = new BlockPos(14, 0, 14);
+        boolean[] broken = {false};
+        helper.onEachTick(() -> {
+            if (!broken[0] && !helper.getBlockState(trampled.above()).is(Blocks.WHEAT)) return;
+            if (!broken[0] && anyFieldCropHarvested(helper)) {
+                broken[0] = true;
+                helper.setBlock(trampled.above(), Blocks.AIR);
+                helper.setBlock(trampled, Blocks.DIRT);
+            }
+        });
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(broken[0], "Field was never trampled");
+            helper.assertBlockPresent(Blocks.FARMLAND, trampled);
+            helper.assertTrue(helper.getBlockState(trampled.above()).getBlock() instanceof CropBlock, "Retilled ground should be replanted");
+        });
+    }
+
+    public static void farmerWithAFullInventoryStillHarvests(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        Villager farmer = spawnFarmer(helper);
+        for (int i = 0; i < farmer.getInventory().getContainerSize(); i++) {
+            if (farmer.getInventory().getItem(i).isEmpty()) farmer.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
+        }
+
+        helper.succeedWhen(() -> helper.assertTrue(anyFieldCropHarvested(helper),
+                "A farmer with nowhere to put its harvest should still reap, dropping what it can't carry"));
+    }
+
+    public static void farmerReportExplainsWhatTheFarmerIsMissing(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        Villager farmer = spawnFarmerWithoutHoe(helper);
+
+        String report = String.join("\n", FarmerReport.describe(helper.getLevel(), farmer).stream().map(c -> c.getString()).toList());
+
+        helper.assertTrue(report.contains("no hoe"), "Report should say the farmer has no hoe:\n" + report);
+        helper.assertTrue(report.contains("work"), "Report should show the current activity:\n" + report);
+        helper.assertTrue(report.contains("no home chest"), "Report should say there is no home chest:\n" + report);
+        helper.assertTrue(report.contains("80 ripe"), "Report should count the ripe crops in the field:\n" + report);
+        helper.succeed();
+    }
+
     public static void farmerTillsConnectedGroundNearWater(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

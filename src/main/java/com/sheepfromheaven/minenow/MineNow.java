@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow;
 
 import com.sheepfromheaven.minenow.dev.GametestPlayground;
+import com.sheepfromheaven.minenow.farmer.FarmerReport;
 import com.sheepfromheaven.minenow.farmer.FarmerRules;
 import com.sheepfromheaven.minenow.farmer.FarmerTests;
 import com.sheepfromheaven.minenow.farmer.FarmerTrades;
@@ -33,6 +34,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onMobGriefing);
+        NeoForge.EVENT_BUS.addListener(FarmerReport::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(FarmerTrades::onTrade);
         NeoForge.EVENT_BUS.addListener(TradeTable::onAddReloadListeners);
@@ -56,6 +58,9 @@ public final class MineNow {
             test(helper, "farmer_tills_connected_ground_near_water", FarmerTests::farmerTillsConnectedGroundNearWater);
             test(helper, "composter_walled_in_on_four_sides_has_no_field", FarmerTests::composterWalledInOnFourSidesHasNoField);
             test(helper, "a_line_of_string_ends_the_field", FarmerTests::aLineOfStringEndsTheField);
+            test(helper, "farmer_retills_farmland_that_was_trampled", FarmerTests::farmerRetillsFarmlandThatWasTrampled);
+            test(helper, "farmer_with_a_full_inventory_still_harvests", FarmerTests::farmerWithAFullInventoryStillHarvests);
+            test(helper, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
             test(helper, "novice_farmer_only_works_ten_blocks_out", FarmerTests::noviceFarmerOnlyWorksTenBlocksOut);
             test(helper, "master_farmer_works_further_out", FarmerTests::masterFarmerWorksFurtherOut);
             test(helper, "harvesting_takes_time_and_swings_the_hoe", FarmerTests::harvestingTakesTimeAndSwingsTheHoe);
