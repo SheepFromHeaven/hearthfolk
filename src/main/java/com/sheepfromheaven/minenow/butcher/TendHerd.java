@@ -66,7 +66,7 @@ public class TendHerd extends Behavior<Villager> {
     private long targetSince;
     private long nextStartAllowed;
     private int windUp;
-    private int swings;
+    private final Map<UUID, Integer> swingsLanded = new HashMap<>();
 
     public TendHerd() {
         super(ImmutableMap.of(
@@ -121,7 +121,6 @@ public class TendHerd extends Behavior<Villager> {
             return;
         }
         windUp = 0;
-        swings = 0;
         if (timestamp - targetSince > GIVE_UP_AFTER_TICKS || (animal != null && pathCannotReach(body))) {
             if (animal != null) unreachable.put(animal.getUUID(), timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
@@ -136,7 +135,6 @@ public class TendHerd extends Behavior<Villager> {
         animal = null;
         block = null;
         windUp = 0;
-        swings = 0;
         body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         body.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
         Tools.showInHand(body, false);
@@ -154,7 +152,9 @@ public class TendHerd extends Behavior<Villager> {
         windUp = 0;
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         Tools.wear(level, body);
-        if (++swings < Butchering.swings(animal.getHealth(), Butchering.attackDamage(axe))) return;
+        int landed = swingsLanded.merge(animal.getUUID(), 1, Integer::sum);
+        if (landed < Butchering.swings(animal.getHealth(), Butchering.attackDamage(axe))) return;
+        swingsLanded.remove(animal.getUUID());
         animal.hurtServer(level, level.damageSources().mobAttack(body), Float.MAX_VALUE);
         advance(level, body, timestamp);
     }
@@ -208,7 +208,6 @@ public class TendHerd extends Behavior<Villager> {
 
     private void advance(ServerLevel level, Villager body, long timestamp) {
         windUp = 0;
-        swings = 0;
         if (pickTarget(level, body)) {
             targetSince = timestamp;
             Tools.showInHand(body, task == Task.CULL);
@@ -224,6 +223,7 @@ public class TendHerd extends Behavior<Villager> {
         if (smoker.isEmpty()) return false;
         long now = level.getGameTime();
         unreachable.values().removeIf(until -> until < now);
+        swingsLanded.keySet().removeIf(id -> level.getEntity(id) == null);
         if (Unloading.shouldUnload(body)) {
             Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
             if (home.isPresent()) return target(Task.DEPOSIT, null, home.get());

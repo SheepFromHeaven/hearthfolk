@@ -110,6 +110,15 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         return supplies.stream().filter(supply -> supply.item() == item).findFirst();
     }
 
+    /** How many of {@code item} this trade sells for one emerald at {@code level}, from its own entry or the default price. */
+    public java.util.OptionalInt perEmerald(Item item, int level) {
+        Optional<Produce> entry = produce.stream().filter(crop -> crop.item() == item).findFirst();
+        if (entry.isPresent()) return entry.get().level() <= level ? java.util.OptionalInt.of(entry.get().perEmerald()) : java.util.OptionalInt.empty();
+        return defaultProduce.filter(fallback -> fallback.level() <= level && fallback.items().contains(item.builtInRegistryHolder()))
+                .map(fallback -> java.util.OptionalInt.of(fallback.perEmerald()))
+                .orElse(java.util.OptionalInt.empty());
+    }
+
     public int keepMax(ItemStack stack) {
         return keeps.stream().filter(keep -> stack.is(keep.items())).mapToInt(Keep::max).max().orElse(0);
     }

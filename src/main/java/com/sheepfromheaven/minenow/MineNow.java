@@ -17,6 +17,7 @@ import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.MeetingTests;
 import com.sheepfromheaven.minenow.villager.HomeStorageTests;
 import com.sheepfromheaven.minenow.villager.ModVillagers;
+import com.sheepfromheaven.minenow.villager.VillagerTradingTests;
 import com.sheepfromheaven.minenow.villager.ProfessionTrades;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
 import com.sheepfromheaven.minenow.villager.RoadTests;
@@ -123,6 +124,7 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_leaves_sheep_and_named_animals_alone", ButcherTests::butcherLeavesSheepAndNamedAnimalsAlone);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
             test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
+            test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);
