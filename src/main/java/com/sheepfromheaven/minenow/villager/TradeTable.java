@@ -37,38 +37,34 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         ).apply(i, Tool::new));
     }
 
-    /** {@code count} of an item for {@code emeralds} emeralds. */
-    public record Price(int count, int emeralds) {}
+    /** One decimal price per item: 0.05 is 20 for an emerald, 3 is one for three emeralds ({@link Price#of}). */
+    static final Codec<Price> PRICE_CODEC = Codec.DOUBLE
+            .validate(value -> value > 0 ? com.mojang.serialization.DataResult.success(value) : com.mojang.serialization.DataResult.error(() -> "price must be above 0, got " + value))
+            .xmap(Price::of, Price::perItem);
 
-    /** Sold either {@code per_emerald} (that many for one emerald) or for a {@code price} (one for that many emeralds). */
     public record Produce(Item item, Price price, int level) {
-        static final Codec<Produce> CODEC = RecordCodecBuilder.<Produce>create(i -> i.group(
+        static final Codec<Produce> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Produce::item),
-                ExtraCodecs.POSITIVE_INT.optionalFieldOf("per_emerald").forGetter(produce -> produce.price().emeralds() == 1 ? Optional.of(produce.price().count()) : Optional.empty()),
-                ExtraCodecs.POSITIVE_INT.optionalFieldOf("price").forGetter(produce -> produce.price().emeralds() > 1 ? Optional.of(produce.price().emeralds()) : Optional.empty()),
+                PRICE_CODEC.fieldOf("price").forGetter(Produce::price),
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Produce::level)
-        ).apply(i, (item, perEmerald, price, level) -> new Produce(item, new Price(perEmerald.orElse(1), price.orElse(1)), level)))
-                .validate(produce -> produce.price().count() > 1 && produce.price().emeralds() > 1
-                        ? com.mojang.serialization.DataResult.error(() -> "produce " + produce.item() + " has both per_emerald and price; give one")
-                        : com.mojang.serialization.DataResult.success(produce));
+        ).apply(i, Produce::new));
     }
 
-    /** Bought from players in batches of {@code count} while the villager holds at most {@code max} afterwards. */
-    public record Supply(Item item, int count, int price, int max, int level) {
+    /** Bought from players at {@code price} per item, in the smallest whole-emerald batch, while the villager holds at most {@code max} afterwards. */
+    public record Supply(Item item, Price price, int max, int level) {
         static final Codec<Supply> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Supply::item),
-                ExtraCodecs.POSITIVE_INT.fieldOf("count").forGetter(Supply::count),
-                ExtraCodecs.POSITIVE_INT.fieldOf("price").forGetter(Supply::price),
+                PRICE_CODEC.fieldOf("price").forGetter(Supply::price),
                 ExtraCodecs.POSITIVE_INT.fieldOf("max").forGetter(Supply::max),
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Supply::level)
         ).apply(i, Supply::new));
     }
 
     /** Price for anything in {@code items} that has no {@code produce} entry of its own. */
-    public record DefaultProduce(HolderSet<Item> items, int perEmerald, int level) {
+    public record DefaultProduce(HolderSet<Item> items, Price price, int level) {
         static final Codec<DefaultProduce> CODEC = RecordCodecBuilder.create(i -> i.group(
                 RegistryCodecs.holderSet(Registries.ITEM).fieldOf("items").forGetter(DefaultProduce::items),
-                ExtraCodecs.POSITIVE_INT.fieldOf("per_emerald").forGetter(DefaultProduce::perEmerald),
+                PRICE_CODEC.fieldOf("price").forGetter(DefaultProduce::price),
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(DefaultProduce::level)
         ).apply(i, DefaultProduce::new));
     }
@@ -88,12 +84,12 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         ).apply(i, Material::new));
     }
 
-    /** Made at the villager's workstation from {@code materials}, kept {@code stock} in its goods, sold for {@code price} emeralds each. */
-    public record Craft(Item item, List<Material> materials, int price, int level, int stock) {
+    /** Made at the villager's workstation from {@code materials}, kept {@code stock} in its goods, sold for the materials plus {@code labor} ({@link #craftPrice}). */
+    public record Craft(Item item, List<Material> materials, double labor, int level, int stock) {
         static final Codec<Craft> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Craft::item),
                 Material.CODEC.listOf().fieldOf("materials").forGetter(Craft::materials),
-                ExtraCodecs.POSITIVE_INT.fieldOf("price").forGetter(Craft::price),
+                Codec.DOUBLE.optionalFieldOf("labor", 0.0).forGetter(Craft::labor),
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Craft::level),
                 ExtraCodecs.POSITIVE_INT.optionalFieldOf("stock", 1).forGetter(Craft::stock)
         ).apply(i, Craft::new));
@@ -142,7 +138,19 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         Optional<Produce> entry = produce.stream().filter(crop -> crop.item() == item).findFirst();
         if (entry.isPresent()) return entry.get().level() <= level ? Optional.of(entry.get().price()) : Optional.empty();
         return defaultProduce.filter(fallback -> fallback.level() <= level && fallback.items().contains(item.builtInRegistryHolder()))
-                .map(fallback -> new Price(fallback.perEmerald(), 1));
+                .map(DefaultProduce::price);
+    }
+
+    /** A craft costs its materials, valued at what this trade pays for them (or sells them for), plus its labor. */
+    public int craftPrice(Craft craft) {
+        double materials = 0.0;
+        for (Material material : craft.materials()) {
+            double perItem = supply(material.item()).map(supply -> supply.price().perItem())
+                    .or(() -> price(material.item(), 5).map(Price::perItem))
+                    .orElse(0.0);
+            materials += perItem * material.count();
+        }
+        return Price.ofCraft(materials, craft.labor());
     }
 
     public int keepMax(ItemStack stack) {

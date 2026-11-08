@@ -140,6 +140,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "toolsmith_crafts_a_tool_at_its_smithing_table", ToolsmithTests::toolsmithCraftsAToolAtItsSmithingTable);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_keeps_one_of_each_tool_in_stock", ToolsmithTests::toolsmithKeepsOneOfEachToolInStock);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_sells_its_tools_to_players", ToolsmithTests::toolsmithSellsItsToolsToPlayers);
+            test(helper, TestGroup.TOOLSMITH, "toolsmith_charges_for_materials_and_labor", ToolsmithTests::toolsmithChargesForMaterialsAndLabor);
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.MINER, "a_plain_furnace_is_no_job_site", MinerTests::aPlainFurnaceIsNoJobSite);

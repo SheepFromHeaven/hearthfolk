@@ -2,32 +2,99 @@
   "profession": "minenow:miner",
   "tool_tag": "#minecraft:pickaxes",
   "tools": [
-    { "item": "minecraft:wooden_pickaxe", "price": 1, "level": 1 },
-    { "item": "minecraft:stone_pickaxe", "price": 1, "level": 1 },
-    { "item": "minecraft:copper_pickaxe", "price": 2, "level": 2 },
-    { "item": "minecraft:iron_pickaxe", "price": 3, "level": 3 },
-    { "item": "minecraft:diamond_pickaxe", "price": 6, "level": 4 },
-    { "item": "minecraft:netherite_pickaxe", "price": 12, "level": 5 }
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "price": 1,
+      "level": 1
+    },
+    {
+      "item": "minecraft:stone_pickaxe",
+      "price": 1,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_pickaxe",
+      "price": 2,
+      "level": 2
+    },
+    {
+      "item": "minecraft:iron_pickaxe",
+      "price": 3,
+      "level": 3
+    },
+    {
+      "item": "minecraft:diamond_pickaxe",
+      "price": 6,
+      "level": 4
+    },
+    {
+      "item": "minecraft:netherite_pickaxe",
+      "price": 12,
+      "level": 5
+    }
   ],
   "produce": [
-    { "item": "minecraft:cobblestone", "per_emerald": 32, "level": 1 },
-    { "item": "minecraft:coal", "per_emerald": 12, "level": 1 },
-    { "item": "minecraft:copper_ingot", "per_emerald": 8, "level": 1 },
-    { "item": "minecraft:iron_ingot", "per_emerald": 4, "level": 1 },
-    { "item": "minecraft:gold_ingot", "per_emerald": 3, "level": 2 },
-    { "item": "minecraft:redstone", "per_emerald": 16, "level": 2 },
-    { "item": "minecraft:lapis_lazuli", "per_emerald": 12, "level": 2 },
-    { "item": "minecraft:diamond", "price": 3, "level": 4 }
+    {
+      "item": "minecraft:cobblestone",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:coal",
+      "level": 1,
+      "price": 0.0833
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "level": 1,
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "level": 1,
+      "price": 0.25
+    },
+    {
+      "item": "minecraft:gold_ingot",
+      "level": 2,
+      "price": 0.3333
+    },
+    {
+      "item": "minecraft:redstone",
+      "level": 2,
+      "price": 0.0625
+    },
+    {
+      "item": "minecraft:lapis_lazuli",
+      "level": 2,
+      "price": 0.0833
+    },
+    {
+      "item": "minecraft:diamond",
+      "price": 3,
+      "level": 4
+    }
   ],
   "supplies": [
-    { "item": "minecraft:ladder", "count": 8, "price": 1, "max": 32, "level": 1 }
+    {
+      "item": "minecraft:ladder",
+      "price": 0.125,
+      "max": 32,
+      "level": 1
+    }
   ],
   "keeps": [
-    { "items": "#c:raw_materials", "max": 64 },
-    { "items": "#minecraft:coals", "max": 16 }
+    {
+      "items": "#c:raw_materials",
+      "max": 64
+    },
+    {
+      "items": "#minecraft:coals",
+      "max": 16
+    }
   ],
   "default_produce": {
     "items": "#c:stones",
-    "per_emerald": 32
+    "price": 0.0312
   }
 }

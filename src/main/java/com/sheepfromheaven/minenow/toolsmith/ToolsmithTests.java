@@ -63,6 +63,23 @@ public final class ToolsmithTests {
         helper.succeed();
     }
 
+    public static void toolsmithChargesForMaterialsAndLabor(GameTestHelper helper) {
+        Villager toolsmith = spawnToolsmith(helper);
+        toolsmith.setVillagerData(toolsmith.getVillagerData().withLevel(4));
+        toolsmith.getInventory().addItem(new ItemStack(Items.DIAMOND_HOE));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.interactOn(toolsmith, InteractionHand.MAIN_HAND, toolsmith.position());
+
+        Optional<MerchantOffer> hoe = toolsmith.getOffers().stream().filter(o -> o.getResult().is(Items.DIAMOND_HOE)).findFirst();
+        helper.assertTrue(hoe.isPresent(), "The toolsmith sells its diamond hoe");
+        helper.assertTrue(hoe.get().getCostA().getCount() == 7, "2 diamonds at 2, 2 sticks at 1/32 and 2 emeralds of labor make 7, asks "
+                + hoe.get().getCostA().getCount());
+        helper.succeed();
+    }
+
     public static void farmerWithoutAHoeBuysOneFromTheToolsmith(GameTestHelper helper) {
         Villager toolsmith = spawnToolsmith(helper);
         toolsmith.getInventory().addItem(new ItemStack(Items.STONE_HOE));

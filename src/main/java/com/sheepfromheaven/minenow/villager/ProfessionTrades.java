@@ -92,23 +92,23 @@ public final class ProfessionTrades {
         for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
             int inStock = Economy.count(level, villager, craft.item());
             if (inStock > 0) {
-                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, craft.price()), new ItemStack(craft.item()), inStock, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, table.craftPrice(craft)), new ItemStack(craft.item()), inStock, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
         int purse = Economy.emeralds(level, villager);
         for (TradeTable.Supply supply : table.suppliesUpTo(villagerLevel)) {
-            int room = (supply.max() - Economy.count(level, villager, supply.item())) / supply.count();
-            int trades = Math.min(room, purse / supply.price());
+            int room = (supply.max() - Economy.count(level, villager, supply.item())) / supply.price().count();
+            int trades = Math.min(room, purse / supply.price().emeralds());
             if (trades > 0) {
-                offers.add(new MerchantOffer(new ItemCost(supply.item(), supply.count()), new ItemStack(Items.EMERALD, supply.price()), trades, XP_PER_TRADE, 0.0F));
+                offers.add(new MerchantOffer(new ItemCost(supply.item(), supply.price().count()), new ItemStack(Items.EMERALD, supply.price().emeralds()), trades, XP_PER_TRADE, 0.0F));
             }
         }
         table.defaultProduce().filter(fallback -> fallback.level() <= villagerLevel).ifPresent(fallback -> {
             for (var item : Economy.items(level, villager)) {
                 if (table.hasProduceEntry(item) || !fallback.items().contains(item.builtInRegistryHolder())) continue;
-                int trades = (Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item))) / fallback.perEmerald();
+                int trades = (Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item))) / fallback.price().count();
                 if (trades > 0) {
-                    offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 1), new ItemStack(item, fallback.perEmerald()), trades, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                    offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, fallback.price().emeralds()), new ItemStack(item, fallback.price().count()), trades, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
                 }
             }
         });

@@ -11,27 +11,27 @@
   "produce": [
     {
       "item": "minecraft:cod",
-      "per_emerald": 12,
-      "level": 1
+      "level": 1,
+      "price": 0.0833
     },
     {
       "item": "minecraft:salmon",
-      "per_emerald": 8,
-      "level": 1
+      "level": 1,
+      "price": 0.125
     },
     {
       "item": "minecraft:tropical_fish",
-      "per_emerald": 4,
-      "level": 2
+      "level": 2,
+      "price": 0.25
     },
     {
       "item": "minecraft:pufferfish",
-      "per_emerald": 2,
-      "level": 2
+      "level": 2,
+      "price": 0.5
     }
   ],
   "default_produce": {
     "items": "#c:foods/raw_fish",
-    "per_emerald": 8
+    "price": 0.125
   }
 }

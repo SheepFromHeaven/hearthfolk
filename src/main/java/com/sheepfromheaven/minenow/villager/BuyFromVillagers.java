@@ -36,7 +36,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static final int RETRY_DELAY = 400;
 
     /** Buys lots of the seller's {@code price} (so many items for so many emeralds), up to {@code room} items. */
-    private record Deal(Villager seller, Item item, TradeTable.Price price, int room) {}
+    private record Deal(Villager seller, Item item, Price price, int room) {}
 
     private @Nullable Deal deal;
     private long startedAt;
@@ -90,7 +90,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private static void trade(ServerLevel level, Villager buyer, Deal deal) {
         Villager seller = deal.seller();
-        TradeTable.Price price = deal.price();
+        Price price = deal.price();
         int lots = Math.min(Economy.emeralds(level, buyer) / price.emeralds(),
                 Math.min(sellable(level, seller, deal.item()) / price.count(), Math.max(1, deal.room() / price.count())));
         if (lots <= 0) return;
@@ -129,18 +129,18 @@ public class BuyFromVillagers extends Behavior<Villager> {
             int wallet = Economy.emeralds(level, buyer);
             Optional<Deal> tool = sellers(level, buyer).stream()
                     .flatMap(seller -> TradeTable.forVillager(seller).stream()
-                            .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream())
-                            .filter(craft -> craft.price() <= wallet && table.get().isToolItem(new ItemStack(craft.item()))
-                                    && Economy.count(level, seller, craft.item()) > 0)
-                            .max(Comparator.comparingInt(TradeTable.Craft::price))
-                            .map(craft -> new Deal(seller, craft.item(), new TradeTable.Price(1, craft.price()), 1))
-                            .stream())
+                            .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
+                                    .filter(craft -> sellerTable.craftPrice(craft) <= wallet && table.get().isToolItem(new ItemStack(craft.item()))
+                                            && Economy.count(level, seller, craft.item()) > 0)
+                                    .max(Comparator.comparingInt(sellerTable::craftPrice))
+                                    .map(craft -> new Deal(seller, craft.item(), new Price(1, sellerTable.craftPrice(craft)), 1))
+                                    .stream()))
                     .findFirst();
             if (tool.isPresent()) return tool;
         }
         for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
             int held = buyer.getInventory().countItem(supply.item());
-            if (held >= supply.count()) continue;
+            if (held >= supply.price().count()) continue;
             Optional<Deal> deal = sellers(level, buyer).stream()
                     .flatMap(seller -> offer(level, seller, supply.item(), supply.max() - held).stream())
                     .findFirst();
@@ -158,7 +158,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     }
 
     private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room) {
-        Optional<TradeTable.Price> price = TradeTable.forVillager(seller).flatMap(table -> table.price(item, seller.getVillagerData().level()));
+        Optional<Price> price = TradeTable.forVillager(seller).flatMap(table -> table.price(item, seller.getVillagerData().level()));
         if (price.isEmpty() || sellable(level, seller, item) < price.get().count()) return Optional.empty();
         return Optional.of(new Deal(seller, item, price.get(), room));
     }
