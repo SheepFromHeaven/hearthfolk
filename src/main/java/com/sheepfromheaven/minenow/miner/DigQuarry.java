@@ -19,7 +19,12 @@ import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.LadderBlock;
+import net.minecraft.world.item.Items;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
@@ -34,7 +39,8 @@ import java.util.Optional;
  * The miner digs its {@link Quarry} layer by layer with its pickaxe, each block taking as long as the pickaxe's speed
  * against the block's hardness dictates (with the crack animation a player would see). What it digs goes straight into
  * its inventory, ore with up to {@link MinerSkill#extraOre} extra; blocks its pickaxe can't harvest are left in place.
- * When its goods pile up it carries them to its home chest. Lives in CORE after MoveToTargetSink, like TendFields.
+ * It puts a ladder down one wall of the quarry as it digs ({@link Quarry#ladder}) and won't dig a layer it can't put a
+ * ladder in, so it can always climb back out. When its goods pile up it carries them to its home chest. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class DigQuarry extends Behavior<Villager> {
     private static final float SPEED = 0.5F;
@@ -47,9 +53,11 @@ public class DigQuarry extends Behavior<Villager> {
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
     private @Nullable BlockPos target;
     private @Nullable BlockPos chest;
+    private Quarry.@Nullable Ladder ladder;
     private long targetSince;
     private long nextStartAllowed;
     private int progress;
+    private boolean climbing;
 
     public DigQuarry() {
         super(ImmutableMap.of(
@@ -82,6 +90,16 @@ public class DigQuarry extends Behavior<Villager> {
     @Override
     protected void tick(ServerLevel level, Villager body, long timestamp) {
         if (chest != null) {
+            if (LadderClimb.inQuarry(level, body)) {
+                LadderClimb.climbOut(level, body);
+                climbing = true;
+                targetSince = timestamp;
+                return;
+            }
+            if (climbing) {
+                climbing = false;
+                LadderClimb.forgetRoute(body);
+            }
             if (body.distanceToSqr(Vec3.atBottomCenterOf(chest)) <= 4.0 && Math.abs(chest.getY() - body.getY()) <= 1.5) {
                 Unloading.deposit(level, body, chest);
                 advance(level, body, timestamp);
@@ -134,6 +152,7 @@ public class DigQuarry extends Behavior<Villager> {
                 ? MinerSkill.extraOre(body.getVillagerData().level()) : 0;
         level.destroyBlockProgress(body.getId(), target, -1);
         level.destroyBlock(target, false, body);
+        if (ladder != null && target.equals(ladder.at(target.getY()))) placeLadder(level, body, target);
         for (ItemStack drop : drops) {
             if (extra > 0) drop.grow(body.getRandom().nextInt(extra + 1));
             ItemStack rest = body.getInventory().addItem(drop);
@@ -169,12 +188,37 @@ public class DigQuarry extends Behavior<Villager> {
         if (pickaxe.isEmpty()) return false;
         Quarry quarry = Quarry.around(level, furnace.get());
         if (quarry.isEmpty()) return false;
+        ladder = quarry.ladder(level, furnace.get()).orElse(null);
+        if (ladder == null) return false;
+        if (!hasLadder(level, ladder.at(quarry.top())) && !placeLadder(level, body, ladder.at(quarry.top()))) return false;
         int bottom = furnace.get().getY() - MinerSkill.depth(body.getVillagerData().level());
-        target = quarry.nextLayer(level, bottom, pickaxe).stream()
+        List<BlockPos> layer = quarry.nextLayer(level, bottom, pickaxe);
+        if (layer.isEmpty() || (!hasLadder(level, ladder.at(layer.getFirst().getY())) && !carriesLadder(body))) return false;
+        BlockPos column = ladder.at(layer.getFirst().getY());
+        target = layer.contains(column) ? column : layer.stream()
                 .filter(pos -> !unreachable.containsKey(pos))
                 .min(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position())))
                 .orElse(null);
         return target != null;
+    }
+
+    private static boolean hasLadder(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).is(Blocks.LADDER);
+    }
+
+    private static boolean carriesLadder(Villager body) {
+        return body.getInventory().countItem(Items.LADDER) > 0;
+    }
+
+    /** Puts a ladder from its inventory against the column's wall, so it can always climb back out of what it dug. */
+    private boolean placeLadder(ServerLevel level, Villager body, BlockPos pos) {
+        if (ladder == null || !carriesLadder(body) || !level.getBlockState(pos).isAir()) return false;
+        BlockState state = Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, ladder.facing());
+        if (!state.canSurvive(level, pos)) return false;
+        level.setBlock(pos, state, 3);
+        level.playSound(null, pos, SoundEvents.LADDER_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        body.getInventory().removeItem(body.getInventory().getItems().indexOf(body.getInventory().getItems().stream().filter(stack -> stack.is(Items.LADDER)).findFirst().get()), 1);
+        return true;
     }
 
     private static ItemStack pickaxe(Villager body) {

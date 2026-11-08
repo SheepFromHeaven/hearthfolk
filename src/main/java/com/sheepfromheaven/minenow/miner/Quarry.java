@@ -39,11 +39,44 @@ final class Quarry {
         while (!queue.isEmpty()) {
             BlockPos pos = queue.poll();
             if (!seen.add(pos) || Math.abs(pos.getX() - furnace.getX()) > RANGE || Math.abs(pos.getZ() - furnace.getZ()) > RANGE) continue;
-            if (!level.getBlockState(pos).isAir()) continue;
+            if (!open(level.getBlockState(pos))) continue;
             outline.add(pos);
             for (Direction side : Direction.Plane.HORIZONTAL) queue.add(pos.relative(side));
         }
         return new Quarry(outline, top);
+    }
+
+    /** Where the ladder goes down: a cell beside a solid wall whose top is free ground to step out onto, nearest the furnace first. */
+    Optional<Ladder> ladder(ServerLevel level, BlockPos furnace) {
+        return outline.stream()
+                .sorted(java.util.Comparator.comparingDouble((BlockPos cell) -> cell.distSqr(furnace)).thenComparing(BlockPos::asLong))
+                .flatMap(cell -> Direction.Plane.HORIZONTAL.stream()
+                        .filter(side -> {
+                            BlockPos wall = cell.relative(side);
+                            BlockPos exit = wall.above();
+                            return !outline.contains(wall) && !exit.equals(furnace)
+                                    && level.getBlockState(wall).isFaceSturdy(level, wall, side.getOpposite())
+                                    && level.getBlockState(exit).getCollisionShape(level, exit).isEmpty()
+                                    && level.getBlockState(exit.above()).getCollisionShape(level, exit.above()).isEmpty();
+                        })
+                        .map(side -> new Ladder(cell, side.getOpposite()))
+                        .findFirst().stream())
+                .findFirst();
+    }
+
+    /** A ladder column: the cells below {@code top} under this outline cell, each ladder facing away from its wall. */
+    record Ladder(BlockPos top, Direction facing) {
+        BlockPos at(int y) {
+            return top.atY(y);
+        }
+    }
+
+    int top() {
+        return top;
+    }
+
+    private static boolean open(BlockState state) {
+        return state.isAir() || state.is(net.minecraft.tags.BlockTags.CLIMBABLE);
     }
 
     boolean isEmpty() {
@@ -73,7 +106,7 @@ final class Quarry {
 
     static boolean diggable(ServerLevel level, BlockPos pos, ItemStack pickaxe) {
         BlockState state = level.getBlockState(pos);
-        if (state.isAir() || !state.getFluidState().isEmpty() || level.getBlockEntity(pos) != null) return false;
+        if (open(state) || !state.getFluidState().isEmpty() || level.getBlockEntity(pos) != null) return false;
         if (state.getDestroySpeed(level, pos) < 0.0F) return false;
         if (state.requiresCorrectToolForDrops() && !pickaxe.isCorrectToolForDrops(state)) return false;
         for (Direction side : Direction.values()) {

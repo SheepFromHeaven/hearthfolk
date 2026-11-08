@@ -8,6 +8,7 @@ import com.sheepfromheaven.minenow.fisherman.GoFishing;
 import com.sheepfromheaven.minenow.shepherd.ShearSheep;
 import com.sheepfromheaven.minenow.butcher.TendHerd;
 import com.sheepfromheaven.minenow.miner.DigQuarry;
+import com.sheepfromheaven.minenow.miner.LeaveQuarry;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.schedule.Activity;
@@ -33,7 +34,7 @@ public final class BrainHook {
         // runs after the walk target was cleared on arrival and before WORK's walk-back-to-job-site can claim it.
         brain.addActivity(
                 Activity.CORE,
-                ImmutableList.of(Pair.of(1, new TendFields()), Pair.of(1, new GoFishing()), Pair.of(1, new ShearSheep()), Pair.of(1, new TendHerd()), Pair.of(1, new DigQuarry()), Pair.of(1, new CraftAtWorkstation()), Pair.of(2, new EatMeals()), Pair.of(2, new BuyFromVillagers()), Pair.of(1, new OpenFenceGates()), Pair.of(1, new FollowEmeraldHolder()), Pair.of(6, new PickUpGiftedTool()),
+                ImmutableList.of(Pair.of(1, new TendFields()), Pair.of(1, new GoFishing()), Pair.of(1, new ShearSheep()), Pair.of(1, new TendHerd()), Pair.of(1, new DigQuarry()), Pair.of(1, new LeaveQuarry()), Pair.of(1, new CraftAtWorkstation()), Pair.of(2, new EatMeals()), Pair.of(2, new BuyFromVillagers()), Pair.of(1, new OpenFenceGates()), Pair.of(1, new FollowEmeraldHolder()), Pair.of(6, new PickUpGiftedTool()),
                         Pair.of(10, new ChooseMeetingPoint())),
                 ImmutableSet.of(),
                 Set.of());

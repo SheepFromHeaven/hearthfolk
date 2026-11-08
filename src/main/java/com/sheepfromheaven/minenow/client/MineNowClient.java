@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.client;
 import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.fisherman.FishermanEntities;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -17,6 +18,7 @@ public final class MineNowClient {
     static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(EntityTypes.VILLAGER, SwingingVillagerRenderer::new);
         event.registerEntityRenderer(FishermanEntities.VILLAGER_BOBBER.get(), VillagerBobberRenderer::new);
+        event.registerBlockEntityRenderer(BlockEntityTypes.FURNACE, FurnaceCartRenderer::new);
     }
 
     @SubscribeEvent
