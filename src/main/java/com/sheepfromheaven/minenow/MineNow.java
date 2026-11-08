@@ -151,6 +151,8 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);
             test(helper, TestGroup.MINER, "miner_smelts_its_ore_in_its_furnace_minecart", MinerTests::minerSmeltsItsOreInItsFurnaceMinecart);
+            test(helper, TestGroup.MINER, "miner_sells_a_diamond_for_several_emeralds", MinerTests::minerSellsADiamondForSeveralEmeralds);
+            test(helper, TestGroup.VILLAGER_TRADING, "toolsmith_buys_diamonds_from_the_miner_at_its_price", MinerTests::toolsmithBuysDiamondsFromTheMinerAtItsPrice);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);

@@ -204,6 +204,42 @@ public final class MinerTests {
         });
     }
 
+    public static void minerSellsADiamondForSeveralEmeralds(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.setVillagerData(miner.getVillagerData().withLevel(4));
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.DIAMOND, 2));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.interactOn(miner, InteractionHand.MAIN_HAND, miner.position());
+
+        Optional<MerchantOffer> diamond = miner.getOffers().stream().filter(o -> o.getResult().is(Items.DIAMOND)).findFirst();
+        helper.assertTrue(diamond.isPresent(), "A miner with diamonds offers them");
+        helper.assertTrue(diamond.get().getResult().getCount() == 1 && diamond.get().getCostA().is(Items.EMERALD) && diamond.get().getCostA().getCount() == 3,
+                "A diamond costs 3 emeralds, offered " + diamond.get().getResult().getCount() + " for " + diamond.get().getCostA().getCount());
+        helper.succeed();
+    }
+
+    public static void toolsmithBuysDiamondsFromTheMinerAtItsPrice(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.setVillagerData(miner.getVillagerData().withLevel(4));
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.DIAMOND, 3));
+        BlockPos table = new BlockPos(16, 4, 12);
+        helper.setBlock(table, Blocks.SMITHING_TABLE);
+        Villager toolsmith = GameTestHelpers.spawnEmployed(helper, table.west(), table,
+                net.minecraft.world.entity.npc.villager.VillagerProfession.TOOLSMITH, net.minecraft.world.entity.ai.village.poi.PoiTypes.TOOLSMITH);
+        toolsmith.setVillagerData(toolsmith.getVillagerData().withLevel(4));
+        toolsmith.getInventory().addItem(new ItemStack(Items.EMERALD, 9));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(count(toolsmith, Items.DIAMOND) == 3, "The toolsmith should buy the miner's diamonds, has " + count(toolsmith, Items.DIAMOND));
+            helper.assertTrue(count(miner, Items.EMERALD) == 9, "It pays 3 emeralds each, the miner got " + count(miner, Items.EMERALD));
+        });
+    }
+
     /** A 3x3 pit dug one block deep into the platform beside the furnace minecart: the quarry, two layers above a barrier floor. */
     static void quarry(GameTestHelper helper) {
         for (int x = 7; x <= 9; x++) {

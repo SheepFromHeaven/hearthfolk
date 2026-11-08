@@ -37,12 +37,20 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         ).apply(i, Tool::new));
     }
 
-    public record Produce(Item item, int perEmerald, int level) {
-        static final Codec<Produce> CODEC = RecordCodecBuilder.create(i -> i.group(
+    /** {@code count} of an item for {@code emeralds} emeralds. */
+    public record Price(int count, int emeralds) {}
+
+    /** Sold either {@code per_emerald} (that many for one emerald) or for a {@code price} (one for that many emeralds). */
+    public record Produce(Item item, Price price, int level) {
+        static final Codec<Produce> CODEC = RecordCodecBuilder.<Produce>create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Produce::item),
-                ExtraCodecs.POSITIVE_INT.fieldOf("per_emerald").forGetter(Produce::perEmerald),
+                ExtraCodecs.POSITIVE_INT.optionalFieldOf("per_emerald").forGetter(produce -> produce.price().emeralds() == 1 ? Optional.of(produce.price().count()) : Optional.empty()),
+                ExtraCodecs.POSITIVE_INT.optionalFieldOf("price").forGetter(produce -> produce.price().emeralds() > 1 ? Optional.of(produce.price().emeralds()) : Optional.empty()),
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Produce::level)
-        ).apply(i, Produce::new));
+        ).apply(i, (item, perEmerald, price, level) -> new Produce(item, new Price(perEmerald.orElse(1), price.orElse(1)), level)))
+                .validate(produce -> produce.price().count() > 1 && produce.price().emeralds() > 1
+                        ? com.mojang.serialization.DataResult.error(() -> "produce " + produce.item() + " has both per_emerald and price; give one")
+                        : com.mojang.serialization.DataResult.success(produce));
     }
 
     /** Bought from players in batches of {@code count} while the villager holds at most {@code max} afterwards. */
@@ -129,13 +137,12 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         return supplies.stream().filter(supply -> supply.item() == item).findFirst();
     }
 
-    /** How many of {@code item} this trade sells for one emerald at {@code level}, from its own entry or the default price. */
-    public java.util.OptionalInt perEmerald(Item item, int level) {
+    /** What this trade charges for {@code item} at {@code level}, from its own entry or the default price. */
+    public Optional<Price> price(Item item, int level) {
         Optional<Produce> entry = produce.stream().filter(crop -> crop.item() == item).findFirst();
-        if (entry.isPresent()) return entry.get().level() <= level ? java.util.OptionalInt.of(entry.get().perEmerald()) : java.util.OptionalInt.empty();
+        if (entry.isPresent()) return entry.get().level() <= level ? Optional.of(entry.get().price()) : Optional.empty();
         return defaultProduce.filter(fallback -> fallback.level() <= level && fallback.items().contains(item.builtInRegistryHolder()))
-                .map(fallback -> java.util.OptionalInt.of(fallback.perEmerald()))
-                .orElse(java.util.OptionalInt.empty());
+                .map(fallback -> new Price(fallback.perEmerald(), 1));
     }
 
     public int keepMax(ItemStack stack) {

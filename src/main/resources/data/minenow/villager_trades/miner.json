@@ -17,7 +17,7 @@
     { "item": "minecraft:gold_ingot", "per_emerald": 3, "level": 2 },
     { "item": "minecraft:redstone", "per_emerald": 16, "level": 2 },
     { "item": "minecraft:lapis_lazuli", "per_emerald": 12, "level": 2 },
-    { "item": "minecraft:diamond", "per_emerald": 1, "level": 4 }
+    { "item": "minecraft:diamond", "price": 3, "level": 4 }
   ],
   "supplies": [
     { "item": "minecraft:ladder", "count": 8, "price": 1, "max": 32, "level": 1 }

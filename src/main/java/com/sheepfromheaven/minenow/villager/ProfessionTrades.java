@@ -114,9 +114,10 @@ public final class ProfessionTrades {
         });
         for (TradeTable.Produce crop : table.produceUpTo(villagerLevel)) {
             int sellable = Economy.count(level, villager, crop.item()) - Unloading.keepLimit(villager, new ItemStack(crop.item()));
-            int trades = sellable / crop.perEmerald();
+            int trades = sellable / crop.price().count();
             if (trades > 0) {
-                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 1), new ItemStack(crop.item(), crop.perEmerald()), trades, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, crop.price().emeralds()), new ItemStack(crop.item(), crop.price().count()),
+                        trades, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
     }
