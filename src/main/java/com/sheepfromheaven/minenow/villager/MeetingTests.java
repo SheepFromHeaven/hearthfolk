@@ -20,6 +20,7 @@ public final class MeetingTests {
     private MeetingTests() {}
 
     public static void villagerPicksTheNearestBellWhenTheAfternoonStarts(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.LATE_AFTERNOON);
         GameTestHelpers.fence(helper);
         helper.setBlock(FAR_BELL, Blocks.BELL);
         helper.setBlock(NEAR_BELL, Blocks.BELL);
@@ -27,14 +28,29 @@ public final class MeetingTests {
         BlockPos far = helper.absolutePos(FAR_BELL);
         helper.getLevel().getPoiManager().take(type -> type.is(PoiTypes.MEETING), (type, pos) -> pos.equals(far), far, 1);
         villager.getBrain().setMemory(MemoryModuleType.MEETING_POINT, GlobalPos.of(helper.getLevel().dimension(), far));
+        java.util.List<String> history = new java.util.ArrayList<>();
+        String[] last = {""};
+        helper.onEachTick(() -> {
+            String now = villager.getBrain().getMemory(MemoryModuleType.MEETING_POINT)
+                    .map(p -> p.pos().equals(helper.absolutePos(NEAR_BELL)) ? "near" : p.pos().equals(far) ? "far" : p.pos().toShortString()).orElse("none");
+            var activity = helper.getLevel().environmentAttributes().getValue(net.minecraft.world.attribute.EnvironmentAttributes.VILLAGER_ACTIVITY, villager.position());
+            now = now + "/" + activity + "/" + villager.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-");
+            if (!now.equals(last[0])) history.add(helper.getTick() + ":" + now + (villager.onGround() ? "" : "(air)"));
+            last[0] = now;
+        });
 
         helper.succeedWhen(() -> helper.assertTrue(
                 villager.getBrain().getMemory(MemoryModuleType.MEETING_POINT).map(p -> p.pos().equals(helper.absolutePos(NEAR_BELL))).orElse(false),
                 "At the start of the afternoon the villager should pick the bell nearest to it, has "
-                        + villager.getBrain().getMemory(MemoryModuleType.MEETING_POINT)));
+                        + villager.getBrain().getMemory(MemoryModuleType.MEETING_POINT).map(p -> p.pos().toShortString()).orElse("none")
+                        + "; near " + helper.absolutePos(NEAR_BELL).toShortString() + ", far " + far.toShortString()
+                        + ", villager at " + villager.blockPosition().toShortString()
+                        + ", near bell free " + (helper.getLevel().getPoiManager().getCountInRange(type -> type.is(PoiTypes.MEETING), helper.absolutePos(NEAR_BELL), 0, net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.HAS_SPACE) > 0)
+                        + ", on ground " + villager.onGround() + ", history " + history));
     }
 
     public static void villagersDoNotHandItemsToEachOther(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.LATE_AFTERNOON);
         GameTestHelpers.fence(helper);
         Villager giver = helper.spawn(EntityTypes.VILLAGER, new BlockPos(10, 1, 12));
         Villager taker = helper.spawn(EntityTypes.VILLAGER, new BlockPos(13, 1, 12));

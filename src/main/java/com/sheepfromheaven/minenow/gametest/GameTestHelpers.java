@@ -20,6 +20,8 @@ import net.minecraft.world.phys.AABB;
 
 public final class GameTestHelpers {
     public static final long WORK_HOURS = 3000L;
+    /** Tests in the {@code late_afternoon} environment set this too: the environment's clock doesn't take when its batch runs first after server start. */
+    public static final long LATE_AFTERNOON = 9100L;
 
     private GameTestHelpers() {}
 

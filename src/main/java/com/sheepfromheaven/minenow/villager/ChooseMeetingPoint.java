@@ -40,7 +40,7 @@ public class ChooseMeetingPoint extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         long now = level.getGameTime();
-        if (now < nextCheck || body.isBaby() || body.isSleeping()) return false;
+        if (now < nextCheck || body.isBaby() || body.isSleeping() || !body.onGround()) return false;
         nextCheck = now + CHECK_INTERVAL;
         return now - lastChosen > HALF_A_DAY
                 && level.environmentAttributes().getValue(EnvironmentAttributes.VILLAGER_ACTIVITY, body.position()) == Activity.MEET;
