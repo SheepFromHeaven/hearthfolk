@@ -5,7 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.ConversionParams;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
@@ -40,6 +42,37 @@ public final class EconomyTests {
             player.closeContainer();
             helper.assertTrue(Economy.emeralds(helper.getLevel(), villager) == Economy.STARTING_PURSE, "Opening its trades adds nothing more");
         });
+    }
+
+    public static void aVillagerGetsItsPurseOnlyOnce(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(12, 1, 12));
+        employ(helper, villager, VillagerProfession.FARMER);
+
+        helper.runAfterDelay(5, () -> {
+            helper.assertTrue(Economy.emeralds(helper.getLevel(), villager) == Economy.STARTING_PURSE, "Its first job comes with the purse");
+            villager.getInventory().clearContent();
+            villager.setVillagerXp(1);
+            employ(helper, villager, VillagerProfession.BUTCHER);
+            helper.runAfterDelay(5, () -> {
+                helper.assertTrue(Economy.emeralds(helper.getLevel(), villager) == 0, "A new job brings no new purse, has " + Economy.emeralds(helper.getLevel(), villager));
+                ZombieVillager zombie = villager.convertTo(EntityTypes.ZOMBIE_VILLAGER, ConversionParams.single(villager, true, true), z -> { z.setVillagerData(villager.getVillagerData()); net.neoforged.neoforge.event.EventHooks.onLivingConvert(villager, z); });
+                Villager cured = zombie.convertTo(EntityTypes.VILLAGER, ConversionParams.single(zombie, true, true), v -> { v.setVillagerData(zombie.getVillagerData()); net.neoforged.neoforge.event.EventHooks.onLivingConvert(zombie, v); });
+                cured.setVillagerXp(1);
+                employ(helper, cured, VillagerProfession.BUTCHER);
+                helper.runAfterDelay(5, () -> {
+                    helper.assertTrue(cured.getVillagerData().profession().is(VillagerProfession.BUTCHER), "The cured villager has a job again");
+                    helper.assertTrue(Economy.emeralds(helper.getLevel(), cured) == 0, "Nor does zombifying and curing it, has " + Economy.emeralds(helper.getLevel(), cured));
+                    helper.succeed();
+                });
+            });
+        });
+    }
+
+    private static void employ(GameTestHelper helper, Villager villager, net.minecraft.resources.ResourceKey<VillagerProfession> profession) {
+        villager.setVillagerData(villager.getVillagerData().withProfession(helper.getLevel().registryAccess(), profession));
+        villager.refreshBrain(helper.getLevel());
     }
 
     public static void villagerKeepsFoodAndToolMoneyWhenBuyingFromPlayers(GameTestHelper helper) {

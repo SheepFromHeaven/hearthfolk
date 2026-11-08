@@ -40,6 +40,7 @@ public final class ModVillagers {
     public static final Supplier<AttachmentType<Boolean>> PURSE_GRANTED = ATTACHMENT_TYPES.register("purse_granted",
             () -> AttachmentType.builder(() -> false)
                     .serialize(Codec.BOOL.fieldOf("granted"))
+                    .copyOnDeath()
                     .build());
 
     public static final Supplier<AttachmentType<Long>> LAST_MEAL = ATTACHMENT_TYPES.register("last_meal",

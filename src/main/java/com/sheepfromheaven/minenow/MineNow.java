@@ -101,6 +101,7 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "farmer_fetches_a_spare_hoe_from_its_home_chest", FarmerTests::farmerFetchesASpareHoeFromItsHomeChest);
             test(helper, TestGroup.TRADING, "hoeless_farmer_offers_to_buy_an_undamaged_hoe", FarmerTradeTests::hoelessFarmerOffersToBuyAnUndamagedHoe);
             test(helper, TestGroup.VILLAGER_TRADING, "starting_purse_comes_with_the_job", com.sheepfromheaven.minenow.villager.EconomyTests::startingPurseComesWithTheJob);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_villager_gets_its_purse_only_once", com.sheepfromheaven.minenow.villager.EconomyTests::aVillagerGetsItsPurseOnlyOnce);
             test(helper, TestGroup.VILLAGER_TRADING, "villager_keeps_food_and_tool_money_when_buying_from_players", com.sheepfromheaven.minenow.villager.EconomyTests::villagerKeepsFoodAndToolMoneyWhenBuyingFromPlayers);
             test(helper, TestGroup.VILLAGER_TRADING, "villager_without_a_tool_keeps_its_food_money", com.sheepfromheaven.minenow.villager.EconomyTests::villagerWithoutAToolKeepsItsFoodMoney);
             test(helper, TestGroup.TRADING, "selling_a_hoe_to_a_farmer_moves_real_items", FarmerTradeTests::sellingAHoeToAFarmerMovesRealItems);
