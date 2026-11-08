@@ -81,6 +81,16 @@
       "price": 0.125,
       "max": 32,
       "level": 1
+    },
+    {
+      "item": "minecraft:torch",
+      "price": 0.0625,
+      "max": 32
+    },
+    {
+      "item": "minecraft:stick",
+      "price": 0.0313,
+      "max": 16
     }
   ],
   "keeps": [

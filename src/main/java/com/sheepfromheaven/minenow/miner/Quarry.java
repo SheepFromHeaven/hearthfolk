@@ -39,7 +39,7 @@ final class Quarry {
         while (!queue.isEmpty()) {
             BlockPos pos = queue.poll();
             if (!seen.add(pos) || Math.abs(pos.getX() - furnace.getX()) > RANGE || Math.abs(pos.getZ() - furnace.getZ()) > RANGE) continue;
-            if (!open(level.getBlockState(pos))) continue;
+            if (!open(level, pos)) continue;
             outline.add(pos);
             for (Direction side : Direction.Plane.HORIZONTAL) queue.add(pos.relative(side));
         }
@@ -75,8 +75,33 @@ final class Quarry {
         return top;
     }
 
-    private static boolean open(BlockState state) {
-        return state.isAir() || state.is(net.minecraft.tags.BlockTags.CLIMBABLE);
+    private static boolean open(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.isAir() || state.is(net.minecraft.tags.BlockTags.CLIMBABLE)
+                || (state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty());
+    }
+
+    /** A torch spot: an open floor cell below {@code light} block light, against an outer wall of the quarry. */
+    record TorchSpot(BlockPos pos, Direction facing) {}
+
+    /** Dark floor cells, where monsters could spawn, that have an outer wall to put a torch on. */
+    List<TorchSpot> darkSpots(ServerLevel level, int bottom, int light) {
+        List<TorchSpot> spots = new ArrayList<>();
+        for (BlockPos column : outline) {
+            for (int y = top; y >= Math.max(bottom, level.getMinY() + 1); y--) {
+                BlockPos pos = column.atY(y);
+                if (!level.getBlockState(pos).isAir()) continue;
+                if (!level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)) continue;
+                if (level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos) >= light) continue;
+                for (Direction side : Direction.Plane.HORIZONTAL) {
+                    BlockPos wall = pos.relative(side);
+                    if (outline.contains(wall.atY(top)) || !level.getBlockState(wall).isFaceSturdy(level, wall, side.getOpposite())) continue;
+                    spots.add(new TorchSpot(pos, side.getOpposite()));
+                    break;
+                }
+            }
+        }
+        return spots;
     }
 
     boolean isEmpty() {
@@ -106,7 +131,7 @@ final class Quarry {
 
     static boolean diggable(ServerLevel level, BlockPos pos, ItemStack pickaxe) {
         BlockState state = level.getBlockState(pos);
-        if (open(state) || !state.getFluidState().isEmpty() || level.getBlockEntity(pos) != null) return false;
+        if (open(level, pos) || !state.getFluidState().isEmpty() || level.getBlockEntity(pos) != null) return false;
         if (state.getDestroySpeed(level, pos) < 0.0F) return false;
         if (state.requiresCorrectToolForDrops() && !pickaxe.isCorrectToolForDrops(state)) return false;
         for (Direction side : Direction.values()) {

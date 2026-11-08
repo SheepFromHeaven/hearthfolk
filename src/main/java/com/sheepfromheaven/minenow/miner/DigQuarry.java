@@ -18,7 +18,10 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.BlastFurnaceBlock;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -42,7 +45,8 @@ import java.util.Optional;
  * against the block's hardness dictates (with the crack animation a player would see). What it digs goes straight into
  * its inventory, ore with up to {@link MinerSkill#extraOre} extra; blocks its pickaxe can't harvest are left in place.
  * It puts a ladder down one wall of the quarry as it digs ({@link Quarry#ladder}) and won't dig a layer it can't put a
- * ladder in, so it can always climb back out. It smelts its raw ore in its furnace minecart with coal it holds, and when its goods pile up it carries them to its
+ * ladder in, so it can always climb back out. It keeps the quarry floor lit with torches on its walls (making them from coal and sticks) so monsters can't spawn.
+ * It smelts its raw ore in its furnace minecart, and in more furnaces beside it as it levels, with coal it holds, and when its goods pile up it carries them to its
  * home chest, climbing out of the quarry for either. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class DigQuarry extends Behavior<Villager> {
@@ -52,11 +56,18 @@ public class DigQuarry extends Behavior<Villager> {
     private static final int GIVE_UP_AFTER_TICKS = 300;
     private static final int UNREACHABLE_COOLDOWN = 600;
     private static final int IDLE_RESCAN_DELAY = 100;
+    private static final int FURNACE_RANGE = 4;
+    private static final int LIT = 8;
+    private static final int TORCH_RECHECK = 40;
 
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
     private @Nullable BlockPos target;
     private @Nullable BlockPos chest;
     private boolean smelting;
+    private RecipeType<? extends AbstractCookingRecipe> smeltType = RecipeType.SMELTING;
+    private int smeltShare = Integer.MAX_VALUE;
+    private Quarry.@Nullable TorchSpot torch;
+    private long nextTorchCheck;
     private Quarry.@Nullable Ladder ladder;
     private long targetSince;
     private long nextStartAllowed;
@@ -106,7 +117,7 @@ public class DigQuarry extends Behavior<Villager> {
             }
             if (body.distanceToSqr(Vec3.atBottomCenterOf(chest)) <= 4.0 && Math.abs(chest.getY() - body.getY()) <= 1.5) {
                 if (smelting) {
-                    FurnaceTending.tend(level, body, chest, RecipeType.SMELTING, Miner::smelts);
+                    FurnaceTending.tend(level, body, chest, smeltType, Miner::smelts, smeltShare);
                     body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
                 } else {
                     Unloading.deposit(level, body, chest);
@@ -120,6 +131,17 @@ public class DigQuarry extends Behavior<Villager> {
             return;
         }
         if (target == null) return;
+        if (torch != null) {
+            if (body.getEyePosition().distanceTo(Vec3.atCenterOf(torch.pos())) <= REACH) {
+                placeTorch(level, body, timestamp);
+                advance(level, body, timestamp);
+            } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
+                advance(level, body, timestamp);
+            } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+                walk(body);
+            }
+            return;
+        }
         ItemStack pickaxe = pickaxe(body);
         if (pickaxe.isEmpty() || !Quarry.diggable(level, target, pickaxe)) {
             advance(level, body, timestamp);
@@ -182,6 +204,7 @@ public class DigQuarry extends Behavior<Villager> {
     private boolean pickTarget(ServerLevel level, Villager body) {
         target = null;
         chest = null;
+        torch = null;
         smelting = false;
         Optional<BlockPos> furnace = furnace(level, body);
         if (furnace.isEmpty()) return false;
@@ -194,10 +217,21 @@ public class DigQuarry extends Behavior<Villager> {
                 return true;
             }
         }
-        if (FurnaceTending.needsTending(level, body, furnace.get(), RecipeType.SMELTING, Miner::smelts)) {
-            chest = furnace.get();
-            smelting = true;
-            return true;
+        List<BlockPos> furnaces = furnaces(level, body, furnace.get());
+        int raw = body.getInventory().getItems().stream().filter(Miner::smelts).mapToInt(ItemStack::getCount).sum();
+        for (BlockPos pos : furnaces) {
+            if (level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity cooking && Miner.smelts(cooking.getItem(0))) raw += cooking.getItem(0).getCount();
+        }
+        int share = Math.max(1, (raw + furnaces.size() - 1) / furnaces.size());
+        for (BlockPos pos : furnaces) {
+            RecipeType<? extends AbstractCookingRecipe> type = level.getBlockState(pos).getBlock() instanceof BlastFurnaceBlock ? RecipeType.BLASTING : RecipeType.SMELTING;
+            if (FurnaceTending.needsTending(level, body, pos, type, Miner::smelts, share)) {
+                chest = pos;
+                smelting = true;
+                smeltType = type;
+                smeltShare = share;
+                return true;
+            }
         }
         ItemStack pickaxe = pickaxe(body);
         if (pickaxe.isEmpty()) return false;
@@ -207,6 +241,16 @@ public class DigQuarry extends Behavior<Villager> {
         if (ladder == null) return false;
         if (!hasLadder(level, ladder.at(quarry.top())) && !placeLadder(level, body, ladder.at(quarry.top()))) return false;
         int bottom = furnace.get().getY() - MinerSkill.depth(body.getVillagerData().level());
+        if (now >= nextTorchCheck && (carriesTorch(body) || canMakeTorches(body))) {
+            torch = quarry.darkSpots(level, bottom, LIT).stream()
+                    .filter(spot -> !spot.pos().equals(ladder.at(spot.pos().getY())))
+                    .min(Comparator.comparingDouble(spot -> spot.pos().distToCenterSqr(body.position())))
+                    .orElse(null);
+            if (torch != null) {
+                target = torch.pos();
+                return true;
+            }
+        }
         List<BlockPos> layer = quarry.nextLayer(level, bottom, pickaxe);
         if (layer.isEmpty() || (!hasLadder(level, ladder.at(layer.getFirst().getY())) && !carriesLadder(body))) return false;
         BlockPos column = ladder.at(layer.getFirst().getY());
@@ -215,6 +259,47 @@ public class DigQuarry extends Behavior<Villager> {
                 .min(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position())))
                 .orElse(null);
         return target != null;
+    }
+
+    /** Its furnace minecart, then the furnaces and blast furnaces nearest to it that its level lets it use. */
+    private static List<BlockPos> furnaces(ServerLevel level, Villager body, BlockPos cart) {
+        List<BlockPos> furnaces = new java.util.ArrayList<>();
+        furnaces.add(cart);
+        int extra = MinerSkill.extraFurnaces(body.getVillagerData().level());
+        if (extra == 0) return furnaces;
+        BlockPos.betweenClosedStream(cart.offset(-FURNACE_RANGE, -1, -FURNACE_RANGE), cart.offset(FURNACE_RANGE, 1, FURNACE_RANGE))
+                .filter(pos -> !pos.equals(cart) && (level.getBlockState(pos).is(Blocks.FURNACE) || level.getBlockState(pos).is(Blocks.BLAST_FURNACE)))
+                .map(BlockPos::immutable)
+                .sorted(Comparator.comparingDouble(pos -> pos.distSqr(cart)))
+                .limit(extra)
+                .forEach(furnaces::add);
+        return furnaces;
+    }
+
+    private static boolean carriesTorch(Villager body) {
+        return body.getInventory().countItem(Items.TORCH) > 0;
+    }
+
+    private static boolean canMakeTorches(Villager body) {
+        return body.getInventory().hasAnyMatching(stack -> stack.is(net.minecraft.tags.ItemTags.COALS)) && body.getInventory().countItem(Items.STICK) > 0;
+    }
+
+    /** Puts a torch on the quarry wall, making four from a coal and a stick if it has none, the way a player would craft them. */
+    private void placeTorch(ServerLevel level, Villager body, long timestamp) {
+        nextTorchCheck = timestamp + TORCH_RECHECK;
+        if (torch == null || !level.getBlockState(torch.pos()).isAir()) return;
+        if (!carriesTorch(body)) {
+            if (!canMakeTorches(body)) return;
+            body.getInventory().getItems().stream().filter(stack -> stack.is(net.minecraft.tags.ItemTags.COALS)).findFirst().ifPresent(stack -> stack.shrink(1));
+            body.getInventory().getItems().stream().filter(stack -> stack.is(Items.STICK)).findFirst().ifPresent(stack -> stack.shrink(1));
+            body.getInventory().addItem(new ItemStack(Items.TORCH, 4));
+        }
+        BlockState state = Blocks.WALL_TORCH.defaultBlockState().setValue(net.minecraft.world.level.block.WallTorchBlock.FACING, torch.facing());
+        if (!state.canSurvive(level, torch.pos())) return;
+        level.setBlock(torch.pos(), state, 3);
+        level.playSound(null, torch.pos(), SoundEvents.WOOD_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        body.getInventory().getItems().stream().filter(stack -> stack.is(Items.TORCH)).findFirst().ifPresent(stack -> stack.shrink(1));
     }
 
     private static boolean hasLadder(ServerLevel level, BlockPos pos) {

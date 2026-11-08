@@ -3,11 +3,12 @@ package com.sheepfromheaven.minenow.miner;
 /**
  * What a miner gets better at with each level: how deep below its furnace it may dig, and how much extra ore it gets
  * out of each ore block (up to {@link #extraOre} more, like Fortune). Better pickaxes, unlocked by level in the trade
- * file, dig faster and harvest harder ores.
+ * file, dig faster and harvest harder ores. It also smelts in more furnaces ({@link #extraFurnaces}).
  */
 final class MinerSkill {
     private static final int[] DEPTH = {8, 16, 24, 40, 64};
     private static final int[] EXTRA_ORE = {0, 0, 1, 1, 2};
+    private static final int[] EXTRA_FURNACES = {0, 1, 2, 3, 4};
 
     private MinerSkill() {}
 
@@ -17,6 +18,11 @@ final class MinerSkill {
 
     static int extraOre(int villagerLevel) {
         return EXTRA_ORE[index(villagerLevel)];
+    }
+
+    /** How many furnaces or blast furnaces beside its furnace minecart it smelts in as well. */
+    static int extraFurnaces(int villagerLevel) {
+        return EXTRA_FURNACES[index(villagerLevel)];
     }
 
     private static int index(int villagerLevel) {

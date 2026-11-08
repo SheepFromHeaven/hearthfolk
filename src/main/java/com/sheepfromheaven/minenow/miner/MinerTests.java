@@ -240,6 +240,67 @@ public final class MinerTests {
         });
     }
 
+    public static void minerLightsItsQuarryWithTorches(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 1));
+        miner.getInventory().addItem(new ItemStack(Items.STICK, 1));
+        quarry(helper);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(solidCells(helper, 1) == 0, "The miner digs its quarry first, " + solidCells(helper, 1) + " left");
+            int torches = 0;
+            for (int y = 1; y <= 3; y++) {
+                for (int x = 7; x <= 9; x++) {
+                    for (int z = 11; z <= 13; z++) if (helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.WALL_TORCH)) torches++;
+                }
+            }
+            helper.assertTrue(torches >= 1, "It puts torches on the quarry walls, made from its coal and a stick");
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) {
+                    int light = helper.getLevel().getBrightness(net.minecraft.world.level.LightLayer.BLOCK, helper.absolutePos(new BlockPos(x, 1, z)));
+                    helper.assertTrue(light >= 8, "No dark spot on the quarry floor where monsters could spawn, light " + light + " at " + x + ", 1, " + z);
+                }
+            }
+        });
+    }
+
+    public static void minerUsesMoreFurnacesAtHigherLevels(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.setVillagerData(miner.getVillagerData().withLevel(3));
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 9));
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 3));
+        List<BlockPos> furnaces = List.of(new BlockPos(6, 4, 14), new BlockPos(6, 4, 10));
+        furnaces.forEach(furnace -> helper.setBlock(furnace, Blocks.FURNACE));
+        boolean[] usedTogether = {false};
+        helper.onEachTick(() -> {
+            long busy = furnaces.stream().filter(furnace -> helper.getBlockEntity(furnace, net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.class).getItem(0).is(Items.RAW_IRON)).count();
+            if (busy == furnaces.size()) usedTogether[0] = true;
+        });
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(usedTogether[0], "A journeyman shares its ore between its furnace minecart and two furnaces beside it");
+            helper.assertTrue(count(miner, Items.IRON_INGOT) == 9, "...and collects every ingot, has " + count(miner, Items.IRON_INGOT));
+        });
+    }
+
+    public static void noviceMinerUsesOnlyItsFurnaceMinecart(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 3));
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 2));
+        BlockPos furnace = new BlockPos(6, 4, 14);
+        helper.setBlock(furnace, Blocks.FURNACE);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(count(miner, Items.IRON_INGOT) == 3, "The novice smelts its ore, has " + count(miner, Items.IRON_INGOT) + " ingots");
+            var plain = helper.getBlockEntity(furnace, net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.class);
+            helper.assertTrue(plain.getItem(0).isEmpty() && plain.getItem(2).isEmpty(), "...in its furnace minecart alone, leaving the furnace beside it to you");
+        });
+    }
+
     /** A 3x3 pit dug one block deep into the platform beside the furnace minecart: the quarry, two layers above a barrier floor. */
     static void quarry(GameTestHelper helper) {
         for (int x = 7; x <= 9; x++) {
@@ -256,7 +317,7 @@ public final class MinerTests {
         for (int x = 7; x <= 9; x++) {
             for (int z = 11; z <= 13; z++) {
                 var state = helper.getBlockState(new BlockPos(x, y, z));
-                if (!state.isAir() && !state.is(Blocks.LADDER)) solid++;
+                if (!state.isAir() && !state.is(Blocks.LADDER) && !state.is(Blocks.WALL_TORCH)) solid++;
             }
         }
         return solid;
