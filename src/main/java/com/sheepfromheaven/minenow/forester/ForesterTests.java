@@ -81,6 +81,74 @@ public final class ForesterTests {
                 "An unemployed villager should take a free nursery and become a forester"));
     }
 
+    public static void foresterFellsAGrownTreeAndReplantsIt(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        forester.getInventory().addItem(new ItemStack(Items.OAK_SAPLING));
+        BlockPos base = new BlockPos(12, 1, 12);
+        tree(helper, base, Blocks.DIRT);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(logs(helper, base) == 0, "The forester fells the whole tree, " + logs(helper, base) + " logs left");
+            helper.assertTrue(forester.getInventory().countItem(Items.OAK_LOG) >= 4, "The logs go into its inventory, has " + forester.getInventory().countItem(Items.OAK_LOG));
+            helper.assertTrue(helper.getBlockState(base).is(Blocks.OAK_SAPLING), "It replants the stump with its nursery's sapling, there's " + helper.getBlockState(base));
+        });
+    }
+
+    public static void foresterLeavesATreeStandingOnCobblestone(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        BlockPos base = new BlockPos(12, 1, 12);
+        tree(helper, base, Blocks.COBBLESTONE);
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(logs(helper, base) == 4, "Cobblestone under a tree means keep it, " + logs(helper, base) + " logs left");
+            helper.succeed();
+        });
+    }
+
+    public static void foresterLeavesALogPostWithoutLeavesAlone(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        BlockPos base = new BlockPos(12, 1, 12);
+        helper.setBlock(base.below(), Blocks.DIRT);
+        for (int y = 0; y < 3; y++) helper.setBlock(base.above(y), Blocks.OAK_LOG);
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(logs(helper, base) == 3, "Logs without leaves of their own are a build, not a tree, " + logs(helper, base) + " left");
+            helper.succeed();
+        });
+    }
+
+    private static Villager spawnForester(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos nursery = new BlockPos(5, 2, 12);
+        helper.setBlock(nursery.below(), Blocks.OAK_LOG);
+        helper.setBlock(nursery, Forester.nursery(NurseryTree.OAK));
+        return GameTestHelpers.spawnEmployed(helper, nursery.east(2).below(), nursery, Forester.PROFESSION, Forester.POI);
+    }
+
+    /** A small oak: four logs on {@code ground} with a crown of natural (non-persistent) leaves. */
+    private static void tree(GameTestHelper helper, BlockPos base, Block ground) {
+        helper.setBlock(base.below(), ground);
+        for (int y = 0; y < 4; y++) helper.setBlock(base.above(y), Blocks.OAK_LOG);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int y = 2; y <= 4; y++) {
+                    BlockPos pos = base.offset(dx, y, dz);
+                    if (helper.getBlockState(pos).isAir()) helper.setBlock(pos, Blocks.OAK_LEAVES.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.DISTANCE, 1));
+                }
+            }
+        }
+    }
+
+    private static int logs(GameTestHelper helper, BlockPos base) {
+        int logs = 0;
+        for (int y = 0; y < 5; y++) if (helper.getBlockState(base.above(y)).is(net.minecraft.tags.BlockTags.LOGS)) logs++;
+        return logs;
+    }
+
     private static ServerPlayer playerHolding(GameTestHelper helper, Item item) {
         @SuppressWarnings("removal")
         ServerPlayer player = helper.makeMockServerPlayerInLevel();

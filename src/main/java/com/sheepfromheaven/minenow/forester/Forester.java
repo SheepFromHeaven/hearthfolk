@@ -22,8 +22,12 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.attachment.AttachmentType;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * The forester: a new profession whose job site is a nursery, a sapling potted on a log ({@link NurseryBlock}).
@@ -36,6 +40,13 @@ public final class Forester {
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MineNow.MOD_ID);
     private static final DeferredRegister<PoiType> POI_TYPES = DeferredRegister.create(Registries.POINT_OF_INTEREST_TYPE, MineNow.MOD_ID);
     private static final DeferredRegister<VillagerProfession> PROFESSIONS = DeferredRegister.create(Registries.VILLAGER_PROFESSION, MineNow.MOD_ID);
+    private static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MineNow.MOD_ID);
+
+    /** Stumps a forester felled without a sapling to put back, replanted once it has one. */
+    public static final Supplier<AttachmentType<List<BlockPos>>> REPLANT = ATTACHMENT_TYPES.register("replant",
+            () -> AttachmentType.<List<BlockPos>>builder(() -> List.of())
+                    .serialize(BlockPos.CODEC.listOf().fieldOf("stumps"))
+                    .build());
 
     public static final DeferredBlock<NurseryBlock> NURSERY = BLOCKS.registerBlock("nursery", NurseryBlock::new,
             properties -> properties.instabreak().noOcclusion());
@@ -58,6 +69,7 @@ public final class Forester {
         BLOCKS.register(modBus);
         POI_TYPES.register(modBus);
         PROFESSIONS.register(modBus);
+        ATTACHMENT_TYPES.register(modBus);
     }
 
     public static BlockState nursery(NurseryTree tree) {

@@ -153,6 +153,9 @@ public final class MineNow {
             test(helper, TestGroup.FORESTER, "a_nursery_without_its_log_is_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aNurseryWithoutItsLogIsAPlainPottedSapling);
             test(helper, TestGroup.FORESTER, "breaking_a_nursery_gives_back_the_pot_and_the_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::breakingANurseryGivesBackThePotAndTheSapling);
             test(helper, TestGroup.FORESTER, "unemployed_villager_becomes_a_forester_at_a_free_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::unemployedVillagerBecomesAForesterAtAFreeNursery);
+            test(helper, TestGroup.FORESTER, "forester_fells_a_grown_tree_and_replants_it", com.sheepfromheaven.minenow.forester.ForesterTests::foresterFellsAGrownTreeAndReplantsIt);
+            test(helper, TestGroup.FORESTER, "forester_leaves_a_tree_standing_on_cobblestone", com.sheepfromheaven.minenow.forester.ForesterTests::foresterLeavesATreeStandingOnCobblestone);
+            test(helper, TestGroup.FORESTER, "forester_leaves_a_log_post_without_leaves_alone", com.sheepfromheaven.minenow.forester.ForesterTests::foresterLeavesALogPostWithoutLeavesAlone);
             test(helper, TestGroup.MINER, "a_plain_furnace_is_no_job_site", MinerTests::aPlainFurnaceIsNoJobSite);
             test(helper, TestGroup.MINER, "a_furnace_minecart_can_be_placed_off_rails", MinerTests::aFurnaceMinecartCanBePlacedOffRails);
             test(helper, TestGroup.MINER, "a_furnace_minecart_on_a_rail_stays_a_minecart", MinerTests::aFurnaceMinecartOnARailStaysAMinecart);
