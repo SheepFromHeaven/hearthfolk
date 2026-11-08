@@ -256,13 +256,37 @@ public final class MinerTests {
                     for (int z = 11; z <= 13; z++) if (helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.WALL_TORCH)) torches++;
                 }
             }
-            helper.assertTrue(torches >= 1, "It puts torches on the quarry walls, made from its coal and a stick");
+            helper.assertTrue(torches == 1, "One torch lights this small quarry, made from its coal and a stick; placed " + torches);
+            for (int y = 1; y <= 3; y++) {
+                for (int x = 7; x <= 9; x++) {
+                    for (int z = 11; z <= 13; z++) {
+                        BlockPos pos = new BlockPos(x, y, z);
+                        if (!helper.getBlockState(pos).is(Blocks.WALL_TORCH)) continue;
+                        helper.assertTrue(helper.getBlockState(pos.below()).isAir(),
+                                "Torches hang above the floor (one block above it when placed), not at floor level; one at " + pos.toShortString());
+                    }
+                }
+            }
             for (int x = 7; x <= 9; x++) {
                 for (int z = 11; z <= 13; z++) {
                     int light = helper.getLevel().getBrightness(net.minecraft.world.level.LightLayer.BLOCK, helper.absolutePos(new BlockPos(x, 1, z)));
                     helper.assertTrue(light >= 8, "No dark spot on the quarry floor where monsters could spawn, light " + light + " at " + x + ", 1, " + z);
                 }
             }
+        });
+    }
+
+    public static void minerLeavesOutTorchesWhereYourLightIsEnough(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 16));
+        quarry(helper);
+        helper.setBlock(new BlockPos(10, 3, 12), Blocks.GLOWSTONE);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(solidCells(helper, 1) == 0, "The miner digs its quarry first, " + solidCells(helper, 1) + " left");
+            helper.assertTrue(count(miner, Items.TORCH) == 16, "Glowstone in the wall already lights the floor, so no torches are needed; it used " + (16 - count(miner, Items.TORCH)));
         });
     }
 

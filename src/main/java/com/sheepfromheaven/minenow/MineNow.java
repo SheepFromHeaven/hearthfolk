@@ -160,6 +160,7 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_leaves_platforms_and_branches_tunnels_off_them", MinerTests::minerLeavesPlatformsAndBranchesTunnelsOffThem);
             test(helper, TestGroup.ROADS, "villager_takes_the_stairs_rather_than_jumping_off_a_ledge", RoadTests::villagerTakesTheStairsRatherThanJumpingOffALedge);
             test(helper, TestGroup.ROADS, "villager_still_jumps_down_when_there_is_no_other_way", RoadTests::villagerStillJumpsDownWhenThereIsNoOtherWay);
+            test(helper, TestGroup.MINER, "miner_leaves_out_torches_where_your_light_is_enough", MinerTests::minerLeavesOutTorchesWhereYourLightIsEnough);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);

@@ -87,7 +87,7 @@ final class Quarry {
         }
     }
 
-    /** A torch spot: an open floor cell below the wanted block light, against an outer wall of the mine. */
+    /** A torch spot: one block above a floor cell below the wanted block light, against an outer wall of the mine. */
     record TorchSpot(BlockPos pos, Direction facing) {}
 
     Optional<Ladder> ladder(ServerLevel level, BlockPos furnace) {
@@ -205,7 +205,7 @@ final class Quarry {
         return Optional.empty();
     }
 
-    /** Dark floor cells of the shaft and tunnels, where monsters could spawn, that have an outer wall to put a torch on. */
+    /** Spots one block above dark floor cells of the shaft and tunnels, where monsters could spawn, with an outer wall to put a torch on. */
     List<TorchSpot> darkSpots(ServerLevel level, int bottom, int light, int tunnelLength) {
         List<BlockPos> cells = new ArrayList<>();
         for (BlockPos column : outline) {
@@ -215,10 +215,12 @@ final class Quarry {
             if (layout.isPlatform(y)) cells.addAll(layout.tunnels(y, tunnelLength));
         }
         List<TorchSpot> spots = new ArrayList<>();
-        for (BlockPos pos : cells) {
+        for (BlockPos floor : cells) {
+            if (!level.getBlockState(floor).isAir()) continue;
+            if (!level.getBlockState(floor.below()).isFaceSturdy(level, floor.below(), Direction.UP)) continue;
+            if (level.getBrightness(LightLayer.BLOCK, floor) >= light || litNearby(level, floor, light)) continue;
+            BlockPos pos = floor.above();
             if (!level.getBlockState(pos).isAir()) continue;
-            if (!level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)) continue;
-            if (level.getBrightness(LightLayer.BLOCK, pos) >= light) continue;
             for (Direction side : Direction.Plane.HORIZONTAL) {
                 BlockPos wall = pos.relative(side);
                 if (outline.contains(wall.atY(top)) || layout.inTunnel(wall, bottom, tunnelLength)) continue;
@@ -228,6 +230,21 @@ final class Quarry {
             }
         }
         return spots;
+    }
+
+    /**
+     * Whether a light source nearby (a torch, lantern or glowstone, the player's or the miner's own) reaches this cell
+     * with at least {@code light}: block light only updates a moment after a block changes, and reading it alone made
+     * the miner put several torches side by side.
+     */
+    private static boolean litNearby(ServerLevel level, BlockPos cell, int light) {
+        int range = 15 - light;
+        for (BlockPos pos : BlockPos.betweenClosed(cell.offset(-range, -range, -range), cell.offset(range, range, range))) {
+            int distance = Math.abs(pos.getX() - cell.getX()) + Math.abs(pos.getY() - cell.getY()) + Math.abs(pos.getZ() - cell.getZ());
+            if (distance > range) continue;
+            if (level.getBlockState(pos).getLightEmission(level, pos) - distance >= light) return true;
+        }
+        return false;
     }
 
     private static boolean floored(ServerLevel level, BlockPos pos) {
