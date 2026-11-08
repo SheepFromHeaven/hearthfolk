@@ -122,6 +122,7 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_keeps_its_raw_meat_for_the_smoker", ButcherTests::butcherKeepsItsRawMeatForTheSmoker);
             test(helper, TestGroup.BUTCHER, "culling_takes_as_many_swings_as_the_axe_needs", ButcherTests::cullingTakesAsManySwingsAsTheAxeNeeds);
             test(helper, TestGroup.BUTCHER, "butcher_culls_the_herd_down_to_six", ButcherTests::butcherCullsTheHerdDownToSix);
+            test(helper, TestGroup.BUTCHER, "butchers_and_shepherds_open_fence_gates_but_not_others", ButcherTests::butchersAndShepherdsOpenFenceGatesButNotOthers);
             test(helper, TestGroup.BUTCHER, "butcher_breeds_a_small_herd", ButcherTests::butcherBreedsASmallHerd);
             test(helper, TestGroup.BUTCHER, "butcher_leaves_sheep_and_named_animals_alone", ButcherTests::butcherLeavesSheepAndNamedAnimalsAlone);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);

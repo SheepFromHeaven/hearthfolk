@@ -2,8 +2,10 @@ package com.sheepfromheaven.minenow.villager;
 
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -20,11 +22,12 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Shepherds and butchers open the fence gates on their path, like every villager opens doors, and close them once
- * they're clear of the gateway so the animals stay in. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
+ * Shepherds and butchers open the fence gates on their path, like every villager opens doors, and close them as soon
+ * as they're clear of the gateway. An animal caught in the gateway is shooed back to the side away from the villager,
+ * so a closing gate never lets it slip out. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
  */
 public class OpenFenceGates extends Behavior<Villager> {
-    private static final double REACH = 2.0;
+    private static final double REACH = 1.2;
 
     private final Set<BlockPos> opened = new HashSet<>();
 
@@ -89,6 +92,16 @@ public class OpenFenceGates extends Behavior<Villager> {
         }
     }
 
+    private static void shooBack(ServerLevel level, Villager body, BlockPos gate, BlockState state) {
+        Direction through = state.getValue(FenceGateBlock.FACING);
+        double villagerSide = (body.getX() - gate.getX() - 0.5) * through.getStepX() + (body.getZ() - gate.getZ() - 0.5) * through.getStepZ();
+        BlockPos away = gate.relative(villagerSide > 0 ? through.getOpposite() : through);
+        for (Animal animal : level.getEntitiesOfClass(Animal.class, new AABB(gate))) {
+            animal.snapTo(away.getX() + 0.5, away.getY(), away.getZ() + 0.5, animal.getYRot(), animal.getXRot());
+            animal.getNavigation().stop();
+        }
+    }
+
     private static boolean inGateway(Villager body, BlockPos gate) {
         return body.getBoundingBox().intersects(new AABB(gate).inflate(0.2));
     }
@@ -108,6 +121,7 @@ public class OpenFenceGates extends Behavior<Villager> {
     private static void close(ServerLevel level, Villager body, BlockPos gate) {
         BlockState state = level.getBlockState(gate);
         if (!(state.getBlock() instanceof FenceGateBlock gateBlock) || !state.getValue(FenceGateBlock.OPEN)) return;
+        shooBack(level, body, gate, state);
         level.setBlock(gate, state.setValue(FenceGateBlock.OPEN, false), 10);
         level.playSound(null, gate, gateBlock.closeSound, SoundSource.BLOCKS, 1.0F, level.getRandom().nextFloat() * 0.1F + 0.9F);
         level.gameEvent(body, GameEvent.BLOCK_CLOSE, gate);

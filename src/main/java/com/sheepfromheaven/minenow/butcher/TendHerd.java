@@ -53,6 +53,7 @@ public class TendHerd extends Behavior<Villager> {
     private static final int HEIGHT = 3;
     private static final float SPEED = 0.5F;
     private static final double REACH = 2.0;
+    private static final double MELEE_REACH = 3.0;
     private static final int GIVE_UP_AFTER_TICKS = 300;
     private static final int UNREACHABLE_COOLDOWN = 600;
     private static final int IDLE_RESCAN_DELAY = 100;
@@ -122,7 +123,7 @@ public class TendHerd extends Behavior<Villager> {
         }
         windUp = 0;
         if (timestamp - targetSince > GIVE_UP_AFTER_TICKS || (animal != null && pathCannotReach(body))) {
-            if (animal != null) unreachable.put(animal.getUUID(), timestamp + UNREACHABLE_COOLDOWN);
+            if (animal != null && !swingsLanded.containsKey(animal.getUUID())) unreachable.put(animal.getUUID(), timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
         } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
             walk(body);
@@ -152,6 +153,7 @@ public class TendHerd extends Behavior<Villager> {
         windUp = 0;
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         Tools.wear(level, body);
+        targetSince = timestamp;
         int landed = swingsLanded.merge(animal.getUUID(), 1, Integer::sum);
         if (landed < Butchering.swings(animal.getHealth(), Butchering.attackDamage(axe))) return;
         swingsLanded.remove(animal.getUUID());
@@ -302,7 +304,7 @@ public class TendHerd extends Behavior<Villager> {
     }
 
     private boolean inReach(Villager body) {
-        if (animal != null) return body.distanceTo(animal) <= REACH;
+        if (animal != null) return body.distanceTo(animal) <= (task == Task.CULL ? MELEE_REACH : REACH);
         return body.distanceToSqr(Vec3.atBottomCenterOf(block)) <= REACH * REACH && Math.abs(block.getY() - body.getY()) <= 1.5;
     }
 

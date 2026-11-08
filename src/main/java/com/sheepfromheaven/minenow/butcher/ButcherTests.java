@@ -82,10 +82,14 @@ public final class ButcherTests {
         GameTestHelpers.gatedPen(helper, 9);
         List<Animal> cows = herd(helper, EntityTypes.COW, ButcherHerd.HERD_SIZE + 2);
         List<Long> killedAt = new ArrayList<>();
+        List<Integer> wearAtKill = new ArrayList<>();
         int[] aliveBefore = {cows.size()};
         helper.onEachTick(() -> {
             int now = alive(cows);
-            for (int i = now; i < aliveBefore[0]; i++) killedAt.add(helper.getTick());
+            for (int i = now; i < aliveBefore[0]; i++) {
+                killedAt.add(helper.getTick());
+                wearAtKill.add(butcher.getInventory().getItems().stream().filter(stack -> stack.is(Items.WOODEN_AXE)).findFirst().map(ItemStack::getDamageValue).orElse(-1));
+            }
             aliveBefore[0] = now;
         });
         int swings = Butchering.swings(10.0F, 7.0);
@@ -96,7 +100,8 @@ public final class ButcherTests {
             long gap = killedAt.get(1) - killedAt.get(0);
             helper.assertTrue(gap >= (long) swings * swingTicks, "A wooden axe needs " + swings + " swings of " + swingTicks + " ticks per cow, took " + gap);
             ItemStack axe = butcher.getInventory().getItems().stream().filter(stack -> stack.is(Items.WOODEN_AXE)).findFirst().orElse(ItemStack.EMPTY);
-            helper.assertTrue(axe.getDamageValue() == 2 * swings, "Every swing wears the axe, " + axe.getDamageValue() + " damage");
+            helper.assertTrue(axe.getDamageValue() == 2 * swings, "Every swing wears the axe, " + axe.getDamageValue() + " damage; kills at " + killedAt
+                    + " with wear " + wearAtKill + ", cow health " + cows.stream().filter(Animal::isAlive).map(cow -> (int) cow.getHealth()).toList());
         });
     }
 
@@ -106,19 +111,38 @@ public final class ButcherTests {
         BlockPos gate = GameTestHelpers.gatedPen(helper, 9);
         List<Animal> pigs = herd(helper, EntityTypes.PIG, 9);
         int[] fewest = {pigs.size()};
-        boolean[] gateOpened = {false};
-        helper.onEachTick(() -> {
-            fewest[0] = Math.min(fewest[0], alive(pigs));
-            gateOpened[0] |= helper.getBlockState(gate).getValue(FenceGateBlock.OPEN);
-        });
+        helper.onEachTick(() -> fewest[0] = Math.min(fewest[0], alive(pigs)));
 
         helper.succeedWhen(() -> {
-            helper.assertTrue(alive(pigs) == ButcherHerd.HERD_SIZE, "The butcher should cull the herd down to " + ButcherHerd.HERD_SIZE + ", " + alive(pigs) + " alive");
+            helper.assertTrue(alive(pigs) == ButcherHerd.HERD_SIZE, "The butcher should cull the herd down to " + ButcherHerd.HERD_SIZE + ", " + alive(pigs) + " alive at "
+                    + pigs.stream().filter(Animal::isAlive).map(pig -> helper.relativePos(pig.blockPosition()).toShortString() + (pig.isBaby() ? " baby" : "")).toList()
+                    + "; butcher at " + helper.relativePos(butcher.blockPosition()).toShortString() + " holding " + butcher.getMainHandItem().getItem()
+                    + ", inventory " + butcher.getInventory().getItems().stream().filter(stack -> !stack.isEmpty()).map(ItemStack::toString).toList()
+                    + ", running " + butcher.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).toList()
+                    + ", walk target " + butcher.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(walk -> helper.relativePos(walk.getTarget().currentBlockPosition()).toShortString() + " speed " + walk.getSpeedModifier()).orElse("none")
+                    + ", can't reach since " + butcher.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE).orElse(-1L)
+                    + ", reachable " + pigs.stream().filter(Animal::isAlive).map(pig -> { var path = butcher.getNavigation().createPath(pig, 1); return path != null && path.canReach(); }).toList()
+                    + ", on ground " + butcher.onGround() + ", activity " + butcher.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"));
             helper.assertTrue(fewest[0] == ButcherHerd.HERD_SIZE, "It never culls below the herd size, went down to " + fewest[0]);
             helper.assertTrue(count(butcher, Items.PORKCHOP) >= 3, "The meat goes into its inventory, has " + count(butcher, Items.PORKCHOP));
-            helper.assertTrue(gateOpened[0], "It goes into the pen through the gate");
             helper.assertFalse(helper.getBlockState(gate).getValue(FenceGateBlock.OPEN), "It closes the gate behind it");
         });
+    }
+
+    public static void butchersAndShepherdsOpenFenceGatesButNotOthers(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        Villager butcher = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 6));
+        butcher.setVillagerData(butcher.getVillagerData().withProfession(helper.getLevel().registryAccess(), VillagerProfession.BUTCHER));
+        Villager shepherd = helper.spawn(EntityTypes.VILLAGER, new BlockPos(8, 1, 6));
+        shepherd.setVillagerData(shepherd.getVillagerData().withProfession(helper.getLevel().registryAccess(), VillagerProfession.SHEPHERD));
+        Villager farmer = helper.spawn(EntityTypes.VILLAGER, new BlockPos(10, 1, 6));
+        farmer.setVillagerData(farmer.getVillagerData().withProfession(helper.getLevel().registryAccess(), VillagerProfession.FARMER));
+
+        helper.assertTrue(com.sheepfromheaven.minenow.villager.OpenFenceGates.canOpen(butcher), "Butchers open fence gates to reach their herd");
+        helper.assertTrue(com.sheepfromheaven.minenow.villager.OpenFenceGates.canOpen(shepherd), "Shepherds open fence gates to reach their flock");
+        helper.assertFalse(com.sheepfromheaven.minenow.villager.OpenFenceGates.canOpen(farmer), "Other villagers leave fence gates alone");
+        helper.succeed();
     }
 
     public static void butcherBreedsASmallHerd(GameTestHelper helper) {

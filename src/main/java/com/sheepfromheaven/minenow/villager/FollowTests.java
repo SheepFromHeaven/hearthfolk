@@ -39,15 +39,18 @@ public final class FollowTests {
     }
 
     public static void employedVillagerIgnoresTheEmerald(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(VILLAGER.west(2), Blocks.COMPOSTER);
         Villager farmer = GameTestHelpers.spawnEmployed(helper, VILLAGER, VILLAGER.west(2), VillagerProfession.FARMER, PoiTypes.FARMER);
         ServerPlayer player = playerHolding(helper, Items.EMERALD);
-        int[] close = {0};
-        helper.onEachTick(() -> { if (farmer.distanceTo(player) < 3.0F) close[0]++; });
+        boolean[] followed = {false};
+        helper.onEachTick(() -> followed[0] |= farmer.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET)
+                .filter(walk -> walk.getTarget() instanceof net.minecraft.world.entity.ai.behavior.EntityTracker tracker && tracker.getEntity() == player)
+                .isPresent());
 
         helper.runAfterDelay(200, () -> {
-            helper.assertTrue(close[0] == 0, "A villager with a job should not follow the emerald");
+            helper.assertFalse(followed[0], "A villager with a job should not follow the emerald");
             helper.succeed();
         });
     }
