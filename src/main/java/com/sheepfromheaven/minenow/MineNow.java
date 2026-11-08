@@ -5,6 +5,8 @@ import com.sheepfromheaven.minenow.farmer.FarmerReport;
 import com.sheepfromheaven.minenow.farmer.FarmerRules;
 import com.sheepfromheaven.minenow.farmer.FarmerTests;
 import com.sheepfromheaven.minenow.fisherman.FishermanEntities;
+import com.sheepfromheaven.minenow.miner.Miner;
+import com.sheepfromheaven.minenow.miner.MinerTests;
 import com.sheepfromheaven.minenow.fisherman.FishermanTests;
 import com.sheepfromheaven.minenow.butcher.ButcherDrops;
 import com.sheepfromheaven.minenow.butcher.ButcherTests;
@@ -45,6 +47,7 @@ public final class MineNow {
     public MineNow(IEventBus modBus) {
         ModVillagers.register(modBus);
         FishermanEntities.register(modBus);
+        Miner.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onServerTick);
@@ -137,6 +140,10 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "toolsmith_keeps_one_of_each_tool_in_stock", ToolsmithTests::toolsmithKeepsOneOfEachToolInStock);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_sells_its_tools_to_players", ToolsmithTests::toolsmithSellsItsToolsToPlayers);
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
+            test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
+            test(helper, TestGroup.MINER, "miner_without_a_pickaxe_offers_to_buy_one", MinerTests::minerWithoutAPickaxeOffersToBuyOne);
+            test(helper, TestGroup.MINER, "miner_digs_its_quarry_layer_by_layer", MinerTests::minerDigsItsQuarryLayerByLayer);
+            test(helper, TestGroup.MINER, "miner_leaves_ore_its_pickaxe_cannot_harvest", MinerTests::minerLeavesOreItsPickaxeCannotHarvest);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);
