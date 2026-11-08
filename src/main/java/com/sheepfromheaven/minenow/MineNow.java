@@ -162,6 +162,7 @@ public final class MineNow {
             test(helper, TestGroup.ROADS, "villager_still_jumps_down_when_there_is_no_other_way", RoadTests::villagerStillJumpsDownWhenThereIsNoOtherWay);
             test(helper, TestGroup.MINER, "miner_leaves_out_torches_where_your_light_is_enough", MinerTests::minerLeavesOutTorchesWhereYourLightIsEnough);
             test(helper, TestGroup.MINER, "a_redstone_signal_stops_the_miner_at_that_many_platforms", MinerTests::aRedstoneSignalStopsTheMinerAtThatManyPlatforms);
+            test(helper, TestGroup.MINER, "a_redstone_signal_cannot_take_the_miner_past_its_levels_depth", MinerTests::aRedstoneSignalCannotTakeTheMinerPastItsLevelsDepth);
             test(helper, TestGroup.MINER, "miner_seals_lava_it_uncovers", MinerTests::minerSealsLavaItUncovers);
             test(helper, TestGroup.MINER, "miner_walls_off_a_cave", MinerTests::minerWallsOffACave);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);

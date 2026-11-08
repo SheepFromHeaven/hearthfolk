@@ -492,6 +492,43 @@ public final class MinerTests {
         });
     }
 
+    /** A novice's shaft already dug to its 8 layers below the cart, with the strongest redstone signal into the cart: it still goes no deeper. */
+    public static void aRedstoneSignalCannotTakeTheMinerPastItsLevelsDepth(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.IRON_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 16));
+        for (int x = 4; x <= 12; x++) {
+            for (int z = 8; z <= 16; z++) {
+                for (int y = -6; y <= 0; y++) helper.setBlock(x, y, z, Blocks.STONE);
+            }
+        }
+        for (int x = 7; x <= 9; x++) {
+            for (int z = 11; z <= 13; z++) {
+                for (int y = -4; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        helper.setBlock(FURNACE.north(), Blocks.REDSTONE_BLOCK);
+
+        helper.runAfterDelay(1200, () -> {
+            int signal = helper.getLevel().getBestNeighborSignal(helper.absolutePos(FURNACE));
+            helper.assertTrue(signal == 15, "The test powers the cart with strength 15, got " + signal);
+            helper.assertTrue(ladderCellsDown(helper, -4) >= 8, "The miner ladders its shaft down to its depth, " + ladderCellsDown(helper, -4) + " of 8");
+            helper.assertTrue(openCells(helper, 7, 9, 11, 13, -5, -5) == 0, "A novice digs no deeper than 8 below its cart, whatever the signal, " + openCells(helper, 7, 9, 11, 13, -5, -5) + " dug");
+            helper.succeed();
+        });
+    }
+
+    private static int ladderCellsDown(GameTestHelper helper, int bottom) {
+        int ladders = 0;
+        for (int y = bottom; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) if (helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.LADDER)) ladders++;
+            }
+        }
+        return ladders;
+    }
+
     private static boolean open(GameTestHelper helper, BlockPos pos) {
         var state = helper.getBlockState(pos);
         return state.isAir() || state.is(Blocks.LADDER) || state.is(Blocks.WALL_TORCH);
