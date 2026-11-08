@@ -12,7 +12,9 @@ import net.minecraft.core.BlockPos;
 
 /**
  * Vanilla ground navigation where each step costs extra by road tier ({@link Roads#stepCost}), so villagers keep to the
- * streets players build. Vanilla's PathFinder weights its distance estimate by 1.5, so the open-ground cost must stay
+ * streets players build, and landing from a jump costs more the higher the fall ({@link #dropCost}), so villagers
+ * take stairs, ramps and ladders down when there are any. The cost sits on the landing node (a node can't tell which
+ * neighbour it was entered from), taken once rather than added up per neighbour. Vanilla's PathFinder weights its distance estimate by 1.5, so the open-ground cost must stay
  * well above 0.5 or that greed cancels it out and detours are never explored.
  */
 public class RoadNavigation extends GroundPathNavigation {
@@ -30,6 +32,11 @@ public class RoadNavigation extends GroundPathNavigation {
         return new PathFinder(this.nodeEvaluator, Math.max(maxVisitedNodes, MIN_VISITED_NODES));
     }
 
+    /** Jumping down costs more the higher the fall, so villagers take stairs, ramps and ladders down when there are any. */
+    static float dropCost(int drop) {
+        return drop < 2 ? 0.0F : 8.0F * (float) Math.pow(4.0, drop - 2);
+    }
+
     private static class RoadNodeEvaluator extends WalkNodeEvaluator {
         @Override
         public PathType getPathType(PathfindingContext context, int x, int y, int z) {
@@ -45,7 +52,7 @@ public class RoadNavigation extends GroundPathNavigation {
             for (int i = 0; i < count; i++) {
                 Node node = neighbors[i];
                 if (node.costMalus >= 0.0F) {
-                    node.costMalus = Math.max(node.costMalus, Roads.stepCost(this.currentContext.level(), node.asBlockPos()));
+                    node.costMalus = Math.max(node.costMalus, Roads.stepCost(this.currentContext.level(), node.asBlockPos()) + dropCost(pos.y - node.y));
                 }
             }
             return count;

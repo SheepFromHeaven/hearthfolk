@@ -106,4 +106,45 @@ public final class RoadTests {
         }
         return out.toString();
     }
+
+    public static void villagerTakesTheStairsRatherThanJumpingOffALedge(GameTestHelper helper) {
+        Villager villager = onALedge(helper, true);
+        helper.runAfterDelay(20, () -> {
+            Path path = villager.getNavigation().createPath(helper.absolutePos(new BlockPos(12, 1, 10)), 0);
+            helper.assertTrue(path != null && path.canReach(), "The villager should find a way down");
+            helper.assertTrue(biggestDrop(path) <= 1, "It walks down the stairs instead of jumping 3 blocks: " + describe(helper, path));
+            helper.succeed();
+        });
+    }
+
+    public static void villagerStillJumpsDownWhenThereIsNoOtherWay(GameTestHelper helper) {
+        Villager villager = onALedge(helper, false);
+        helper.runAfterDelay(20, () -> {
+            Path path = villager.getNavigation().createPath(helper.absolutePos(new BlockPos(12, 1, 10)), 0);
+            helper.assertTrue(path != null && path.canReach(), "Without stairs a short jump is still allowed: " + (path == null ? "no path" : describe(helper, path)));
+            helper.succeed();
+        });
+    }
+
+    /** A 3-high stone platform (walked on at y 4) with its east edge at x 10, and optionally a staircase down at its far corner. */
+    private static Villager onALedge(GameTestHelper helper, boolean stairs) {
+        GameTestHelpers.fence(helper);
+        for (int x = 4; x <= 10; x++) {
+            for (int z = 4; z <= 18; z++) {
+                for (int y = 1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.STONE);
+            }
+        }
+        if (stairs) {
+            helper.setBlock(11, 1, 18, Blocks.STONE);
+            helper.setBlock(11, 2, 18, Blocks.STONE);
+            helper.setBlock(12, 1, 18, Blocks.STONE);
+        }
+        return helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(6, 4, 10));
+    }
+
+    private static int biggestDrop(Path path) {
+        int biggest = 0;
+        for (int i = 1; i < path.getNodeCount(); i++) biggest = Math.max(biggest, path.getNode(i - 1).y - path.getNode(i).y);
+        return biggest;
+    }
 }

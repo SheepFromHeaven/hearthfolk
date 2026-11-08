@@ -54,29 +54,32 @@ final class MineLayout {
 
     /** The tunnels at a platform as lines running outwards from the shaft wall, nearest cell first. */
     List<List<BlockPos>> tunnelLines(int platform, int length) {
-        List<List<BlockPos>> lines = new ArrayList<>();
+        return tunnelsByDirection(platform, length).stream().flatMap(List::stream).toList();
+    }
+
+    /** The tunnels at a platform, one entry per direction (east, west, north, south), each as its lines running outwards. */
+    List<List<List<BlockPos>>> tunnelsByDirection(int platform, int length) {
         int midX = (minX + maxX) / 2;
         int midZ = (minZ + maxZ) / 2;
+        List<List<List<BlockPos>>> directions = new ArrayList<>();
+        if (maxZ - minZ + 1 >= MIN_SIDE) {
+            directions.add(lines(platform, length, (out, across) -> new BlockPos(maxX + out, 0, midZ + across)));
+            directions.add(lines(platform, length, (out, across) -> new BlockPos(minX - out, 0, midZ + across)));
+        }
+        if (maxX - minX + 1 >= MIN_SIDE) {
+            directions.add(lines(platform, length, (out, across) -> new BlockPos(midX + across, 0, minZ - out)));
+            directions.add(lines(platform, length, (out, across) -> new BlockPos(midX + across, 0, maxZ + out)));
+        }
+        return directions;
+    }
+
+    private static List<List<BlockPos>> lines(int platform, int length, java.util.function.BiFunction<Integer, Integer, BlockPos> cell) {
+        List<List<BlockPos>> lines = new ArrayList<>();
         for (int y = platform + 1; y <= platform + TUNNEL_HEIGHT; y++) {
             for (int across = -1; across <= 1; across++) {
-                List<BlockPos> east = new ArrayList<>();
-                List<BlockPos> west = new ArrayList<>();
-                List<BlockPos> north = new ArrayList<>();
-                List<BlockPos> south = new ArrayList<>();
-                for (int out = 1; out <= length; out++) {
-                    east.add(new BlockPos(maxX + out, y, midZ + across));
-                    west.add(new BlockPos(minX - out, y, midZ + across));
-                    north.add(new BlockPos(midX + across, y, minZ - out));
-                    south.add(new BlockPos(midX + across, y, maxZ + out));
-                }
-                if (maxZ - minZ + 1 >= MIN_SIDE) {
-                    lines.add(east);
-                    lines.add(west);
-                }
-                if (maxX - minX + 1 >= MIN_SIDE) {
-                    lines.add(north);
-                    lines.add(south);
-                }
+                List<BlockPos> line = new ArrayList<>();
+                for (int out = 1; out <= length; out++) line.add(cell.apply(out, across).atY(y));
+                lines.add(line);
             }
         }
         return lines;

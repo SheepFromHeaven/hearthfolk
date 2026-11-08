@@ -22,7 +22,9 @@ import java.util.Set;
  * A miner's quarry starts as the pit the player dug next to its furnace minecart: the open cells one block below the
  * cart that touch a side of the block under it, and all open cells connected to them at that level, within
  * {@link #RANGE} blocks. Below that outline the miner digs the mine laid out by {@link MineLayout}: the shaft layer by
- * layer, platforms every five layers, and tunnels off each platform, down to {@link MinerSkill#depth} under the cart.
+ * layer down to a platform, then the platform's ladder hole, its tunnels one direction after another, its middle, and on
+ * down, to {@link MinerSkill#depth} under the cart. The two layers right under a platform are dug together, column by
+ * column, since one layer alone would leave only a one-block crawl space under the ring.
  */
 final class Quarry {
     static final int RANGE = 8;
@@ -109,8 +111,9 @@ final class Quarry {
         return pos.getY();
     }
 
+    /** Whether {@code pos} is in the shaft, the marked layer included. */
     boolean isShaft(BlockPos pos) {
-        return pos.getY() < top && outline.contains(pos.atY(top));
+        return pos.getY() <= top && outline.contains(pos.atY(top));
     }
 
     /** Whether {@code pos} is down in the mine: in the shaft below the marked layer or in a tunnel. */
@@ -129,19 +132,65 @@ final class Quarry {
                 BlockPos pos = column.atY(y);
                 if (layout.digs(pos) && diggable(level, pos, pickaxe)) layer.add(pos);
             }
-            if (!layer.isEmpty()) return layer;
-            if (!layout.isPlatform(y)) continue;
-            List<BlockPos> tunnels = new ArrayList<>();
-            for (List<BlockPos> line : layout.tunnelLines(y, tunnelLength)) {
-                for (BlockPos pos : line) {
-                    if (open(level, pos)) continue;
-                    if (!diggable(level, pos, pickaxe)) break;
-                    tunnels.add(pos);
+            if (!layout.isPlatform(y)) {
+                if (layout.isPlatform(y + 1) && y - 1 >= Math.max(bottom, level.getMinY() + 1)) {
+                    for (BlockPos column : outline) {
+                        BlockPos below = column.atY(y - 1);
+                        if (layout.digs(below) && diggable(level, below, pickaxe)) layer.add(below);
+                    }
                 }
+                if (!layer.isEmpty()) return layer;
+                continue;
             }
-            if (!tunnels.isEmpty()) return tunnels;
+            if (ladder != null && layer.contains(ladder.at(y))) return List.of(ladder.at(y));
+            for (List<List<BlockPos>> direction : layout.tunnelsByDirection(y, tunnelLength)) {
+                List<BlockPos> tunnel = new ArrayList<>();
+                for (List<BlockPos> line : direction) {
+                    for (BlockPos pos : line) {
+                        if (open(level, pos)) continue;
+                        if (!diggable(level, pos, pickaxe)) break;
+                        tunnel.add(pos);
+                    }
+                }
+                if (!tunnel.isEmpty()) return tunnel;
+            }
+            if (!layer.isEmpty()) return layer;
         }
         return List.of();
+    }
+
+    /**
+     * The spots at feet level {@code feetY} the miner can stand on once it is there on its ladder: a flood from the
+     * ladder column through every open, two-high cell of the mine with a floor under it (the ladder cell only where it has one).
+     */
+    Set<BlockPos> reachable(ServerLevel level, int feetY) {
+        Set<BlockPos> spots = new HashSet<>();
+        if (ladder == null) return spots;
+        BlockPos start = ladder.at(feetY);
+        if (!open(level, start) || !open(level, start.above())) return spots;
+        Set<BlockPos> seen = new HashSet<>();
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        queue.add(start);
+        seen.add(start);
+        if (floored(level, start)) spots.add(start);
+        while (!queue.isEmpty()) {
+            BlockPos pos = queue.poll();
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                BlockPos next = pos.relative(side);
+                if (!seen.add(next) || !contains(next) || !open(level, next) || !open(level, next.above()) || !floored(level, next)) continue;
+                spots.add(next);
+                queue.add(next);
+            }
+        }
+        return spots;
+    }
+
+    /** Whether getting between these feet levels means passing a platform (from on top of it to below it), so on the ladder. */
+    boolean platformBetween(int fromFeet, int toFeet) {
+        for (int y = Math.min(fromFeet, toFeet) + 1; y < Math.max(fromFeet, toFeet); y++) {
+            if (layout.isPlatform(y)) return true;
+        }
+        return false;
     }
 
     /** The highest open cell of the ladder column that has no ladder yet, from the marked layer down to where digging reached. */
@@ -179,6 +228,10 @@ final class Quarry {
             }
         }
         return spots;
+    }
+
+    private static boolean floored(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP);
     }
 
     private static boolean open(ServerLevel level, BlockPos pos) {

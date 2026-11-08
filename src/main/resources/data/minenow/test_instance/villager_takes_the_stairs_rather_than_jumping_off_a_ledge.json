@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:villager_takes_the_stairs_rather_than_jumping_off_a_ledge",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

@@ -11,11 +11,15 @@ import java.util.Optional;
 
 /**
  * Vanilla pathfinding never plans a route up or down a ladder, so a miner uses its ladder the way a player would: it
- * walks to the column (from the surface, to the exit beside its top), climbs by holding jump against the wall or slides
- * down, and steps off at the level it wants.
+ * walks to the column (from the surface, to the exit beside its top) and steps onto it itself, since a ladder cell
+ * over a hole is no place a path can end; then climbs by holding jump against the wall or slides down, and steps off at
+ * the level it wants. On the column it holds itself there and moves at ladder speed, since vanilla only lifts a mob
+ * that keeps pushing into the wall while jumping, and a villager drifts off the ladder doing that.
  */
 final class LadderClimb {
     private static final double CENTERED = 0.45;
+    private static final double CLIMB_SPEED = 0.2;
+    private static final double STEP_SPEED = 0.15;
 
     private LadderClimb() {}
 
@@ -46,7 +50,8 @@ final class LadderClimb {
             if (body.getBlockY() == standY && body.onGround()) return true;
             boolean onSurface = !quarry.contains(body.blockPosition());
             BlockPos approach = onSurface ? exit(ladder) : column.atY(body.getBlockY());
-            if (onSurface && Math.abs(body.getX() - (approach.getX() + 0.5)) <= 0.6 && Math.abs(body.getZ() - (approach.getZ() + 0.5)) <= 0.6) {
+            boolean besideColumn = !onSurface && Math.abs(body.getX() - x) <= 1.6 && Math.abs(body.getZ() - z) <= 1.6;
+            if (besideColumn || (onSurface && Math.abs(body.getX() - (approach.getX() + 0.5)) <= 0.6 && Math.abs(body.getZ() - (approach.getZ() + 0.5)) <= 0.6)) {
                 body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                 body.getNavigation().stop();
                 body.getMoveControl().setWantedPosition(x, body.getY(), z, 0.5);
@@ -58,15 +63,47 @@ final class LadderClimb {
         body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         body.getNavigation().stop();
         if (body.getY() < standY - 0.05) {
-            BlockPos wall = column.relative(ladder.facing().getOpposite()).atY(body.getBlockY());
-            body.getMoveControl().setWantedPosition(wall.getX() + 0.5, standY, wall.getZ() + 0.5, 0.6);
-            body.getJumpControl().jump();
-        } else if (body.getBlockY() > standY) {
-            body.getMoveControl().setWantedPosition(x, body.getY(), z, 0.3);
+            hold(body, x, z, CLIMB_SPEED);
+        } else if (body.getY() > standY + 0.05) {
+            hold(body, x, z, -Math.min(CLIMB_SPEED, body.getY() - standY));
         } else {
-            body.getMoveControl().setWantedPosition(stepTo.getX() + 0.5, standY, stepTo.getZ() + 0.5, 0.6);
+            BlockPos off = stepOff(body, column.atY(standY), stepTo);
+            body.getMoveControl().setWantedPosition(off.getX() + 0.5, standY, off.getZ() + 0.5, 0.6);
+            double dx = off.getX() + 0.5 - body.getX();
+            double dz = off.getZ() + 0.5 - body.getZ();
+            double length = Math.max(1.0E-4, Math.sqrt(dx * dx + dz * dz));
+            double lift = body.getY() < standY - 0.01 ? 0.1 : 0.0;
+            body.setDeltaMovement(dx / length * STEP_SPEED, Math.max(body.getDeltaMovement().y, lift), dz / length * STEP_SPEED);
+            body.resetFallDistance();
         }
         return false;
+    }
+
+    /** The floored, two-high cell beside the ladder at this level that is closest to where the villager is headed; it walks on from there. */
+    private static BlockPos stepOff(Villager body, BlockPos ladderCell, BlockPos headedFor) {
+        BlockPos best = headedFor;
+        double bestDistance = Double.MAX_VALUE;
+        for (net.minecraft.core.Direction side : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+            BlockPos next = ladderCell.relative(side);
+            var level = body.level();
+            boolean standable = level.getBlockState(next).getCollisionShape(level, next).isEmpty()
+                    && level.getBlockState(next.above()).getCollisionShape(level, next.above()).isEmpty()
+                    && level.getBlockState(next.below()).isFaceSturdy(level, next.below(), net.minecraft.core.Direction.UP);
+            if (!standable) continue;
+            double distance = next.distSqr(headedFor);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = next;
+            }
+        }
+        return best;
+    }
+
+    /** Keeps the villager centred on the ladder and moves it up or down at ladder speed, instead of trusting vanilla's push-and-jump climbing. */
+    private static void hold(Villager body, double x, double z, double vertical) {
+        body.getMoveControl().setWantedPosition(x, body.getY(), z, 0.0);
+        body.setDeltaMovement((x - body.getX()) * 0.5, vertical, (z - body.getZ()) * 0.5);
+        body.resetFallDistance();
     }
 
     /** The surface spot beside the ladder's top, on the wall it hangs on. */

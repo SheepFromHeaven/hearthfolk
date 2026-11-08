@@ -328,14 +328,25 @@ public final class MinerTests {
         boolean[] dugBelowBeforeTunnels = {false};
         List<String> trail = new ArrayList<>();
         helper.onEachTick(() -> {
-            if (helper.getTick() % 100 == 0 && openTunnelCells(helper) >= 100 && trail.size() < 30) {
-                trail.add(helper.getTick() + ":" + helper.relativePos(miner.blockPosition()).toShortString() + "/"
+            if (helper.getTick() % 400 == 0) {
+                trail.add(helper.getTick() + " t" + openTunnelCells(helper) + " c" + openCells(helper, 9, 11, 11, 13, -2, -2) + " b" + openCells(helper, 7, 13, 9, 15, -4, -3) + " " + helper.relativePos(miner.blockPosition()).toShortString() + "/"
                         + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.LOOK_TARGET).map(t -> helper.relativePos(t.currentBlockPosition()).toShortString()).orElse("-")
-                        + (miner.getBrain().getRunningBehaviors().stream().anyMatch(b -> b instanceof DigQuarry) ? "D" : ""));
+                        + (miner.getBrain().getRunningBehaviors().stream().anyMatch(b -> b instanceof DigQuarry) ? "D" : "")
+                        + " w" + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> helper.relativePos(w.getTarget().currentBlockPosition()).toShortString()).orElse("-")
+                        + " p" + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.PATH).map(path -> path.getNodeCount() + "/" + path.canReach() + "/" + helper.relativePos(path.getEndNode().asBlockPos()).toShortString()).orElse("-"));
             }
         });
+        boolean[] twoTunnelsAtOnce = {false};
+        boolean[] centerBeforeTunnels = {false};
         helper.onEachTick(() -> {
             if (openCells(helper, 7, 13, 9, 15, -3, -3) > 1 && openTunnelCells(helper) < 4 * 27) dugBelowBeforeTunnels[0] = true;
+            if (openCells(helper, 9, 11, 11, 13, -2, -2) > 0 && openTunnelCells(helper) < 4 * 27) centerBeforeTunnels[0] = true;
+            int partial = 0;
+            for (int[] box : new int[][] {{14, 16, 11, 13}, {4, 6, 11, 13}, {9, 11, 6, 8}, {9, 11, 16, 18}}) {
+                int dug = openCells(helper, box[0], box[1], box[2], box[3], -1, 1);
+                if (dug > 0 && dug < 27) partial++;
+            }
+            if (partial > 1) twoTunnelsAtOnce[0] = true;
         });
 
         helper.succeedWhen(() -> {
@@ -357,7 +368,7 @@ public final class MinerTests {
             helper.assertTrue(openCells(helper, 9, 11, 11, 13, -2, -2) == 9, "The platform's middle 3x3 is opened, " + openCells(helper, 9, 11, 11, 13, -2, -2) + " of 9; miner at "
                     + helper.relativePos(miner.blockPosition()).toShortString() + ", ladders " + ladders + ", running " + miner.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()
                     + ", walk " + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> helper.relativePos(w.getTarget().currentBlockPosition()).toShortString()).orElse("-")
-                    + ", ladders held " + count(miner, Items.LADDER) + ", activity " + miner.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"));
+                    + ", ladders held " + count(miner, Items.LADDER) + ", activity " + miner.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-") + ", trail " + trail.subList(0, Math.min(14, trail.size())));
             List<String> missing = new ArrayList<>();
             for (int[] box : new int[][] {{14, 16, 11, 13}, {4, 6, 11, 13}, {9, 11, 6, 8}, {9, 11, 16, 18}}) {
                 for (int x = box[0]; x <= box[1]; x++) {
@@ -372,9 +383,17 @@ public final class MinerTests {
                     + ", walk " + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> helper.relativePos(w.getTarget().currentBlockPosition()).toShortString()).orElse("-")
                     + ", running " + miner.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()
                     + "; trail " + trail.subList(0, Math.min(8, trail.size())));
-            helper.assertTrue(openCells(helper, 7, 13, 9, 15, -4, -3) == 98, "The 7x7 shaft continues below the platform, " + openCells(helper, 7, 13, 9, 15, -4, -3) + " of 98");
+            helper.assertTrue(openCells(helper, 7, 13, 9, 15, -4, -3) == 98, "The 7x7 shaft continues below the platform, " + openCells(helper, 7, 13, 9, 15, -4, -3) + " of 98"
+                    + " (" + openCells(helper, 7, 13, 9, 15, -3, -3) + " upper, " + openCells(helper, 7, 13, 9, 15, -4, -4) + " lower); miner at " + helper.relativePos(miner.blockPosition()).toShortString()
+                    + " ground " + miner.onGround() + " climbing " + miner.onClimbable()
+                    + " looking at " + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.LOOK_TARGET).map(t -> helper.relativePos(t.currentBlockPosition()).toShortString()).orElse("-")
+                    + ", walk " + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> helper.relativePos(w.getTarget().currentBlockPosition()).toShortString()).orElse("-")
+                    + ", running " + miner.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()
+                    + ", origin " + helper.absolutePos(BlockPos.ZERO).toShortString() + ", trail " + trail.subList(0, Math.min(10, trail.size())));
             helper.assertTrue(ringKept == ring - 1, "The platform keeps its 2-block ring except the ladder hole, " + ringKept + " of " + ring + " kept");
             helper.assertFalse(dugBelowBeforeTunnels[0], "It digs a platform's tunnels before going deeper");
+            helper.assertFalse(twoTunnelsAtOnce[0], "It finishes one tunnel before starting the next");
+            helper.assertFalse(centerBeforeTunnels[0], "It opens the platform's middle only after all four tunnels");
         });
     }
 
