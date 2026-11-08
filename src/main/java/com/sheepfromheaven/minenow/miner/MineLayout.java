@@ -37,6 +37,11 @@ final class MineLayout {
         this.maxZ = outline.stream().mapToInt(BlockPos::getZ).max().orElse(0);
     }
 
+    /** The deepest platform a redstone signal of {@code strength} into the cart allows (one per strength), or no limit without one. */
+    static int deepestPlatform(int top, int strength) {
+        return strength <= 0 ? Integer.MIN_VALUE : top - PLATFORM_EVERY * strength;
+    }
+
     boolean isPlatform(int y) {
         return y < top && (top - y) % PLATFORM_EVERY == 0;
     }

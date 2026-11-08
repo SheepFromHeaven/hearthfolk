@@ -273,7 +273,8 @@ public class DigQuarry extends Behavior<Villager> {
                 target = null;
             }
         }
-        List<BlockPos> work = quarry.nextWork(level, bottom, pickaxe, tunnels);
+        int deepestPlatform = MineLayout.deepestPlatform(quarry.top(), level.getBestNeighborSignal(furnace.get()));
+        List<BlockPos> work = quarry.nextWork(level, bottom, pickaxe, tunnels, deepestPlatform);
         if (work.isEmpty()) return false;
         Optional<BlockPos> column = work.stream().filter(pos -> pos.equals(ladder.at(pos.getY()))).max(Comparator.comparingInt(BlockPos::getY));
         if (column.isPresent() && !carriesLadder(body)) return false;

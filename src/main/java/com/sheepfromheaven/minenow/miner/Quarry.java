@@ -23,7 +23,8 @@ import java.util.Set;
  * cart that touch a side of the block under it, and all open cells connected to them at that level, within
  * {@link #RANGE} blocks. Below that outline the miner digs the mine laid out by {@link MineLayout}: the shaft layer by
  * layer down to a platform, then the platform's ladder hole, its tunnels one direction after another, its middle, and on
- * down, to {@link MinerSkill#depth} under the cart. The two layers right under a platform are dug together, column by
+ * down, to {@link MinerSkill#depth} under the cart, or to the platform a redstone signal into the cart allows
+ * ({@link MineLayout#deepestPlatform}: there only its tunnels, not its middle). The two layers right under a platform are dug together, column by
  * column, since one layer alone would leave only a one-block crawl space under the ring.
  */
 final class Quarry {
@@ -125,8 +126,8 @@ final class Quarry {
      * The next work, top-down: the highest shaft layer with something the pickaxe can dig, or, once a platform is open,
      * its tunnels (each tunnel line up to the first block that can't be dug). Nothing once the mine is done.
      */
-    List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength) {
-        for (int y = top - 1; y >= Math.max(bottom, level.getMinY() + 1); y--) {
+    List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength, int deepestPlatform) {
+        for (int y = top - 1; y >= Math.max(Math.max(bottom, deepestPlatform), level.getMinY() + 1); y--) {
             List<BlockPos> layer = new ArrayList<>();
             for (BlockPos column : outline) {
                 BlockPos pos = column.atY(y);
@@ -142,7 +143,8 @@ final class Quarry {
                 if (!layer.isEmpty()) return layer;
                 continue;
             }
-            if (ladder != null && layer.contains(ladder.at(y))) return List.of(ladder.at(y));
+            boolean lastPlatform = y == deepestPlatform;
+            if (!lastPlatform && ladder != null && layer.contains(ladder.at(y))) return List.of(ladder.at(y));
             for (List<List<BlockPos>> direction : layout.tunnelsByDirection(y, tunnelLength)) {
                 List<BlockPos> tunnel = new ArrayList<>();
                 for (List<BlockPos> line : direction) {
@@ -154,6 +156,7 @@ final class Quarry {
                 }
                 if (!tunnel.isEmpty()) return tunnel;
             }
+            if (lastPlatform) return List.of();
             if (!layer.isEmpty()) return layer;
         }
         return List.of();

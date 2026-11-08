@@ -79,4 +79,11 @@ class MineLayoutTest {
         assertTrue(mine.tunnels(-5, 8).isEmpty());
         assertFalse(mine.tunnelWall(new BlockPos(0, 0, 1), net.minecraft.core.Direction.WEST));
     }
+
+    @Test
+    void aRedstoneSignalLimitsHowManyPlatformsDeep() {
+        assertEquals(Integer.MIN_VALUE, MineLayout.deepestPlatform(TOP, 0));
+        assertEquals(TOP - 5, MineLayout.deepestPlatform(TOP, 1));
+        assertEquals(TOP - 15, MineLayout.deepestPlatform(TOP, 3));
+    }
 }

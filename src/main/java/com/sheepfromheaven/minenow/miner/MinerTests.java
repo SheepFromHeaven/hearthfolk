@@ -421,6 +421,45 @@ public final class MinerTests {
         });
     }
 
+    /** The same 7x7 shaft, with a redstone signal of strength 1 into the cart: one platform deep and no further. */
+    public static void aRedstoneSignalStopsTheMinerAtThatManyPlatforms(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.setVillagerData(miner.getVillagerData().withLevel(5));
+        miner.getInventory().addItem(new ItemStack(Items.NETHERITE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 32));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 32));
+        for (int x = 0; x <= 23; x++) {
+            for (int z = 0; z <= 23; z++) {
+                for (int y = -6; y <= 0; y++) helper.setBlock(x, y, z, Blocks.STONE);
+            }
+        }
+        for (int x = 7; x <= 13; x++) {
+            for (int z = 9; z <= 15; z++) {
+                for (int y = -1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        for (int y = -1; y <= 1; y++) {
+            for (int across = -1; across <= 1; across++) {
+                helper.setBlock(17, y, 12 + across, Blocks.BARRIER);
+                helper.setBlock(3, y, 12 + across, Blocks.BARRIER);
+                helper.setBlock(10 + across, y, 5, Blocks.BARRIER);
+                helper.setBlock(10 + across, y, 19, Blocks.BARRIER);
+            }
+        }
+        for (int x = 1; x <= 5; x++) helper.setBlock(x, 4, 22, Blocks.REDSTONE_WIRE);
+        for (int z = 13; z <= 22; z++) helper.setBlock(6, 4, z, Blocks.REDSTONE_WIRE);
+        helper.setBlock(1, 4, 21, Blocks.REDSTONE_BLOCK);
+
+        helper.runAfterDelay(5000, () -> {
+            int signal = helper.getLevel().getBestNeighborSignal(helper.absolutePos(FURNACE));
+            helper.assertTrue(signal == 1, "The test powers the cart with strength 1, got " + signal);
+            helper.assertTrue(openTunnelCells(helper) == 4 * 27, "It still digs the tunnels of the one platform it may reach, " + openTunnelCells(helper) + " of 108");
+            helper.assertTrue(openCells(helper, 9, 11, 11, 13, -2, -2) == 0, "...but doesn't open that platform's middle, " + openCells(helper, 9, 11, 11, 13, -2, -2) + " dug");
+            helper.assertTrue(openCells(helper, 7, 13, 9, 15, -4, -3) <= 1, "...and digs nothing below it, " + openCells(helper, 7, 13, 9, 15, -4, -3) + " dug");
+            helper.succeed();
+        });
+    }
+
     private static boolean open(GameTestHelper helper, BlockPos pos) {
         var state = helper.getBlockState(pos);
         return state.isAir() || state.is(Blocks.LADDER) || state.is(Blocks.WALL_TORCH);

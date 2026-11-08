@@ -19,6 +19,11 @@ class MinerSkillTest {
     }
 
     @Test
+    void aMasterDigsAllTheWayToBedrock() {
+        assertTrue(MinerSkill.depth(5) > 4096);
+    }
+
+    @Test
     void tunnelsRunFurtherWithEveryLevel() {
         assertEquals(8, MinerSkill.tunnelLength(1));
         for (int level = 2; level <= 5; level++) assertTrue(MinerSkill.tunnelLength(level) > MinerSkill.tunnelLength(level - 1));
