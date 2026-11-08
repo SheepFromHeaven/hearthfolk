@@ -155,7 +155,11 @@ public final class ButcherTests {
         helper.succeedWhen(() -> {
             helper.assertTrue(alive(cows) == 2, "A herd of two is breeding stock and never culled");
             var calves = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.cow.Cow.class, helper.getBounds(), Animal::isBaby);
-            helper.assertTrue(!calves.isEmpty(), "The butcher should feed the cows wheat so they breed");
+            helper.assertTrue(!calves.isEmpty(), "The butcher should feed the cows wheat so they breed; cows "
+                    + cows.stream().map(cow -> helper.relativePos(cow.blockPosition()).toShortString() + " age " + cow.getAge() + (cow.isInLove() ? " in love" : "")).toList()
+                    + ", butcher at " + helper.relativePos(butcher.blockPosition()).toShortString() + " with " + count(butcher, Items.WHEAT) + " wheat"
+                    + ", gate open " + helper.getBlockState(new BlockPos(9, 1, 12)).getValue(FenceGateBlock.OPEN)
+                    + ", running " + butcher.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList());
         });
     }
 
