@@ -1,0 +1,4 @@
+{
+  "parent": "minecraft:block/potted_pale_oak_sapling",
+  "render_type": "minecraft:cutout"
+}

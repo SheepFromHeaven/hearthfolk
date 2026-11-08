@@ -1,0 +1,4 @@
+{
+  "parent": "minecraft:block/potted_mangrove_propagule",
+  "render_type": "minecraft:cutout"
+}

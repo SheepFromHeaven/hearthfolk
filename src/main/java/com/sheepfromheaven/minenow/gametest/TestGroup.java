@@ -18,7 +18,8 @@ public enum TestGroup {
     BUTCHER("Butcher", Blocks.WOOL.brown(), Blocks.CONCRETE.brown()),
     VILLAGER_TRADING("Villager trading", Blocks.WOOL.orange(), Blocks.CONCRETE.orange()),
     TOOLSMITH("Toolsmith", Blocks.WOOL.gray(), Blocks.CONCRETE.gray()),
-    MINER("Miner", Blocks.WOOL.black(), Blocks.CONCRETE.black());
+    MINER("Miner", Blocks.WOOL.black(), Blocks.CONCRETE.black()),
+    FORESTER("Forester", Blocks.WOOL.green(), Blocks.CONCRETE.green());
 
     private static final Map<String, TestGroup> BY_TEST = new ConcurrentHashMap<>();
 

@@ -48,8 +48,10 @@ public final class MineNow {
         ModVillagers.register(modBus);
         FishermanEntities.register(modBus);
         Miner.register(modBus);
+        com.sheepfromheaven.minenow.forester.Forester.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onServerTick);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onRegisterCommands);
@@ -146,6 +148,11 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "toolsmith_charges_for_materials_and_labor", ToolsmithTests::toolsmithChargesForMaterialsAndLabor);
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
+            test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
+            test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);
+            test(helper, TestGroup.FORESTER, "a_nursery_without_its_log_is_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aNurseryWithoutItsLogIsAPlainPottedSapling);
+            test(helper, TestGroup.FORESTER, "breaking_a_nursery_gives_back_the_pot_and_the_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::breakingANurseryGivesBackThePotAndTheSapling);
+            test(helper, TestGroup.FORESTER, "unemployed_villager_becomes_a_forester_at_a_free_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::unemployedVillagerBecomesAForesterAtAFreeNursery);
             test(helper, TestGroup.MINER, "a_plain_furnace_is_no_job_site", MinerTests::aPlainFurnaceIsNoJobSite);
             test(helper, TestGroup.MINER, "a_furnace_minecart_can_be_placed_off_rails", MinerTests::aFurnaceMinecartCanBePlacedOffRails);
             test(helper, TestGroup.MINER, "a_furnace_minecart_on_a_rail_stays_a_minecart", MinerTests::aFurnaceMinecartOnARailStaysAMinecart);
