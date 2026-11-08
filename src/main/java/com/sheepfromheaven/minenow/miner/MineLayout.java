@@ -46,10 +46,10 @@ final class MineLayout {
         return y < top && (top - y) % PLATFORM_EVERY == 0;
     }
 
-    /** Whether this shaft cell is dug: all of it, except a platform's ring (but never the ladder hole). */
+    /** Whether this shaft cell is dug: all of it from the marked layer down, except a platform's ring (but never the ladder hole). */
     boolean digs(BlockPos pos) {
         BlockPos column = pos.atY(top);
-        if (pos.getY() >= top || !outline.contains(column)) return false;
+        if (pos.getY() > top || !outline.contains(column)) return false;
         return !isPlatform(pos.getY()) || column.equals(ladder) || !inRing(column);
     }
 

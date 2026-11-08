@@ -2,6 +2,10 @@ package com.sheepfromheaven.minenow.miner;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
@@ -19,9 +23,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * A miner's quarry starts as the pit the player dug next to its furnace minecart: the open cells one block below the
- * cart that touch a side of the block under it, and all open cells connected to them at that level, within
- * {@link #RANGE} blocks. Below that outline the miner digs the mine laid out by {@link MineLayout}: the shaft layer by
+ * A miner's quarry is the ground the player rimmed with cobblestone ({@code #minenow:mine_rim}) beside its furnace
+ * minecart: the cart stands on the rim, flush in the ground, and the cells the closed rim encloses at that level, within
+ * {@link #RANGE} blocks, are the outline (a rim with a gap encloses nothing). The miner digs the outline itself first,
+ * then the mine laid out by {@link MineLayout} below it: the shaft layer by
  * layer down to a platform, then the platform's ladder hole, its tunnels one direction after another, its middle, and on
  * down, to {@link MinerSkill#depth} under the cart, or to the platform a redstone signal into the cart allows
  * ({@link MineLayout#deepestPlatform}: there only its tunnels, not its middle). The two layers right under a platform are dug together, column by
@@ -29,6 +34,7 @@ import java.util.Set;
  */
 final class Quarry {
     static final int RANGE = 8;
+    static final TagKey<Block> RIM = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minenow", "mine_rim"));
     private static final int LONGEST_TUNNEL = 24;
     private static final int SEAL_RANGE = 8;
 
@@ -47,20 +53,30 @@ final class Quarry {
     static Quarry around(ServerLevel level, BlockPos furnace) {
         int top = furnace.getY() - 1;
         BlockPos under = furnace.below();
-        Set<BlockPos> seen = new HashSet<>();
-        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        Set<BlockPos> outline = new HashSet<>();
-        for (Direction side : Direction.Plane.HORIZONTAL) queue.add(under.relative(side));
-        while (!queue.isEmpty()) {
-            BlockPos pos = queue.poll();
-            if (!seen.add(pos) || Math.abs(pos.getX() - furnace.getX()) > RANGE || Math.abs(pos.getZ() - furnace.getZ()) > RANGE) continue;
-            if (!open(level, pos)) continue;
-            outline.add(pos);
-            for (Direction side : Direction.Plane.HORIZONTAL) queue.add(pos.relative(side));
+        Set<BlockPos> outline = Set.of();
+        if (level.getBlockState(under).is(RIM)) {
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                Set<BlockPos> enclosed = enclosed(level, furnace, under.relative(side));
+                if (enclosed.size() > outline.size()) outline = enclosed;
+            }
         }
         MineLayout shape = new MineLayout(outline, top, under);
         Ladder ladder = pickLadder(level, furnace, outline, shape);
         return new Quarry(outline, top, ladder, ladder == null ? shape : new MineLayout(outline, top, ladder.top()));
+    }
+
+    /** The cells connected to {@code start} inside the rim, or none if they reach past {@link #RANGE} (the rim isn't closed). */
+    private static Set<BlockPos> enclosed(ServerLevel level, BlockPos furnace, BlockPos start) {
+        Set<BlockPos> cells = new HashSet<>();
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        queue.add(start);
+        while (!queue.isEmpty()) {
+            BlockPos pos = queue.poll();
+            if (level.getBlockState(pos).is(RIM) || !cells.add(pos)) continue;
+            if (Math.abs(pos.getX() - furnace.getX()) > RANGE || Math.abs(pos.getZ() - furnace.getZ()) > RANGE) return Set.of();
+            for (Direction side : Direction.Plane.HORIZONTAL) queue.add(pos.relative(side));
+        }
+        return cells;
     }
 
     /** Where the ladder goes down: a cell beside a solid wall whose top is free ground to step out onto, off the tunnel walls, nearest the cart first. */
@@ -128,7 +144,7 @@ final class Quarry {
      * its tunnels (each tunnel line up to the first block that can't be dug). Nothing once the mine is done.
      */
     List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength, int deepestPlatform) {
-        for (int y = top - 1; y >= Math.max(Math.max(bottom, deepestPlatform), level.getMinY() + 1); y--) {
+        for (int y = top; y >= Math.max(Math.max(bottom, deepestPlatform), level.getMinY() + 1); y--) {
             List<BlockPos> layer = new ArrayList<>();
             for (BlockPos column : outline) {
                 BlockPos pos = column.atY(y);
@@ -169,6 +185,7 @@ final class Quarry {
      */
     Set<BlockPos> reachable(ServerLevel level, int feetY) {
         Set<BlockPos> spots = new HashSet<>();
+        if (feetY == top + 1) return onRim(level);
         if (ladder == null) return spots;
         BlockPos start = ladder.at(feetY);
         if (!open(level, start) || !open(level, start.above())) return spots;
@@ -184,6 +201,18 @@ final class Quarry {
                 if (!seen.add(next) || !contains(next) || !open(level, next) || !open(level, next.above()) || !floored(level, next)) continue;
                 spots.add(next);
                 queue.add(next);
+            }
+        }
+        return spots;
+    }
+
+    /** Spots on the surface beside the outline, to dig the marked layer from before there is any mine to stand in. */
+    private Set<BlockPos> onRim(ServerLevel level) {
+        Set<BlockPos> spots = new HashSet<>();
+        for (BlockPos column : outline) {
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                BlockPos spot = column.relative(side).above();
+                if (!outline.contains(column.relative(side)) && open(level, spot) && open(level, spot.above()) && floored(level, spot)) spots.add(spot);
             }
         }
         return spots;

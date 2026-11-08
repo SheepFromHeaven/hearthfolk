@@ -148,6 +148,8 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "a_furnace_minecart_on_a_rail_stays_a_minecart", MinerTests::aFurnaceMinecartOnARailStaysAMinecart);
             test(helper, TestGroup.MINER, "miner_without_a_pickaxe_offers_to_buy_one", MinerTests::minerWithoutAPickaxeOffersToBuyOne);
             test(helper, TestGroup.MINER, "miner_digs_its_quarry_layer_by_layer", MinerTests::minerDigsItsQuarryLayerByLayer);
+            test(helper, TestGroup.MINER, "an_open_pit_without_a_rim_is_no_quarry", MinerTests::anOpenPitWithoutARimIsNoQuarry);
+            test(helper, TestGroup.MINER, "a_rim_with_a_gap_is_no_quarry", MinerTests::aRimWithAGapIsNoQuarry);
             test(helper, TestGroup.MINER, "miner_leaves_ore_its_pickaxe_cannot_harvest", MinerTests::minerLeavesOreItsPickaxeCannotHarvest);
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);

@@ -115,10 +115,12 @@ public final class MinerTests {
         });
 
         helper.succeedWhen(() -> {
+            helper.assertTrue(solidCells(helper, 3) == 0, "The miner digs the ground inside the rim first, " + solidCells(helper, 3) + " left");
             helper.assertTrue(solidCells(helper, 2) == 0 && solidCells(helper, 1) == 0, "The miner should dig both layers of its quarry, solid left "
                     + solidCells(helper, 2) + " above, " + solidCells(helper, 1) + " below");
+            helper.assertTrue(rimIntact(helper, 7, 9, 11, 13), "It leaves the rim in place");
             helper.assertFalse(layerSkipped[0], "It finishes a layer before digging the one below: " + order);
-            helper.assertTrue(count(miner, Items.COBBLESTONE) >= 18, "The stone goes into its inventory as cobblestone, has " + count(miner, Items.COBBLESTONE));
+            helper.assertTrue(count(miner, Items.COBBLESTONE) >= 27, "The stone goes into its inventory as cobblestone, has " + count(miner, Items.COBBLESTONE));
             helper.assertTrue(pickaxe(miner).getDamageValue() >= 18, "Every block wears the pickaxe");
             helper.assertTrue(untouchedOutsideQuarry(helper), "It only digs inside the quarry you marked");
             for (int y = 1; y <= 3; y++) {
@@ -129,6 +131,42 @@ public final class MinerTests {
                 helper.assertTrue(ladders == 1, "It places one ladder per layer down a wall of the quarry, " + ladders + " at y " + y);
             }
         });
+    }
+
+    public static void anOpenPitWithoutARimIsNoQuarry(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        for (int x = 7; x <= 9; x++) {
+            for (int z = 11; z <= 13; z++) helper.setBlock(x, 3, z, Blocks.AIR);
+        }
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(solidCells(helper, 2) == 9, "A hole beside the cart could be part of a build, so the miner leaves it alone, dug " + (9 - solidCells(helper, 2)));
+            helper.succeed();
+        });
+    }
+
+    public static void aRimWithAGapIsNoQuarry(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        quarry(helper);
+        helper.setBlock(10, 3, 13, Blocks.STONE);
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(solidCells(helper, 3) == 9, "Only a closed rim marks a quarry, dug " + (9 - solidCells(helper, 3)));
+            helper.succeed();
+        });
+    }
+
+    private static boolean rimIntact(GameTestHelper helper, int x0, int x1, int z0, int z1) {
+        for (int x = x0 - 1; x <= x1 + 1; x++) {
+            for (int z = z0 - 1; z <= z1 + 1; z++) {
+                if ((x < x0 || x > x1 || z < z0 || z > z1) && !helper.getBlockState(new BlockPos(x, 3, z)).is(Blocks.COBBLESTONE)) return false;
+            }
+        }
+        return true;
     }
 
     public static void minerLeavesOreItsPickaxeCannotHarvest(GameTestHelper helper) {
@@ -283,7 +321,7 @@ public final class MinerTests {
         miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
         miner.getInventory().addItem(new ItemStack(Items.TORCH, 16));
         quarry(helper);
-        helper.setBlock(new BlockPos(10, 3, 12), Blocks.GLOWSTONE);
+        helper.setBlock(new BlockPos(10, 2, 12), Blocks.GLOWSTONE);
 
         helper.succeedWhen(() -> {
             helper.assertTrue(solidCells(helper, 1) == 0, "The miner digs its quarry first, " + solidCells(helper, 1) + " left");
@@ -373,6 +411,7 @@ public final class MinerTests {
                 for (int y = -1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
             }
         }
+        rim(helper, 7, 13, 9, 15);
         for (int y = -1; y <= 1; y++) {
             for (int across = -1; across <= 1; across++) {
                 helper.setBlock(17, y, 12 + across, Blocks.BARRIER);
@@ -470,6 +509,7 @@ public final class MinerTests {
                 for (int y = -1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
             }
         }
+        rim(helper, 7, 13, 9, 15);
         for (int y = -1; y <= 1; y++) {
             for (int across = -1; across <= 1; across++) {
                 helper.setBlock(17, y, 12 + across, Blocks.BARRIER);
@@ -508,6 +548,7 @@ public final class MinerTests {
                 for (int y = -4; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
             }
         }
+        rim(helper, 7, 9, 11, 13);
         helper.setBlock(FURNACE.north(), Blocks.REDSTONE_BLOCK);
 
         helper.runAfterDelay(1200, () -> {
@@ -549,15 +590,22 @@ public final class MinerTests {
                 + openCells(helper, 9, 11, 6, 8, -1, 1) + openCells(helper, 9, 11, 16, 18, -1, 1);
     }
 
-    /** A 3x3 pit dug one block deep into the platform beside the furnace minecart: the quarry, two layers above a barrier floor. */
+    /** A 3x3 quarry rimmed with cobblestone in the ground, the furnace minecart standing on the rim, two layers above a barrier floor. */
     static void quarry(GameTestHelper helper) {
         for (int x = 7; x <= 9; x++) {
-            for (int z = 11; z <= 13; z++) {
-                helper.setBlock(x, 3, z, Blocks.AIR);
-                helper.setBlock(x, 0, z, Blocks.BARRIER);
+            for (int z = 11; z <= 13; z++) helper.setBlock(x, 0, z, Blocks.BARRIER);
+        }
+        rim(helper, 7, 9, 11, 13);
+        helper.setBlock(FURNACE, Miner.FURNACE_CART.get());
+    }
+
+    /** Cobblestone around these cells, flush in the ground the cart stands on. */
+    static void rim(GameTestHelper helper, int x0, int x1, int z0, int z1) {
+        for (int x = x0 - 1; x <= x1 + 1; x++) {
+            for (int z = z0 - 1; z <= z1 + 1; z++) {
+                if (x < x0 || x > x1 || z < z0 || z > z1) helper.setBlock(x, 3, z, Blocks.COBBLESTONE);
             }
         }
-        helper.setBlock(FURNACE, Miner.FURNACE_CART.get());
     }
 
     static int solidCells(GameTestHelper helper, int y) {
