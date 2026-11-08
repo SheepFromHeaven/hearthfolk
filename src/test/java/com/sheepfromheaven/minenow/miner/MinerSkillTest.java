@@ -19,6 +19,13 @@ class MinerSkillTest {
     }
 
     @Test
+    void tunnelsRunFurtherWithEveryLevel() {
+        assertEquals(8, MinerSkill.tunnelLength(1));
+        for (int level = 2; level <= 5; level++) assertTrue(MinerSkill.tunnelLength(level) > MinerSkill.tunnelLength(level - 1));
+        assertEquals(24, MinerSkill.tunnelLength(5));
+    }
+
+    @Test
     void breakingTakesAsLongAsItWouldForAPlayer() {
         assertEquals(23, Mining.ticks(1.5F, 2.0F, true));
         assertEquals(12, Mining.ticks(1.5F, 4.0F, true));

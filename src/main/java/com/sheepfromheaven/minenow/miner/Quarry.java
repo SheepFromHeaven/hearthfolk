@@ -3,30 +3,41 @@ package com.sheepfromheaven.minenow.miner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * A miner's quarry is the pit the player dug next to its furnace: the open cells one block below the furnace that touch
- * a side of the block under it, and all open cells connected to them at that level, within {@link #RANGE} blocks. The
- * miner digs that outline downwards layer by layer, never below {@link MinerSkill#depth} under the furnace.
+ * A miner's quarry starts as the pit the player dug next to its furnace minecart: the open cells one block below the
+ * cart that touch a side of the block under it, and all open cells connected to them at that level, within
+ * {@link #RANGE} blocks. Below that outline the miner digs the mine laid out by {@link MineLayout}: the shaft layer by
+ * layer, platforms every five layers, and tunnels off each platform, down to {@link MinerSkill#depth} under the cart.
  */
 final class Quarry {
     static final int RANGE = 8;
+    private static final int LONGEST_TUNNEL = 24;
 
-    private final List<BlockPos> outline;
+    private final Set<BlockPos> outline;
     private final int top;
+    private final @Nullable Ladder ladder;
+    private final MineLayout layout;
 
-    private Quarry(List<BlockPos> outline, int top) {
+    private Quarry(Set<BlockPos> outline, int top, @Nullable Ladder ladder, MineLayout layout) {
         this.outline = outline;
         this.top = top;
+        this.ladder = ladder;
+        this.layout = layout;
     }
 
     static Quarry around(ServerLevel level, BlockPos furnace) {
@@ -34,7 +45,7 @@ final class Quarry {
         BlockPos under = furnace.below();
         Set<BlockPos> seen = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        List<BlockPos> outline = new ArrayList<>();
+        Set<BlockPos> outline = new HashSet<>();
         for (Direction side : Direction.Plane.HORIZONTAL) queue.add(under.relative(side));
         while (!queue.isEmpty()) {
             BlockPos pos = queue.poll();
@@ -43,90 +54,136 @@ final class Quarry {
             outline.add(pos);
             for (Direction side : Direction.Plane.HORIZONTAL) queue.add(pos.relative(side));
         }
-        return new Quarry(outline, top);
+        MineLayout shape = new MineLayout(outline, top, under);
+        Ladder ladder = pickLadder(level, furnace, outline, shape);
+        return new Quarry(outline, top, ladder, ladder == null ? shape : new MineLayout(outline, top, ladder.top()));
     }
 
-    /** Where the ladder goes down: a cell beside a solid wall whose top is free ground to step out onto, nearest the furnace first. */
-    Optional<Ladder> ladder(ServerLevel level, BlockPos furnace) {
+    /** Where the ladder goes down: a cell beside a solid wall whose top is free ground to step out onto, off the tunnel walls, nearest the cart first. */
+    private static @Nullable Ladder pickLadder(ServerLevel level, BlockPos furnace, Set<BlockPos> outline, MineLayout shape) {
         return outline.stream()
-                .sorted(java.util.Comparator.comparingDouble((BlockPos cell) -> cell.distSqr(furnace)).thenComparing(BlockPos::asLong))
+                .sorted(Comparator.comparingDouble((BlockPos cell) -> cell.distSqr(furnace)).thenComparing(BlockPos::asLong))
                 .flatMap(cell -> Direction.Plane.HORIZONTAL.stream()
                         .filter(side -> {
                             BlockPos wall = cell.relative(side);
                             BlockPos exit = wall.above();
-                            return !outline.contains(wall) && !exit.equals(furnace)
+                            return !outline.contains(wall) && !exit.equals(furnace) && !shape.tunnelWall(cell, side)
                                     && level.getBlockState(wall).isFaceSturdy(level, wall, side.getOpposite())
                                     && level.getBlockState(exit).getCollisionShape(level, exit).isEmpty()
                                     && level.getBlockState(exit.above()).getCollisionShape(level, exit.above()).isEmpty();
                         })
                         .map(side -> new Ladder(cell, side.getOpposite()))
                         .findFirst().stream())
-                .findFirst();
+                .findFirst()
+                .orElse(null);
     }
 
-    /** A ladder column: the cells below {@code top} under this outline cell, each ladder facing away from its wall. */
+    /** A ladder column: the cells from {@code top} down under this outline cell, each ladder facing away from its wall. */
     record Ladder(BlockPos top, Direction facing) {
         BlockPos at(int y) {
             return top.atY(y);
         }
     }
 
-    int top() {
-        return top;
-    }
-
-    private static boolean open(ServerLevel level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        return state.isAir() || state.is(net.minecraft.tags.BlockTags.CLIMBABLE)
-                || (state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty());
-    }
-
-    /** A torch spot: an open floor cell below {@code light} block light, against an outer wall of the quarry. */
+    /** A torch spot: an open floor cell below the wanted block light, against an outer wall of the mine. */
     record TorchSpot(BlockPos pos, Direction facing) {}
 
-    /** Dark floor cells, where monsters could spawn, that have an outer wall to put a torch on. */
-    List<TorchSpot> darkSpots(ServerLevel level, int bottom, int light) {
-        List<TorchSpot> spots = new ArrayList<>();
-        for (BlockPos column : outline) {
-            for (int y = top; y >= Math.max(bottom, level.getMinY() + 1); y--) {
-                BlockPos pos = column.atY(y);
-                if (!level.getBlockState(pos).isAir()) continue;
-                if (!level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)) continue;
-                if (level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos) >= light) continue;
-                for (Direction side : Direction.Plane.HORIZONTAL) {
-                    BlockPos wall = pos.relative(side);
-                    if (outline.contains(wall.atY(top)) || !level.getBlockState(wall).isFaceSturdy(level, wall, side.getOpposite())) continue;
-                    spots.add(new TorchSpot(pos, side.getOpposite()));
-                    break;
-                }
-            }
-        }
-        return spots;
+    Optional<Ladder> ladder(ServerLevel level, BlockPos furnace) {
+        return Optional.ofNullable(ladder);
+    }
+
+    int top() {
+        return top;
     }
 
     boolean isEmpty() {
         return outline.isEmpty();
     }
 
-    /** The cells of the highest layer that still has something the pickaxe can dig, or nothing if the quarry is done. */
-    List<BlockPos> nextLayer(ServerLevel level, int bottom, ItemStack pickaxe) {
+    /** The feet level to work on {@code pos} from: above it in the shaft, on the platform for a tunnel cell, beside it for the ladder. */
+    int standLevel(BlockPos pos) {
+        if (isShaft(pos)) return pos.getY() + 1;
+        for (int platform = pos.getY() - 1; platform >= pos.getY() - MineLayout.TUNNEL_HEIGHT; platform--) {
+            if (layout.isPlatform(platform)) return platform + 1;
+        }
+        return pos.getY();
+    }
+
+    boolean isShaft(BlockPos pos) {
+        return pos.getY() < top && outline.contains(pos.atY(top));
+    }
+
+    /** Whether {@code pos} is down in the mine: in the shaft below the marked layer or in a tunnel. */
+    boolean contains(BlockPos pos) {
+        return isShaft(pos) || layout.inTunnel(pos, Integer.MIN_VALUE, LONGEST_TUNNEL);
+    }
+
+    /**
+     * The next work, top-down: the highest shaft layer with something the pickaxe can dig, or, once a platform is open,
+     * its tunnels (each tunnel line up to the first block that can't be dug). Nothing once the mine is done.
+     */
+    List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength) {
         for (int y = top - 1; y >= Math.max(bottom, level.getMinY() + 1); y--) {
             List<BlockPos> layer = new ArrayList<>();
             for (BlockPos column : outline) {
                 BlockPos pos = column.atY(y);
-                if (diggable(level, pos, pickaxe)) layer.add(pos);
+                if (layout.digs(pos) && diggable(level, pos, pickaxe)) layer.add(pos);
             }
             if (!layer.isEmpty()) return layer;
+            if (!layout.isPlatform(y)) continue;
+            List<BlockPos> tunnels = new ArrayList<>();
+            for (List<BlockPos> line : layout.tunnelLines(y, tunnelLength)) {
+                for (BlockPos pos : line) {
+                    if (open(level, pos)) continue;
+                    if (!diggable(level, pos, pickaxe)) break;
+                    tunnels.add(pos);
+                }
+            }
+            if (!tunnels.isEmpty()) return tunnels;
         }
         return List.of();
     }
 
-    boolean contains(BlockPos pos) {
-        return pos.getY() < top && outline.contains(pos.atY(top));
+    /** The highest open cell of the ladder column that has no ladder yet, from the marked layer down to where digging reached. */
+    Optional<BlockPos> missingLadder(ServerLevel level) {
+        if (ladder == null) return Optional.empty();
+        for (int y = top; y > level.getMinY(); y--) {
+            BlockPos pos = ladder.at(y);
+            BlockState state = level.getBlockState(pos);
+            if (state.is(Blocks.LADDER)) continue;
+            return state.isAir() ? Optional.of(pos) : Optional.empty();
+        }
+        return Optional.empty();
     }
 
-    Optional<BlockPos> anyColumn() {
-        return outline.stream().findFirst();
+    /** Dark floor cells of the shaft and tunnels, where monsters could spawn, that have an outer wall to put a torch on. */
+    List<TorchSpot> darkSpots(ServerLevel level, int bottom, int light, int tunnelLength) {
+        List<BlockPos> cells = new ArrayList<>();
+        for (BlockPos column : outline) {
+            for (int y = top; y >= Math.max(bottom, level.getMinY() + 1); y--) cells.add(column.atY(y));
+        }
+        for (int y = top - 1; y >= Math.max(bottom, level.getMinY() + 1); y--) {
+            if (layout.isPlatform(y)) cells.addAll(layout.tunnels(y, tunnelLength));
+        }
+        List<TorchSpot> spots = new ArrayList<>();
+        for (BlockPos pos : cells) {
+            if (!level.getBlockState(pos).isAir()) continue;
+            if (!level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)) continue;
+            if (level.getBrightness(LightLayer.BLOCK, pos) >= light) continue;
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                BlockPos wall = pos.relative(side);
+                if (outline.contains(wall.atY(top)) || layout.inTunnel(wall, bottom, tunnelLength)) continue;
+                if (!level.getBlockState(wall).isFaceSturdy(level, wall, side.getOpposite())) continue;
+                spots.add(new TorchSpot(pos, side.getOpposite()));
+                break;
+            }
+        }
+        return spots;
+    }
+
+    private static boolean open(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.isAir() || state.is(BlockTags.CLIMBABLE) || (state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty());
     }
 
     static boolean diggable(ServerLevel level, BlockPos pos, ItemStack pickaxe) {

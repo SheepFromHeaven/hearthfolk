@@ -44,8 +44,9 @@ import java.util.Optional;
  * The miner digs its {@link Quarry} layer by layer with its pickaxe, each block taking as long as the pickaxe's speed
  * against the block's hardness dictates (with the crack animation a player would see). What it digs goes straight into
  * its inventory, ore with up to {@link MinerSkill#extraOre} extra; blocks its pickaxe can't harvest are left in place.
- * It puts a ladder down one wall of the quarry as it digs ({@link Quarry#ladder}) and won't dig a layer it can't put a
- * ladder in, so it can always climb back out. It keeps the quarry floor lit with torches on its walls (making them from coal and sticks) so monsters can't spawn.
+ * The mine follows {@link MineLayout}: a shaft with a platform every five layers and tunnels off each platform. It
+ * puts a ladder down one wall of the shaft as it digs (filling any gap in it first) and won't dig a ladder cell it has
+ * no ladder for, so it can always climb back out. It keeps the quarry floor lit with torches on its walls (making them from coal and sticks) so monsters can't spawn.
  * It smelts its raw ore in its furnace minecart, and in more furnaces beside it as it levels, with coal it holds, and when its goods pile up it carries them to its
  * home chest, climbing out of the quarry for either. Lives in CORE after MoveToTargetSink, like TendFields.
  */
@@ -67,6 +68,9 @@ public class DigQuarry extends Behavior<Villager> {
     private RecipeType<? extends AbstractCookingRecipe> smeltType = RecipeType.SMELTING;
     private int smeltShare = Integer.MAX_VALUE;
     private Quarry.@Nullable TorchSpot torch;
+    private boolean placingLadder;
+    private boolean inShaft = true;
+    private int standLevel;
     private long nextTorchCheck;
     private Quarry.@Nullable Ladder ladder;
     private long targetSince;
@@ -125,19 +129,21 @@ public class DigQuarry extends Behavior<Villager> {
                 advance(level, body, timestamp);
             } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
                 advance(level, body, timestamp);
-            } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+            } else if (!walkingWhereWanted(body)) {
                 walk(body);
             }
             return;
         }
         if (target == null) return;
-        if (torch != null) {
-            if (body.getEyePosition().distanceTo(Vec3.atCenterOf(torch.pos())) <= REACH) {
-                placeTorch(level, body, timestamp);
+        if (body.getEyePosition().distanceTo(Vec3.atCenterOf(target)) > REACH && useLadder(level, body, timestamp)) return;
+        if (torch != null || placingLadder) {
+            if (body.getEyePosition().distanceTo(Vec3.atCenterOf(target)) <= REACH) {
+                if (placingLadder) placeLadder(level, body, target);
+                else placeTorch(level, body, timestamp);
                 advance(level, body, timestamp);
             } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
                 advance(level, body, timestamp);
-            } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+            } else if (!walkingWhereWanted(body)) {
                 walk(body);
             }
             return;
@@ -152,7 +158,7 @@ public class DigQuarry extends Behavior<Villager> {
         } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
             unreachable.put(target, timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
-        } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+        } else if (!walkingWhereWanted(body)) {
             walk(body);
         }
     }
@@ -205,6 +211,8 @@ public class DigQuarry extends Behavior<Villager> {
         target = null;
         chest = null;
         torch = null;
+        placingLadder = false;
+        inShaft = true;
         smelting = false;
         Optional<BlockPos> furnace = furnace(level, body);
         if (furnace.isEmpty()) return false;
@@ -239,26 +247,79 @@ public class DigQuarry extends Behavior<Villager> {
         if (quarry.isEmpty()) return false;
         ladder = quarry.ladder(level, furnace.get()).orElse(null);
         if (ladder == null) return false;
-        if (!hasLadder(level, ladder.at(quarry.top())) && !placeLadder(level, body, ladder.at(quarry.top()))) return false;
+        Optional<BlockPos> missing = quarry.missingLadder(level);
+        if (missing.isPresent()) {
+            if (!carriesLadder(body)) return false;
+            target = missing.get();
+            placingLadder = true;
+            standLevel = target.getY() + 1;
+            return true;
+        }
         int bottom = furnace.get().getY() - MinerSkill.depth(body.getVillagerData().level());
+        int tunnels = MinerSkill.tunnelLength(body.getVillagerData().level());
         if (now >= nextTorchCheck && (carriesTorch(body) || canMakeTorches(body))) {
-            torch = quarry.darkSpots(level, bottom, LIT).stream()
+            torch = quarry.darkSpots(level, bottom, LIT, tunnels).stream()
                     .filter(spot -> !spot.pos().equals(ladder.at(spot.pos().getY())))
                     .min(Comparator.comparingDouble(spot -> spot.pos().distToCenterSqr(body.position())))
                     .orElse(null);
             if (torch != null) {
                 target = torch.pos();
+                standLevel = target.getY();
                 return true;
             }
         }
-        List<BlockPos> layer = quarry.nextLayer(level, bottom, pickaxe);
-        if (layer.isEmpty() || (!hasLadder(level, ladder.at(layer.getFirst().getY())) && !carriesLadder(body))) return false;
-        BlockPos column = ladder.at(layer.getFirst().getY());
-        target = layer.contains(column) ? column : layer.stream()
+        List<BlockPos> work = quarry.nextWork(level, bottom, pickaxe, tunnels);
+        if (work.isEmpty()) return false;
+        BlockPos column = ladder.at(work.getFirst().getY());
+        if (work.contains(column) && !carriesLadder(body)) return false;
+        target = work.contains(column) ? column : work.stream()
                 .filter(pos -> !unreachable.containsKey(pos))
                 .min(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position())))
                 .orElse(null);
+        inShaft = target != null && quarry.isShaft(target);
+        if (target != null) standLevel = quarry.standLevel(target);
         return target != null;
+    }
+
+    /**
+     * Takes the ladder when the work is more than a step above or below: vanilla paths never use ladders, and a deep
+     * mine can't be reached by dropping in. True while still on the way.
+     */
+    private boolean useLadder(ServerLevel level, Villager body, long timestamp) {
+        Optional<BlockPos> furnace = furnace(level, body);
+        if (furnace.isEmpty() || ladder == null) return false;
+        Quarry quarry = Quarry.around(level, furnace.get());
+        int standY = placingLadder ? target.getY() + 1 : quarry.standLevel(target);
+        boolean onLadderColumn = Math.abs(body.getX() - (ladder.top().getX() + 0.5)) <= 0.45 && Math.abs(body.getZ() - (ladder.top().getZ() + 0.5)) <= 0.45;
+        if (Math.abs(body.getY() - standY) <= 1.5 && !(onLadderColumn && body.getBlockY() != standY)) {
+            if (climbing) {
+                climbing = false;
+                LadderClimb.forgetRoute(body);
+            }
+            return false;
+        }
+        climbing = true;
+        targetSince = timestamp;
+        BlockPos stepTo = ladder.top().relative(ladder.facing()).atY(standY);
+        LadderClimb.climbTo(body, quarry, ladder, standY, stepTo);
+        return true;
+    }
+
+    /**
+     * Where to stand to dig a shaft cell: on it, if there's headroom above, else (under a platform's ring, where only
+     * one block is open until the next layer is out) beside it in a part of the same layer already dug.
+     */
+    private static BlockPos standFor(net.minecraft.world.level.Level level, BlockPos cell) {
+        if (headroom(level, cell.above())) return cell.above();
+        for (net.minecraft.core.Direction side : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+            BlockPos beside = cell.relative(side);
+            if (headroom(level, beside) && level.getBlockState(beside.below()).isFaceSturdy(level, beside.below(), net.minecraft.core.Direction.UP)) return beside;
+        }
+        return cell.above();
+    }
+
+    private static boolean headroom(net.minecraft.world.level.Level level, BlockPos feet) {
+        return level.getBlockState(feet).getCollisionShape(level, feet).isEmpty() && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty();
     }
 
     /** Its furnace minecart, then the furnaces and blast furnaces nearest to it that its level lets it use. */
@@ -326,12 +387,28 @@ public class DigQuarry extends Behavior<Villager> {
         return slot < 0 ? ItemStack.EMPTY : body.getInventory().getItem(slot);
     }
 
+    /** Vanilla's work package keeps pulling a villager back within 9 blocks of its job site, so the walk target is re-pinned every tick. */
+    private boolean walkingWhereWanted(Villager body) {
+        BlockPos wanted = wantedStand(body);
+        return wanted != null && body.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                .filter(walk -> walk.getTarget().currentBlockPosition().equals(wanted))
+                .isPresent();
+    }
+
+    private @Nullable BlockPos wantedStand(Villager body) {
+        if (chest != null) return chest;
+        if (target == null) return null;
+        boolean shaftCell = inShaft && torch == null && !placingLadder;
+        return shaftCell ? standFor(body.level(), target) : target.atY(standLevel);
+    }
+
     private void walk(Villager body) {
         if (chest != null) {
             body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(chest, SPEED, 1));
             body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(chest));
         } else if (target != null) {
-            body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(target.above(), SPEED, 1));
+            boolean shaftCell = inShaft && torch == null && !placingLadder;
+            body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(wantedStand(body), SPEED, shaftCell ? 1 : 2));
             body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target));
         }
     }

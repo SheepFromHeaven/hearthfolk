@@ -9,6 +9,7 @@ final class MinerSkill {
     private static final int[] DEPTH = {8, 16, 24, 40, 64};
     private static final int[] EXTRA_ORE = {0, 0, 1, 1, 2};
     private static final int[] EXTRA_FURNACES = {0, 1, 2, 3, 4};
+    private static final int[] TUNNEL_LENGTH = {8, 12, 16, 20, 24};
 
     private MinerSkill() {}
 
@@ -23,6 +24,11 @@ final class MinerSkill {
     /** How many furnaces or blast furnaces beside its furnace minecart it smelts in as well. */
     static int extraFurnaces(int villagerLevel) {
         return EXTRA_FURNACES[index(villagerLevel)];
+    }
+
+    /** How far each tunnel runs out from a platform. */
+    static int tunnelLength(int villagerLevel) {
+        return TUNNEL_LENGTH[index(villagerLevel)];
     }
 
     private static int index(int villagerLevel) {

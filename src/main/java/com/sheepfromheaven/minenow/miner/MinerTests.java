@@ -301,6 +301,103 @@ public final class MinerTests {
         });
     }
 
+    /** A 7x7 shaft marked beside the cart at y 3, already dug down to y -1; the first platform is y -2. */
+    public static void minerLeavesPlatformsAndBranchesTunnelsOffThem(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.NETHERITE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 32));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 32));
+        for (int x = 0; x <= 23; x++) {
+            for (int z = 0; z <= 23; z++) {
+                for (int y = -6; y <= 0; y++) helper.setBlock(x, y, z, Blocks.STONE);
+            }
+        }
+        for (int x = 7; x <= 13; x++) {
+            for (int z = 9; z <= 15; z++) {
+                for (int y = -1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        for (int y = -1; y <= 1; y++) {
+            for (int across = -1; across <= 1; across++) {
+                helper.setBlock(17, y, 12 + across, Blocks.BARRIER);
+                helper.setBlock(3, y, 12 + across, Blocks.BARRIER);
+                helper.setBlock(10 + across, y, 5, Blocks.BARRIER);
+                helper.setBlock(10 + across, y, 19, Blocks.BARRIER);
+            }
+        }
+        boolean[] dugBelowBeforeTunnels = {false};
+        List<String> trail = new ArrayList<>();
+        helper.onEachTick(() -> {
+            if (helper.getTick() % 100 == 0 && openTunnelCells(helper) >= 100 && trail.size() < 30) {
+                trail.add(helper.getTick() + ":" + helper.relativePos(miner.blockPosition()).toShortString() + "/"
+                        + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.LOOK_TARGET).map(t -> helper.relativePos(t.currentBlockPosition()).toShortString()).orElse("-")
+                        + (miner.getBrain().getRunningBehaviors().stream().anyMatch(b -> b instanceof DigQuarry) ? "D" : ""));
+            }
+        });
+        helper.onEachTick(() -> {
+            if (openCells(helper, 7, 13, 9, 15, -3, -3) > 1 && openTunnelCells(helper) < 4 * 27) dugBelowBeforeTunnels[0] = true;
+        });
+
+        helper.succeedWhen(() -> {
+            int ring = 0;
+            int ringKept = 0;
+            for (int x = 7; x <= 13; x++) {
+                for (int z = 9; z <= 15; z++) {
+                    if (x >= 9 && x <= 11 && z >= 11 && z <= 13) continue;
+                    ring++;
+                    if (!open(helper, new BlockPos(x, -2, z))) ringKept++;
+                }
+            }
+            List<String> ladders = new ArrayList<>();
+            for (int y = -5; y <= 3; y++) {
+                for (int x = 7; x <= 13; x++) {
+                    for (int z = 9; z <= 15; z++) if (helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.LADDER)) ladders.add(x + "," + y + "," + z);
+                }
+            }
+            helper.assertTrue(openCells(helper, 9, 11, 11, 13, -2, -2) == 9, "The platform's middle 3x3 is opened, " + openCells(helper, 9, 11, 11, 13, -2, -2) + " of 9; miner at "
+                    + helper.relativePos(miner.blockPosition()).toShortString() + ", ladders " + ladders + ", running " + miner.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()
+                    + ", walk " + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> helper.relativePos(w.getTarget().currentBlockPosition()).toShortString()).orElse("-")
+                    + ", ladders held " + count(miner, Items.LADDER) + ", activity " + miner.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"));
+            List<String> missing = new ArrayList<>();
+            for (int[] box : new int[][] {{14, 16, 11, 13}, {4, 6, 11, 13}, {9, 11, 6, 8}, {9, 11, 16, 18}}) {
+                for (int x = box[0]; x <= box[1]; x++) {
+                    for (int z = box[2]; z <= box[3]; z++) {
+                        for (int y = -1; y <= 1; y++) if (!open(helper, new BlockPos(x, y, z))) missing.add(x + "," + y + "," + z + "=" + helper.getBlockState(new BlockPos(x, y, z)).getBlock().getName().getString());
+                    }
+                }
+            }
+            helper.assertTrue(openTunnelCells(helper) == 4 * 27, "A 3x3 tunnel runs out from the middle of each wall, " + openTunnelCells(helper) + " of 108 cells dug, missing " + missing
+                    + "; below " + openCells(helper, 7, 13, 9, 15, -4, -3) + "/98, miner at " + helper.relativePos(miner.blockPosition()).toShortString()
+                    + " looking at " + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.LOOK_TARGET).map(t -> helper.relativePos(t.currentBlockPosition()).toShortString()).orElse("-")
+                    + ", walk " + miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> helper.relativePos(w.getTarget().currentBlockPosition()).toShortString()).orElse("-")
+                    + ", running " + miner.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()
+                    + "; trail " + trail.subList(0, Math.min(8, trail.size())));
+            helper.assertTrue(openCells(helper, 7, 13, 9, 15, -4, -3) == 98, "The 7x7 shaft continues below the platform, " + openCells(helper, 7, 13, 9, 15, -4, -3) + " of 98");
+            helper.assertTrue(ringKept == ring - 1, "The platform keeps its 2-block ring except the ladder hole, " + ringKept + " of " + ring + " kept");
+            helper.assertFalse(dugBelowBeforeTunnels[0], "It digs a platform's tunnels before going deeper");
+        });
+    }
+
+    private static boolean open(GameTestHelper helper, BlockPos pos) {
+        var state = helper.getBlockState(pos);
+        return state.isAir() || state.is(Blocks.LADDER) || state.is(Blocks.WALL_TORCH);
+    }
+
+    private static int openCells(GameTestHelper helper, int x0, int x1, int z0, int z1, int y0, int y1) {
+        int open = 0;
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                for (int y = y0; y <= y1; y++) if (open(helper, new BlockPos(x, y, z))) open++;
+            }
+        }
+        return open;
+    }
+
+    private static int openTunnelCells(GameTestHelper helper) {
+        return openCells(helper, 14, 16, 11, 13, -1, 1) + openCells(helper, 4, 6, 11, 13, -1, 1)
+                + openCells(helper, 9, 11, 6, 8, -1, 1) + openCells(helper, 9, 11, 16, 18, -1, 1);
+    }
+
     /** A 3x3 pit dug one block deep into the platform beside the furnace minecart: the quarry, two layers above a barrier floor. */
     static void quarry(GameTestHelper helper) {
         for (int x = 7; x <= 9; x++) {
