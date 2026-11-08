@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:miner_digs_new_emeralds_out_of_emerald_ore",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 3600
+}

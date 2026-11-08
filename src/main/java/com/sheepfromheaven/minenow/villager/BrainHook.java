@@ -11,6 +11,7 @@ import com.sheepfromheaven.minenow.miner.DigQuarry;
 import com.sheepfromheaven.minenow.miner.LeaveQuarry;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
@@ -25,11 +26,17 @@ public final class BrainHook {
 
     private BrainHook() {}
 
+    private static boolean employed(Villager villager) {
+        var profession = villager.getVillagerData().profession();
+        return !profession.is(VillagerProfession.NONE) && !profession.is(VillagerProfession.NITWIT);
+    }
+
     public static void onEntityTick(EntityTickEvent.Pre event) {
         if (!(event.getEntity() instanceof Villager villager) || villager.level().isClientSide() || villager.isBaby()) return;
         Brain<Villager> brain = villager.getBrain();
         if (!AUGMENTED.add(brain)) return;
         VillagerBrains.rebuild(brain, villager);
+        if (villager.level() instanceof net.minecraft.server.level.ServerLevel level && employed(villager)) Economy.grantStartingPurseOnce(level, villager);
         // TendFields sits in CORE right after vanilla's MoveToTargetSink (same priority, added later), so each tick it
         // runs after the walk target was cleared on arrival and before WORK's walk-back-to-job-site can claim it.
         brain.addActivity(

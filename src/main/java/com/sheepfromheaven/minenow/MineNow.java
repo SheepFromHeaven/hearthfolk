@@ -100,7 +100,9 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "farmer_picks_up_a_hoe_thrown_to_it", FarmerTests::farmerPicksUpAHoeThrownToIt);
             test(helper, TestGroup.FARMER, "farmer_fetches_a_spare_hoe_from_its_home_chest", FarmerTests::farmerFetchesASpareHoeFromItsHomeChest);
             test(helper, TestGroup.TRADING, "hoeless_farmer_offers_to_buy_an_undamaged_hoe", FarmerTradeTests::hoelessFarmerOffersToBuyAnUndamagedHoe);
-            test(helper, TestGroup.TRADING, "starting_purse_is_granted_only_once", FarmerTradeTests::startingPurseIsGrantedOnlyOnce);
+            test(helper, TestGroup.VILLAGER_TRADING, "starting_purse_comes_with_the_job", com.sheepfromheaven.minenow.villager.EconomyTests::startingPurseComesWithTheJob);
+            test(helper, TestGroup.VILLAGER_TRADING, "villager_keeps_food_and_tool_money_when_buying_from_players", com.sheepfromheaven.minenow.villager.EconomyTests::villagerKeepsFoodAndToolMoneyWhenBuyingFromPlayers);
+            test(helper, TestGroup.VILLAGER_TRADING, "villager_without_a_tool_keeps_its_food_money", com.sheepfromheaven.minenow.villager.EconomyTests::villagerWithoutAToolKeepsItsFoodMoney);
             test(helper, TestGroup.TRADING, "selling_a_hoe_to_a_farmer_moves_real_items", FarmerTradeTests::sellingAHoeToAFarmerMovesRealItems);
             test(helper, TestGroup.TRADING, "farmer_sells_crops_from_its_inventory_and_chest", FarmerTradeTests::farmerSellsCropsFromItsInventoryAndChest);
             test(helper, TestGroup.TRADING, "farmer_with_nothing_to_trade_shakes_its_head", FarmerTradeTests::farmerWithNothingToTradeShakesItsHead);
@@ -167,6 +169,7 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "a_redstone_signal_cannot_take_the_miner_past_its_levels_depth", MinerTests::aRedstoneSignalCannotTakeTheMinerPastItsLevelsDepth);
             test(helper, TestGroup.MINER, "miner_seals_lava_it_uncovers", MinerTests::minerSealsLavaItUncovers);
             test(helper, TestGroup.MINER, "miner_walls_off_a_cave", MinerTests::minerWallsOffACave);
+            test(helper, TestGroup.MINER, "miner_digs_new_emeralds_out_of_emerald_ore", MinerTests::minerDigsNewEmeraldsOutOfEmeraldOre);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);

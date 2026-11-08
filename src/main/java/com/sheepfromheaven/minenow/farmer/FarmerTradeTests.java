@@ -42,22 +42,6 @@ public final class FarmerTradeTests {
         helper.succeed();
     }
 
-    public static void startingPurseIsGrantedOnlyOnce(GameTestHelper helper) {
-        Villager farmer = spawnFarmer(helper);
-        ServerPlayer player = player(helper);
-        helper.assertTrue(Economy.emeralds(helper.getLevel(), farmer) == 0, "No purse before anyone trades");
-
-        openTrades(player, farmer);
-        player.closeContainer();
-        int afterFirst = Economy.emeralds(helper.getLevel(), farmer);
-        openTrades(player, farmer);
-        player.closeContainer();
-
-        helper.assertTrue(afterFirst == Economy.STARTING_PURSE, "First opening grants the purse, has " + afterFirst);
-        helper.assertTrue(Economy.emeralds(helper.getLevel(), farmer) == afterFirst, "Second opening must not grant it again");
-        helper.succeed();
-    }
-
     public static void sellingAHoeToAFarmerMovesRealItems(GameTestHelper helper) {
         Villager farmer = spawnFarmer(helper);
         ServerPlayer player = player(helper);
@@ -148,6 +132,7 @@ public final class FarmerTradeTests {
     public static void farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo(GameTestHelper helper) {
         Villager farmer = spawnFarmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        farmer.getInventory().addItem(new ItemStack(Items.EMERALD, 4));
         ServerPlayer player = player(helper);
 
         openTrades(player, farmer);
@@ -204,7 +189,9 @@ public final class FarmerTradeTests {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
-        return GameTestHelpers.spawnEmployed(helper, COMPOSTER.east(), COMPOSTER, VillagerProfession.FARMER, PoiTypes.FARMER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, COMPOSTER.east(), COMPOSTER, VillagerProfession.FARMER, PoiTypes.FARMER);
+        GameTestHelpers.giveStartingPurse(helper, farmer);
+        return farmer;
     }
 
     @SuppressWarnings("removal")

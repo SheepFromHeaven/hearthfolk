@@ -33,6 +33,7 @@ public final class ShepherdTests {
 
     public static void shepherdWithoutShearsOffersToBuyThem(GameTestHelper helper) {
         Villager shepherd = spawnShepherd(helper);
+        GameTestHelpers.giveStartingPurse(helper, shepherd);
         @SuppressWarnings("removal")
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
 

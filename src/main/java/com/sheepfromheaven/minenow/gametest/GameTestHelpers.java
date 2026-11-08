@@ -69,6 +69,7 @@ public final class GameTestHelpers {
         villager.getBrain().setMemory(MemoryModuleType.HOME, GlobalPos.of(level.dimension(), absBed));
     }
 
+    /** An employed villager without its starting purse, so tests start from the emeralds they hand it. */
     public static Villager spawnEmployed(GameTestHelper helper, BlockPos spawnAt, BlockPos jobSite,
                                          ResourceKey<VillagerProfession> profession, ResourceKey<PoiType> poi) {
         ServerLevel level = helper.getLevel();
@@ -78,8 +79,14 @@ public final class GameTestHelpers {
         level.getPoiManager().take(type -> type.is(poi), (type, pos) -> pos.equals(absJobSite), absJobSite, 1)
                 .orElseThrow(() -> helper.assertionException(jobSite, "test.error.expected_block", "job site POI"));
         villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, GlobalPos.of(level.dimension(), absJobSite));
+        villager.setData(com.sheepfromheaven.minenow.villager.ModVillagers.PURSE_GRANTED, true);
         villager.refreshBrain(level);
         return villager;
+    }
+
+    /** The emeralds a villager gets when it takes a job, which {@link #spawnEmployed} leaves out. */
+    public static void giveStartingPurse(GameTestHelper helper, Villager villager) {
+        villager.getInventory().addItem(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.EMERALD, com.sheepfromheaven.minenow.villager.Economy.STARTING_PURSE));
     }
 
     /** A 7x7 oak fence pen whose west side is at {@code x} (z 9 to 15), with an oak fence gate in the middle of that side. */

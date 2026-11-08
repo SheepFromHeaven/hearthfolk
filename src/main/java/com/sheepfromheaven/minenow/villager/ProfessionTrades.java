@@ -15,7 +15,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
 
 
-/** Offers of any villager whose profession has a {@link TradeTable}, rebuilt from its needs, goods, level and that table every time a player opens trading; vanilla's fixed trade sets are dropped. */
+/** Offers of any villager whose profession has a {@link TradeTable}, rebuilt from its needs, goods, level and that table every time a player opens trading (it never pays below {@link Economy#reserve}); vanilla's fixed trade sets are dropped. */
 public final class ProfessionTrades {
     private static final int XP_PER_TRADE = 2;
     private static final float SELL_PRICE_MULTIPLIER = 0.05F;
@@ -26,7 +26,6 @@ public final class ProfessionTrades {
         if (event.getHand() != InteractionHand.MAIN_HAND || event.getEntity().isSecondaryUseActive()) return;
         if (!(event.getTarget() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) return;
         if (TradeTable.forVillager(villager).isEmpty() || villager.isBaby() || villager.isTrading()) return;
-        Economy.grantStartingPurseOnce(level, villager);
         rebuildOffers(level, villager);
     }
 
@@ -40,6 +39,8 @@ public final class ProfessionTrades {
         if (boughtSupply) {
             Economy.take(level, villager, Items.EMERALD, result.getCount());
             Economy.give(level, villager, new ItemStack(offer.getCostA().getItem(), offer.getCostA().getCount()));
+            capSupplyOffers(level, villager);
+            resendOffers(event, villager);
         } else if (result.is(Items.EMERALD)) {
             Economy.take(level, villager, Items.EMERALD, result.getCount());
             Economy.give(level, villager, paidStack(event, offer));
@@ -47,13 +48,29 @@ public final class ProfessionTrades {
             villager.getOffers().stream()
                     .filter(other -> other.getResult().is(Items.EMERALD) && table != null && table.isTool(other.getCostA().getItem()))
                     .forEach(MerchantOffer::setToOutOfStock);
-            if (event.getEntity().containerMenu instanceof MerchantMenu menu) {
-                event.getEntity().sendMerchantOffers(menu.containerId, villager.getOffers(), villager.getVillagerData().level(),
-                        villager.getVillagerXp(), villager.showProgressBar(), villager.canRestock());
-            }
+            resendOffers(event, villager);
         } else {
             Economy.take(level, villager, result.getItem(), result.getCount());
             Economy.give(level, villager, new ItemStack(Items.EMERALD, offer.getCostA().getCount()));
+        }
+    }
+
+    /** Every supply offer shares the one purse, so after a purchase none may offer more than what is left above the reserve. */
+    private static void capSupplyOffers(ServerLevel level, Villager villager) {
+        TradeTable table = TradeTable.forVillager(villager).orElse(null);
+        if (table == null) return;
+        int spendable = Economy.spendable(level, villager);
+        for (MerchantOffer offer : villager.getOffers()) {
+            if (!offer.getResult().is(Items.EMERALD) || table.isTool(offer.getCostA().getItem())) continue;
+            int affordable = spendable / offer.getResult().getCount();
+            while (offer.getMaxUses() - offer.getUses() > affordable) offer.increaseUses();
+        }
+    }
+
+    private static void resendOffers(TradeWithVillagerEvent event, Villager villager) {
+        if (event.getEntity().containerMenu instanceof MerchantMenu menu) {
+            event.getEntity().sendMerchantOffers(menu.containerId, villager.getOffers(), villager.getVillagerData().level(),
+                    villager.getVillagerXp(), villager.showProgressBar(), villager.canRestock());
         }
     }
 
@@ -82,7 +99,7 @@ public final class ProfessionTrades {
         if (table == null) return;
         int villagerLevel = villager.getVillagerData().level();
         if (!Unloading.ownsTool(level, villager)) {
-            int wallet = Economy.emeralds(level, villager);
+            int wallet = Economy.emeralds(level, villager) - Economy.FOOD_MONEY;
             for (TradeTable.Tool tool : table.toolsUpTo(villagerLevel)) {
                 if (tool.price() > wallet) continue;
                 ItemCost undamaged = new ItemCost(tool.item().builtInRegistryHolder(), 1, DataComponentExactPredicate.expect(DataComponents.DAMAGE, 0));
@@ -95,7 +112,7 @@ public final class ProfessionTrades {
                 offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, table.craftPrice(craft)), new ItemStack(craft.item()), inStock, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
-        int purse = Economy.emeralds(level, villager);
+        int purse = Economy.spendable(level, villager);
         for (TradeTable.Supply supply : table.suppliesUpTo(villagerLevel)) {
             int room = (supply.max() - Economy.count(level, villager, supply.item())) / supply.price().count();
             int trades = Math.min(room, purse / supply.price().emeralds());

@@ -22,6 +22,7 @@ public final class FishermanTests {
 
     public static void fishermanWithoutARodOffersToBuyOne(GameTestHelper helper) {
         Villager fisherman = spawnFisherman(helper);
+        GameTestHelpers.giveStartingPurse(helper, fisherman);
         @SuppressWarnings("removal")
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
 

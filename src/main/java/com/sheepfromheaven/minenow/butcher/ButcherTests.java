@@ -30,6 +30,7 @@ public final class ButcherTests {
 
     public static void butcherWithoutAnAxeOffersToBuyOne(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
+        GameTestHelpers.giveStartingPurse(helper, butcher);
         @SuppressWarnings("removal")
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
 

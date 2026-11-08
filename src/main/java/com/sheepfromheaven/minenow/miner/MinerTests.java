@@ -87,6 +87,7 @@ public final class MinerTests {
 
     public static void minerWithoutAPickaxeOffersToBuyOne(GameTestHelper helper) {
         Villager miner = spawnMiner(helper);
+        GameTestHelpers.giveStartingPurse(helper, miner);
         @SuppressWarnings("removal")
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
@@ -358,6 +359,17 @@ public final class MinerTests {
             helper.assertTrue(solidCells(helper, 1) == 0, "The miner digs its quarry, " + solidCells(helper, 1) + " left");
             helper.assertTrue(helper.getBlockState(cave).is(Blocks.COBBLESTONE), "It fills the cave opening in its wall with cobblestone, it's " + helper.getBlockState(cave).getBlock().getName().getString());
         });
+    }
+
+    public static void minerDigsNewEmeraldsOutOfEmeraldOre(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.IRON_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        quarry(helper);
+        helper.setBlock(new BlockPos(8, 2, 12), Blocks.EMERALD_ORE);
+
+        helper.succeedWhen(() -> helper.assertTrue(count(miner, Items.EMERALD) >= 1,
+                "Emerald ore it digs is new money for the village, has " + count(miner, Items.EMERALD) + " emeralds; ore " + helper.getBlockState(new BlockPos(8, 2, 12)).getBlock().getName().getString()));
     }
 
     public static void minerUsesMoreFurnacesAtHigherLevels(GameTestHelper helper) {
