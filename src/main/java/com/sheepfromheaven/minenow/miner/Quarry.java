@@ -30,6 +30,7 @@ import java.util.Set;
 final class Quarry {
     static final int RANGE = 8;
     private static final int LONGEST_TUNNEL = 24;
+    private static final int SEAL_RANGE = 8;
 
     private final Set<BlockPos> outline;
     private final int top;
@@ -206,6 +207,34 @@ final class Quarry {
             return state.isAir() ? Optional.of(pos) : Optional.empty();
         }
         return Optional.empty();
+    }
+
+    /**
+     * Blocks to fill with cobblestone, near {@code around}: fluid in or beside the mine (beside an open cell, or beside a
+     * cell still to dig, which can't be dug while it touches fluid), and openings in the walls, floor or ceiling of the
+     * dug mine where it meets a cave. Never above the marked layer.
+     */
+    List<BlockPos> sealSpots(ServerLevel level, BlockPos around, int bottom, int tunnelLength) {
+        List<BlockPos> spots = new ArrayList<>();
+        int low = Math.max(Math.max(bottom, level.getMinY() + 1), around.getY() - SEAL_RANGE);
+        int high = Math.min(top, around.getY() + SEAL_RANGE);
+        for (BlockPos cell : BlockPos.betweenClosed(around.offset(-SEAL_RANGE, 0, -SEAL_RANGE).atY(low), around.offset(SEAL_RANGE, 0, SEAL_RANGE).atY(high))) {
+            if (!contains(cell)) continue;
+            BlockPos pos = cell.immutable();
+            boolean cellOpen = open(level, pos);
+            if (!level.getFluidState(pos).isEmpty()) {
+                spots.add(pos);
+                continue;
+            }
+            for (Direction side : Direction.values()) {
+                BlockPos next = pos.relative(side);
+                if (next.getY() > top || spots.contains(next)) continue;
+                boolean fluid = !level.getFluidState(next).isEmpty();
+                boolean caveOpening = cellOpen && !contains(next) && !fluid && level.getBlockState(next).canBeReplaced() && !level.getBlockState(next).is(BlockTags.CLIMBABLE);
+                if (fluid || caveOpening) spots.add(next);
+            }
+        }
+        return spots;
     }
 
     /** Spots one block above dark floor cells of the shaft and tunnels, where monsters could spawn, with an outer wall to put a torch on. */

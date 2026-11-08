@@ -174,6 +174,7 @@ public final class MinerTests {
         }
         miner.snapTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(8.5, 1, 12.5)));
         miner.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
+        miner.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 32));
         BlockPos chest = new BlockPos(5, 4, 15);
         helper.setBlock(chest, Blocks.CHEST);
         GameTestHelpers.giveHome(helper, miner, new BlockPos(5, 4, 9));
@@ -287,6 +288,37 @@ public final class MinerTests {
         helper.succeedWhen(() -> {
             helper.assertTrue(solidCells(helper, 1) == 0, "The miner digs its quarry first, " + solidCells(helper, 1) + " left");
             helper.assertTrue(count(miner, Items.TORCH) == 16, "Glowstone in the wall already lights the floor, so no torches are needed; it used " + (16 - count(miner, Items.TORCH)));
+        });
+    }
+
+    public static void minerSealsLavaItUncovers(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 16));
+        quarry(helper);
+        BlockPos lava = new BlockPos(10, 1, 12);
+        helper.setBlock(lava, Blocks.LAVA);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(helper.getBlockState(lava).is(Blocks.COBBLESTONE), "The miner covers the lava behind its wall with cobblestone, it's " + helper.getBlockState(lava).getBlock().getName().getString());
+            helper.assertTrue(solidCells(helper, 1) == 0, "...and then digs the cell beside it too, " + solidCells(helper, 1) + " left");
+        });
+    }
+
+    public static void minerWallsOffACave(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 16));
+        quarry(helper);
+        BlockPos cave = new BlockPos(10, 2, 12);
+        helper.setBlock(cave, Blocks.AIR);
+        helper.setBlock(cave.east(), Blocks.AIR);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(solidCells(helper, 1) == 0, "The miner digs its quarry, " + solidCells(helper, 1) + " left");
+            helper.assertTrue(helper.getBlockState(cave).is(Blocks.COBBLESTONE), "It fills the cave opening in its wall with cobblestone, it's " + helper.getBlockState(cave).getBlock().getName().getString());
         });
     }
 

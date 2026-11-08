@@ -101,6 +101,10 @@
     {
       "items": "#minecraft:coals",
       "max": 16
+    },
+    {
+      "items": "#c:cobblestones",
+      "max": 32
     }
   ],
   "default_produce": {

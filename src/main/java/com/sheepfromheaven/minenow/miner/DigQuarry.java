@@ -71,6 +71,7 @@ public class DigQuarry extends Behavior<Villager> {
     private int smeltShare = Integer.MAX_VALUE;
     private Quarry.@Nullable TorchSpot torch;
     private boolean placingLadder;
+    private boolean sealing;
     private boolean inShaft = true;
     private @Nullable BlockPos stand;
     private long nextTorchCheck;
@@ -138,9 +139,10 @@ public class DigQuarry extends Behavior<Villager> {
         }
         if (target == null) return;
         if (body.getEyePosition().distanceTo(Vec3.atCenterOf(target)) > REACH && useLadder(level, body, timestamp)) return;
-        if (torch != null || placingLadder) {
+        if (torch != null || placingLadder || sealing) {
             if (body.getEyePosition().distanceTo(Vec3.atCenterOf(target)) <= REACH) {
                 if (placingLadder) placeLadder(level, body, target);
+                else if (sealing) seal(level, body, target);
                 else placeTorch(level, body, timestamp);
                 advance(level, body, timestamp);
             } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
@@ -215,6 +217,7 @@ public class DigQuarry extends Behavior<Villager> {
         torch = null;
         stand = null;
         placingLadder = false;
+        sealing = false;
         inShaft = true;
         smelting = false;
         Optional<BlockPos> furnace = furnace(level, body);
@@ -260,6 +263,18 @@ public class DigQuarry extends Behavior<Villager> {
         }
         int bottom = furnace.get().getY() - MinerSkill.depth(body.getVillagerData().level());
         int tunnels = MinerSkill.tunnelLength(body.getVillagerData().level());
+        if (carriesCobblestone(body)) {
+            Map<Integer, Set<BlockPos>> floods = new HashMap<>();
+            for (BlockPos spot : quarry.sealSpots(level, body.blockPosition(), bottom, tunnels).stream()
+                    .sorted(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position()))).toList()) {
+                BlockPos from = standFor(level, quarry, spot, floods);
+                if (from == null) continue;
+                target = spot;
+                stand = from;
+                sealing = true;
+                return true;
+            }
+        }
         if (now >= nextTorchCheck && (carriesTorch(body) || canMakeTorches(body))) {
             torch = quarry.darkSpots(level, bottom, LIT, tunnels).stream()
                     .filter(spot -> !spot.pos().equals(ladder.at(spot.pos().getY())))
@@ -364,6 +379,26 @@ public class DigQuarry extends Behavior<Villager> {
                 .limit(extra)
                 .forEach(furnaces::add);
         return furnaces;
+    }
+
+    private static boolean carriesCobblestone(Villager body) {
+        return body.getInventory().hasAnyMatching(DigQuarry::isCobblestone);
+    }
+
+    private static boolean isCobblestone(ItemStack stack) {
+        return stack.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "cobblestones")));
+    }
+
+    /** Fills fluid or a cave opening with cobblestone from its stock, the way a player keeps a mine dry and closed. */
+    private static void seal(ServerLevel level, Villager body, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!state.canBeReplaced() && state.getFluidState().isEmpty()) return;
+        Optional<ItemStack> stone = body.getInventory().getItems().stream().filter(DigQuarry::isCobblestone).findFirst();
+        if (stone.isEmpty() || !(stone.get().getItem() instanceof net.minecraft.world.item.BlockItem block)) return;
+        level.setBlock(pos, block.getBlock().defaultBlockState(), 3);
+        level.playSound(null, pos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        stone.get().shrink(1);
     }
 
     private static boolean carriesTorch(Villager body) {
