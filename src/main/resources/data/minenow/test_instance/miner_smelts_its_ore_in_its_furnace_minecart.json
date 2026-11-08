@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:miner_smelts_its_ore_in_its_furnace_minecart",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

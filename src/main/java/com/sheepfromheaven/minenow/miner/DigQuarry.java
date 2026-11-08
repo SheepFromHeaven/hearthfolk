@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow.miner;
 
 import com.google.common.collect.ImmutableMap;
+import com.sheepfromheaven.minenow.villager.FurnaceTending;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.Tools;
 import com.sheepfromheaven.minenow.villager.Unloading;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -40,7 +42,8 @@ import java.util.Optional;
  * against the block's hardness dictates (with the crack animation a player would see). What it digs goes straight into
  * its inventory, ore with up to {@link MinerSkill#extraOre} extra; blocks its pickaxe can't harvest are left in place.
  * It puts a ladder down one wall of the quarry as it digs ({@link Quarry#ladder}) and won't dig a layer it can't put a
- * ladder in, so it can always climb back out. When its goods pile up it carries them to its home chest. Lives in CORE after MoveToTargetSink, like TendFields.
+ * ladder in, so it can always climb back out. It smelts its raw ore in its furnace minecart with coal it holds, and when its goods pile up it carries them to its
+ * home chest, climbing out of the quarry for either. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class DigQuarry extends Behavior<Villager> {
     private static final float SPEED = 0.5F;
@@ -53,6 +56,7 @@ public class DigQuarry extends Behavior<Villager> {
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
     private @Nullable BlockPos target;
     private @Nullable BlockPos chest;
+    private boolean smelting;
     private Quarry.@Nullable Ladder ladder;
     private long targetSince;
     private long nextStartAllowed;
@@ -101,7 +105,12 @@ public class DigQuarry extends Behavior<Villager> {
                 LadderClimb.forgetRoute(body);
             }
             if (body.distanceToSqr(Vec3.atBottomCenterOf(chest)) <= 4.0 && Math.abs(chest.getY() - body.getY()) <= 1.5) {
-                Unloading.deposit(level, body, chest);
+                if (smelting) {
+                    FurnaceTending.tend(level, body, chest, RecipeType.SMELTING, Miner::smelts);
+                    body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+                } else {
+                    Unloading.deposit(level, body, chest);
+                }
                 advance(level, body, timestamp);
             } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
                 advance(level, body, timestamp);
@@ -173,6 +182,7 @@ public class DigQuarry extends Behavior<Villager> {
     private boolean pickTarget(ServerLevel level, Villager body) {
         target = null;
         chest = null;
+        smelting = false;
         Optional<BlockPos> furnace = furnace(level, body);
         if (furnace.isEmpty()) return false;
         long now = level.getGameTime();
@@ -183,6 +193,11 @@ public class DigQuarry extends Behavior<Villager> {
                 chest = home.get();
                 return true;
             }
+        }
+        if (FurnaceTending.needsTending(level, body, furnace.get(), RecipeType.SMELTING, Miner::smelts)) {
+            chest = furnace.get();
+            smelting = true;
+            return true;
         }
         ItemStack pickaxe = pickaxe(body);
         if (pickaxe.isEmpty()) return false;

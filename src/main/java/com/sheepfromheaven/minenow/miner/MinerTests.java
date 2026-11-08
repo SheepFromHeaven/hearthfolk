@@ -187,13 +187,25 @@ public final class MinerTests {
         });
     }
 
-    /** A stone platform (top at y 4) with a 3x3 pit dug one block deep beside the furnace: the quarry, two layers above a barrier floor. */
+    public static void minerSmeltsItsOreInItsFurnaceMinecart(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 3));
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 2));
+        miner.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 10));
+
+        helper.succeedWhen(() -> {
+            var furnace = helper.getLevel().getBlockEntity(helper.absolutePos(FURNACE)) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity f ? f : null;
+            helper.assertTrue(count(miner, Items.IRON_INGOT) >= 3, "The miner should smelt its raw iron in its furnace minecart, has " + count(miner, Items.IRON_INGOT) + " ingots, "
+                    + count(miner, Items.RAW_IRON) + " raw, " + count(miner, Items.COAL) + " coal; furnace " + (furnace == null ? "missing" : furnace.getItem(0) + " / " + furnace.getItem(1) + " / " + furnace.getItem(2))
+                    + "; miner at " + helper.relativePos(miner.blockPosition()).toShortString() + ", running " + miner.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()
+                    + ", activity " + miner.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"));
+            helper.assertTrue(count(miner, Items.COBBLESTONE) == 10, "It keeps its cobblestone as it is rather than smelting it into stone");
+        });
+    }
+
+    /** A 3x3 pit dug one block deep into the platform beside the furnace minecart: the quarry, two layers above a barrier floor. */
     static void quarry(GameTestHelper helper) {
-        for (int x = 4; x <= 12; x++) {
-            for (int z = 8; z <= 16; z++) {
-                for (int y = 1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.STONE);
-            }
-        }
         for (int x = 7; x <= 9; x++) {
             for (int z = 11; z <= 13; z++) {
                 helper.setBlock(x, 3, z, Blocks.AIR);
@@ -246,10 +258,12 @@ public final class MinerTests {
     static Villager spawnMiner(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
-        helper.setBlock(FURNACE, Miner.FURNACE_CART.get());
-        for (int x = 4; x <= 6; x++) {
-            for (int y = 1; y <= 3; y++) helper.setBlock(x, y, 12, Blocks.STONE);
+        for (int x = 1; x <= 22; x++) {
+            for (int z = 1; z <= 22; z++) {
+                for (int y = 1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.STONE);
+            }
         }
+        helper.setBlock(FURNACE, Miner.FURNACE_CART.get());
         return GameTestHelpers.spawnEmployed(helper, FURNACE.west(), FURNACE, Miner.PROFESSION, Miner.POI);
     }
 }

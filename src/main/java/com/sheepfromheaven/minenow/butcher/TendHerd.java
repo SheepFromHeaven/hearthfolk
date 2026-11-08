@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.butcher;
 
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.MineNow;
+import com.sheepfromheaven.minenow.villager.FurnaceTending;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.Tools;
 import com.sheepfromheaven.minenow.villager.Unloading;
@@ -10,7 +11,6 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
@@ -27,7 +27,6 @@ import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.phys.AABB;
@@ -179,32 +178,7 @@ public class TendHerd extends Behavior<Villager> {
     }
 
     private void tendSmoker(ServerLevel level, Villager body) {
-        if (!(level.getBlockEntity(block) instanceof AbstractFurnaceBlockEntity smoker)) return;
-        ItemStack result = smoker.getItem(2);
-        if (!result.isEmpty()) {
-            ItemStack rest = body.getInventory().addItem(result.copy());
-            smoker.setItem(2, rest);
-        }
-        for (ItemStack stack : body.getInventory().getItems()) {
-            if (!smokable(level, stack)) continue;
-            ItemStack input = smoker.getItem(0);
-            if (input.isEmpty()) {
-                smoker.setItem(0, stack.split(stack.getCount()));
-            } else if (ItemStack.isSameItemSameComponents(input, stack)) {
-                int moved = Math.min(stack.getCount(), input.getMaxStackSize() - input.getCount());
-                input.grow(moved);
-                stack.shrink(moved);
-            }
-        }
-        if (smoker.getItem(1).isEmpty()) {
-            for (ItemStack stack : body.getInventory().getItems()) {
-                if (stack.is(ItemTags.COALS)) {
-                    smoker.setItem(1, stack.split(stack.getCount()));
-                    break;
-                }
-            }
-        }
-        smoker.setChanged();
+        FurnaceTending.tend(level, body, block, RecipeType.SMOKING, stack -> true);
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
     }
 
@@ -230,7 +204,7 @@ public class TendHerd extends Behavior<Villager> {
             Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
             if (home.isPresent()) return target(Task.DEPOSIT, null, home.get());
         }
-        if (smokerNeedsTending(level, body, smoker.get())) return target(Task.SMOKE, null, smoker.get());
+        if (FurnaceTending.needsTending(level, body, smoker.get(), RecipeType.SMOKING, stack -> true)) return target(Task.SMOKE, null, smoker.get());
 
         Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
         for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()),
@@ -263,20 +237,6 @@ public class TendHerd extends Behavior<Villager> {
         this.animal = animal;
         this.block = block;
         return true;
-    }
-
-    private boolean smokerNeedsTending(ServerLevel level, Villager body, BlockPos pos) {
-        if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity smoker)) return false;
-        if (!smoker.getItem(2).isEmpty()) return true;
-        boolean fuelled = !smoker.getItem(1).isEmpty() || body.getInventory().hasAnyMatching(stack -> stack.is(ItemTags.COALS));
-        if (!fuelled) return false;
-        ItemStack input = smoker.getItem(0);
-        return body.getInventory().hasAnyMatching(stack -> smokable(level, stack)
-                && (input.isEmpty() || (ItemStack.isSameItemSameComponents(input, stack) && input.getCount() < input.getMaxStackSize())));
-    }
-
-    private static boolean smokable(ServerLevel level, ItemStack stack) {
-        return !stack.isEmpty() && level.recipeAccess().getRecipeFor(RecipeType.SMOKING, new SingleRecipeInput(stack), level).isPresent();
     }
 
     private static boolean readyToBreed(Animal animal) {
