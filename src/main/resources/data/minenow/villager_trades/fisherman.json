@@ -28,6 +28,11 @@
       "item": "minecraft:pufferfish",
       "level": 2,
       "price": 0.5
+    },
+    {
+      "item": "minecraft:bone",
+      "level": 1,
+      "price": 0.03
     }
   ],
   "default_produce": {

@@ -64,7 +64,7 @@ public final class Armorer {
     static @Nullable Villager owner(ServerLevel level, ArmorStand stand) {
         if (!stand.hasData(DISPLAYED_BY)) return null;
         if (level.getEntity(stand.getData(DISPLAYED_BY)) instanceof Villager armorer && armorer.isAlive()
-                && armorer.getVillagerData().profession().is(VillagerProfession.ARMORER)) {
+                && !armorer.getVillagerData().profession().is(VillagerProfession.NONE) && !armorer.getVillagerData().profession().is(VillagerProfession.NITWIT)) {
             return armorer;
         }
         stand.removeData(DISPLAYED_BY);
@@ -72,7 +72,7 @@ public final class Armorer {
     }
 
     /** How much protection a piece gives, armor plus toughness; what decides which piece is shown. */
-    static double protection(ItemStack stack) {
+    public static double protection(ItemStack stack) {
         ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
         return modifiers.modifiers().stream()
                 .filter(entry -> entry.attribute().equals(Attributes.ARMOR) || entry.attribute().equals(Attributes.ARMOR_TOUGHNESS))
@@ -80,7 +80,7 @@ public final class Armorer {
                 .sum();
     }
 
-    static @Nullable EquipmentSlot armorSlot(ItemStack stack) {
+    public static @Nullable EquipmentSlot armorSlot(ItemStack stack) {
         var equippable = stack.get(DataComponents.EQUIPPABLE);
         if (equippable == null || equippable.slot().getType() != EquipmentSlot.Type.HUMANOID_ARMOR) return null;
         return equippable.slot();

@@ -1,0 +1,242 @@
+{
+  "profession": "minecraft:leatherworker",
+  "supplies": [
+    {
+      "item": "minecraft:leather",
+      "price": 0.1667,
+      "max": 32
+    },
+    {
+      "item": "minecraft:rabbit_hide",
+      "price": 0.1111,
+      "max": 16
+    },
+    {
+      "item": "minecraft:bone",
+      "price": 0.03,
+      "max": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "price": 0.0312,
+      "max": 16
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "price": 0.25,
+      "max": 4,
+      "level": 2
+    },
+    {
+      "item": "minecraft:string",
+      "price": 0.1,
+      "max": 8,
+      "level": 3
+    }
+  ],
+  "keeps": [
+    {
+      "items": "minecraft:bone_meal",
+      "max": 16
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:leather",
+      "materials": [
+        {
+          "item": "minecraft:rabbit_hide",
+          "count": 4
+        }
+      ],
+      "count": 1,
+      "labor": 0.05,
+      "level": 1
+    },
+    {
+      "item": "minecraft:bone_meal",
+      "materials": [
+        {
+          "item": "minecraft:bone",
+          "count": 1
+        }
+      ],
+      "count": 3,
+      "labor": 0.01,
+      "level": 1
+    },
+    {
+      "item": "minecraft:red_dye",
+      "materials": [
+        {
+          "item": "minecraft:rose_bush",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.01,
+      "level": 1
+    },
+    {
+      "item": "minecraft:magenta_dye",
+      "materials": [
+        {
+          "item": "minecraft:lilac",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.01,
+      "level": 1
+    },
+    {
+      "item": "minecraft:pink_dye",
+      "materials": [
+        {
+          "item": "minecraft:peony",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.01,
+      "level": 1
+    },
+    {
+      "item": "minecraft:yellow_dye",
+      "materials": [
+        {
+          "item": "minecraft:sunflower",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.01,
+      "level": 1
+    },
+    {
+      "item": "minecraft:orange_dye",
+      "materials": [
+        {
+          "item": "minecraft:red_dye",
+          "count": 1
+        },
+        {
+          "item": "minecraft:yellow_dye",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.01,
+      "level": 1
+    },
+    {
+      "item": "minecraft:leather_helmet",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 5
+        }
+      ],
+      "count": 1,
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:leather_chestplate",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 8
+        }
+      ],
+      "count": 1,
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:leather_leggings",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 7
+        }
+      ],
+      "count": 1,
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:leather_boots",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 4
+        }
+      ],
+      "count": 1,
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:item_frame",
+      "materials": [
+        {
+          "item": "minecraft:stick",
+          "count": 8
+        },
+        {
+          "item": "minecraft:leather",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.05,
+      "level": 1,
+      "stock": 2
+    },
+    {
+      "item": "minecraft:saddle",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 3
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.5,
+      "level": 2
+    },
+    {
+      "item": "minecraft:leather_horse_armor",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 7
+        }
+      ],
+      "count": 1,
+      "labor": 0.5,
+      "level": 2
+    },
+    {
+      "item": "minecraft:bundle",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 1
+        },
+        {
+          "item": "minecraft:string",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.2,
+      "level": 3
+    }
+  ]
+}

@@ -45,17 +45,28 @@ public class ShowArmor extends Behavior<Villager> {
     private long since;
     private long nextStartAllowed;
 
+    private final net.minecraft.resources.ResourceKey<VillagerProfession> profession;
+    private final java.util.function.ToDoubleFunction<ItemStack> worth;
+
+    /** The armorer's displays: any armor, the most protective shown. */
     public ShowArmor() {
+        this(VillagerProfession.ARMORER, Armorer::protection);
+    }
+
+    /** Another trade's displays: pieces worth something to {@code worth} (0 for what it doesn't show), the best shown. */
+    public ShowArmor(net.minecraft.resources.ResourceKey<VillagerProfession> profession, java.util.function.ToDoubleFunction<ItemStack> worth) {
         super(ImmutableMap.of(
                 MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT,
                 MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT
         ), GIVE_UP_AFTER_TICKS + 20);
+        this.profession = profession;
+        this.worth = worth;
     }
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.ARMORER) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(profession) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + RESCAN;
         return pickDisplay(level, body);
     }
@@ -116,8 +127,8 @@ public class ShowArmor extends Behavior<Villager> {
             for (int i = 0; i < body.getInventory().getContainerSize(); i++) {
                 ItemStack piece = body.getInventory().getItem(i);
                 EquipmentSlot target = Armorer.armorSlot(piece);
-                if (target == null) continue;
-                double gain = Armorer.protection(piece) - Armorer.protection(candidate.getItemBySlot(target));
+                if (target == null || worth.applyAsDouble(piece) <= 0) continue;
+                double gain = worth.applyAsDouble(piece) - worth.applyAsDouble(candidate.getItemBySlot(target));
                 if (gain > bestGain) {
                     bestGain = gain;
                     stand = candidate;
