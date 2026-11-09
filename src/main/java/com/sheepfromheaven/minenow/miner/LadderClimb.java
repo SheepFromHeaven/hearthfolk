@@ -37,6 +37,14 @@ final class LadderClimb {
                 .map(GlobalPos::pos);
     }
 
+    /** Puts the villager on the surface beside the top of the mine's ladder (or on its cart), for when climbing has failed. */
+    static void helpOut(ServerLevel level, Villager body, BlockPos cart) {
+        BlockPos spot = Quarry.around(level, cart).ladder(level, cart).map(LadderClimb::exit).orElse(cart.above());
+        forgetRoute(body);
+        body.teleportTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
+        body.resetFallDistance();
+    }
+
     static boolean climbedOut(ServerLevel level, Villager body, BlockPos cart) {
         return !Quarry.around(level, cart).contains(body.blockPosition()) && body.onGround();
     }

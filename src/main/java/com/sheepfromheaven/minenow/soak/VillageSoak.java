@@ -142,6 +142,20 @@ public final class VillageSoak {
             residents.add(new Resident(role, n, settle(helper, role, ox, oz, starterTools)));
         }
 
+        net.minecraft.server.level.ServerPlayer player = null;
+        if (!"false".equals(System.getProperty("minenow.soak.player", "true"))) {
+            @SuppressWarnings("removal")
+            net.minecraft.server.level.ServerPlayer mock = helper.makeMockServerPlayerInLevel();
+            mock.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            BlockPos stand = helper.absolutePos(new BlockPos(SIZE / 2, G + 1, 1 + 2 * CELL_D));
+            mock.snapTo(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5);
+            player = mock;
+        }
+        int playerBudget = Integer.getInteger("minenow.soak.playerBudget", 0);
+        net.minecraft.server.level.ServerPlayer visitor = player;
+        Map<String, Integer> playerBought = new TreeMap<>();
+        java.util.Random shopping = new java.util.Random(11);
+
         try {
             Files.createDirectories(out);
             Files.writeString(out.resolve("days.csv"), "day,profession,alive,emeralds,food,goods,export_goods,starving,idle,idle_reasons\n");
@@ -171,6 +185,7 @@ public final class VillageSoak {
         helper.succeedWhen(() -> {
             tick[0]++;
             helper.setTime(tick[0] % DAY);
+            if (visitor != null && playerBudget > 0 && tick[0] % DAY == 6000) shop(level, visitor, residents, playerBudget, shopping, playerBought);
             if (tick[0] % 200 == 0) {
                 for (WanderingTrader trader : level.getEntitiesOfClass(WanderingTrader.class, helper.getBounds().inflate(128),
                         t -> t.getData(ModVillagers.TRAVELLING_MERCHANT))) {
@@ -236,7 +251,7 @@ public final class VillageSoak {
                         String.format("%.0f", tick[0] / Math.max(seconds, 0.001)));
             }
             if (tick[0] >= totalTicks) {
-                finalReport(level, helper, out, residents);
+                finalReport(level, helper, out, residents, playerBought);
                 return;
             }
             helper.assertTrue(false, "soaking, tick " + tick[0]);
@@ -420,6 +435,28 @@ public final class VillageSoak {
         return all;
     }
 
+    /** A player's day of shopping: random villagers' goods at their player prices, through the same trade event as a real trade, until the budget is spent. */
+    private static void shop(ServerLevel level, net.minecraft.server.level.ServerPlayer player, List<Resident> residents, int budget, java.util.Random random, Map<String, Integer> bought) {
+        List<Resident> shops = new ArrayList<>(residents);
+        java.util.Collections.shuffle(shops, random);
+        int left = budget;
+        for (Resident resident : shops) {
+            Villager v = resident.villager();
+            if (left <= 0) break;
+            if (!v.isAlive() || v.isBaby() || v.isTrading()) continue;
+            int remaining = left;
+            List<net.minecraft.world.item.trading.MerchantOffer> wares = com.sheepfromheaven.minenow.villager.ProfessionTrades.currentOffers(level, v).stream()
+                    .filter(offer -> offer.getCostA().is(Items.EMERALD) && !offer.getResult().is(Items.EMERALD) && !offer.isOutOfStock() && offer.getCostA().getCount() <= remaining)
+                    .toList();
+            if (wares.isEmpty()) continue;
+            net.minecraft.world.item.trading.MerchantOffer offer = wares.get(random.nextInt(wares.size()));
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent(player, offer, v));
+            offer.increaseUses();
+            left -= offer.getCostA().getCount();
+            bought.merge(offer.getResult().getItem().toString().replace("minecraft:", ""), offer.getResult().getCount(), Integer::sum);
+        }
+    }
+
     /** Every emerald there is, claimed or not: the soak's chests, the villagers' pockets and any lying about. */
     private static int everyEmerald(ServerLevel level, GameTestHelper helper, List<Resident> residents) {
         int total = 0;
@@ -502,7 +539,7 @@ public final class VillageSoak {
                 day, all[0], residents.size(), all[1], all[2], all[3], all[4], all[5], all[6], merchants);
     }
 
-    private static void finalReport(ServerLevel level, GameTestHelper helper, Path out, List<Resident> residents) {
+    private static void finalReport(ServerLevel level, GameTestHelper helper, Path out, List<Resident> residents, Map<String, Integer> playerBought) {
         StringBuilder text = new StringBuilder();
         for (Resident resident : residents) {
             Villager v = resident.villager();
@@ -532,7 +569,25 @@ public final class VillageSoak {
         for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, helper.getBounds().inflate(8))) {
             loose.merge(item.getItem().getItem().toString(), item.getItem().getCount(), Integer::sum);
         }
-        text.append("== loose items in the world: ").append(loose).append('\n');
+        text.append("== loose items in the world: ").append(loose).append('\n');        text.append("== the visiting player bought: ").append(playerBought).append('\n');
+        for (int i = 0; i < ROSTER.length; i++) {
+            if (ROSTER[i] != Role.MINER) continue;
+            int ox = 1 + (i % 5) * CELL_W;
+            int oz = 1 + (i / 5) * CELL_D;
+            text.append("== mine of the miner in cell ").append(ox).append(',').append(oz).append(" (x across ").append(ox + 3).append("..").append(ox + 13)
+                    .append(", z down ").append(oz + 2).append("..").append(oz + 12).append("; #=solid H=ladder .=air ~=fluid)\n");
+            for (int y = G; y >= G - 7; y--) {
+                text.append("  y ").append(y).append('\n');
+                for (int z = oz + 2; z <= oz + 12; z++) {
+                    text.append("    ");
+                    for (int x = ox + 3; x <= ox + 13; x++) {
+                        BlockState state = helper.getBlockState(new BlockPos(x, y, z));
+                        text.append(state.is(Blocks.LADDER) ? 'H' : !state.getFluidState().isEmpty() ? '~' : state.isAir() ? '.' : state.getBlock() instanceof net.minecraft.world.level.block.TorchBlock || state.getBlock() instanceof net.minecraft.world.level.block.WallTorchBlock ? 't' : '#');
+                    }
+                    text.append('\n');
+                }
+            }
+        }
         text.append("== travelling merchants and mules still around: ").append(
                 level.getEntitiesOfClass(WanderingTrader.class, helper.getBounds().inflate(128)).size()).append(" traders\n");
         try {

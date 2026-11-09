@@ -14,10 +14,13 @@ public class LeaveQuarry extends Behavior<Villager> {
     private static final int CHECK_EVERY = 20;
 
     private long nextCheck;
+    private long startedAt;
+    /** Climbing out has failed in odd corners of a half-dug mine; after this long a villager is helped out rather than trapped for good. */
+    private static final int HELP_OUT_AFTER = 600;
     private net.minecraft.core.@org.jspecify.annotations.Nullable BlockPos cart;
 
     public LeaveQuarry() {
-        super(ImmutableMap.of(), 600);
+        super(ImmutableMap.of(), 1200);
     }
 
     @Override
@@ -40,7 +43,16 @@ public class LeaveQuarry extends Behavior<Villager> {
     }
 
     @Override
+    protected void start(ServerLevel level, Villager body, long timestamp) {
+        startedAt = timestamp;
+    }
+
+    @Override
     protected void tick(ServerLevel level, Villager body, long timestamp) {
+        if (timestamp - startedAt > HELP_OUT_AFTER) {
+            LadderClimb.helpOut(level, body, cart);
+            return;
+        }
         LadderClimb.climbOut(level, body, cart);
     }
 

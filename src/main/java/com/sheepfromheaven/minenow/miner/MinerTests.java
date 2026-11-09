@@ -337,6 +337,22 @@ public final class MinerTests {
         helper.runAfterDelay(300, helper::succeed);
     }
 
+    public static void aVillagerSealedOffFromTheLadderStillGetsOut(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) helper.setBlock(new BlockPos(7, y, 11), Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, net.minecraft.core.Direction.EAST));
+        helper.setBlock(new BlockPos(9, 1, 13), Blocks.AIR);
+        helper.setBlock(new BlockPos(9, 2, 13), Blocks.AIR);
+        Villager visitor = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(9, 1, 13));
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(visitor.getY() >= surface && visitor.onGround(),
+                    "A villager down a mine that can't reach the ladder is helped out rather than trapped for good, at " + helper.relativePos(visitor.blockPosition()).toShortString());
+            helper.succeed();
+        });
+    }
+
     public static void aVillagerThatFallsIntoAMineClimbsOutByTheLadder(GameTestHelper helper) {
         spawnMiner(helper);
         quarry(helper);
