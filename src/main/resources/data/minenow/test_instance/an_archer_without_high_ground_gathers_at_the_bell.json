@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:bell",
+  "function": "minenow:an_archer_without_high_ground_gathers_at_the_bell",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

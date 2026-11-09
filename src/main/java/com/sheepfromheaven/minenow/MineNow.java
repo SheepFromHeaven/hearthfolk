@@ -242,6 +242,13 @@ public final class MineNow {
             test(helper, TestGroup.DEFENCE, "an_armed_villager_chases_no_further_than_eight_blocks", com.sheepfromheaven.minenow.villager.GearTests::anArmedVillagerChasesNoFurtherThanEightBlocks);
             test(helper, TestGroup.DEFENCE, "armed_villagers_fight_raiders", com.sheepfromheaven.minenow.villager.GearTests::armedVillagersFightRaiders);
             test(helper, TestGroup.DEFENCE, "an_archer_shoots_hostiles", com.sheepfromheaven.minenow.villager.GearTests::anArcherShootsHostiles);
+            test(helper, TestGroup.DEFENCE, "the_bell_gathers_armed_villagers_at_the_meeting_point", com.sheepfromheaven.minenow.villager.GearTests::theBellGathersArmedVillagersAtTheMeetingPoint);
+            test(helper, TestGroup.DEFENCE, "an_archer_climbs_to_high_ground_when_the_bell_rings", com.sheepfromheaven.minenow.villager.GearTests::anArcherClimbsToHighGroundWhenTheBellRings);
+            test(helper, TestGroup.DEFENCE, "a_perched_archer_stays_up_and_shoots_raiders_further_than_it_would_on_the_ground", com.sheepfromheaven.minenow.villager.GearTests::aPerchedArcherStaysUpAndShootsRaidersFurtherThanItWouldOnTheGround);
+            test(helper, TestGroup.DEFENCE, "an_archer_without_high_ground_gathers_at_the_bell", com.sheepfromheaven.minenow.villager.GearTests::anArcherWithoutHighGroundGathersAtTheBell);
+            test(helper, TestGroup.DEFENCE, "an_archer_climbs_into_a_roofed_tower", com.sheepfromheaven.minenow.villager.GearTests::anArcherClimbsIntoARoofedTower);
+            test(helper, TestGroup.DEFENCE, "an_archer_prefers_a_marked_post_to_higher_ground", com.sheepfromheaven.minenow.villager.GearTests::anArcherPrefersAMarkedPostToHigherGround);
+            test(helper, TestGroup.DEFENCE, "a_villager_on_high_ground_notices_a_hostile_further_off_than_one_on_the_ground", com.sheepfromheaven.minenow.villager.GearTests::aVillagerOnHighGroundNoticesAHostileFurtherOffThanOneOnTheGround);
             test(helper, TestGroup.DEFENCE, "a_fallen_villagers_gear_drops", com.sheepfromheaven.minenow.villager.GearTests::aFallenVillagersGearDrops);
             test(helper, TestGroup.WEAPONSMITH, "a_novice_weaponsmith_makes_stone_swords", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aNoviceWeaponsmithMakesStoneSwords);
             test(helper, TestGroup.WEAPONSMITH, "a_weaponsmith_grinds_two_worn_swords_into_one", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aWeaponsmithGrindsTwoWornSwordsIntoOne);

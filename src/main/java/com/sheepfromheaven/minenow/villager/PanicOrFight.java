@@ -28,13 +28,12 @@ import org.jspecify.annotations.Nullable;
  * away. With a sword it draws it from its side and swings it as a player would ({@link Weapons}), wearing it; with a bow
  * (at its side, or a fletcher's among its goods) it shoots from where it stands, arrows from its quiver first. It chases no further than {@link #CHASE} blocks from where the fight
  * started, then goes back to its day and puts the weapon away. A fight only starts with an enemy it can see, so an
- * attacker it remembers but can't see doesn't draw it in as it goes about its day. A villager below a third of its health, or unarmed,
- * panics as in vanilla.
+ * attacker it remembers but can't see doesn't draw it in as it goes about its day. An archer on the high ground it took
+ * for an alarm ({@link Muster}) never leaves it: it shoots whatever it sees from there ({@link Sight}) and doesn't panic at hostiles it can't see. A villager below a third of its health, or unarmed, panics as in vanilla.
  */
 public class PanicOrFight extends VillagerPanicTrigger {
     static final double CHASE = 8.0;
     private static final double REACH = 2.5;
-    private static final double BOW_RANGE = 15.0;
     private static final int SHOT_EVERY = 30;
     private static final float SPEED = 0.7F;
     private static final float VELOCITY = 1.6F;
@@ -43,10 +42,17 @@ public class PanicOrFight extends VillagerPanicTrigger {
 
     private static final int REMEMBER_ANCHOR = 200;
 
+    private static final java.util.Set<Villager> FIGHTING = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
     private @Nullable Vec3 anchor;
     private @Nullable Vec3 lastAnchor;
     private long endedAt;
     private long nextSwing;
+
+    /** Whether it's in a fight right now, which then decides where it walks. */
+    static boolean isFighting(Villager villager) {
+        return FIGHTING.contains(villager);
+    }
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
@@ -58,6 +64,8 @@ public class PanicOrFight extends VillagerPanicTrigger {
         LivingEntity enemy = enemy(body, origin(body, timestamp));
         if (enemy != null && body.hasLineOfSight(enemy) && ableToFight(body)) {
             beginFight(body, timestamp);
+        } else if (Muster.holdsPerch(body) && ableToFight(body)) {
+            return;
         } else {
             super.start(level, body, timestamp);
         }
@@ -71,7 +79,7 @@ public class PanicOrFight extends VillagerPanicTrigger {
         if (enemy == null || !ableToFight(body)) {
             if (anchor != null) {
                 endFight(level, body, timestamp);
-                if (isHurt(body) || hasHostile(body)) body.getBrain().setActiveActivityIfPossible(Activity.PANIC);
+                if ((isHurt(body) || hasHostile(body)) && !Muster.holdsPerch(body)) body.getBrain().setActiveActivityIfPossible(Activity.PANIC);
             }
             return;
         }
@@ -89,16 +97,17 @@ public class PanicOrFight extends VillagerPanicTrigger {
         return Gear.isArmed(body) && body.getHealth() > body.getMaxHealth() / 3.0F;
     }
 
-    /** What attacked it, if that's a hostile, else the nearest hostile; only within reach of a chase from {@code from}. */
+    /** What attacked it, if that's a hostile, else the nearest hostile; only within reach of a chase from {@code from}, or of its bow when it holds high ground. */
     private static @Nullable LivingEntity enemy(Villager body, Vec3 from) {
         Brain<?> brain = body.getBrain();
+        double reach = Muster.holdsPerch(body) ? Sight.BOW_RANGE + Sight.MAX_HEIGHT : CHASE + REACH;
         LivingEntity attacker = brain.getMemory(MemoryModuleType.HURT_BY_ENTITY).filter(entity -> entity instanceof Enemy).orElse(null);
-        LivingEntity enemy = attacker != null && inReach(attacker, from) ? attacker : brain.getMemory(MemoryModuleType.NEAREST_HOSTILE).orElse(null);
-        return enemy != null && enemy.isAlive() && inReach(enemy, from) ? enemy : null;
+        LivingEntity enemy = attacker != null && inReach(attacker, from, reach) ? attacker : brain.getMemory(MemoryModuleType.NEAREST_HOSTILE).orElse(null);
+        return enemy != null && enemy.isAlive() && inReach(enemy, from, reach) ? enemy : null;
     }
 
-    private static boolean inReach(LivingEntity enemy, Vec3 from) {
-        return enemy.position().distanceTo(from) <= CHASE + REACH;
+    private static boolean inReach(LivingEntity enemy, Vec3 from, double reach) {
+        return enemy.position().distanceTo(from) <= reach;
     }
 
     /** Where a chase is measured from: where this fight began, or the last one if it ended only moments ago, so fights that stop and start again can't walk it further and further away. */
@@ -110,6 +119,7 @@ public class PanicOrFight extends VillagerPanicTrigger {
 
     private void beginFight(Villager body, long timestamp) {
         anchor = origin(body, timestamp);
+        FIGHTING.add(body);
         Brain<Villager> brain = body.getBrain();
         brain.eraseMemory(MemoryModuleType.PATH);
         brain.eraseMemory(MemoryModuleType.WALK_TARGET);
@@ -122,6 +132,7 @@ public class PanicOrFight extends VillagerPanicTrigger {
         lastAnchor = anchor;
         endedAt = timestamp;
         anchor = null;
+        FIGHTING.remove(body);
         ItemStack held = body.getMainHandItem();
         if (held.is(net.minecraft.tags.ItemTags.SWORDS) || held.is(Items.BOW)) body.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
         Brain<Villager> brain = body.getBrain();
@@ -142,7 +153,8 @@ public class PanicOrFight extends VillagerPanicTrigger {
             body.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
         }
         double distance = body.distanceTo(enemy);
-        boolean inRange = (shooting ? distance <= BOW_RANGE : distance <= REACH) && body.hasLineOfSight(enemy);
+        boolean inRange = (shooting ? distance <= Sight.bowRange(body, enemy) : distance <= REACH) && body.hasLineOfSight(enemy);
+        if (!inRange && shooting && Muster.holdsPerch(body)) return;
         if (!inRange) {
             brain.setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(new EntityTracker(enemy, false), SPEED, shooting ? 8 : 1));
             return;
