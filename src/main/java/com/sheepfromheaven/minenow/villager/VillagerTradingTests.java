@@ -61,4 +61,34 @@ public final class VillagerTradingTests {
     private static int count(Villager villager, Item item) {
         return villager.getInventory().countItem(item);
     }
+
+    public static void aSellerOutOfReachDoesNotCostTheBuyerItsJob(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(5, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager buyer = GameTestHelpers.spawnEmployed(helper, composter.east(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        buyer.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+        BlockPos sellerSite = new BlockPos(11, 1, 12);
+        for (int x = 8; x <= 14; x++) {
+            for (int z = 9; z <= 15; z++) {
+                for (int y = 1; y <= 3; y++) {
+                    if (x == 8 || x == 14 || z == 9 || z == 15 || y == 3) helper.setBlock(x, y, z, Blocks.GLASS);
+                }
+            }
+        }
+        helper.setBlock(sellerSite, Blocks.COMPOSTER);
+        Villager seller = GameTestHelpers.spawnEmployed(helper, sellerSite.east(), sellerSite, VillagerProfession.FARMER, PoiTypes.FARMER);
+        seller.getInventory().addItem(new ItemStack(Items.POTATO, 64));
+        seller.setNoAi(true);
+        seller.snapTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(9.6, 1, 12.5)));
+        helper.onEachTick(() -> com.sheepfromheaven.minenow.villager.Meals.makeHungry(buyer));
+
+        helper.runAfterDelay(2600, () -> {
+            helper.assertTrue(buyer.getBrain().hasMemoryValue(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE),
+                    "Failing to reach a seller behind glass must not count as failing to reach its own composter, or vanilla takes its job away");
+            helper.assertTrue(buyer.getInventory().countItem(Items.EMERALD) == 5, "...and it can't buy through the glass, has " + buyer.getInventory().countItem(Items.EMERALD));
+            helper.succeed();
+        });
+    }
 }

@@ -30,13 +30,30 @@ final class LadderClimb {
         return furnace(level, body).map(furnace -> Quarry.around(level, furnace).contains(body.blockPosition())).orElse(false);
     }
 
-    /** One tick of climbing out; true once the villager stands on the surface beside the ladder. */
-    static boolean climbOut(ServerLevel level, Villager body) {
-        Optional<BlockPos> furnace = furnace(level, body);
-        if (furnace.isEmpty()) return true;
-        Quarry quarry = Quarry.around(level, furnace.get());
-        if (!quarry.contains(body.blockPosition())) return true;
-        return quarry.ladder(level, furnace.get()).map(ladder -> climbTo(body, quarry, ladder, quarry.top() + 1, exit(ladder))).orElse(true);
+    static Optional<BlockPos> ownCart(ServerLevel level, Villager body) {
+        if (!body.getVillagerData().profession().is(Miner.PROFESSION)) return Optional.empty();
+        return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
+                .filter(site -> site.dimension() == level.dimension())
+                .map(GlobalPos::pos);
+    }
+
+    static boolean climbedOut(ServerLevel level, Villager body, BlockPos cart) {
+        return !Quarry.around(level, cart).contains(body.blockPosition()) && body.onGround();
+    }
+
+    /** The cart of the mine the villager stands in, if any. */
+    static Optional<BlockPos> mineOf(ServerLevel level, Villager body) {
+        return furnace(level, body).filter(cart -> Quarry.around(level, cart).contains(body.blockPosition()));
+    }
+
+    /**
+     * One tick of climbing out of the mine at {@code cart}; true once the villager stands on solid ground outside it. Its
+     * feet clear the mine while it is still over the ladder column, with nothing under it, so it isn't out until it's on the ground.
+     */
+    static boolean climbOut(ServerLevel level, Villager body, BlockPos cart) {
+        Quarry quarry = Quarry.around(level, cart);
+        if (!quarry.contains(body.blockPosition()) && body.onGround()) return true;
+        return quarry.ladder(level, cart).map(ladder -> climbTo(body, quarry, ladder, quarry.top() + 1, exit(ladder))).orElse(true);
     }
 
     /**
@@ -150,13 +167,10 @@ final class LadderClimb {
         body.getNavigation().stop();
     }
 
-    /** A miner's own cart; for anyone else the cart of the mine it stands in, since a buyer or a stroller can end up down someone's mine. */
+    /** A miner's own cart while it is in its own mine; otherwise the cart of the mine it stands in, since a buyer, a stroller or another miner can end up down someone's mine. */
     private static Optional<BlockPos> furnace(ServerLevel level, Villager body) {
-        if (body.getVillagerData().profession().is(Miner.PROFESSION)) {
-            return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
-                    .filter(site -> site.dimension() == level.dimension())
-                    .map(GlobalPos::pos);
-        }
+        Optional<BlockPos> own = ownCart(level, body);
+        if (own.isPresent() && Quarry.around(level, own.get()).contains(body.blockPosition())) return own;
         return level.getPoiManager().findAll(poi -> poi.is(Miner.POI), pos -> pos.getY() > body.getBlockY(), body.blockPosition(), CART_SEARCH,
                         net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY)
                 .filter(cart -> Quarry.around(level, cart).contains(body.blockPosition()))

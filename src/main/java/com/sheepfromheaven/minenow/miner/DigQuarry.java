@@ -103,8 +103,9 @@ public class DigQuarry extends Behavior<Villager> {
     @Override
     protected void tick(ServerLevel level, Villager body, long timestamp) {
         if (chest != null) {
-            if (LadderClimb.inQuarry(level, body)) {
-                LadderClimb.climbOut(level, body);
+            Optional<BlockPos> cart = furnace(level, body);
+            if (cart.isPresent() && LadderClimb.inQuarry(level, body)) {
+                LadderClimb.climbOut(level, body, cart.get());
                 climbing = true;
                 targetSince = timestamp;
                 return;

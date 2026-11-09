@@ -262,9 +262,57 @@ public final class MinerTests {
         }
         Villager visitor = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(8, 1, 12));
 
-        helper.runAfterDelay(200, () -> {
-            helper.assertTrue(visitor.getY() >= helper.absolutePos(new BlockPos(0, 4, 0)).getY(),
-                    "A villager in a dug pocket diagonal to the ladder climbs out rather than pushing into the corner, at " + helper.relativePos(visitor.blockPosition()).toShortString());
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+        helper.runAfterDelay(200, () -> helper.assertTrue(visitor.getY() >= surface && visitor.onGround(),
+                "A villager in a dug pocket diagonal to the ladder climbs out rather than pushing into the corner, at " + helper.relativePos(visitor.blockPosition()).toShortString()));
+        helper.runAfterDelay(260, () -> {
+            helper.assertTrue(visitor.getY() >= surface && visitor.onGround(), "...and stays out, at " + helper.relativePos(visitor.blockPosition()).toShortString());
+            helper.succeed();
+        });
+    }
+
+    public static void aWorkerHeadedForItsJobSiteStillClimbsOutOfAMine(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+            helper.setBlock(new BlockPos(7, y, 11), Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, net.minecraft.core.Direction.EAST));
+        }
+        BlockPos composter = new BlockPos(18, 4, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, new BlockPos(9, 1, 13), composter,
+                net.minecraft.world.entity.npc.villager.VillagerProfession.FARMER, net.minecraft.world.entity.ai.village.poi.PoiTypes.FARMER);
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+
+        helper.runAfterDelay(300, () -> helper.assertTrue(farmer.getY() >= surface && farmer.onGround(),
+                "A farmer at work climbs out of a mine though vanilla keeps steering it towards its composter, at " + helper.relativePos(farmer.blockPosition()).toShortString()));
+        helper.runAfterDelay(360, () -> {
+            helper.assertTrue(farmer.getY() >= surface && farmer.onGround(), "...and stays out, at " + helper.relativePos(farmer.blockPosition()).toShortString());
+            helper.succeed();
+        });
+    }
+
+    public static void aMinerInAnotherMinersMineClimbsOut(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+            helper.setBlock(new BlockPos(7, y, 11), Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, net.minecraft.core.Direction.EAST));
+        }
+        BlockPos otherCart = new BlockPos(18, 4, 18);
+        helper.setBlock(otherCart, Miner.FURNACE_CART.get());
+        Villager visitor = GameTestHelpers.spawnEmployed(helper, new BlockPos(9, 1, 13), otherCart, Miner.PROFESSION, Miner.POI);
+        visitor.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+
+        helper.runAfterDelay(300, () -> helper.assertTrue(visitor.getY() >= surface && visitor.onGround(),
+                "A miner down another miner's mine climbs out by that mine's ladder, at " + helper.relativePos(visitor.blockPosition()).toShortString()));
+        helper.runAfterDelay(360, () -> {
+            helper.assertTrue(visitor.getY() >= surface && visitor.onGround(), "...and stays out, at " + helper.relativePos(visitor.blockPosition()).toShortString());
             helper.succeed();
         });
     }
@@ -280,9 +328,11 @@ public final class MinerTests {
         }
         Villager visitor = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(9, 1, 13));
 
-        helper.runAfterDelay(200, () -> {
-            helper.assertTrue(visitor.getY() >= helper.absolutePos(new BlockPos(0, 4, 0)).getY(),
-                    "A villager down someone's mine climbs out by its ladder instead of staying trapped, at " + helper.relativePos(visitor.blockPosition()).toShortString());
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+        helper.runAfterDelay(200, () -> helper.assertTrue(visitor.getY() >= surface && visitor.onGround(),
+                "A villager down someone's mine climbs out by its ladder instead of staying trapped, at " + helper.relativePos(visitor.blockPosition()).toShortString()));
+        helper.runAfterDelay(260, () -> {
+            helper.assertTrue(visitor.getY() >= surface && visitor.onGround(), "...and stays out, at " + helper.relativePos(visitor.blockPosition()).toShortString());
             helper.succeed();
         });
     }

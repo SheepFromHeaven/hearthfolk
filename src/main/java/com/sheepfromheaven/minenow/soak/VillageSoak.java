@@ -155,12 +155,16 @@ public final class VillageSoak {
         long traceFrom = Long.getLong("minenow.soak.traceFrom", -1L);
         try {
             Files.deleteIfExists(out.resolve("trace.txt"));
+            Files.deleteIfExists(out.resolve("mines.txt"));
         } catch (IOException e) {
             LOGGER.error("Cannot clear the soak trace", e);
         }
         LOGGER.info("[soak] village built, running {} ticks", totalTicks);
         Set<UUID> merchantsSeen = new HashSet<>();
         long[] tick = {0};
+        boolean[] hadJob = new boolean[ROSTER.length];
+        net.minecraft.core.GlobalPos[] lastSite = new net.minecraft.core.GlobalPos[ROSTER.length];
+        java.util.Arrays.fill(hadJob, true);
         long started = System.nanoTime();
         helper.getLevel().getServer().tickRateManager().requestGameToSprint((int) Math.min(Integer.MAX_VALUE, totalTicks + 40));
 
@@ -171,6 +175,51 @@ public final class VillageSoak {
                 for (WanderingTrader trader : level.getEntitiesOfClass(WanderingTrader.class, helper.getBounds().inflate(128),
                         t -> t.getData(ModVillagers.TRAVELLING_MERCHANT))) {
                     merchantsSeen.add(trader.getUUID());
+                }
+            }
+            if (Boolean.getBoolean("minenow.soak.traceMines") && tick[0] % 20 == 0) {
+                StringBuilder down = new StringBuilder();
+                for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds())) {
+                    if (v.isBaby() || !Miner.isDownAMine(level, v)) continue;
+                    down.append(tick[0]).append(' ').append(v.getName().getString()).append(' ').append(v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?"))
+                            .append(String.format(" at %.2f %.2f %.2f", v.getX() - helper.absolutePos(BlockPos.ZERO).getX(), v.getY() - helper.absolutePos(BlockPos.ZERO).getY(), v.getZ() - helper.absolutePos(BlockPos.ZERO).getZ()))
+                            .append(" ground ").append(v.onGround()).append(String.format(" v %.2f %.2f %.2f", v.getDeltaMovement().x, v.getDeltaMovement().y, v.getDeltaMovement().z))
+                            .append(' ').append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
+                            .append(' ').append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList())
+                            .append(" walk=").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> helper.relativePos(w.getTarget().currentBlockPosition()).toShortString()).orElse("-"))
+                            .append('\n');
+                }
+                if (!down.isEmpty()) {
+                    try {
+                        Files.writeString(out.resolve("mines.txt"), down, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+                    } catch (IOException e) {
+                        LOGGER.error("Cannot append to the mine trace", e);
+                    }
+                }
+            }
+            if (tick[0] % 20 == 0) {
+                for (int i = 0; i < residents.size(); i++) {
+                    Villager v = residents.get(i).villager();
+                    boolean has = v.getBrain().hasMemoryValue(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE);
+                    if (hadJob[i] && !has && lastSite[i] != null) {
+                        net.minecraft.core.GlobalPos lost = lastSite[i];
+                        String rivals = level.getEntitiesOfClass(Villager.class, helper.getBounds(), o -> o != v
+                                        && o.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE).map(lost::equals).orElse(false))
+                                .stream().map(o -> o.getName().getString() + (o.isBaby() ? " baby" : "") + " xp " + o.getVillagerXp()).toList().toString();
+                        LOGGER.info("[soak] tick {}: {} (xp {}) lost {} to {}; cant reach for {}; poi {} block {} free {}", tick[0], residents.get(i).name(), v.getVillagerXp(), helper.relativePos(lost.pos()).toShortString(), rivals,
+                                v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE).map(since -> level.getGameTime() - since).map(Object::toString).orElse("-"),
+                                level.getPoiManager().getType(lost.pos()).flatMap(h -> h.unwrapKey()).map(Object::toString).orElse("none"),
+                                level.getBlockState(lost.pos()).getBlock().getDescriptionId(),
+                                level.getPoiManager().exists(lost.pos(), h -> true) && level.getPoiManager().getInRange(h -> true, lost.pos(), 0, net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.HAS_SPACE).findAny().isPresent());
+                    }
+                    if (hadJob[i] && !has) {
+                        LOGGER.info("[soak] tick {}: {} lost its job site at {} ({}), alive {}, profession {}, running {}", tick[0], residents.get(i).name(),
+                                helper.relativePos(v.blockPosition()).toShortString(), v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"), v.isAlive(),
+                                v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?"),
+                                v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList());
+                    }
+                    hadJob[i] = has;
+                    lastSite[i] = v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE).orElse(lastSite[i]);
                 }
             }
             if (!trace.isEmpty() && (tick[0] % 1200 == 0 || (tick[0] >= traceFrom && tick[0] < traceFrom + 1200 && tick[0] % 20 == 0))) trace(level, helper, out, tick[0], residents, trace);
@@ -349,6 +398,8 @@ public final class VillageSoak {
                     .append(' ').append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
                     .append(' ').append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList())
                     .append(" walk=").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> w.getTarget().currentBlockPosition().toShortString()).orElse("-"))
+                    .append(" cantReach=").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE).map(since -> level.getGameTime() - since).map(Object::toString).orElse("-"))
+                    .append(" job=").append(v.getBrain().hasMemoryValue(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE))
                     .append(" goods=").append(list(v.getInventory()))
                     .append(resident.role() == Role.MINER ? " " + Miner.describeLadder(level, v).replaceAll("-?\\d+, (-?\\d+), -?\\d+ facing", "(top y $1) facing") + " ladderAt " + Miner.ladderTop(level, v).map(p -> helper.relativePos(p).toShortString()).orElse("-") : "").append('\n');
         }
@@ -367,6 +418,20 @@ public final class VillageSoak {
             if (container != null) all.add(container);
         }
         return all;
+    }
+
+    /** Every emerald there is, claimed or not: the soak's chests, the villagers' pockets and any lying about. */
+    private static int everyEmerald(ServerLevel level, GameTestHelper helper, List<Resident> residents) {
+        int total = 0;
+        for (int i = 0; i < ROSTER.length; i++) {
+            Container chest = HomeStorage.chestContainer(level, helper.absolutePos(at(1 + (i % 5) * CELL_W, 1 + (i / 5) * CELL_D, 5, 1, 13)));
+            if (chest != null) total += chest.countItem(Items.EMERALD);
+        }
+        for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds())) total += v.getInventory().countItem(Items.EMERALD);
+        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, helper.getBounds().inflate(8), item -> item.getItem().is(Items.EMERALD))) {
+            total += item.getItem().getCount();
+        }
+        return total;
     }
 
     private record Tally(int emeralds, int food, int goods, int exportGoods) {}
@@ -415,9 +480,19 @@ public final class VillageSoak {
             herd.merge(animal.getType().toShortString(), animal.isBaby() ? "+1 young" : "+1", (a, b) -> a + b);
         }
         csv.append(day).append(",livestock,0,0,0,0,0,0,0,\"").append(herd).append("\"\n");
+        List<Villager> everyone = level.getEntitiesOfClass(Villager.class, helper.getBounds());
+        Set<Villager> original = new HashSet<>();
+        for (Resident resident : residents) original.add(resident.villager());
+        Map<String, Integer> newcomers = new TreeMap<>();
+        for (Villager v : everyone) {
+            if (original.contains(v)) continue;
+            String kind = v.isBaby() ? "baby" : v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?");
+            newcomers.merge(kind, 1, Integer::sum);
+        }
+        csv.append(day).append(",population,").append(everyone.size()).append(",0,0,0,0,0,0,\"born here: ").append(newcomers).append("\"\n");
         csv.append(day).append(",ALL");
         for (int i = 0; i < 7; i++) csv.append(',').append(all[i]);
-        csv.append(",\"merchants seen so far: ").append(merchants).append("\"\n");
+        csv.append(",\"merchants seen so far: ").append(merchants).append(", every emerald in the village: ").append(everyEmerald(level, helper, residents)).append("\"\n");
         try {
             Files.writeString(out.resolve("days.csv"), csv, java.nio.file.StandardOpenOption.APPEND);
         } catch (IOException e) {
@@ -444,6 +519,14 @@ public final class VillageSoak {
                 text.append("  chest ").append(helper.relativePos(chest).toShortString()).append(": ")
                         .append(container == null ? "(gone)" : list(container)).append('\n');
             }
+        }
+        Set<Villager> original = new HashSet<>();
+        for (Resident resident : residents) original.add(resident.villager());
+        for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds(), v -> !original.contains(v))) {
+            text.append("== born here: ").append(v.getName().getString()).append(v.isBaby() ? " (baby)" : " " + v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?")
+                    + " level " + v.getVillagerData().level()).append(" at ").append(helper.relativePos(v.blockPosition()).toShortString())
+                    .append(", job site ").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE).map(g -> helper.relativePos(g.pos()).toShortString()).orElse("-"))
+                    .append(", pockets ").append(list(v.getInventory())).append('\n');
         }
         Map<String, Integer> loose = new TreeMap<>();
         for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, helper.getBounds().inflate(8))) {

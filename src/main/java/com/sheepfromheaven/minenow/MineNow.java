@@ -73,6 +73,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onServerTick);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
+        NeoForge.EVENT_BUS.addListener(Miner::onEntityTick);
         NeoForge.EVENT_BUS.addListener(Roads::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(Roads::onAddReloadListeners);
         FarmerReport.register();
@@ -182,6 +183,7 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
             test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_seller_out_of_reach_does_not_cost_the_buyer_its_job", com.sheepfromheaven.minenow.villager.VillagerTradingTests::aSellerOutOfReachDoesNotCostTheBuyerItsJob);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
             test(helper, TestGroup.VILLAGER_TRADING, "travelling_merchants_can_be_switched_off", com.sheepfromheaven.minenow.villager.ExportTests::travellingMerchantsCanBeSwitchedOff);
             test(helper, TestGroup.VILLAGER_TRADING, "a_wandering_trader_buys_a_villages_surplus_goods", com.sheepfromheaven.minenow.villager.ExportTests::aWanderingTraderBuysAVillagesSurplusGoods);
@@ -230,6 +232,8 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);
             test(helper, TestGroup.MINER, "a_villager_that_falls_into_a_mine_climbs_out_by_the_ladder", MinerTests::aVillagerThatFallsIntoAMineClimbsOutByTheLadder);
+            test(helper, TestGroup.MINER, "a_miner_in_another_miners_mine_climbs_out", MinerTests::aMinerInAnotherMinersMineClimbsOut);
+            test(helper, TestGroup.MINER, "a_worker_headed_for_its_job_site_still_climbs_out_of_a_mine", MinerTests::aWorkerHeadedForItsJobSiteStillClimbsOutOfAMine);
             test(helper, TestGroup.MINER, "a_villager_diagonal_to_the_ladder_still_climbs_out", MinerTests::aVillagerDiagonalToTheLadderStillClimbsOut);
             test(helper, TestGroup.MINER, "miner_climbs_out_after_work_though_it_is_headed_elsewhere", MinerTests::minerClimbsOutAfterWorkThoughItIsHeadedElsewhere);
             test(helper, TestGroup.MINER, "buyers_wait_for_a_miner_to_come_up_out_of_its_mine", MinerTests::buyersWaitForAMinerToComeUpOutOfItsMine);

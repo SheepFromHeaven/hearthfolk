@@ -112,4 +112,23 @@ public final class Miner {
         return miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE)
                 .flatMap(site -> Quarry.around(level, site.pos()).ladder(level, site.pos()).map(Quarry.Ladder::top));
     }
+
+    private static final java.util.Map<java.util.UUID, Boolean> UNDERGROUND = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Vanilla gives up a job site it has failed to reach for a minute, and it can't plan a path in or out of a mine, so
+     * while a miner is down its mine those failures don't count against its cart (checked once a second, applied every tick).
+     */
+    public static void onEntityTick(net.neoforged.neoforge.event.tick.EntityTickEvent.Pre event) {
+        if (!(event.getEntity() instanceof net.minecraft.world.entity.npc.villager.Villager villager)
+                || !(villager.level() instanceof net.minecraft.server.level.ServerLevel level)
+                || !villager.getVillagerData().profession().is(PROFESSION)) return;
+        if (villager.tickCount % 20 == 0) {
+            if (LadderClimb.inQuarry(level, villager)) UNDERGROUND.put(villager.getUUID(), true);
+            else UNDERGROUND.remove(villager.getUUID());
+        }
+        if (UNDERGROUND.containsKey(villager.getUUID())) {
+            villager.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
+        }
+    }
 }

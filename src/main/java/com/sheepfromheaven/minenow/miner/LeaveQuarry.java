@@ -14,6 +14,7 @@ public class LeaveQuarry extends Behavior<Villager> {
     private static final int CHECK_EVERY = 20;
 
     private long nextCheck;
+    private net.minecraft.core.@org.jspecify.annotations.Nullable BlockPos cart;
 
     public LeaveQuarry() {
         super(ImmutableMap.of(), 600);
@@ -23,27 +24,29 @@ public class LeaveQuarry extends Behavior<Villager> {
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextCheck || body.isBaby() || body.isSleeping()) return false;
         nextCheck = level.getGameTime() + CHECK_EVERY;
-        return mustLeave(body) && LadderClimb.inQuarry(level, body);
+        cart = LadderClimb.mineOf(level, body).orElse(null);
+        return cart != null && mustLeave(level, body, cart);
     }
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return mustLeave(body) && LadderClimb.inQuarry(level, body);
+        return cart != null && mustLeave(level, body, cart) && !LadderClimb.climbedOut(level, body, cart);
     }
 
     /** Not its mine, or work is over, or its pickaxe broke and it has to fetch or buy another. */
-    private static boolean mustLeave(Villager body) {
-        return !body.getVillagerData().profession().is(Miner.PROFESSION)
+    private static boolean mustLeave(ServerLevel level, Villager body, net.minecraft.core.BlockPos cart) {
+        return !LadderClimb.ownCart(level, body).map(cart::equals).orElse(false)
                 || !body.getBrain().isActive(Activity.WORK) || !com.sheepfromheaven.minenow.villager.Tools.has(body);
     }
 
     @Override
     protected void tick(ServerLevel level, Villager body, long timestamp) {
-        LadderClimb.climbOut(level, body);
+        LadderClimb.climbOut(level, body, cart);
     }
 
     @Override
     protected void stop(ServerLevel level, Villager body, long timestamp) {
         LadderClimb.forgetRoute(body);
+        cart = null;
     }
 }

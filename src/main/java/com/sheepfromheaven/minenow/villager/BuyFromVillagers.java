@@ -73,7 +73,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     @Override
     protected void tick(ServerLevel level, Villager buyer, long timestamp) {
-        if (buyer.distanceTo(deal.seller()) <= REACH) {
+        if (buyer.distanceTo(deal.seller()) <= REACH && buyer.hasLineOfSight(deal.seller())) {
             trade(level, buyer, deal);
             deal = null;
             nextStartAllowed = timestamp;
