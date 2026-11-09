@@ -76,6 +76,30 @@ public final class ExportTests {
         });
     }
 
+    public static void travellingMerchantsCanBeSwitchedOff(GameTestHelper helper) {
+        Villager armorer = spawnArmorer(helper);
+        for (int i = 0; i < 4; i++) armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
+        @SuppressWarnings("removal")
+        net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setPos(armorer.position());
+        boolean before = com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.get();
+        try {
+            com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.set(false);
+            Exports.visitNear(helper.getLevel(), player, () -> 0.0);
+            helper.assertTrue(merchants(helper) == 0, "Switched off, no merchant comes however many exports, got " + merchants(helper));
+            com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.set(true);
+            Exports.visitNear(helper.getLevel(), player, () -> 0.0);
+            helper.assertTrue(merchants(helper) == 1, "Switched on, the same village draws one, got " + merchants(helper));
+        } finally {
+            com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.set(before);
+        }
+        helper.succeed();
+    }
+
+    private static int merchants(GameTestHelper helper) {
+        return helper.getLevel().getEntitiesOfClass(WanderingTrader.class, helper.getBounds().inflate(16)).size();
+    }
+
     private static Villager spawnArmorer(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

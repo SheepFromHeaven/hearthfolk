@@ -205,6 +205,20 @@ public final class GolemsmithTests {
         helper.succeed();
     }
 
+    public static void villagerGolemsCanBeSwitchedBackOn(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        boolean before = com.sheepfromheaven.minenow.MineNowConfig.VILLAGERS_SUMMON_GOLEMS.get();
+        try {
+            com.sheepfromheaven.minenow.MineNowConfig.VILLAGERS_SUMMON_GOLEMS.set(true);
+            var summoned = net.minecraft.util.SpawnUtil.trySpawnMob(EntityTypes.IRON_GOLEM, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED,
+                    helper.getLevel(), helper.absolutePos(new BlockPos(12, 1, 12)), 10, 8, 6, net.minecraft.util.SpawnUtil.Strategy.LEGACY_IRON_GOLEM, false);
+            helper.assertTrue(summoned.isPresent(), "With the switch on, villagers summon golems as in vanilla");
+        } finally {
+            com.sheepfromheaven.minenow.MineNowConfig.VILLAGERS_SUMMON_GOLEMS.set(before);
+        }
+        helper.succeed();
+    }
+
     public static void aPlayerBuiltGolemStillComesToLife(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         BlockPos base = new BlockPos(12, 1, 12);

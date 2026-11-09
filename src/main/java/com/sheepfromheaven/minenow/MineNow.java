@@ -45,7 +45,8 @@ import java.util.function.Consumer;
 public final class MineNow {
     public static final String MOD_ID = "minenow";
 
-    public MineNow(IEventBus modBus) {
+    public MineNow(IEventBus modBus, net.neoforged.fml.ModContainer container) {
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.LOCAL, MineNowConfig.SPEC);
         ModVillagers.register(modBus);
         FishermanEntities.register(modBus);
         Miner.register(modBus);
@@ -174,6 +175,7 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
+            test(helper, TestGroup.VILLAGER_TRADING, "travelling_merchants_can_be_switched_off", com.sheepfromheaven.minenow.villager.ExportTests::travellingMerchantsCanBeSwitchedOff);
             test(helper, TestGroup.VILLAGER_TRADING, "a_wandering_trader_buys_a_villages_surplus_goods", com.sheepfromheaven.minenow.villager.ExportTests::aWanderingTraderBuysAVillagesSurplusGoods);
             test(helper, TestGroup.VILLAGER_TRADING, "surplus_goods_draw_a_wandering_trader_to_the_village", com.sheepfromheaven.minenow.villager.ExportTests::surplusGoodsDrawAWanderingTraderToTheVillage);
             test(helper, TestGroup.VILLAGER_TRADING, "a_travelling_merchant_looks_and_trades_unlike_a_wandering_trader", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantLooksAndTradesUnlikeAWanderingTrader);
@@ -264,6 +266,7 @@ public final class MineNow {
             test(helper, TestGroup.GOLEMSMITH, "a_poppy_marks_where_the_golem_is_built", com.sheepfromheaven.minenow.golemsmith.GolemsmithTests::aPoppyMarksWhereTheGolemIsBuilt);
             test(helper, TestGroup.GOLEMSMITH, "a_blocked_mark_is_no_reason_to_build_elsewhere", com.sheepfromheaven.minenow.golemsmith.GolemsmithTests::aBlockedMarkIsNoReasonToBuildElsewhere);
             test(helper, TestGroup.GOLEMSMITH, "villagers_no_longer_summon_golems", com.sheepfromheaven.minenow.golemsmith.GolemsmithTests::villagersNoLongerSummonGolems);
+            test(helper, TestGroup.GOLEMSMITH, "villager_golems_can_be_switched_back_on", com.sheepfromheaven.minenow.golemsmith.GolemsmithTests::villagerGolemsCanBeSwitchedBackOn);
             test(helper, TestGroup.GOLEMSMITH, "a_player_built_golem_still_comes_to_life", com.sheepfromheaven.minenow.golemsmith.GolemsmithTests::aPlayerBuiltGolemStillComesToLife);
             test(helper, TestGroup.GOLEMSMITH, "an_apprentice_golemsmith_builds_nothing", com.sheepfromheaven.minenow.golemsmith.GolemsmithTests::anApprenticeGolemsmithBuildsNothing);
             test(helper, TestGroup.GOLEMSMITH, "a_golemsmith_stops_building_when_the_village_has_enough_golems", com.sheepfromheaven.minenow.golemsmith.GolemsmithTests::aGolemsmithStopsBuildingWhenTheVillageHasEnoughGolems);

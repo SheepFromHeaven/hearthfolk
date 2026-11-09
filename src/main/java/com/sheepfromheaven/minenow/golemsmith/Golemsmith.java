@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.golemsmith;
 
 import com.google.common.collect.ImmutableSet;
 import com.sheepfromheaven.minenow.MineNow;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
 import net.minecraft.core.BlockPos;
@@ -42,7 +43,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * Using a carved pumpkin on an iron block while sneaking makes one (without sneaking, golem building stays vanilla).
  * It mends hurt iron golems with ingots and, from journeyman, builds them ({@link TendGolems}). Breaking the iron of a
  * golem it has started is allowed, but it remembers who did. Villagers no longer summon golems out of thin air: the
- * golemsmith is where a village's golems come from.
+ * golemsmith is where a village's golems come from (unless {@link MineNowConfig#VILLAGERS_SUMMON_GOLEMS} says otherwise).
  */
 public final class Golemsmith {
     public static final ResourceKey<PoiType> POI = ResourceKey.create(Registries.POINT_OF_INTEREST_TYPE, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "golemsmith"));
@@ -85,10 +86,12 @@ public final class Golemsmith {
     }
 
     /**
-     * Vetoes vanilla's villager-summoned golems (gossip about golems, panicking villagers). Golems built from iron and a
+     * Vetoes vanilla's villager-summoned golems (gossip about golems, panicking villagers) unless the
+     * {@code villagersSummonGolems} config switch brings them back. Golems built from iron and a
      * pumpkin are spawned as {@code TRIGGERED}, and those placed with the village structure as {@code STRUCTURE}.
      */
     public static void onFinalizeSpawn(FinalizeSpawnEvent event) {
+        if (MineNowConfig.VILLAGERS_SUMMON_GOLEMS.get()) return;
         if (event.getEntity() instanceof IronGolem && event.getSpawnType() == EntitySpawnReason.MOB_SUMMONED) event.setSpawnCancelled(true);
     }
 
