@@ -164,7 +164,7 @@ public final class ForesterTests {
         helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
         Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
         miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
-        miner.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
+        miner.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
 
         helper.succeedWhen(() -> {
             helper.assertTrue(miner.getInventory().countItem(Items.LADDER) >= 8, "The miner buys its ladders from the fletcher, has " + miner.getInventory().countItem(Items.LADDER));

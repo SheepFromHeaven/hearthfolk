@@ -43,6 +43,18 @@ public final class ModVillagers {
                     .copyOnDeath()
                     .build());
 
+    /** A wandering trader sent by {@link Exports}: the village's travelling merchant, not vanilla's wandering trader. */
+    public static final Supplier<AttachmentType<Boolean>> TRAVELLING_MERCHANT = ATTACHMENT_TYPES.register("travelling_merchant",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL.fieldOf("merchant"))
+                    .build());
+
+    /** A travelling merchant's pack mule, which leaves with it. */
+    public static final Supplier<AttachmentType<Boolean>> PACK_MULE = ATTACHMENT_TYPES.register("pack_mule",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL.fieldOf("pack"))
+                    .build());
+
     /** On a dropped item: the villager whose goods it is (see {@link Belongings}). */
     public static final Supplier<AttachmentType<UUID>> BELONGS_TO = ATTACHMENT_TYPES.register("belongs_to",
             () -> AttachmentType.builder(() -> new UUID(0L, 0L))

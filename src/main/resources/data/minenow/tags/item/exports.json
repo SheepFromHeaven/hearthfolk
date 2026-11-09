@@ -1,0 +1,15 @@
+{
+  "values": [
+    "#minecraft:head_armor",
+    "#minecraft:chest_armor",
+    "#minecraft:leg_armor",
+    "#minecraft:foot_armor",
+    "#minecraft:swords",
+    "minecraft:shield",
+    "minecraft:bow",
+    "minecraft:crossbow",
+    "minecraft:saddle",
+    "minecraft:leather_horse_armor",
+    "minecraft:bundle"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "wares": [
+    {
+      "item": "minecraft:string",
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:sugar_cane",
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:cocoa_beans",
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:sweet_berries",
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:honeycomb",
+      "price": 0.333
+    },
+    {
+      "item": "minecraft:nether_wart",
+      "price": 0.25
+    }
+  ]
+}
