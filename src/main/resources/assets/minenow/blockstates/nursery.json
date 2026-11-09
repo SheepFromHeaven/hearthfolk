@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "tree=oak": {
+      "model": "minenow:block/nursery_oak"
+    },
+    "tree=spruce": {
+      "model": "minenow:block/nursery_spruce"
+    },
+    "tree=birch": {
+      "model": "minenow:block/nursery_birch"
+    },
+    "tree=jungle": {
+      "model": "minenow:block/nursery_jungle"
+    },
+    "tree=acacia": {
+      "model": "minenow:block/nursery_acacia"
+    },
+    "tree=dark_oak": {
+      "model": "minenow:block/nursery_dark_oak"
+    },
+    "tree=cherry": {
+      "model": "minenow:block/nursery_cherry"
+    },
+    "tree=pale_oak": {
+      "model": "minenow:block/nursery_pale_oak"
+    },
+    "tree=mangrove": {
+      "model": "minenow:block/nursery_mangrove"
+    }
+  }
+}

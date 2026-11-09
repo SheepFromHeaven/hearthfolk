@@ -1,0 +1,90 @@
+{
+  "profession": "minenow:smelter",
+  "supplies": [
+    {
+      "item": "minecraft:raw_iron",
+      "price": 0.15,
+      "max": 64
+    },
+    {
+      "item": "minecraft:raw_copper",
+      "price": 0.06,
+      "max": 64
+    },
+    {
+      "item": "minecraft:raw_gold",
+      "price": 0.2,
+      "max": 32,
+      "level": 2
+    },
+    {
+      "item": "minecraft:coal",
+      "price": 0.0667,
+      "max": 32
+    },
+    {
+      "item": "minecraft:oak_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:spruce_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:birch_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:jungle_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:acacia_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:dark_oak_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:cherry_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:pale_oak_log",
+      "price": 0.0625,
+      "max": 16
+    },
+    {
+      "item": "minecraft:mangrove_log",
+      "price": 0.0625,
+      "max": 16
+    }
+  ],
+  "produce": [
+    {
+      "item": "minecraft:iron_ingot",
+      "price": 0.25
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:gold_ingot",
+      "price": 0.3333,
+      "level": 2
+    },
+    {
+      "item": "minecraft:charcoal",
+      "price": 0.0833
+    }
+  ]
+}

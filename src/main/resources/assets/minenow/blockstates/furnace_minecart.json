@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "minenow:block/furnace_minecart"
+    }
+  }
+}

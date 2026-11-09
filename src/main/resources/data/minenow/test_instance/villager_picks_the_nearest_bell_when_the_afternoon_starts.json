@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:late_afternoon",
+  "function": "minenow:villager_picks_the_nearest_bell_when_the_afternoon_starts",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

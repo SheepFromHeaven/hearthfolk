@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:farmer_retills_farmland_that_was_trampled",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 4800
+}

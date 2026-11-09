@@ -1,0 +1,344 @@
+{
+  "profession": "minecraft:armorer",
+  "supplies": [
+    {
+      "item": "minecraft:copper_ingot",
+      "price": 0.125,
+      "max": 32
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "price": 0.25,
+      "max": 32
+    },
+    {
+      "item": "minecraft:diamond",
+      "price": 3,
+      "max": 12,
+      "level": 4
+    },
+    {
+      "item": "minecraft:oak_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:spruce_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:birch_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:jungle_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:acacia_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:dark_oak_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:cherry_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:pale_oak_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    },
+    {
+      "item": "minecraft:mangrove_planks",
+      "price": 0.03,
+      "max": 12,
+      "level": 2
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:copper_helmet",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 5
+        }
+      ],
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_chestplate",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 8
+        }
+      ],
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_leggings",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 7
+        }
+      ],
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_boots",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 4
+        }
+      ],
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:oak_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:spruce_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:birch_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:jungle_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:acacia_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:dark_oak_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:cherry_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:pale_oak_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:shield",
+      "materials": [
+        {
+          "item": "minecraft:mangrove_planks",
+          "count": 6
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 2
+    },
+    {
+      "item": "minecraft:iron_helmet",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 5
+        }
+      ],
+      "labor": 0.5,
+      "level": 3
+    },
+    {
+      "item": "minecraft:iron_chestplate",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 8
+        }
+      ],
+      "labor": 0.5,
+      "level": 3
+    },
+    {
+      "item": "minecraft:iron_leggings",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 7
+        }
+      ],
+      "labor": 0.5,
+      "level": 3
+    },
+    {
+      "item": "minecraft:iron_boots",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 4
+        }
+      ],
+      "labor": 0.5,
+      "level": 3
+    },
+    {
+      "item": "minecraft:diamond_helmet",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 5
+        }
+      ],
+      "labor": 1.0,
+      "level": 4
+    },
+    {
+      "item": "minecraft:diamond_chestplate",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 8
+        }
+      ],
+      "labor": 1.0,
+      "level": 4
+    },
+    {
+      "item": "minecraft:diamond_leggings",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 7
+        }
+      ],
+      "labor": 1.0,
+      "level": 4
+    },
+    {
+      "item": "minecraft:diamond_boots",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 4
+        }
+      ],
+      "labor": 1.0,
+      "level": 4
+    }
+  ]
+}

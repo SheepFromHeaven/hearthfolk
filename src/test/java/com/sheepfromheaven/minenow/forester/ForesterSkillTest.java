@@ -1,0 +1,22 @@
+package com.sheepfromheaven.minenow.forester;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ForesterSkillTest {
+    @Test
+    void theGroveGrowsWithLevel() {
+        assertEquals(8, ForesterSkill.groveRange(1));
+        assertEquals(12, ForesterSkill.groveRange(3));
+        assertEquals(16, ForesterSkill.groveRange(5));
+    }
+
+    @Test
+    void bigTreesAreExpertWork() {
+        assertFalse(ForesterSkill.fellsBigTrees(3));
+        assertTrue(ForesterSkill.fellsBigTrees(4));
+    }
+}

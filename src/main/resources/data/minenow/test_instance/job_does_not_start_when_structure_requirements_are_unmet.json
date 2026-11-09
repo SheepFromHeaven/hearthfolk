@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:job_does_not_start_when_structure_requirements_are_unmet",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 40
-}

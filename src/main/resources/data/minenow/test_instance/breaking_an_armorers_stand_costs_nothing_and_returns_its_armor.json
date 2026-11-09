@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:breaking_an_armorers_stand_costs_nothing_and_returns_its_armor",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

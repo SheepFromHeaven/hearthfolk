@@ -1,0 +1,164 @@
+{
+  "profession": "minenow:miner",
+  "tool_tag": "#minecraft:pickaxes",
+  "tools": [
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "price": 1,
+      "level": 1
+    },
+    {
+      "item": "minecraft:stone_pickaxe",
+      "price": 1,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_pickaxe",
+      "price": 2,
+      "level": 2
+    },
+    {
+      "item": "minecraft:iron_pickaxe",
+      "price": 3,
+      "level": 3
+    },
+    {
+      "item": "minecraft:diamond_pickaxe",
+      "price": 6,
+      "level": 4
+    },
+    {
+      "item": "minecraft:netherite_pickaxe",
+      "price": 12,
+      "level": 5
+    }
+  ],
+  "produce": [
+    {
+      "item": "minecraft:cobblestone",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:coal",
+      "level": 1,
+      "price": 0.0833
+    },
+    {
+      "item": "minecraft:redstone",
+      "level": 2,
+      "price": 0.0625
+    },
+    {
+      "item": "minecraft:lapis_lazuli",
+      "level": 2,
+      "price": 0.0833
+    },
+    {
+      "item": "minecraft:diamond",
+      "price": 3,
+      "level": 4
+    },
+    {
+      "item": "minecraft:raw_copper",
+      "level": 1,
+      "price": 0.06
+    },
+    {
+      "item": "minecraft:raw_iron",
+      "level": 1,
+      "price": 0.15
+    },
+    {
+      "item": "minecraft:raw_gold",
+      "level": 2,
+      "price": 0.2
+    }
+  ],
+  "supplies": [
+    {
+      "item": "minecraft:ladder",
+      "price": 0.125,
+      "max": 32,
+      "level": 1
+    },
+    {
+      "item": "minecraft:torch",
+      "price": 0.0625,
+      "max": 32
+    },
+    {
+      "item": "minecraft:stick",
+      "price": 0.0313,
+      "max": 16
+    }
+  ],
+  "keeps": [
+    {
+      "items": "#minecraft:coals",
+      "max": 16
+    },
+    {
+      "items": "#c:cobblestones",
+      "max": 32
+    },
+    {
+      "items": "minecraft:gravel",
+      "max": 64
+    }
+  ],
+  "default_produce": {
+    "items": "#c:stones",
+    "price": 0.0312
+  },
+  "crafts": [
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 10,
+      "level": 1
+    },
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 7,
+      "level": 2
+    },
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 4,
+      "level": 3
+    },
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 1,
+      "level": 5
+    }
+  ]
+}

@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:shift_right_click_cycles_mode_and_builds_matching_furnished_structure",
-  "structure": "minenow:room_12x8x14",
-  "max_ticks": 20
-}

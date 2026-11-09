@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:forester_leaves_a_tree_standing_on_cobblestone",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 700
+}

@@ -1,0 +1,189 @@
+{
+  "profession": "minecraft:toolsmith",
+  "crafts": [
+    {
+      "item": "minecraft:stone_hoe",
+      "materials": [
+        {
+          "item": "minecraft:cobblestone",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.5,
+      "level": 1
+    },
+    {
+      "item": "minecraft:stone_axe",
+      "materials": [
+        {
+          "item": "minecraft:cobblestone",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.5,
+      "level": 1
+    },
+    {
+      "item": "minecraft:fishing_rod",
+      "materials": [
+        {
+          "item": "minecraft:stick",
+          "count": 3
+        },
+        {
+          "item": "minecraft:string",
+          "count": 2
+        }
+      ],
+      "labor": 0.5,
+      "level": 1
+    },
+    {
+      "item": "minecraft:shears",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 2
+        }
+      ],
+      "labor": 0.5,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_hoe",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 1,
+      "level": 2
+    },
+    {
+      "item": "minecraft:copper_axe",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 1,
+      "level": 2
+    },
+    {
+      "item": "minecraft:iron_hoe",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 1,
+      "level": 3
+    },
+    {
+      "item": "minecraft:iron_axe",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 1,
+      "level": 3
+    },
+    {
+      "item": "minecraft:diamond_hoe",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 2,
+      "level": 4
+    },
+    {
+      "item": "minecraft:diamond_axe",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 2,
+      "level": 4
+    }
+  ],
+  "supplies": [
+    {
+      "item": "minecraft:cobblestone",
+      "price": 0.0625,
+      "max": 32,
+      "level": 1
+    },
+    {
+      "item": "minecraft:stick",
+      "price": 0.0312,
+      "max": 64,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "price": 0.125,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "price": 0.25,
+      "max": 32,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "price": 0.125,
+      "max": 32,
+      "level": 2
+    },
+    {
+      "item": "minecraft:diamond",
+      "price": 2.0,
+      "max": 16,
+      "level": 4
+    }
+  ]
+}

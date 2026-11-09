@@ -1,35 +1,26 @@
 plugins {
     id 'java'
     id 'idea'
-    id 'net.neoforged.moddev' version '2.0.143'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
 
 version = '0.4.0' // x-release-please-version
 group = 'com.sheepfromheaven.minenow'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
-    version = '21.11.45'
+    version = '26.3.0.101'
 
     runs {
         configureEach {
-            systemProperty 'forge.enabledGameTestNamespaces', 'minenow'
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'minenow'
         }
 
         client {
             client()
             if (org.gradle.internal.os.OperatingSystem.current().isMacOsX())
                 jvmArguments.add('-XstartOnFirstThread')
-        }
-
-        playtest {
-            client()
-            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX())
-                jvmArguments.add('-XstartOnFirstThread')
-            systemProperty 'minenow.devWorld', 'true'
         }
 
         gametestPlayground {
@@ -49,16 +40,6 @@ neoForge {
             programArguments.addAll([
                 '--report',
                 layout.projectDirectory.file('build/test-report.xml').asFile.absolutePath
-            ])
-        }
-
-        data {
-            clientData()
-            programArguments.addAll([
-                '--mod', 'minenow',
-                '--all',
-                '--output', file('src/generated/resources/').absolutePath,
-                '--existing', file('src/main/resources/').absolutePath
             ])
         }
     }
@@ -83,34 +64,8 @@ testing {
     }
 }
 
-// Skip the "Accessibility Onboarding" (narrator) screen that Minecraft shows before the title
-// screen on a totally fresh run directory - it would otherwise block the auto-join in
-// DevWorldBootstrap on first launch. Only ever adds the line; never overwrites an existing
-// options.txt the user has customized.
-def playtestOptionsFile = layout.projectDirectory.file('run/options.txt').asFile
-tasks.named('runPlaytest') {
-    doFirst {
-        if (!playtestOptionsFile.exists()) {
-            playtestOptionsFile.parentFile.mkdirs()
-            playtestOptionsFile.text = "onboardAccessibility:false\nsoundCategory_master:0.1\n"
-        } else {
-            if (!playtestOptionsFile.text.contains('onboardAccessibility:')) {
-                playtestOptionsFile.text += "\nonboardAccessibility:false\n"
-            }
-            if (!playtestOptionsFile.text.contains('soundCategory_master:')) {
-                playtestOptionsFile.text += "\nsoundCategory_master:0.1\n"
-            }
-        }
-    }
-}
-
 repositories {
     mavenCentral()
-    maven {
-        name = 'GeckoLib'
-        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content { includeGroup 'software.bernie.geckolib' }
-    }
     maven {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
@@ -118,19 +73,18 @@ repositories {
     }
 }
 
-dependencies {
-    implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.11:5.4.5'
-    implementation 'maven.modrinth:screenspec:sByrxfE3'
-    runtimeOnly 'maven.modrinth:jei:NfVKHhHa'
-    runtimeOnly 'maven.modrinth:jade:LDFqgwEA'
+configurations {
+    // Mods loaded only in runClient, for trying compatibility by hand; not in gametests and not shipped.
+    clientDevMods
 }
+
+dependencies {
+    clientDevMods 'maven.modrinth:rightclickharvest:OPZ0mGdB'
+    clientDevMods 'maven.modrinth:jamlib:Rj4DDcb2'
+}
+
+neoForge.runs.client.additionalRuntimeClasspathConfiguration.extendsFrom configurations.clientDevMods
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-}
-
-task printCompileClasspath {
-    doLast {
-        configurations.compileClasspath.each { println it }
-    }
 }

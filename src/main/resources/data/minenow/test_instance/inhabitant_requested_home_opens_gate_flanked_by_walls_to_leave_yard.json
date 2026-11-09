@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:inhabitant_requested_home_opens_gate_flanked_by_walls_to_leave_yard",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 600
-}

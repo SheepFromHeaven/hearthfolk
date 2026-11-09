@@ -1,0 +1,37 @@
+{
+  "profession": "minecraft:fisherman",
+  "tool_tag": "#c:tools/fishing_rod",
+  "tools": [
+    {
+      "item": "minecraft:fishing_rod",
+      "price": 2,
+      "level": 1
+    }
+  ],
+  "produce": [
+    {
+      "item": "minecraft:cod",
+      "level": 1,
+      "price": 0.0833
+    },
+    {
+      "item": "minecraft:salmon",
+      "level": 1,
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:tropical_fish",
+      "level": 2,
+      "price": 0.25
+    },
+    {
+      "item": "minecraft:pufferfish",
+      "level": 2,
+      "price": 0.5
+    }
+  ],
+  "default_produce": {
+    "items": "#c:foods/raw_fish",
+    "price": 0.125
+  }
+}

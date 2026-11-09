@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:miner_digs_stairway_tunnels_through_ore_and_deposits_at_the_mine",
-  "structure": "minenow:room_5x17x23",
-  "max_ticks": 3000
-}

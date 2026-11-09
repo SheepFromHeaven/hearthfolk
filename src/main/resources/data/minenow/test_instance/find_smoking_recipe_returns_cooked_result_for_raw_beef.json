@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:find_smoking_recipe_returns_cooked_result_for_raw_beef",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 20
-}

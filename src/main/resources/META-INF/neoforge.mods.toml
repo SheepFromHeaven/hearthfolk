@@ -1,32 +1,27 @@
 modLoader="javafml"
-loaderVersion="[2,)"
+loaderVersion="[1,)"
 license="All Rights Reserved"
 
 [[mods]]
 modId="minenow"
-version="0.3.0"
+version="0.4.0" # x-release-please-version
 displayName="MineNow"
 authors="Marc Emmanuel"
-description='''MineNow mod.'''
+description='''Villagers that work the farms and workshops you build.'''
 
 [[dependencies.minenow]]
     modId="neoforge"
     type="required"
-    versionRange="[21.11,)"
+    versionRange="[26.3,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.minenow]]
     modId="minecraft"
     type="required"
-    versionRange="[1.21.11,1.22)"
+    versionRange="[26.3]"
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.minenow]]
-    modId="geckolib"
-    type="required"
-    versionRange="[5.4,6)"
-
-    ordering="AFTER"
-    side="BOTH"
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"

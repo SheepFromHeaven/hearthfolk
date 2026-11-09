@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minecraft:default",
-  "function": "minenow:vines_adjacent_to_trunk_do_not_abort_tree",
-  "structure": "minenow:room_9x5x9",
-  "max_ticks": 40
-}
