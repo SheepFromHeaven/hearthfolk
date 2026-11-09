@@ -206,7 +206,7 @@ public final class MineNow {
             test(helper, TestGroup.MASON, "a_mason_paves_dirt_paths_while_its_stonecutter_is_powered", com.sheepfromheaven.minenow.mason.MasonTests::aMasonPavesDirtPathsWhileItsStonecutterIsPowered);
             test(helper, TestGroup.MASON, "a_mason_leaves_paths_alone_without_a_signal", com.sheepfromheaven.minenow.mason.MasonTests::aMasonLeavesPathsAloneWithoutASignal);
             test(helper, TestGroup.MASON, "a_journeyman_paves_a_natural_stone_road", com.sheepfromheaven.minenow.mason.MasonTests::aJourneymanPavesANaturalStoneRoad);
-            test(helper, TestGroup.MASON, "a_mason_follows_its_roads_and_leaves_stray_paths_alone", com.sheepfromheaven.minenow.mason.MasonTests::aMasonFollowsItsRoadsAndLeavesStrayPathsAlone);
+            test(helper, TestGroup.MASON, "a_mason_paves_its_roads_and_scattered_paths_alike", com.sheepfromheaven.minenow.mason.MasonTests::aMasonPavesItsRoadsAndScatteredPathsAlike);
             test(helper, TestGroup.SMELTER, "an_anvil_makes_an_armorer", com.sheepfromheaven.minenow.smelter.SmelterTests::anAnvilMakesAnArmorer);
             test(helper, TestGroup.SMELTER, "smelter_smelts_raw_ore_in_its_blast_furnace", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterSmeltsRawOreInItsBlastFurnace);
             test(helper, TestGroup.SMELTER, "smelter_burns_logs_into_charcoal_in_a_furnace_beside_it", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBurnsLogsIntoCharcoalInAFurnaceBesideIt);

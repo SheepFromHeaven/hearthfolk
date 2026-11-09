@@ -103,7 +103,7 @@ public final class MasonTests {
         });
     }
 
-    public static void aMasonFollowsItsRoadsAndLeavesStrayPathsAlone(GameTestHelper helper) {
+    public static void aMasonPavesItsRoadsAndScatteredPathsAlike(GameTestHelper helper) {
         Villager mason = spawnMason(helper, 2);
         mason.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
         mason.getInventory().addItem(new ItemStack(Items.GRAVEL, 32));
@@ -118,7 +118,8 @@ public final class MasonTests {
                 var state = helper.getBlockState(new BlockPos(20, 0, z));
                 helper.assertTrue(state.is(TIER_2), "It follows the road around the corner to its far end, at z " + z + " it's " + state.getBlock().getName().getString());
             }
-            helper.assertTrue(helper.getBlockState(stray).is(Blocks.DIRT_PATH), "A path not joined to its roads is left alone");
+            helper.assertTrue(helper.getBlockState(stray).is(TIER_2), "...and a path on its own, not joined to any road, too, it's " + helper.getBlockState(stray).getBlock().getName().getString());
+            helper.assertTrue(helper.getBlockState(stray.east()).is(Blocks.STONE), "...but nothing beside it");
         });
     }
 

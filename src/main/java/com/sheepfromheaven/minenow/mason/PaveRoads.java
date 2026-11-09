@@ -5,8 +5,11 @@ import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.Walking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -42,8 +45,9 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * While a redstone signal reaches its stonecutter, a mason from apprentice on paves the roads the player shovelled
- * that join the road network around its workshop ({@link #roads}), within {@link MasonSkill#roadRange} of it: each dirt path becomes cobblestone or gravel, or from journeyman stone
+ * While a redstone signal reaches its stonecutter, a mason from apprentice on paves the paths the player shovelled
+ * within {@link MasonSkill#roadRange} of it, scattered ones under open sky ({@link #surfacePaths}) as well as those
+ * joined to the road network around its workshop, roofed or not ({@link #roads}): each dirt path becomes cobblestone or gravel, or from journeyman stone
  * bricks or slabs, as {@link RoadPattern} has it for that spot, and a journeyman lays stone on the cobblestone and gravel
  * it paved before ({@link Mason#PAVED}). It only ever replaces dirt paths and its own paving, with blocks from its goods.
  */
@@ -51,6 +55,8 @@ public class PaveRoads extends Behavior<Villager> {
     private static final int HEIGHT = 4;
     private static final int START = 8;
     private static final int MAX_NETWORK = 8192;
+    private static final int SURFACE_RESCAN = 600;
+    private static final int LOOK_DOWN = 16;
     private static final TagKey<Block> TIER_2 = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minenow", "villager_roads/tier_2"));
     private static final TagKey<Block> TIER_3 = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minenow", "villager_roads/tier_3"));
     private static final double REACH = 3.0;
@@ -71,6 +77,10 @@ public class PaveRoads extends Behavior<Villager> {
             RoadPattern.Material.STONE_BRICK_SLAB, Blocks.STONE_BRICK_SLAB);
 
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
+    private Set<BlockPos> surface = Set.of();
+    private long surfaceAt = Long.MIN_VALUE;
+    private @Nullable BlockPos surfaceSite;
+    private int surfaceRange;
     private @Nullable BlockPos target;
     private RoadPattern.@Nullable Material material;
     private long since;
@@ -148,8 +158,10 @@ public class PaveRoads extends Behavior<Villager> {
         if (site.isEmpty() || range == 0 || !level.hasNeighborSignal(site.get())) return false;
         long now = level.getGameTime();
         unreachable.values().removeIf(until -> until < now);
+        Set<BlockPos> paths = new HashSet<>(surfacePaths(level, site.get(), range, now));
+        paths.addAll(roads(level, site.get(), range));
         List<BlockPos> candidates = new ArrayList<>();
-        for (BlockPos pos : roads(level, site.get(), range)) {
+        for (BlockPos pos : paths) {
             if (level.getBlockState(pos).is(Blocks.DIRT_PATH)) candidates.add(pos);
         }
         if (MasonSkill.laysStone(body.getVillagerData().level())) candidates.addAll(body.getData(Mason.PAVED));
@@ -162,6 +174,37 @@ public class PaveRoads extends Behavior<Villager> {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Every dirt path under open sky within {@code range} of its stonecutter, wherever it lies (scattered paths laid to
+     * make the settlement look nice join no road): per column the first solid block from the top, looking past leaves
+     * and the like ({@link #seeThrough}), in loaded chunks; remembered for
+     * {@link #SURFACE_RESCAN} ticks, since a master's reach covers a lot of columns.
+     */
+    private Set<BlockPos> surfacePaths(ServerLevel level, BlockPos site, int range, long now) {
+        if (surfaceAt != Long.MIN_VALUE && now - surfaceAt < SURFACE_RESCAN && site.equals(surfaceSite) && range == surfaceRange) return surface;
+        Set<BlockPos> found = new HashSet<>();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int x = site.getX() - range; x <= site.getX() + range; x++) {
+            for (int z = site.getZ() - range; z <= site.getZ() + range; z++) {
+                if (!level.hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) continue;
+                pos.set(x, level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1, z);
+                for (int step = 0; step < LOOK_DOWN && seeThrough(level, pos); step++) pos.move(0, -1, 0);
+                if (level.getBlockState(pos).is(Blocks.DIRT_PATH)) found.add(pos.immutable());
+            }
+        }
+        surface = found;
+        surfaceAt = now;
+        surfaceSite = site;
+        surfaceRange = range;
+        return found;
+    }
+
+    /** What the sky reaches the ground through: air, leaves, barriers and anything without collision, like grass and flowers. */
+    private static boolean seeThrough(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.isAir() || state.is(BlockTags.LEAVES) || state.is(Blocks.BARRIER) || state.getCollisionShape(level, pos).isEmpty();
     }
 
     /**
