@@ -108,9 +108,10 @@ public final class ProfessionTrades {
         }
         for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
             if (table.hasProduceEntry(craft.item())) continue;
-            int inStock = Economy.count(level, villager, craft.item());
-            if (inStock > 0) {
-                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, table.craftPrice(craft)), new ItemStack(craft.item()), inStock, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+            Price price = table.craftPrice(craft);
+            int batches = Economy.count(level, villager, craft.item()) / price.count();
+            if (batches > 0) {
+                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), new ItemStack(craft.item(), price.count()), batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
         int purse = Economy.spendable(level, villager);
@@ -123,7 +124,7 @@ public final class ProfessionTrades {
         }
         table.defaultProduce().filter(fallback -> fallback.level() <= villagerLevel).ifPresent(fallback -> {
             for (var item : Economy.items(level, villager)) {
-                if (table.hasProduceEntry(item) || !fallback.items().contains(item.builtInRegistryHolder())) continue;
+                if (table.hasProduceEntry(item) || table.craft(item).isPresent() || !fallback.items().contains(item.builtInRegistryHolder())) continue;
                 int trades = (Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item))) / fallback.price().count();
                 if (trades > 0) {
                     offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, fallback.price().emeralds()), new ItemStack(item, fallback.price().count()), trades, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));

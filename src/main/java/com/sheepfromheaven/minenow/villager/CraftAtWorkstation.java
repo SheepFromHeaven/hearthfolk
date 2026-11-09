@@ -25,7 +25,7 @@ import java.util.Optional;
 /**
  * A villager whose trade file lists {@code crafts} keeps each of them (unlocked at its level) in stock: when its goods
  * hold fewer than the craft's {@code stock} and it carries the materials, it walks to its workstation and hammers for
- * {@link #CRAFT_TICKS} before the item is made. Lives in CORE after MoveToTargetSink, like the other trades.
+ * {@link #CRAFT_TICKS} before the item is made, wearing the tool of its trade where the craft needs it ({@code tool_uses}). Lives in CORE after MoveToTargetSink, like the other trades.
  */
 public class CraftAtWorkstation extends Behavior<Villager> {
     public static final int CRAFT_TICKS = 100;
@@ -84,9 +84,10 @@ public class CraftAtWorkstation extends Behavior<Villager> {
             level.playSound(null, station, sound != null ? sound : SoundEvents.SMITHING_TABLE_USE, SoundSource.BLOCKS, 0.4F, 0.9F + body.getRandom().nextFloat() * 0.2F);
         }
         if (++hammering < CRAFT_TICKS) return;
-        if (hasMaterials(level, body, craft)) {
+        if (hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body))) {
             for (TradeTable.Material material : craft.materials()) Economy.take(level, body, material.item(), material.count());
             Economy.give(level, body, new ItemStack(craft.item(), craft.count()));
+            for (int use = 0; use < craft.toolUses(); use++) Tools.wear(level, body);
         }
         craft = null;
     }
@@ -103,8 +104,13 @@ public class CraftAtWorkstation extends Behavior<Villager> {
     private static Optional<TradeTable.Craft> nextCraft(ServerLevel level, Villager body) {
         return TradeTable.forVillager(body).stream()
                 .flatMap(table -> table.craftsUpTo(body.getVillagerData().level()).stream())
-                .filter(craft -> Economy.count(level, body, craft.item()) < craft.stock() && hasMaterials(level, body, craft))
+                .filter(craft -> Economy.count(level, body, craft.item()) < table(body).map(t -> t.stockTarget(craft)).orElse(craft.stock())
+                        && hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body)))
                 .findFirst();
+    }
+
+    private static Optional<TradeTable> table(Villager body) {
+        return TradeTable.forVillager(body);
     }
 
     private static boolean hasMaterials(ServerLevel level, Villager body, TradeTable.Craft craft) {

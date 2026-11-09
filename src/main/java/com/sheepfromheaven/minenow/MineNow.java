@@ -159,8 +159,10 @@ public final class MineNow {
             test(helper, TestGroup.FORESTER, "a_journeyman_forester_leaves_big_trees_alone", com.sheepfromheaven.minenow.forester.ForesterTests::aJourneymanForesterLeavesBigTreesAlone);
             test(helper, TestGroup.FORESTER, "an_expert_forester_fells_a_big_tree_and_replants_all_four_saplings", com.sheepfromheaven.minenow.forester.ForesterTests::anExpertForesterFellsABigTreeAndReplantsAllFourSaplings);
             test(helper, TestGroup.FORESTER, "forester_gathers_what_falls_from_its_trees", com.sheepfromheaven.minenow.forester.ForesterTests::foresterGathersWhatFallsFromItsTrees);
-            test(helper, TestGroup.FORESTER, "forester_turns_logs_into_planks_sticks_and_ladders", com.sheepfromheaven.minenow.forester.ForesterTests::foresterTurnsLogsIntoPlanksSticksAndLadders);
-            test(helper, TestGroup.VILLAGER_TRADING, "miner_buys_ladders_from_the_forester", com.sheepfromheaven.minenow.forester.ForesterTests::minerBuysLaddersFromTheForester);
+            test(helper, TestGroup.FORESTER, "forester_makes_planks_and_stripped_logs", com.sheepfromheaven.minenow.forester.ForesterTests::foresterMakesPlanksAndStrippedLogs);
+            test(helper, TestGroup.VILLAGER_TRADING, "fletcher_turns_planks_into_sticks_and_ladders", com.sheepfromheaven.minenow.forester.ForesterTests::fletcherTurnsPlanksIntoSticksAndLadders);
+            test(helper, TestGroup.VILLAGER_TRADING, "crafted_goods_are_sold_in_whole_emerald_batches", com.sheepfromheaven.minenow.forester.ForesterTests::craftedGoodsAreSoldInWholeEmeraldBatches);
+            test(helper, TestGroup.VILLAGER_TRADING, "miner_buys_ladders_from_the_fletcher", com.sheepfromheaven.minenow.forester.ForesterTests::minerBuysLaddersFromTheFletcher);
             test(helper, TestGroup.MINER, "a_plain_furnace_is_no_job_site", MinerTests::aPlainFurnaceIsNoJobSite);
             test(helper, TestGroup.MINER, "a_furnace_minecart_can_be_placed_off_rails", MinerTests::aFurnaceMinecartCanBePlacedOffRails);
             test(helper, TestGroup.MINER, "a_furnace_minecart_on_a_rail_stays_a_minecart", MinerTests::aFurnaceMinecartOnARailStaysAMinecart);

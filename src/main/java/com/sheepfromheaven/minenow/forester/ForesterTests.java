@@ -134,22 +134,32 @@ public final class ForesterTests {
         });
     }
 
-    public static void foresterTurnsLogsIntoPlanksSticksAndLadders(GameTestHelper helper) {
+    public static void foresterMakesPlanksAndStrippedLogs(GameTestHelper helper) {
         Villager forester = spawnForester(helper);
         forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
-        forester.getInventory().addItem(new ItemStack(Items.OAK_LOG, 4));
+        forester.getInventory().addItem(new ItemStack(Items.OAK_LOG, 20));
 
         helper.succeedWhen(() -> {
-            helper.assertTrue(forester.getInventory().countItem(Items.LADDER) >= 3, "At its nursery it makes planks from logs, sticks from planks and ladders from sticks, has "
-                    + forester.getInventory().countItem(Items.LADDER) + " ladders, " + forester.getInventory().countItem(Items.STICK) + " sticks, "
-                    + forester.getInventory().countItem(Items.OAK_PLANKS) + " planks, " + forester.getInventory().countItem(Items.OAK_LOG) + " logs");
+            int planks = forester.getInventory().countItem(Items.OAK_PLANKS);
+            int stripped = forester.getInventory().countItem(Items.STRIPPED_OAK_LOG);
+            helper.assertTrue(planks >= 4 && stripped >= 1, "At its nursery it saws planks and strips logs with its axe, has " + planks + " planks, " + stripped + " stripped logs");
+            helper.assertTrue(forester.getInventory().countItem(Items.STICK) == 0 && forester.getInventory().countItem(Items.LADDER) == 0, "Sticks and ladders are the fletcher's fine work");
+            helper.assertTrue(forester.getInventory().getItem(com.sheepfromheaven.minenow.villager.Tools.slot(forester)).getDamageValue() >= stripped, "Stripping wears its axe");
         });
     }
 
-    public static void minerBuysLaddersFromTheForester(GameTestHelper helper) {
-        Villager forester = spawnForester(helper);
-        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
-        forester.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+    public static void fletcherTurnsPlanksIntoSticksAndLadders(GameTestHelper helper) {
+        Villager fletcher = spawnFletcher(helper, new BlockPos(5, 1, 12));
+        fletcher.getInventory().addItem(new ItemStack(Items.OAK_PLANKS, 24));
+
+        helper.succeedWhen(() -> helper.assertTrue(fletcher.getInventory().countItem(Items.LADDER) >= 3,
+                "At its fletching table it makes sticks from planks and ladders from sticks, has " + fletcher.getInventory().countItem(Items.LADDER) + " ladders, "
+                        + fletcher.getInventory().countItem(Items.STICK) + " sticks, " + fletcher.getInventory().countItem(Items.OAK_PLANKS) + " planks"));
+    }
+
+    public static void minerBuysLaddersFromTheFletcher(GameTestHelper helper) {
+        Villager fletcher = spawnFletcher(helper, new BlockPos(5, 1, 12));
+        fletcher.getInventory().addItem(new ItemStack(Items.LADDER, 20));
         BlockPos cart = new BlockPos(18, 1, 12);
         helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
         Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
@@ -157,15 +167,48 @@ public final class ForesterTests {
         miner.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
 
         helper.succeedWhen(() -> {
-            helper.assertTrue(miner.getInventory().countItem(Items.LADDER) >= 8, "The miner buys its ladders from the forester, has " + miner.getInventory().countItem(Items.LADDER));
-            helper.assertTrue(forester.getInventory().countItem(Items.EMERALD) >= 1, "The forester is paid");
+            helper.assertTrue(miner.getInventory().countItem(Items.LADDER) >= 8, "The miner buys its ladders from the fletcher, has " + miner.getInventory().countItem(Items.LADDER));
+            helper.assertTrue(fletcher.getInventory().countItem(Items.EMERALD) >= 1, "The fletcher is paid");
         });
+    }
+
+    public static void craftedGoodsAreSoldInWholeEmeraldBatches(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        forester.getInventory().addItem(new ItemStack(Items.OAK_PLANKS, 40));
+        forester.getInventory().addItem(new ItemStack(Items.STRIPPED_OAK_LOG, 5));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        player.interactOn(forester, InteractionHand.MAIN_HAND, forester.position());
+
+        String offers = forester.getOffers().stream().map(o -> o.getCostA() + "->" + o.getResult() + " x" + o.getMaxUses()).toList().toString();
+        var planks = forester.getOffers().stream().filter(offer -> offer.getResult().is(Items.OAK_PLANKS)).findFirst()
+                .orElseThrow(() -> helper.assertionException("It should sell its planks, offers " + offers));
+        helper.assertTrue(planks.getCostA().is(Items.EMERALD) && planks.getCostA().getCount() == 1 && planks.getResult().getCount() > 1,
+                "Planks are sold as many as one emerald buys, got " + offers);
+        helper.assertTrue(planks.getMaxUses() == 40 / planks.getResult().getCount(), "...in whole batches of its stock, " + offers);
+        var table = com.sheepfromheaven.minenow.villager.TradeTable.forVillager(forester).orElseThrow();
+        double log = table.sellPrice(Items.OAK_LOG, 1).orElseThrow().perItem();
+        double stripped = table.sellPrice(Items.STRIPPED_OAK_LOG, 1).orElseThrow().perItem();
+        helper.assertTrue(stripped > log, "A stripped log costs its log plus the labor and axe wear, " + stripped + " vs " + log);
+        helper.assertTrue(forester.getOffers().stream().noneMatch(offer -> offer.getResult().is(Items.STRIPPED_OAK_LOG)),
+                "Five stripped logs are less than a batch, so none are offered, " + offers);
+        helper.succeed();
     }
 
     private static void drop(GameTestHelper helper, BlockPos pos, ItemStack stack) {
         var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), helper.absolutePos(pos).getX() + 0.5, helper.absolutePos(pos).getY(), helper.absolutePos(pos).getZ() + 0.5, stack);
         item.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
         helper.getLevel().addFreshEntity(item);
+    }
+
+    private static Villager spawnFletcher(GameTestHelper helper, BlockPos table) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(table, Blocks.FLETCHING_TABLE);
+        return GameTestHelpers.spawnEmployed(helper, table.east(), table, net.minecraft.world.entity.npc.villager.VillagerProfession.FLETCHER,
+                net.minecraft.world.entity.ai.village.poi.PoiTypes.FLETCHER);
     }
 
     public static void aJourneymanForesterLeavesBigTreesAlone(GameTestHelper helper) {

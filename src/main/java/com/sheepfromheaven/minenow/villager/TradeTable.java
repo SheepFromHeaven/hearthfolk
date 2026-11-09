@@ -85,17 +85,19 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
     }
 
     /**
-     * Made at the villager's workstation from {@code materials}, {@code count} at a time, kept {@code stock} in its goods,
-     * sold for the materials plus {@code labor} ({@link #craftPrice}), or at its {@code produce} price when it has one.
+     * Made at the villager's workstation from {@code materials}, {@code count} at a time, wearing the tool of its trade
+     * {@code tool_uses} times, kept {@code stock} (and at least one sale's batch) in its goods, sold at {@link #craftPrice},
+     * or at its {@code produce} price when it has one.
      */
-    public record Craft(Item item, List<Material> materials, double labor, int level, int stock, int count) {
+    public record Craft(Item item, List<Material> materials, double labor, int level, int stock, int count, int toolUses) {
         static final Codec<Craft> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Craft::item),
                 Material.CODEC.listOf().fieldOf("materials").forGetter(Craft::materials),
                 Codec.DOUBLE.optionalFieldOf("labor", 0.0).forGetter(Craft::labor),
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Craft::level),
                 ExtraCodecs.POSITIVE_INT.optionalFieldOf("stock", 1).forGetter(Craft::stock),
-                ExtraCodecs.POSITIVE_INT.optionalFieldOf("count", 1).forGetter(Craft::count)
+                ExtraCodecs.POSITIVE_INT.optionalFieldOf("count", 1).forGetter(Craft::count),
+                ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("tool_uses", 0).forGetter(Craft::toolUses)
         ).apply(i, Craft::new));
     }
 
@@ -110,6 +112,7 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
             Craft.CODEC.listOf().optionalFieldOf("crafts", List.of()).forGetter(TradeTable::crafts)
     ).apply(i, TradeTable::new));
 
+    private static final int MAX_CRAFT_DEPTH = 4;
     private static volatile Map<ResourceKey<VillagerProfession>, TradeTable> byProfession = Map.of();
 
     public static Optional<TradeTable> forVillager(Villager villager) {
@@ -137,24 +140,55 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         return supplies.stream().filter(supply -> supply.item() == item).findFirst();
     }
 
-    /** What this trade charges for {@code item} at {@code level}, from its own entry or the default price. */
-    public Optional<Price> price(Item item, int level) {
+    /** What this trade charges for {@code item} at {@code level}: its own entry, else what it crafts it for, else the default price. */
+    public Optional<Price> sellPrice(Item item, int level) {
+        return sellPrice(item, level, 0);
+    }
+
+    private Optional<Price> sellPrice(Item item, int level, int depth) {
         Optional<Produce> entry = produce.stream().filter(crop -> crop.item() == item).findFirst();
         if (entry.isPresent()) return entry.get().level() <= level ? Optional.of(entry.get().price()) : Optional.empty();
+        Optional<Craft> craft = craft(item);
+        if (craft.isPresent()) return craft.get().level() <= level && depth < MAX_CRAFT_DEPTH ? Optional.of(craftPrice(craft.get(), depth)) : Optional.empty();
         return defaultProduce.filter(fallback -> fallback.level() <= level && fallback.items().contains(item.builtInRegistryHolder()))
                 .map(DefaultProduce::price);
     }
 
-    /** A craft costs its materials, valued at what this trade pays for them (or sells them for), plus its labor. */
-    public int craftPrice(Craft craft) {
-        double materials = 0.0;
+    public Optional<Craft> craft(Item item) {
+        return crafts.stream().filter(craft -> craft.item() == item).findFirst();
+    }
+
+    /**
+     * A craft costs its materials, valued at what this trade pays for them (or sells them for), plus its labor and the
+     * wear on its tool, split over the items it makes; sold in the smallest whole-emerald batch ({@link Price#of}). A
+     * tool or anything else that doesn't stack is one item for whole emeralds, rounded up.
+     */
+    public Price craftPrice(Craft craft) {
+        return craftPrice(craft, 0);
+    }
+
+    private Price craftPrice(Craft craft, int depth) {
+        double total = craft.labor() + craft.toolUses() * wearPerUse();
         for (Material material : craft.materials()) {
             double perItem = supply(material.item()).map(supply -> supply.price().perItem())
-                    .or(() -> price(material.item(), 5).map(Price::perItem))
+                    .or(() -> sellPrice(material.item(), 5, depth + 1).map(Price::perItem))
                     .orElse(0.0);
-            materials += perItem * material.count();
+            total += perItem * material.count();
         }
-        return Price.ofCraft(materials, craft.labor());
+        if (craft.item().getDefaultMaxStackSize() == 1) return new Price(1, Price.ofCraft(total, 0.0));
+        return Price.of(total / craft.count());
+    }
+
+    /** What one use of its tool costs: the cheapest tool of the trade over the uses it lasts. */
+    double wearPerUse() {
+        return tools.stream().min(java.util.Comparator.comparingInt(Tool::price))
+                .map(tool -> (double) tool.price() / Math.max(1, new ItemStack(tool.item()).getMaxDamage()))
+                .orElse(0.0);
+    }
+
+    /** How many a crafter keeps in its goods: the craft's stock, but never less than one sale's batch. */
+    public int stockTarget(Craft craft) {
+        return Math.max(craft.stock(), craftPrice(craft).count());
     }
 
     public int keepMax(ItemStack stack) {
