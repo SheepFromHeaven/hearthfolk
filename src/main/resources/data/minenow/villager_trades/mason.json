@@ -1,0 +1,216 @@
+{
+  "profession": "minecraft:mason",
+  "supplies": [
+    {
+      "item": "minecraft:cobblestone",
+      "price": 0.0312,
+      "max": 64
+    },
+    {
+      "item": "minecraft:gravel",
+      "price": 0.03,
+      "max": 32,
+      "level": 2
+    },
+    {
+      "item": "minecraft:stone",
+      "price": 0.05,
+      "max": 64,
+      "level": 2
+    },
+    {
+      "item": "minecraft:andesite",
+      "price": 0.0312,
+      "max": 32,
+      "level": 3
+    },
+    {
+      "item": "minecraft:diorite",
+      "price": 0.0312,
+      "max": 32,
+      "level": 3
+    },
+    {
+      "item": "minecraft:granite",
+      "price": 0.0312,
+      "max": 32,
+      "level": 3
+    },
+    {
+      "item": "minecraft:cobbled_deepslate",
+      "price": 0.0312,
+      "max": 64,
+      "level": 4
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:cobblestone_slab",
+      "materials": [
+        {
+          "item": "minecraft:cobblestone",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.02,
+      "level": 1
+    },
+    {
+      "item": "minecraft:cobblestone_stairs",
+      "materials": [
+        {
+          "item": "minecraft:cobblestone",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 1
+    },
+    {
+      "item": "minecraft:cobblestone_wall",
+      "materials": [
+        {
+          "item": "minecraft:cobblestone",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 1
+    },
+    {
+      "item": "minecraft:stone_bricks",
+      "materials": [
+        {
+          "item": "minecraft:stone",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 2
+    },
+    {
+      "item": "minecraft:stone_brick_slab",
+      "materials": [
+        {
+          "item": "minecraft:stone",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.02,
+      "level": 2
+    },
+    {
+      "item": "minecraft:stone_brick_stairs",
+      "materials": [
+        {
+          "item": "minecraft:stone",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 2
+    },
+    {
+      "item": "minecraft:stone_slab",
+      "materials": [
+        {
+          "item": "minecraft:stone",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.02,
+      "level": 2
+    },
+    {
+      "item": "minecraft:polished_andesite",
+      "materials": [
+        {
+          "item": "minecraft:andesite",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 3
+    },
+    {
+      "item": "minecraft:polished_diorite",
+      "materials": [
+        {
+          "item": "minecraft:diorite",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 3
+    },
+    {
+      "item": "minecraft:polished_granite",
+      "materials": [
+        {
+          "item": "minecraft:granite",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 3
+    },
+    {
+      "item": "minecraft:chiseled_stone_bricks",
+      "materials": [
+        {
+          "item": "minecraft:stone",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 3
+    },
+    {
+      "item": "minecraft:polished_deepslate",
+      "materials": [
+        {
+          "item": "minecraft:cobbled_deepslate",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 4
+    },
+    {
+      "item": "minecraft:deepslate_bricks",
+      "materials": [
+        {
+          "item": "minecraft:cobbled_deepslate",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 4
+    },
+    {
+      "item": "minecraft:deepslate_tiles",
+      "materials": [
+        {
+          "item": "minecraft:cobbled_deepslate",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "labor": 0.02,
+      "level": 4
+    }
+  ]
+}

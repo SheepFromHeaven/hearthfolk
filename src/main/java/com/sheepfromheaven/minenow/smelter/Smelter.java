@@ -76,6 +76,11 @@ public final class Smelter {
         return stack.is(ItemTags.LOGS_THAT_BURN);
     }
 
+    /** Cobblestone goes into a plain furnace, for the mason's stone. */
+    static boolean bakes(ItemStack stack) {
+        return stack.is(net.minecraft.world.item.Items.COBBLESTONE);
+    }
+
     /** Both share the armorer's job site type, so vanilla hands out "armorer"; the block decides which it really is. */
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level) || villager.tickCount % CHECK_EVERY != 0) return;

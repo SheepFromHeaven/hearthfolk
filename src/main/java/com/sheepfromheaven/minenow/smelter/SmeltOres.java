@@ -35,7 +35,8 @@ import java.util.function.Predicate;
 /**
  * The smelter keeps its blast furnace, and the furnaces and blast furnaces within {@link #RANGE} blocks of it that its
  * level allows ({@link SmelterSkill#extraFurnaces}), going: raw ore spread in equal shares over the blast furnaces (and
- * the plain furnaces when it has no logs), logs into the plain furnaces for charcoal, with coal or charcoal it holds,
+ * the plain furnaces when it has nothing else for them), logs into the plain furnaces for charcoal or else cobblestone
+ * into stone, with coal or charcoal it holds,
  * through {@link FurnaceTending}. When its goods pile up it carries them to its home chest. In CORE like TendFields.
  */
 public class SmeltOres extends Behavior<Villager> {
@@ -124,7 +125,8 @@ public class SmeltOres extends Behavior<Villager> {
         List<BlockPos> furnaces = furnaces(level, body, site.get());
         List<BlockPos> blast = furnaces.stream().filter(pos -> level.getBlockState(pos).getBlock() instanceof BlastFurnaceBlock).toList();
         List<BlockPos> plain = furnaces.stream().filter(pos -> !blast.contains(pos)).toList();
-        boolean hasLogs = body.getInventory().hasAnyMatching(Smelter::burns) || plain.stream().anyMatch(pos -> holds(level, pos, Smelter::burns));
+        Predicate<ItemStack> plainWork = plainWork(level, body, plain);
+        boolean hasLogs = plainWork != null;
         List<BlockPos> oreFurnaces = new ArrayList<>(blast);
         if (!hasLogs) oreFurnaces.addAll(plain);
         int raw = body.getInventory().getItems().stream().filter(Smelter::smelts).mapToInt(ItemStack::getCount).sum();
@@ -138,10 +140,18 @@ public class SmeltOres extends Behavior<Villager> {
         }
         if (hasLogs) {
             for (BlockPos pos : plain) {
-                if (FurnaceTending.needsTending(level, body, pos, RecipeType.SMELTING, Smelter::burns)) return aim(pos, RecipeType.SMELTING, Smelter::burns, Integer.MAX_VALUE);
+                if (FurnaceTending.needsTending(level, body, pos, RecipeType.SMELTING, plainWork)) return aim(pos, RecipeType.SMELTING, plainWork, Integer.MAX_VALUE);
             }
         }
         return false;
+    }
+
+    /** What the plain furnaces are for: logs into charcoal first, then cobblestone into stone (for the mason); null leaves them to ore. */
+    private static @Nullable Predicate<ItemStack> plainWork(ServerLevel level, Villager body, List<BlockPos> plain) {
+        for (Predicate<ItemStack> work : List.<Predicate<ItemStack>>of(Smelter::burns, Smelter::bakes)) {
+            if (body.getInventory().hasAnyMatching(work) || plain.stream().anyMatch(pos -> holds(level, pos, work))) return work;
+        }
+        return null;
     }
 
     private boolean aim(BlockPos pos, RecipeType<? extends AbstractCookingRecipe> recipe, Predicate<ItemStack> what, int amount) {
