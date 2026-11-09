@@ -227,6 +227,48 @@ public final class MinerTests {
         });
     }
 
+    public static void minerClimbsOutAfterWorkThoughItIsHeadedElsewhere(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        helper.setTime(GameTestHelpers.LATE_AFTERNOON);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+            helper.setBlock(new BlockPos(7, y, 11), Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, net.minecraft.core.Direction.EAST));
+        }
+        miner.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        miner.snapTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(9.5, 1, 13.5)));
+        GameTestHelpers.giveHome(helper, miner, new BlockPos(18, 4, 6));
+
+        helper.runAfterDelay(300, () -> {
+            helper.assertTrue(miner.getY() >= helper.absolutePos(new BlockPos(0, 4, 0)).getY(),
+                    "After work the miner climbs its ladder out of the mine, wherever it's headed, at " + helper.relativePos(miner.blockPosition()).toShortString());
+            helper.succeed();
+        });
+    }
+
+    public static void aVillagerDiagonalToTheLadderStillClimbsOut(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 2; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        helper.setBlock(new BlockPos(8, 1, 12), Blocks.AIR);
+        for (int y = 1; y <= 3; y++) {
+            helper.setBlock(new BlockPos(7, y, 11), Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, net.minecraft.core.Direction.EAST));
+        }
+        Villager visitor = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(8, 1, 12));
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertTrue(visitor.getY() >= helper.absolutePos(new BlockPos(0, 4, 0)).getY(),
+                    "A villager in a dug pocket diagonal to the ladder climbs out rather than pushing into the corner, at " + helper.relativePos(visitor.blockPosition()).toShortString());
+            helper.succeed();
+        });
+    }
+
     public static void aVillagerThatFallsIntoAMineClimbsOutByTheLadder(GameTestHelper helper) {
         spawnMiner(helper);
         quarry(helper);

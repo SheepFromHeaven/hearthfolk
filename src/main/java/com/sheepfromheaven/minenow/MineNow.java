@@ -227,6 +227,8 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);
             test(helper, TestGroup.MINER, "a_villager_that_falls_into_a_mine_climbs_out_by_the_ladder", MinerTests::aVillagerThatFallsIntoAMineClimbsOutByTheLadder);
+            test(helper, TestGroup.MINER, "a_villager_diagonal_to_the_ladder_still_climbs_out", MinerTests::aVillagerDiagonalToTheLadderStillClimbsOut);
+            test(helper, TestGroup.MINER, "miner_climbs_out_after_work_though_it_is_headed_elsewhere", MinerTests::minerClimbsOutAfterWorkThoughItIsHeadedElsewhere);
             test(helper, TestGroup.MINER, "buyers_wait_for_a_miner_to_come_up_out_of_its_mine", MinerTests::buyersWaitForAMinerToComeUpOutOfItsMine);
             test(helper, TestGroup.MINER, "miner_sells_a_diamond_for_several_emeralds", MinerTests::minerSellsADiamondForSeveralEmeralds);
             test(helper, TestGroup.VILLAGER_TRADING, "toolsmith_buys_diamonds_from_the_miner_at_its_price", MinerTests::toolsmithBuysDiamondsFromTheMinerAtItsPrice);

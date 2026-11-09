@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:late_afternoon",
+  "function": "minenow:miner_climbs_out_after_work_though_it_is_headed_elsewhere",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

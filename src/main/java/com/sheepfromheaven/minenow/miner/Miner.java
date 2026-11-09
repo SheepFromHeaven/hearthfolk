@@ -93,4 +93,23 @@ public final class Miner {
     public static boolean isDownAMine(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager villager) {
         return LadderClimb.inQuarry(level, villager);
     }
+
+    /** Where a miner's ladder is and what its column holds, for the soak trace. */
+    public static String describeLadder(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager miner) {
+        return miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE).map(site -> {
+            Quarry quarry = Quarry.around(level, site.pos());
+            return quarry.ladder(level, site.pos()).map(ladder -> {
+                StringBuilder column = new StringBuilder("ladder " + ladder.top().toShortString() + " facing " + ladder.facing() + ":");
+                for (int y = ladder.top().getY() + 1; y >= ladder.top().getY() - 4; y--) {
+                    column.append(' ').append(y).append('=').append(level.getBlockState(ladder.top().atY(y)).getBlock().getDescriptionId().replace("block.minecraft.", ""));
+                }
+                return column.toString();
+            }).orElse("no ladder");
+        }).orElse("no job site");
+    }
+
+    public static java.util.Optional<net.minecraft.core.BlockPos> ladderTop(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager miner) {
+        return miner.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE)
+                .flatMap(site -> Quarry.around(level, site.pos()).ladder(level, site.pos()).map(Quarry.Ladder::top));
+    }
 }

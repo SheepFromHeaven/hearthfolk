@@ -52,12 +52,15 @@ final class LadderClimb {
             if (body.getBlockY() == standY && body.onGround()) return true;
             boolean onSurface = !quarry.contains(body.blockPosition());
             BlockPos approach = onSurface ? exit(ladder) : column.atY(body.getBlockY());
-            boolean besideColumn = !onSurface && Math.abs(body.getX() - x) <= 1.6 && Math.abs(body.getZ() - z) <= 1.6;
+            double dx = Math.abs(body.getX() - x);
+            double dz = Math.abs(body.getZ() - z);
+            // Only straight beside it: pushed diagonally at the column, a villager wedges into the corner of undug rock.
+            boolean besideColumn = !onSurface && ((dx <= 1.6 && dz <= CENTERED) || (dz <= 1.6 && dx <= CENTERED));
             if (besideColumn || (onSurface && Math.abs(body.getX() - (approach.getX() + 0.5)) <= 0.6 && Math.abs(body.getZ() - (approach.getZ() + 0.5)) <= 0.6)) {
                 body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                 body.getNavigation().stop();
                 body.getMoveControl().setWantedPosition(x, body.getY(), z, 0.5);
-            } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+            } else if (!body.getBrain().getMemory(MemoryModuleType.WALK_TARGET).map(walk -> walk.getTarget().currentBlockPosition().equals(approach)).orElse(false)) {
                 body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(approach, 0.5F, 0));
             }
             return false;

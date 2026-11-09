@@ -152,6 +152,7 @@ public final class VillageSoak {
         long totalTicks = (long) days * DAY;
         Set<String> trace = new HashSet<>(List.of(System.getProperty("minenow.soak.trace", "").split(",")));
         trace.remove("");
+        long traceFrom = Long.getLong("minenow.soak.traceFrom", -1L);
         try {
             Files.deleteIfExists(out.resolve("trace.txt"));
         } catch (IOException e) {
@@ -172,7 +173,7 @@ public final class VillageSoak {
                     merchantsSeen.add(trader.getUUID());
                 }
             }
-            if (!trace.isEmpty() && tick[0] % 1200 == 0) trace(level, helper, out, tick[0], residents, trace);
+            if (!trace.isEmpty() && (tick[0] % 1200 == 0 || (tick[0] >= traceFrom && tick[0] < traceFrom + 1200 && tick[0] % 20 == 0))) trace(level, helper, out, tick[0], residents, trace);
             if (tick[0] % 2000 == 0) {
                 double seconds = (System.nanoTime() - started) / 1e9;
                 LOGGER.info("[soak] tick {} ({} ticks/s, sprinting {})", tick[0], String.format("%.0f", tick[0] / Math.max(seconds, 0.001)),
@@ -348,7 +349,8 @@ public final class VillageSoak {
                     .append(' ').append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
                     .append(' ').append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList())
                     .append(" walk=").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> w.getTarget().currentBlockPosition().toShortString()).orElse("-"))
-                    .append(" goods=").append(list(v.getInventory())).append('\n');
+                    .append(" goods=").append(list(v.getInventory()))
+                    .append(resident.role() == Role.MINER ? " " + Miner.describeLadder(level, v).replaceAll("-?\\d+, (-?\\d+), -?\\d+ facing", "(top y $1) facing") + " ladderAt " + Miner.ladderTop(level, v).map(p -> helper.relativePos(p).toShortString()).orElse("-") : "").append('\n');
         }
         try {
             Files.writeString(out.resolve("trace.txt"), line, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);

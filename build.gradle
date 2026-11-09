@@ -48,6 +48,7 @@ neoForge {
             systemProperty 'minenow.soak.only', 'true'
             systemProperty 'minenow.soak.days', providers.gradleProperty('soakDays').orElse('50').get()
             systemProperty 'minenow.soak.trace', providers.gradleProperty('soakTrace').orElse('').get()
+            systemProperty 'minenow.soak.traceFrom', providers.gradleProperty('soakTraceFrom').orElse('-1').get()
             systemProperty 'minenow.soak.out', layout.projectDirectory.dir('soak-report').asFile.absolutePath
         }
     }

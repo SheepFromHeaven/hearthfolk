@@ -52,7 +52,9 @@ public final class FarmerTests {
         helper.succeedWhen(() -> {
             int crops = (FIELD_MAX - FIELD_MIN + 1) * (FIELD_MAX - FIELD_MIN + 1) - 1;
             int atWorkshop = countWheat(helper, CHEST_NEAR_COMPOSTER);
-            helper.assertTrue(atWorkshop >= crops - 8, "Expected about " + crops + " wheat in the chest by the composter, its workshop chest, found " + atWorkshop);
+            int baked = 3 * (farmer.getInventory().countItem(Items.BREAD) + countItem(helper, HOME_CHEST, Items.BREAD));
+            helper.assertTrue(atWorkshop + baked >= crops - 8, "Expected about " + crops + " wheat in the chest by the composter, its workshop chest, or baked, found "
+                    + atWorkshop + " and " + baked + " baked");
             helper.assertTrue(countWheat(helper, HOME_CHEST) == 0, "The harvest is trade goods, so none of it goes home");
             helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) > 0, "Farmer should keep seeds for replanting");
             helper.assertTrue(Hoes.has(farmer), "Farmer should keep its hoe when depositing");
@@ -67,6 +69,13 @@ public final class FarmerTests {
             if (stack.is(Items.WHEAT)) wheat += stack.getCount();
         }
         return wheat;
+    }
+
+    private static int countItem(GameTestHelper helper, BlockPos chest, net.minecraft.world.item.Item item) {
+        var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
+        int count = 0;
+        for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(item)) count += container.getItem(i).getCount();
+        return count;
     }
 
     private static Villager spawnFarmer(GameTestHelper helper) {
