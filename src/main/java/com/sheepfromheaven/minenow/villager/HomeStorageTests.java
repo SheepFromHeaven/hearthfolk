@@ -103,6 +103,26 @@ public final class HomeStorageTests {
         });
     }
 
+    public static void aHopperSwallowingAVillagersDroppedGoodsIsTheftByItsPlacer(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        @SuppressWarnings("removal")
+        ServerPlayer thief = helper.makeMockServerPlayerInLevel();
+        Villager owner = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(20, 1, 20));
+        owner.setNoAi(true);
+        BlockPos hopper = new BlockPos(10, 1, 10);
+        useItemOn(helper, thief, Items.HOPPER, hopper.below(), Direction.UP);
+        var goods = new net.minecraft.world.SimpleContainer(new ItemStack(Items.EMERALD, 3));
+        Belongings.drop(helper.getLevel(), helper.absolutePos(hopper.above()), goods, owner);
+
+        helper.succeedWhen(() -> {
+            helper.assertBlockPresent(Blocks.HOPPER, hopper);
+            var container = helper.getBlockEntity(hopper, net.minecraft.world.level.block.entity.HopperBlockEntity.class);
+            helper.assertTrue(container.countItem(Items.EMERALD) == 3, "The hopper swallows the villager's emeralds, has " + container.countItem(Items.EMERALD));
+            int reputation = owner.getGossips().getReputation(thief.getUUID(), type -> true);
+            helper.assertTrue(reputation < 0, "Whoever placed the hopper stole the villager's goods, reputation " + reputation);
+        });
+    }
+
     public static void aDeadOwnersGoodsAreFreeToTake(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);

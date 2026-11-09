@@ -75,6 +75,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(HomeStorage::onDeath);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onConversion);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Belongings::onEntityLeave);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, HomeStorage::onBreak);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, StorageTheft::onPlace);
         NeoForge.EVENT_BUS.addListener(StorageTheft::onRightClickBlock);
@@ -222,6 +223,7 @@ public final class MineNow {
             test(helper, TestGroup.STORAGE, "right_clicking_an_owned_chest_says_who_owns_it", HomeStorageTests::rightClickingAnOwnedChestSaysWhoOwnsIt);
             test(helper, TestGroup.STORAGE, "breaking_a_home_chest_costs_nothing_and_its_goods_stay_the_owners", HomeStorageTests::breakingAHomeChestCostsNothingAndItsGoodsStayTheOwners);
             test(helper, TestGroup.STORAGE, "a_dead_owners_goods_are_free_to_take", HomeStorageTests::aDeadOwnersGoodsAreFreeToTake);
+            test(helper, TestGroup.STORAGE, "a_hopper_swallowing_a_villagers_dropped_goods_is_theft_by_its_placer", HomeStorageTests::aHopperSwallowingAVillagersDroppedGoodsIsTheftByItsPlacer);
             test(helper, TestGroup.STORAGE, "owner_dying_releases_and_unlocks_its_chest", HomeStorageTests::ownerDyingReleasesAndUnlocksItsChest);
             test(helper, TestGroup.STORAGE, "placing_a_chest_next_to_an_owned_chest_extends_the_claim", HomeStorageTests::placingAChestNextToAnOwnedChestExtendsTheClaim);
             test(helper, TestGroup.STORAGE, "breaking_one_half_of_an_owned_double_chest_keeps_the_other_half", HomeStorageTests::breakingOneHalfOfAnOwnedDoubleChestKeepsTheOtherHalf);

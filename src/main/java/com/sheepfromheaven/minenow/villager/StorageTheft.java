@@ -110,14 +110,18 @@ public final class StorageTheft {
 
     private static Set<UUID> placersBelow(ServerLevel level, BlockPos chest) {
         Set<UUID> placers = new LinkedHashSet<>();
-        for (BlockPos half : HomeStorage.halves(level, chest)) {
-            BlockPos below = half.below();
-            if (level.getBlockState(below).is(Blocks.HOPPER) && level.getBlockEntity(below) != null) {
-                level.getBlockEntity(below).getExistingData(ModVillagers.PLACED_BY).ifPresent(placers::add);
-            }
-            for (MinecartHopper cart : level.getEntitiesOfClass(MinecartHopper.class, new AABB(below))) {
-                cart.getExistingData(ModVillagers.PLACED_BY).ifPresent(placers::add);
-            }
+        for (BlockPos half : HomeStorage.halves(level, chest)) placers.addAll(hopperPlacersAt(level, half.below()));
+        return placers;
+    }
+
+    /** Who placed the hopper, or the hopper minecart, at {@code pos}. */
+    static Set<UUID> hopperPlacersAt(ServerLevel level, BlockPos pos) {
+        Set<UUID> placers = new LinkedHashSet<>();
+        if (level.getBlockState(pos).is(Blocks.HOPPER) && level.getBlockEntity(pos) != null) {
+            level.getBlockEntity(pos).getExistingData(ModVillagers.PLACED_BY).ifPresent(placers::add);
+        }
+        for (MinecartHopper cart : level.getEntitiesOfClass(MinecartHopper.class, new AABB(pos))) {
+            cart.getExistingData(ModVillagers.PLACED_BY).ifPresent(placers::add);
         }
         return placers;
     }
