@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.weaponsmith;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.CraftSkill;
 import net.minecraft.core.BlockPos;
@@ -92,6 +93,7 @@ public class RestoreWorn extends Behavior<Villager> {
         restored.setDamageValue(Math.max(0, max - life));
         body.getInventory().setItem(slots[0], restored);
         body.getInventory().setItem(slots[1], ItemStack.EMPTY);
+        WorkXp.award(body, WorkXp.RESTORED);
     }
 
     @Override

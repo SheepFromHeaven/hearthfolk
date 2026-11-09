@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.fletcher;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -157,6 +158,7 @@ public class PracticeArchery extends Behavior<Villager> {
 
     /** Its arrows come back to it wherever they landed, as a fletcher walking the range would pick them all up. */
     private void collect(Villager body) {
+        if (!shot.isEmpty()) WorkXp.award(body, WorkXp.ARCHERY_ROUND);
         for (AbstractArrow arrow : shot) {
             if (arrow.isAlive()) arrow.discard();
             ItemStack rest = body.getInventory().addItem(new ItemStack(Items.ARROW));

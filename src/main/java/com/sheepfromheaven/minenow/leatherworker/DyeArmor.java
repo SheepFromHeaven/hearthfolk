@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.leatherworker;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -76,6 +77,7 @@ public class DyeArmor extends Behavior<Villager> {
         ItemStack piece = body.getInventory().getItem(pieceSlot);
         body.getInventory().setItem(pieceSlot, DyedItemColor.applyDyes(piece, List.of(color)));
         dye.shrink(1);
+        WorkXp.award(body, WorkXp.DYED);
         level.playSound(null, cauldron.get(), SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 0.6F, 1.2F);
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
     }

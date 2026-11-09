@@ -10,6 +10,9 @@
     "minecraft:crossbow",
     "minecraft:saddle",
     "minecraft:leather_horse_armor",
-    "minecraft:bundle"
+    "minecraft:bundle",
+    "minecraft:iron_bars",
+    "minecraft:bucket",
+    "minecraft:cauldron"
   ]
 }

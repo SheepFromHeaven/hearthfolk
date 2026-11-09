@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golem_building",
+  "function": "minenow:a_golemsmith_places_an_iron_block_as_soon_as_it_has_one",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

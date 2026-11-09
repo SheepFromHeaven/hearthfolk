@@ -353,6 +353,15 @@ public final class FarmerTests {
                 "The farmer should use bone meal on its young crops"));
     }
 
+    public static void farmerGainsExperienceFromHarvesting(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        Villager farmer = spawnFarmer(helper);
+        GameTestHelpers.allowWorkXp(farmer);
+
+        helper.succeedWhen(() -> helper.assertTrue(farmer.getVillagerXp() > 0,
+                "A farmer should earn experience from harvesting, xp " + farmer.getVillagerXp()));
+    }
+
     public static void cropsAndSeedsAreRecognizedBeyondVanillaWheat(GameTestHelper helper) {
         BlockState ripePitcher = Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, 4);
         BlockState youngPitcher = Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, 2);

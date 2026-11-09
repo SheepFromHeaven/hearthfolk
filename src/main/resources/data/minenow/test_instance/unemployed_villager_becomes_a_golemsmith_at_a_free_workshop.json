@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:unemployed_villager_becomes_a_golemsmith_at_a_free_workshop",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

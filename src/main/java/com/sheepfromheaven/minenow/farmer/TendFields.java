@@ -1,5 +1,7 @@
 package com.sheepfromheaven.minenow.farmer;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.StorageTheft;
@@ -260,12 +262,14 @@ public class TendFields extends Behavior<Villager> {
                 Block ripe = level.getBlockState(target).getBlock();
                 if (RightClickHarvest.tryHarvest(level, body, target)) {
                     Hoes.wear(level, body);
+                    WorkXp.award(body, WorkXp.HARVESTED);
                     plant(level, body, target, ripe);
                     break;
                 }
                 Block crop = harvest(level, body, target);
                 if (crop != null) {
                     Hoes.wear(level, body);
+                    WorkXp.award(body, WorkXp.HARVESTED);
                     plant(level, body, target, crop);
                 }
             }

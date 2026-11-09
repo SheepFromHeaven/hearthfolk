@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.leatherworker;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Walking;
 import net.minecraft.core.BlockPos;
@@ -94,6 +95,7 @@ public class TendFlowers extends Behavior<Villager> {
         if (state.getBlock() instanceof TallFlowerBlock && !boneMeal.isEmpty() && BoneMealItem.growCrop(boneMeal, level, flower)) {
             level.levelEvent(1505, flower, 15);
             body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+            WorkXp.award(body, WorkXp.BONE_MEALED);
             for (ItemEntity copy : level.getEntitiesOfClass(ItemEntity.class, new AABB(flower).inflate(2.0), item -> item.getItem().is(state.getBlock().asItem()))) {
                 ItemStack rest = body.getInventory().addItem(copy.getItem().copy());
                 if (rest.isEmpty()) copy.discard();

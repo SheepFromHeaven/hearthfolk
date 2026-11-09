@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golem_building",
+  "function": "minenow:a_blocked_mark_is_no_reason_to_build_elsewhere",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

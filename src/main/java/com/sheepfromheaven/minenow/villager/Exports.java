@@ -153,15 +153,19 @@ public final class Exports {
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % VISIT_CHECK != 0) return;
         if (lastVisit != Long.MIN_VALUE && level.getGameTime() - lastVisit < VISIT_COOLDOWN && level.getGameTime() >= lastVisit) return;
-        for (ServerPlayer player : level.players()) {
-            if (!level.getEntitiesOfClass(WanderingTrader.class, player.getBoundingBox().inflate(TRADER_RANGE)).isEmpty()) continue;
-            var villagers = level.getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(VILLAGE_RANGE), Villager::isAlive);
-            int total = villagers.stream().mapToInt(villager -> surplus(level, villager)).sum();
-            if (level.getRandom().nextDouble() >= visitChance(total)) continue;
-            villagers.stream().max(Comparator.comparingInt(villager -> surplus(level, villager))).ifPresent(villager -> {
-                if (sendTrader(level, villager) != null) lastVisit = level.getGameTime();
-            });
-        }
+        for (ServerPlayer player : level.players()) visitNear(level, player, level.getRandom()::nextDouble);
+    }
+
+    /** The village around this player may draw a merchant: {@code roll} below the visit chance for its export goods, unless merchants are switched off ({@code travellingMerchants}). */
+    static void visitNear(ServerLevel level, ServerPlayer player, java.util.function.DoubleSupplier roll) {
+        if (!com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.get()) return;
+        if (!level.getEntitiesOfClass(WanderingTrader.class, player.getBoundingBox().inflate(TRADER_RANGE)).isEmpty()) return;
+        var villagers = level.getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(VILLAGE_RANGE), Villager::isAlive);
+        int total = villagers.stream().mapToInt(villager -> surplus(level, villager)).sum();
+        if (roll.getAsDouble() >= visitChance(total)) return;
+        villagers.stream().max(Comparator.comparingInt(villager -> surplus(level, villager))).ifPresent(villager -> {
+            if (sendTrader(level, villager) != null) lastVisit = level.getGameTime();
+        });
     }
 
     public static void onAddReloadListeners(AddServerReloadListenersEvent event) {

@@ -288,6 +288,7 @@ public final class VillageSoak {
         Villager villager = GameTestHelpers.spawnEmployed(helper, spawn, station, role.profession, role.poi);
         GameTestHelpers.giveHome(helper, villager, bed);
         GameTestHelpers.giveStartingPurse(helper, villager);
+        GameTestHelpers.allowWorkXp(villager);
         if (starterTools && role.startingTool != null) villager.getInventory().addItem(new ItemStack(role.startingTool));
         return villager;
     }

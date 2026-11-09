@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.miner;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.Tools;
@@ -185,6 +186,7 @@ public class DigQuarry extends Behavior<Villager> {
             if (!rest.isEmpty()) Block.popResource(level, body.blockPosition(), rest);
         }
         Tools.wear(level, body);
+        WorkXp.award(body, WorkXp.MINED);
         advance(level, body, timestamp);
     }
 

@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.mason;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.Walking;
@@ -141,6 +142,7 @@ public class PaveRoads extends Behavior<Villager> {
         if (!wanted(level, body, pos) || Economy.take(level, body, ITEMS.get(what), 1) < 1) return;
         BlockState state = BLOCKS.get(what).defaultBlockState();
         level.setBlock(pos, state, 3);
+        WorkXp.award(body, WorkXp.PAVED);
         level.playSound(null, pos, state.getSoundType().getPlaceSound(), SoundSource.BLOCKS, 1.0F, 0.9F);
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         List<BlockPos> paved = new ArrayList<>(body.getData(Mason.PAVED));

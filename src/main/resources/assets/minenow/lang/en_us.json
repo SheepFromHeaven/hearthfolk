@@ -4,5 +4,7 @@
   "entity.minenow.villager.forester": "Forester",
   "block.minenow.nursery": "Nursery",
   "minenow.armor_stand.displayed_by": "This is %s's armor display",
-  "entity.minenow.villager.smelter": "Smelter"
+  "entity.minenow.villager.smelter": "Smelter",
+  "entity.minenow.villager.golemsmith": "Golemsmith",
+  "block.minenow.golem_workshop": "Golem Workshop"
 }
