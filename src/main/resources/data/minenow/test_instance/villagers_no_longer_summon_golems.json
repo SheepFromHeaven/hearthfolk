@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golems",
+  "function": "minenow:villagers_no_longer_summon_golems",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

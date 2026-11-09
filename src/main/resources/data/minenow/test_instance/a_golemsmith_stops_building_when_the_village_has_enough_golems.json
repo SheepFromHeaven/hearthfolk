@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golems",
+  "function": "minenow:a_golemsmith_stops_building_when_the_village_has_enough_golems",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1800
+}

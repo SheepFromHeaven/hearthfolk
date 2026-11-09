@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golem_building",
+  "function": "minenow:a_poppy_marks_where_the_golem_is_built",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 3600
+}

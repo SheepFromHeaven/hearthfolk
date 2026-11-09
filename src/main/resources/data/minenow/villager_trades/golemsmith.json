@@ -1,0 +1,84 @@
+{
+  "profession": "minenow:golemsmith",
+  "tools": [
+    {
+      "item": "minecraft:shears",
+      "price": 1,
+      "level": 1
+    }
+  ],
+  "supplies": [
+    {
+      "item": "minecraft:iron_ingot",
+      "price": 0.25,
+      "max": 36
+    },
+    {
+      "item": "minecraft:pumpkin",
+      "price": 0.25,
+      "max": 2,
+      "level": 3
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:iron_bars",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 6
+        }
+      ],
+      "count": 16,
+      "labor": 0.5,
+      "level": 1
+    },
+    {
+      "item": "minecraft:bucket",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 3
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:cauldron",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 7
+        }
+      ],
+      "labor": 0.25,
+      "level": 2
+    },
+    {
+      "item": "minecraft:iron_block",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 9
+        }
+      ],
+      "labor": 0.5,
+      "stock": 1,
+      "level": 3
+    },
+    {
+      "item": "minecraft:carved_pumpkin",
+      "materials": [
+        {
+          "item": "minecraft:pumpkin",
+          "count": 1
+        }
+      ],
+      "labor": 0.1,
+      "tool_uses": 1,
+      "stock": 1,
+      "level": 3
+    }
+  ]
+}

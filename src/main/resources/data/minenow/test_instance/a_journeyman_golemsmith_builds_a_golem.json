@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golem_building",
+  "function": "minenow:a_journeyman_golemsmith_builds_a_golem",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 3600
+}
