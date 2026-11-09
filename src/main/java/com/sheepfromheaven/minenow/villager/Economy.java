@@ -125,7 +125,7 @@ public final class Economy {
         return taken;
     }
 
-    private static List<Container> chests(ServerLevel level, Villager villager) {
+    static List<Container> chests(ServerLevel level, Villager villager) {
         return Workshop.allChests(level, villager).stream().map(pos -> HomeStorage.chestContainer(level, pos)).filter(java.util.Objects::nonNull).toList();
     }
 }

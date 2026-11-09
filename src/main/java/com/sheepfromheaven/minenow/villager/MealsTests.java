@@ -87,6 +87,22 @@ public final class MealsTests {
         });
     }
 
+    public static void wealthyVillagerWithFoodAtHomeBuysNoMore(GameTestHelper helper) {
+        Villager villager = villagerNextToAFarmerWithPotatoes(helper);
+        BlockPos chest = new BlockPos(4, 1, 6);
+        helper.setBlock(chest, Blocks.CHEST);
+        helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class).setItem(0, new ItemStack(Items.POTATO, 20));
+        GameTestHelpers.giveHome(helper, villager, new BlockPos(4, 1, 8));
+        helper.runAfterDelay(60, () -> villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.WEALTHY)));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(Economy.emeralds(helper.getLevel(), villager) == Wealth.WEALTHY,
+                    "A villager whose home chest already holds food for a family buys no more, has " + Economy.emeralds(helper.getLevel(), villager) + " emeralds and "
+                            + Economy.count(helper.getLevel(), villager, Items.POTATO) + " potatoes");
+            helper.succeed();
+        });
+    }
+
     private static Villager villagerNextToAFarmerWithPotatoes(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

@@ -51,7 +51,7 @@ final class LadderClimb {
         if (!onColumn) {
             if (body.getBlockY() == standY && body.onGround()) return true;
             boolean onSurface = !quarry.contains(body.blockPosition());
-            BlockPos approach = onSurface ? exit(ladder) : column.atY(body.getBlockY());
+            BlockPos approach = onSurface ? exit(ladder) : besideLadder(body, column);
             double dx = Math.abs(body.getX() - x);
             double dz = Math.abs(body.getZ() - z);
             // Only straight beside it: pushed diagonally at the column, a villager wedges into the corner of undug rock.
@@ -82,6 +82,33 @@ final class LadderClimb {
             body.resetFallDistance();
         }
         return false;
+    }
+
+    /**
+     * Where to step onto the ladder from inside the mine: the nearest floored, two-high cell straight beside the column,
+     * at the villager's level or one up, since a path to the ladder cell itself can end diagonally against undug rock.
+     */
+    private static BlockPos besideLadder(Villager body, BlockPos column) {
+        BlockPos best = column.atY(body.getBlockY());
+        double bestDistance = Double.MAX_VALUE;
+        for (int dy = 0; dy <= 1; dy++) {
+            for (net.minecraft.core.Direction side : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                BlockPos cell = column.atY(body.getBlockY() + dy).relative(side);
+                if (!standable(body.level(), cell)) continue;
+                double distance = cell.distToCenterSqr(body.position());
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = cell;
+                }
+            }
+        }
+        return best;
+    }
+
+    private static boolean standable(net.minecraft.world.level.Level level, BlockPos cell) {
+        return level.getBlockState(cell).getCollisionShape(level, cell).isEmpty()
+                && level.getBlockState(cell.above()).getCollisionShape(level, cell.above()).isEmpty()
+                && level.getBlockState(cell.below()).isFaceSturdy(level, cell.below(), net.minecraft.core.Direction.UP);
     }
 
     /** The floored, two-high cell beside the ladder at this level that is closest to where the villager is headed; it walks on from there. */
