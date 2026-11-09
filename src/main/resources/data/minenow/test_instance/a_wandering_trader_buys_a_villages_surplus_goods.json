@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_wandering_trader_buys_a_villages_surplus_goods",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1800
+}

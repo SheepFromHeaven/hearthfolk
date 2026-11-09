@@ -82,6 +82,8 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(HomeStorage::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onConversion);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Belongings::onEntityLeave);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onLevelTick);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onEntityTick);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, HomeStorage::onBreak);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, StorageTheft::onPlace);
         NeoForge.EVENT_BUS.addListener(StorageTheft::onRightClickBlock);
@@ -149,6 +151,9 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
             test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_wandering_trader_buys_a_villages_surplus_goods", com.sheepfromheaven.minenow.villager.ExportTests::aWanderingTraderBuysAVillagesSurplusGoods);
+            test(helper, TestGroup.VILLAGER_TRADING, "surplus_goods_draw_a_wandering_trader_to_the_village", com.sheepfromheaven.minenow.villager.ExportTests::surplusGoodsDrawAWanderingTraderToTheVillage);
             test(helper, TestGroup.VILLAGER_TRADING, "hungry_villager_eats_from_its_inventory", MealsTests::hungryVillagerEatsFromItsInventory);
             test(helper, TestGroup.VILLAGER_TRADING, "fed_villager_leaves_its_food_alone", MealsTests::fedVillagerLeavesItsFoodAlone);
             test(helper, TestGroup.VILLAGER_TRADING, "hungry_villager_without_food_buys_a_meal", MealsTests::hungryVillagerWithoutFoodBuysAMeal);

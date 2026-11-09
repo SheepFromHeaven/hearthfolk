@@ -255,11 +255,12 @@ public final class MinerTests {
         Villager toolsmith = GameTestHelpers.spawnEmployed(helper, table.west(), table,
                 net.minecraft.world.entity.npc.villager.VillagerProfession.TOOLSMITH, net.minecraft.world.entity.ai.village.poi.PoiTypes.TOOLSMITH);
         toolsmith.setVillagerData(toolsmith.getVillagerData().withLevel(4));
-        toolsmith.getInventory().addItem(new ItemStack(Items.EMERALD, 9));
+        toolsmith.getInventory().addItem(new ItemStack(Items.EMERALD, 11));
 
         helper.succeedWhen(() -> {
             helper.assertTrue(count(toolsmith, Items.DIAMOND) == 3, "The toolsmith should buy the miner's diamonds, has " + count(toolsmith, Items.DIAMOND));
             helper.assertTrue(count(miner, Items.EMERALD) == 9, "It pays 3 emeralds each, the miner got " + count(miner, Items.EMERALD));
+            helper.assertTrue(count(toolsmith, Items.EMERALD) == 2, "...keeping its food money, has " + count(toolsmith, Items.EMERALD));
         });
     }
 

@@ -1,0 +1,153 @@
+package com.sheepfromheaven.minenow.villager;
+
+import com.sheepfromheaven.minenow.MineNow;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SwingAnimation;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import org.jspecify.annotations.Nullable;
+
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * The village's exports: goods only players would otherwise buy ({@code #minenow:exports}: armor, swords, shields, bows,
+ * saddles, bundles, ...). A wandering trader near a villager holding some walks over and buys them at the villager's
+ * price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn without a player. And the more
+ * such goods a village holds near a player, the likelier a trader turns up ({@link #visitChance}), on top of vanilla's
+ * own wandering trader.
+ */
+public final class Exports {
+    static final TagKey<Item> GOODS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "exports"));
+    static final int MIN_SURPLUS = 8;
+    static final double MAX_CHANCE = 0.5;
+    private static final double FULL_CHANCE_AT = 128.0;
+    private static final int TRADER_BUDGET = 32;
+    private static final int VISIT_CHECK = 1200;
+    private static final int VISIT_COOLDOWN = 6000;
+    private static final int VILLAGE_RANGE = 48;
+    private static final int TRADER_RANGE = 96;
+    private static final int SHOP_RANGE = 24;
+    private static final double REACH = 3.0;
+
+    private static final Map<UUID, Integer> SPENT = new HashMap<>();
+    private static long lastVisit = Long.MIN_VALUE;
+
+    private Exports() {}
+
+    /** How likely a check (once a minute) brings an extra trader, for goods worth {@code surplus} emeralds. */
+    static double visitChance(int surplus) {
+        if (surplus < MIN_SURPLUS) return 0.0;
+        return Math.min(MAX_CHANCE, surplus / FULL_CHANCE_AT);
+    }
+
+    /** What its export goods would fetch, in whole emeralds at its own prices, sold in whole batches. */
+    static int surplus(ServerLevel level, Villager villager) {
+        int worth = 0;
+        for (Item item : Economy.items(level, villager)) {
+            if (!new ItemStack(item).is(GOODS)) continue;
+            Price price = price(villager, item);
+            if (price == null) continue;
+            worth += sellable(level, villager, item) / price.count() * price.emeralds();
+        }
+        return worth;
+    }
+
+    /** Sends a wandering trader to the village, onto open ground within 8 blocks of this villager and 3 of its height; null if there's no room. */
+    static @Nullable WanderingTrader sendTrader(ServerLevel level, Villager villager) {
+        for (int attempt = 0; attempt < 20; attempt++) {
+            int x = villager.getBlockX() + level.getRandom().nextInt(17) - 8;
+            int z = villager.getBlockZ() + level.getRandom().nextInt(17) - 8;
+            BlockPos pos = null;
+            for (int y = villager.getBlockY() + 3; y >= villager.getBlockY() - 3 && pos == null; y--) {
+                BlockPos feet = new BlockPos(x, y, z);
+                if (level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), net.minecraft.core.Direction.UP)
+                        && level.noCollision(EntityTypes.WANDERING_TRADER.getSpawnAABB(x + 0.5, y, z + 0.5))) pos = feet;
+            }
+            if (pos == null) continue;
+            WanderingTrader trader = EntityTypes.WANDERING_TRADER.spawn(level, pos, EntitySpawnReason.EVENT);
+            if (trader == null) continue;
+            trader.setDespawnDelay(24000);
+            trader.setWanderTarget(villager.blockPosition());
+            return trader;
+        }
+        return null;
+    }
+
+    /** Once a minute, near each player: a village holding export goods may draw a wandering trader, the more goods the likelier. */
+    public static void onLevelTick(LevelTickEvent.Post event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % VISIT_CHECK != 0) return;
+        if (lastVisit != Long.MIN_VALUE && level.getGameTime() - lastVisit < VISIT_COOLDOWN && level.getGameTime() >= lastVisit) return;
+        for (ServerPlayer player : level.players()) {
+            if (!level.getEntitiesOfClass(WanderingTrader.class, player.getBoundingBox().inflate(TRADER_RANGE)).isEmpty()) continue;
+            var villagers = level.getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(VILLAGE_RANGE), Villager::isAlive);
+            int total = villagers.stream().mapToInt(villager -> surplus(level, villager)).sum();
+            if (level.getRandom().nextDouble() >= visitChance(total)) continue;
+            villagers.stream().max(Comparator.comparingInt(villager -> surplus(level, villager))).ifPresent(villager -> {
+                if (sendTrader(level, villager) != null) lastVisit = level.getGameTime();
+            });
+        }
+    }
+
+    /** A wandering trader walks to the nearest villager with export goods and buys them, within its budget for the visit. */
+    public static void onEntityTick(EntityTickEvent.Post event) {
+        if (!(event.getEntity() instanceof WanderingTrader trader) || !(trader.level() instanceof ServerLevel level) || trader.tickCount % 20 != 0) return;
+        int budget = TRADER_BUDGET - SPENT.getOrDefault(trader.getUUID(), 0);
+        if (budget <= 0 || trader.isTrading()) return;
+        Villager seller = level.getEntitiesOfClass(Villager.class, new AABB(trader.blockPosition()).inflate(SHOP_RANGE), villager -> villager.isAlive() && !villager.isSleeping() && surplus(level, villager) > 0)
+                .stream().min(Comparator.comparingDouble(trader::distanceToSqr)).orElse(null);
+        if (seller == null) return;
+        if (trader.distanceTo(seller) > REACH) {
+            trader.getNavigation().moveTo(seller, 0.5);
+            return;
+        }
+        int spent = buy(level, seller, budget);
+        if (spent > 0) {
+            SPENT.merge(trader.getUUID(), spent, Integer::sum);
+            trader.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+            seller.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+            level.playSound(null, seller.blockPosition(), SoundEvents.VILLAGER_TRADE, SoundSource.NEUTRAL, 1.0F, seller.getVoicePitch());
+        }
+    }
+
+    private static int buy(ServerLevel level, Villager seller, int budget) {
+        int spent = 0;
+        for (Item item : Economy.items(level, seller)) {
+            if (!new ItemStack(item).is(GOODS)) continue;
+            Price price = price(seller, item);
+            if (price == null) continue;
+            int lots = Math.min((budget - spent) / price.emeralds(), sellable(level, seller, item) / price.count());
+            if (lots <= 0) continue;
+            Economy.take(level, seller, item, lots * price.count());
+            Economy.give(level, seller, new ItemStack(Items.EMERALD, lots * price.emeralds()));
+            spent += lots * price.emeralds();
+        }
+        return spent;
+    }
+
+    private static @Nullable Price price(Villager villager, Item item) {
+        return TradeTable.forVillager(villager).flatMap(table -> table.sellPrice(item, villager.getVillagerData().level())).orElse(null);
+    }
+
+    private static int sellable(ServerLevel level, Villager villager, Item item) {
+        return Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item));
+    }
+}

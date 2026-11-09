@@ -79,7 +79,7 @@ public final class SmelterTests {
 
     public static void smelterBuysRawIronFromTheMiner(GameTestHelper helper) {
         Villager smelter = spawnSmelter(helper);
-        smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 3));
+        smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
         BlockPos cart = new BlockPos(18, 1, 12);
         helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
         Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);

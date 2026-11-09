@@ -36,7 +36,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static final int RETRY_DELAY = 400;
 
     /** Buys lots of the seller's {@code price} (so many items for so many emeralds), up to {@code room} items. */
-    private record Deal(Villager seller, Item item, Price price, int room) {}
+    /** {@code budget}: the emeralds the buyer may spend on it (food may use its food money, supplies only what's above its reserve). */
+    private record Deal(Villager seller, Item item, Price price, int room, int budget) {}
 
     private @Nullable Deal deal;
     private long startedAt;
@@ -91,7 +92,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static void trade(ServerLevel level, Villager buyer, Deal deal) {
         Villager seller = deal.seller();
         Price price = deal.price();
-        int lots = Math.min(Economy.emeralds(level, buyer) / price.emeralds(),
+        int lots = Math.min(Math.min(deal.budget(), Economy.emeralds(level, buyer)) / price.emeralds(),
                 Math.min(sellable(level, seller, deal.item()) / price.count(), Math.max(1, deal.room() / price.count())));
         if (lots <= 0) return;
         int paid = Economy.take(level, buyer, Items.EMERALD, lots * price.emeralds());
@@ -111,7 +112,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> meal = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Meals.isMeal(new ItemStack(item)))
-                            .flatMap(item -> offer(level, seller, item, 0).stream()))
+                            .flatMap(item -> offer(level, seller, item, 0, Economy.emeralds(level, buyer)).stream()))
                     .findFirst();
             if (meal.isPresent()) return meal;
         }
@@ -119,21 +120,21 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> food = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Wealth.isBreedingFood(new ItemStack(item)))
-                            .flatMap(item -> offer(level, seller, item, 0).stream()))
+                            .flatMap(item -> offer(level, seller, item, 0, Economy.spendable(level, buyer)).stream()))
                     .findFirst();
             if (food.isPresent()) return food;
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return Optional.empty();
         if (!Unloading.ownsTool(level, buyer) && (table.get().toolTag().isPresent() || !table.get().tools().isEmpty())) {
-            int wallet = Economy.emeralds(level, buyer);
+            int wallet = Economy.emeralds(level, buyer) - Economy.FOOD_MONEY;
             Optional<Deal> tool = sellers(level, buyer).stream()
                     .flatMap(seller -> TradeTable.forVillager(seller).stream()
                             .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
                                     .filter(craft -> sellerTable.craftPrice(craft).emeralds() <= wallet && table.get().isToolItem(new ItemStack(craft.item()))
                                             && Economy.count(level, seller, craft.item()) > 0)
                                     .max(Comparator.comparingInt(craft -> sellerTable.craftPrice(craft).emeralds()))
-                                    .map(craft -> new Deal(seller, craft.item(), sellerTable.craftPrice(craft), 1))
+                                    .map(craft -> new Deal(seller, craft.item(), sellerTable.craftPrice(craft), 1, wallet))
                                     .stream()))
                     .findFirst();
             if (tool.isPresent()) return tool;
@@ -142,7 +143,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             int held = buyer.getInventory().countItem(supply.item());
             if (held >= supply.price().count()) continue;
             Optional<Deal> deal = sellers(level, buyer).stream()
-                    .flatMap(seller -> offer(level, seller, supply.item(), supply.max() - held).stream())
+                    .flatMap(seller -> offer(level, seller, supply.item(), supply.max() - held, Economy.spendable(level, buyer)).stream())
                     .findFirst();
             if (deal.isPresent()) return deal;
         }
@@ -157,10 +158,10 @@ public class BuyFromVillagers extends Behavior<Villager> {
                 .toList();
     }
 
-    private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room) {
+    private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room, int budget) {
         Optional<Price> price = TradeTable.forVillager(seller).flatMap(table -> table.sellPrice(item, seller.getVillagerData().level()));
-        if (price.isEmpty() || sellable(level, seller, item) < price.get().count()) return Optional.empty();
-        return Optional.of(new Deal(seller, item, price.get(), room));
+        if (price.isEmpty() || sellable(level, seller, item) < price.get().count() || budget < price.get().emeralds()) return Optional.empty();
+        return Optional.of(new Deal(seller, item, price.get(), room, budget));
     }
 
     private static int sellable(ServerLevel level, Villager seller, Item item) {

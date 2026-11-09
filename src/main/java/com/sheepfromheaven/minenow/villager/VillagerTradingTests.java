@@ -21,7 +21,7 @@ public final class VillagerTradingTests {
         helper.setBlock(smoker, Blocks.SMOKER);
         Villager butcher = GameTestHelpers.spawnEmployed(helper, smoker.east(), smoker, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
-        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 3));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 4));
         BlockPos composter = new BlockPos(19, 1, 12);
         helper.setBlock(composter, Blocks.COMPOSTER);
         Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
@@ -31,10 +31,30 @@ public final class VillagerTradingTests {
 
         helper.succeedWhen(() -> {
             helper.assertTrue(count(butcher, Items.WHEAT) >= 20, "The butcher should buy wheat from the farmer, has " + count(butcher, Items.WHEAT));
-            helper.assertTrue(count(butcher, Items.EMERALD) == 2, "It pays the farmer's price of one emerald for 20, has " + count(butcher, Items.EMERALD) + " emeralds left");
+            helper.assertTrue(count(butcher, Items.EMERALD) == 3, "It pays the farmer's price of one emerald for 20, has " + count(butcher, Items.EMERALD) + " emeralds left");
             helper.assertTrue(count(farmer, Items.EMERALD) == 1, "The farmer gets the emerald");
             helper.assertTrue(count(farmer, Items.WHEAT) == 20, "The farmer hands over 20 wheat, has " + count(farmer, Items.WHEAT));
             helper.assertTrue(closest[0] <= 3.0, "It walks over to the farmer to trade, came within " + closest[0]);
+        });
+    }
+
+    public static void aVillagerKeepsItsReserveWhenBuyingFromVillagers(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos smoker = new BlockPos(4, 1, 12);
+        helper.setBlock(smoker, Blocks.SMOKER);
+        Villager butcher = GameTestHelpers.spawnEmployed(helper, smoker.east(), smoker, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, Economy.FOOD_MONEY + 1));
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 40));
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(count(butcher, Items.EMERALD) == Economy.FOOD_MONEY + 1, "With only its food money and a new axe's price it buys no supplies, has " + count(butcher, Items.EMERALD));
+            helper.assertTrue(count(butcher, Items.WHEAT) == 0, "...so no wheat");
+            helper.succeed();
         });
     }
 
