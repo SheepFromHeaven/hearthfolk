@@ -225,7 +225,8 @@ public final class GearTests {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         for (int x = 4; x <= 6; x++) for (int z = 4; z <= 6; z++) for (int y = 1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.STONE_BRICKS);
         Villager high = helper.spawn(EntityTypes.VILLAGER, new BlockPos(5, 4, 5));
-        Villager low = helper.spawn(EntityTypes.VILLAGER, new BlockPos(15, 1, 15));
+        Villager low = helper.spawn(EntityTypes.VILLAGER, new BlockPos(13, 1, 14));
+        for (Villager villager : new Villager[]{high, low}) villager.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(0.0);
         standing(helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(15, 1, 5)));
         boolean[] panicked = {false, false};
 
@@ -268,11 +269,17 @@ public final class GearTests {
             villager.getBrain().setMemory(MemoryModuleType.MEETING_POINT, GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(BELL)));
         }
 
+        boolean[] unarmed = {false, false};
+
         helper.runAfterDelay(20, () -> ((net.minecraft.world.level.block.BellBlock) Blocks.BELL).attemptToRing(helper.getLevel(), helper.absolutePos(BELL), net.minecraft.core.Direction.EAST));
+        helper.onEachTick(() -> {
+            unarmed[0] |= farmer.getBrain().isActive(Activity.HIDE);
+            unarmed[1] |= farmer.getBrain().isActive(Activity.FIGHT);
+        });
         helper.succeedWhen(() -> {
             var bell = net.minecraft.world.phys.Vec3.atBottomCenterOf(helper.absolutePos(BELL));
             helper.assertTrue(swordsman.position().distanceTo(bell) <= 4.0, "The armed villager gathers at the bell, " + swordsman.position().distanceTo(bell) + " blocks away");
-            helper.assertTrue(farmer.position().distanceTo(bell) > 4.0, "...an unarmed one does not");
+            helper.assertTrue(unarmed[0] && !unarmed[1], "...an unarmed one hides as in vanilla instead");
         });
     }
 
