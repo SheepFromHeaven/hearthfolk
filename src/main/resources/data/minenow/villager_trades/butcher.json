@@ -78,6 +78,12 @@
       "level": 1
     },
     {
+      "item": "minecraft:charcoal",
+      "price": 0.0667,
+      "max": 32,
+      "level": 1
+    },
+    {
       "item": "minecraft:wheat",
       "price": 0.0625,
       "max": 32,

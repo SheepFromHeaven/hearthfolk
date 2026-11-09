@@ -58,15 +58,7 @@ public final class Miner {
                 Int2ObjectMap.ofEntries()));
     }
 
-    private static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> RAW_MATERIALS =
-            net.minecraft.tags.TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "raw_materials"));
-
     private Miner() {}
-
-    /** What a miner puts in its furnace: raw ore only, so its cobblestone isn't turned into stone. */
-    public static boolean smelts(ItemStack stack) {
-        return stack.is(RAW_MATERIALS);
-    }
 
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);

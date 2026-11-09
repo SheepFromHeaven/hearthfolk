@@ -45,21 +45,6 @@
       "price": 0.0833
     },
     {
-      "item": "minecraft:copper_ingot",
-      "level": 1,
-      "price": 0.125
-    },
-    {
-      "item": "minecraft:iron_ingot",
-      "level": 1,
-      "price": 0.25
-    },
-    {
-      "item": "minecraft:gold_ingot",
-      "level": 2,
-      "price": 0.3333
-    },
-    {
       "item": "minecraft:redstone",
       "level": 2,
       "price": 0.0625
@@ -73,6 +58,21 @@
       "item": "minecraft:diamond",
       "price": 3,
       "level": 4
+    },
+    {
+      "item": "minecraft:raw_copper",
+      "level": 1,
+      "price": 0.06
+    },
+    {
+      "item": "minecraft:raw_iron",
+      "level": 1,
+      "price": 0.15
+    },
+    {
+      "item": "minecraft:raw_gold",
+      "level": 2,
+      "price": 0.2
     }
   ],
   "supplies": [
@@ -94,10 +94,6 @@
     }
   ],
   "keeps": [
-    {
-      "items": "#c:raw_materials",
-      "max": 64
-    },
     {
       "items": "#minecraft:coals",
       "max": 16

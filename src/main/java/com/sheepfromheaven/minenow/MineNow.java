@@ -50,10 +50,12 @@ public final class MineNow {
         Miner.register(modBus);
         com.sheepfromheaven.minenow.forester.Forester.register(modBus);
         com.sheepfromheaven.minenow.armorer.Armorer.register(modBus);
+        com.sheepfromheaven.minenow.smelter.Smelter.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onEntityInteract);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.smelter.Smelter::onEntityTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onAttackEntity);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onProjectileImpact);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onEntityLeave);
@@ -179,12 +181,9 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_leaves_ore_its_pickaxe_cannot_harvest", MinerTests::minerLeavesOreItsPickaxeCannotHarvest);
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);
-            test(helper, TestGroup.MINER, "miner_smelts_its_ore_in_its_furnace_minecart", MinerTests::minerSmeltsItsOreInItsFurnaceMinecart);
             test(helper, TestGroup.MINER, "miner_sells_a_diamond_for_several_emeralds", MinerTests::minerSellsADiamondForSeveralEmeralds);
             test(helper, TestGroup.VILLAGER_TRADING, "toolsmith_buys_diamonds_from_the_miner_at_its_price", MinerTests::toolsmithBuysDiamondsFromTheMinerAtItsPrice);
             test(helper, TestGroup.MINER, "miner_lights_its_quarry_with_torches", MinerTests::minerLightsItsQuarryWithTorches);
-            test(helper, TestGroup.MINER, "miner_uses_more_furnaces_at_higher_levels", MinerTests::minerUsesMoreFurnacesAtHigherLevels);
-            test(helper, TestGroup.MINER, "novice_miner_uses_only_its_furnace_minecart", MinerTests::noviceMinerUsesOnlyItsFurnaceMinecart);
             test(helper, TestGroup.MINER, "miner_leaves_platforms_and_branches_tunnels_off_them", MinerTests::minerLeavesPlatformsAndBranchesTunnelsOffThem);
             test(helper, TestGroup.ROADS, "villager_takes_the_stairs_rather_than_jumping_off_a_ledge", RoadTests::villagerTakesTheStairsRatherThanJumpingOffALedge);
             test(helper, TestGroup.ROADS, "villager_still_jumps_down_when_there_is_no_other_way", RoadTests::villagerStillJumpsDownWhenThereIsNoOtherWay);
@@ -199,6 +198,12 @@ public final class MineNow {
             test(helper, TestGroup.FLETCHER, "a_journeyman_fletcher_makes_bows", com.sheepfromheaven.minenow.fletcher.FletcherTests::aJourneymanFletcherMakesBows);
             test(helper, TestGroup.FLETCHER, "fletcher_makes_sticks_from_any_planks", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherMakesSticksFromAnyPlanks);
             test(helper, TestGroup.ARMORER, "a_novice_armorer_makes_copper_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::aNoviceArmorerMakesCopperArmor);
+            test(helper, TestGroup.SMELTER, "a_blast_furnace_makes_a_smelter", com.sheepfromheaven.minenow.smelter.SmelterTests::aBlastFurnaceMakesASmelter);
+            test(helper, TestGroup.SMELTER, "an_anvil_makes_an_armorer", com.sheepfromheaven.minenow.smelter.SmelterTests::anAnvilMakesAnArmorer);
+            test(helper, TestGroup.SMELTER, "smelter_smelts_raw_ore_in_its_blast_furnace", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterSmeltsRawOreInItsBlastFurnace);
+            test(helper, TestGroup.SMELTER, "smelter_burns_logs_into_charcoal_in_a_furnace_beside_it", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBurnsLogsIntoCharcoalInAFurnaceBesideIt);
+            test(helper, TestGroup.SMELTER, "smelter_uses_more_furnaces_at_higher_levels", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterUsesMoreFurnacesAtHigherLevels);
+            test(helper, TestGroup.SMELTER, "smelter_buys_raw_iron_from_the_miner", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBuysRawIronFromTheMiner);
             test(helper, TestGroup.ARMORER, "an_apprentice_armorer_makes_shields_from_any_planks", com.sheepfromheaven.minenow.armorer.ArmorerTests::anApprenticeArmorerMakesShieldsFromAnyPlanks);
             test(helper, TestGroup.ARMORER, "armorer_dresses_an_armor_stand_with_its_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerDressesAnArmorStandWithItsArmor);
             test(helper, TestGroup.ARMORER, "armorer_shows_its_best_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerShowsItsBestArmor);

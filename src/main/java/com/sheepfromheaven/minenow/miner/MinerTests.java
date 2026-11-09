@@ -227,23 +227,6 @@ public final class MinerTests {
         });
     }
 
-    public static void minerSmeltsItsOreInItsFurnaceMinecart(GameTestHelper helper) {
-        Villager miner = spawnMiner(helper);
-        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
-        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 3));
-        miner.getInventory().addItem(new ItemStack(Items.COAL, 2));
-        miner.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 10));
-
-        helper.succeedWhen(() -> {
-            var furnace = helper.getLevel().getBlockEntity(helper.absolutePos(FURNACE)) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity f ? f : null;
-            helper.assertTrue(count(miner, Items.IRON_INGOT) >= 3, "The miner should smelt its raw iron in its furnace minecart, has " + count(miner, Items.IRON_INGOT) + " ingots, "
-                    + count(miner, Items.RAW_IRON) + " raw, " + count(miner, Items.COAL) + " coal; furnace " + (furnace == null ? "missing" : furnace.getItem(0) + " / " + furnace.getItem(1) + " / " + furnace.getItem(2))
-                    + "; miner at " + helper.relativePos(miner.blockPosition()).toShortString() + ", running " + miner.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()
-                    + ", activity " + miner.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"));
-            helper.assertTrue(count(miner, Items.COBBLESTONE) == 10, "It keeps its cobblestone as it is rather than smelting it into stone");
-        });
-    }
-
     public static void minerSellsADiamondForSeveralEmeralds(GameTestHelper helper) {
         Villager miner = spawnMiner(helper);
         miner.setVillagerData(miner.getVillagerData().withLevel(4));
@@ -389,41 +372,6 @@ public final class MinerTests {
         double master = table.sellPrice(Items.FLINT, 5).orElseThrow().perItem();
         helper.assertTrue(master < novice, "Fewer tries mean less pickaxe wear, so a master's flint is cheaper, " + master + " vs " + novice);
         helper.succeed();
-    }
-
-    public static void minerUsesMoreFurnacesAtHigherLevels(GameTestHelper helper) {
-        Villager miner = spawnMiner(helper);
-        miner.setVillagerData(miner.getVillagerData().withLevel(3));
-        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
-        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 9));
-        miner.getInventory().addItem(new ItemStack(Items.COAL, 3));
-        List<BlockPos> furnaces = List.of(new BlockPos(6, 4, 14), new BlockPos(6, 4, 10));
-        furnaces.forEach(furnace -> helper.setBlock(furnace, Blocks.FURNACE));
-        boolean[] usedTogether = {false};
-        helper.onEachTick(() -> {
-            long busy = furnaces.stream().filter(furnace -> helper.getBlockEntity(furnace, net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.class).getItem(0).is(Items.RAW_IRON)).count();
-            if (busy == furnaces.size()) usedTogether[0] = true;
-        });
-
-        helper.succeedWhen(() -> {
-            helper.assertTrue(usedTogether[0], "A journeyman shares its ore between its furnace minecart and two furnaces beside it");
-            helper.assertTrue(count(miner, Items.IRON_INGOT) == 9, "...and collects every ingot, has " + count(miner, Items.IRON_INGOT));
-        });
-    }
-
-    public static void noviceMinerUsesOnlyItsFurnaceMinecart(GameTestHelper helper) {
-        Villager miner = spawnMiner(helper);
-        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
-        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 3));
-        miner.getInventory().addItem(new ItemStack(Items.COAL, 2));
-        BlockPos furnace = new BlockPos(6, 4, 14);
-        helper.setBlock(furnace, Blocks.FURNACE);
-
-        helper.succeedWhen(() -> {
-            helper.assertTrue(count(miner, Items.IRON_INGOT) == 3, "The novice smelts its ore, has " + count(miner, Items.IRON_INGOT) + " ingots");
-            var plain = helper.getBlockEntity(furnace, net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.class);
-            helper.assertTrue(plain.getItem(0).isEmpty() && plain.getItem(2).isEmpty(), "...in its furnace minecart alone, leaving the furnace beside it to you");
-        });
     }
 
     /** A 7x7 shaft marked beside the cart at y 3, already dug down to y -1; the first platform is y -2. */

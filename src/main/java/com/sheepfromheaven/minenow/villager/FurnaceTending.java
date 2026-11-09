@@ -63,7 +63,8 @@ public final class FurnaceTending {
             }
         }
         int needed = (furnace.getItem(INPUT).getCount() + ITEMS_PER_COAL - 1) / ITEMS_PER_COAL - furnace.getItem(FUEL).getCount();
-        if (needed > 0 && (furnace.getItem(FUEL).isEmpty() || furnace.getItem(FUEL).is(ItemTags.COALS))) {
+        boolean burningOn = furnace.getItem(FUEL).isEmpty() && lit(level, pos);
+        if (needed > 0 && !burningOn && (furnace.getItem(FUEL).isEmpty() || furnace.getItem(FUEL).is(ItemTags.COALS))) {
             for (ItemStack stack : body.getInventory().getItems()) {
                 if (!stack.is(ItemTags.COALS) || (!furnace.getItem(FUEL).isEmpty() && !ItemStack.isSameItemSameComponents(stack, furnace.getItem(FUEL)))) continue;
                 ItemStack fuel = stack.split(Math.min(needed, stack.getCount()));

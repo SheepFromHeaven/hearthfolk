@@ -16,7 +16,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
 public final class ArmorerTests {
-    private static final BlockPos FURNACE = new BlockPos(5, 1, 12);
+    private static final BlockPos ANVIL = new BlockPos(5, 1, 12);
     private static final BlockPos STAND = new BlockPos(9, 1, 12);
 
     private ArmorerTests() {}
@@ -26,7 +26,7 @@ public final class ArmorerTests {
         armorer.getInventory().addItem(new ItemStack(Items.COPPER_INGOT, 5));
 
         helper.succeedWhen(() -> helper.assertTrue(armorer.getInventory().countItem(Items.COPPER_HELMET) == 1,
-                "Five copper make a helmet at the blast furnace, has " + armorer.getInventory().countItem(Items.COPPER_HELMET)));
+                "Five copper make a helmet at the anvil, has " + armorer.getInventory().countItem(Items.COPPER_HELMET)));
     }
 
     public static void anApprenticeArmorerMakesShieldsFromAnyPlanks(GameTestHelper helper) {
@@ -112,7 +112,7 @@ public final class ArmorerTests {
     static Villager spawnArmorer(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
-        helper.setBlock(FURNACE, Blocks.BLAST_FURNACE);
-        return GameTestHelpers.spawnEmployed(helper, FURNACE.east(), FURNACE, VillagerProfession.ARMORER, PoiTypes.ARMORER);
+        helper.setBlock(ANVIL, Blocks.ANVIL);
+        return GameTestHelpers.spawnEmployed(helper, ANVIL.east(), ANVIL, VillagerProfession.ARMORER, PoiTypes.ARMORER);
     }
 }

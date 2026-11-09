@@ -1,7 +1,6 @@
 package com.sheepfromheaven.minenow.miner;
 
 import com.google.common.collect.ImmutableMap;
-import com.sheepfromheaven.minenow.villager.FurnaceTending;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.Tools;
 import com.sheepfromheaven.minenow.villager.Unloading;
@@ -18,10 +17,6 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.AbstractCookingRecipe;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.block.BlastFurnaceBlock;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -48,8 +43,7 @@ import java.util.Set;
  * The mine follows {@link MineLayout}: a shaft with a platform every five layers and tunnels off each platform. It
  * puts a ladder down one wall of the shaft as it digs (filling any gap in it first) and won't dig a ladder cell it has
  * no ladder for, so it can always climb back out. It keeps the quarry floor lit with torches on its walls (making them from coal and sticks) so monsters can't spawn.
- * It smelts its raw ore in its furnace minecart, and in more furnaces beside it as it levels, with coal it holds, and when its goods pile up it carries them to its
- * home chest, climbing out of the quarry for either. Lives in CORE after MoveToTargetSink, like TendFields.
+ * When its goods pile up it carries them to its home chest, climbing out of the quarry; its raw ore goes to the smelter. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class DigQuarry extends Behavior<Villager> {
     private static final float SPEED = 0.5F;
@@ -58,7 +52,6 @@ public class DigQuarry extends Behavior<Villager> {
     private static final int GIVE_UP_AFTER_TICKS = 300;
     private static final int UNREACHABLE_COOLDOWN = 600;
     private static final int IDLE_RESCAN_DELAY = 100;
-    private static final int FURNACE_RANGE = 4;
     private static final int LIT = 8;
     private static final int TORCH_RECHECK = 40;
     private static final double EYE_HEIGHT = 1.62;
@@ -66,9 +59,6 @@ public class DigQuarry extends Behavior<Villager> {
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
     private @Nullable BlockPos target;
     private @Nullable BlockPos chest;
-    private boolean smelting;
-    private RecipeType<? extends AbstractCookingRecipe> smeltType = RecipeType.SMELTING;
-    private int smeltShare = Integer.MAX_VALUE;
     private Quarry.@Nullable TorchSpot torch;
     private boolean placingLadder;
     private boolean sealing;
@@ -123,12 +113,7 @@ public class DigQuarry extends Behavior<Villager> {
                 LadderClimb.forgetRoute(body);
             }
             if (body.distanceToSqr(Vec3.atBottomCenterOf(chest)) <= 4.0 && Math.abs(chest.getY() - body.getY()) <= 1.5) {
-                if (smelting) {
-                    FurnaceTending.tend(level, body, chest, smeltType, Miner::smelts, smeltShare);
-                    body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
-                } else {
-                    Unloading.deposit(level, body, chest);
-                }
+                Unloading.deposit(level, body, chest);
                 advance(level, body, timestamp);
             } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
                 advance(level, body, timestamp);
@@ -219,7 +204,6 @@ public class DigQuarry extends Behavior<Villager> {
         placingLadder = false;
         sealing = false;
         inShaft = true;
-        smelting = false;
         Optional<BlockPos> furnace = furnace(level, body);
         if (furnace.isEmpty()) return false;
         long now = level.getGameTime();
@@ -228,22 +212,6 @@ public class DigQuarry extends Behavior<Villager> {
             Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
             if (home.isPresent()) {
                 chest = home.get();
-                return true;
-            }
-        }
-        List<BlockPos> furnaces = furnaces(level, body, furnace.get());
-        int raw = body.getInventory().getItems().stream().filter(Miner::smelts).mapToInt(ItemStack::getCount).sum();
-        for (BlockPos pos : furnaces) {
-            if (level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity cooking && Miner.smelts(cooking.getItem(0))) raw += cooking.getItem(0).getCount();
-        }
-        int share = Math.max(1, (raw + furnaces.size() - 1) / furnaces.size());
-        for (BlockPos pos : furnaces) {
-            RecipeType<? extends AbstractCookingRecipe> type = level.getBlockState(pos).getBlock() instanceof BlastFurnaceBlock ? RecipeType.BLASTING : RecipeType.SMELTING;
-            if (FurnaceTending.needsTending(level, body, pos, type, Miner::smelts, share)) {
-                chest = pos;
-                smelting = true;
-                smeltType = type;
-                smeltShare = share;
                 return true;
             }
         }
@@ -364,21 +332,6 @@ public class DigQuarry extends Behavior<Villager> {
 
     private static boolean headroom(net.minecraft.world.level.Level level, BlockPos feet) {
         return level.getBlockState(feet).getCollisionShape(level, feet).isEmpty() && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty();
-    }
-
-    /** Its furnace minecart, then the furnaces and blast furnaces nearest to it that its level lets it use. */
-    private static List<BlockPos> furnaces(ServerLevel level, Villager body, BlockPos cart) {
-        List<BlockPos> furnaces = new java.util.ArrayList<>();
-        furnaces.add(cart);
-        int extra = MinerSkill.extraFurnaces(body.getVillagerData().level());
-        if (extra == 0) return furnaces;
-        BlockPos.betweenClosedStream(cart.offset(-FURNACE_RANGE, -1, -FURNACE_RANGE), cart.offset(FURNACE_RANGE, 1, FURNACE_RANGE))
-                .filter(pos -> !pos.equals(cart) && (level.getBlockState(pos).is(Blocks.FURNACE) || level.getBlockState(pos).is(Blocks.BLAST_FURNACE)))
-                .map(BlockPos::immutable)
-                .sorted(Comparator.comparingDouble(pos -> pos.distSqr(cart)))
-                .limit(extra)
-                .forEach(furnaces::add);
-        return furnaces;
     }
 
     private static boolean carriesCobblestone(Villager body) {

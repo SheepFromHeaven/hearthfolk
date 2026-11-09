@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:smelter_burns_logs_into_charcoal_in_a_furnace_beside_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}
