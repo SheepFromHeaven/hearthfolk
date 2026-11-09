@@ -49,9 +49,12 @@ public final class MineNow {
         FishermanEntities.register(modBus);
         Miner.register(modBus);
         com.sheepfromheaven.minenow.forester.Forester.register(modBus);
+        com.sheepfromheaven.minenow.armorer.Armorer.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onEntityInteract);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onAttackEntity);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onServerTick);
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onRegisterCommands);
@@ -191,6 +194,12 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "better_miners_knap_flint_with_fewer_tries", MinerTests::betterMinersKnapFlintWithFewerTries);
             test(helper, TestGroup.FLETCHER, "fletcher_makes_arrows_from_flint_sticks_and_feathers", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherMakesArrowsFromFlintSticksAndFeathers);
             test(helper, TestGroup.FLETCHER, "a_journeyman_fletcher_makes_bows", com.sheepfromheaven.minenow.fletcher.FletcherTests::aJourneymanFletcherMakesBows);
+            test(helper, TestGroup.FLETCHER, "fletcher_makes_sticks_from_any_planks", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherMakesSticksFromAnyPlanks);
+            test(helper, TestGroup.ARMORER, "a_novice_armorer_makes_copper_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::aNoviceArmorerMakesCopperArmor);
+            test(helper, TestGroup.ARMORER, "an_apprentice_armorer_makes_shields_from_any_planks", com.sheepfromheaven.minenow.armorer.ArmorerTests::anApprenticeArmorerMakesShieldsFromAnyPlanks);
+            test(helper, TestGroup.ARMORER, "armorer_dresses_an_armor_stand_with_its_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerDressesAnArmorStandWithItsArmor);
+            test(helper, TestGroup.ARMORER, "armorer_shows_its_best_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerShowsItsBestArmor);
+            test(helper, TestGroup.ARMORER, "players_cannot_strip_or_break_an_armorers_stand", com.sheepfromheaven.minenow.armorer.ArmorerTests::playersCannotStripOrBreakAnArmorersStand);
             test(helper, TestGroup.FLETCHER, "a_novice_fletcher_makes_no_bows", com.sheepfromheaven.minenow.fletcher.FletcherTests::aNoviceFletcherMakesNoBows);
             test(helper, TestGroup.FLETCHER, "fletcher_practises_at_a_target_and_collects_its_arrows", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherPractisesAtATargetAndCollectsItsArrows);
             test(helper, TestGroup.MINER, "miner_digs_new_emeralds_out_of_emerald_ore", MinerTests::minerDigsNewEmeraldsOutOfEmeraldOre);

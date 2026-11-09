@@ -201,9 +201,11 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         return keeps.stream().filter(keep -> stack.is(keep.items())).mapToInt(Keep::max).max().orElse(0);
     }
 
-    /** The crafts unlocked at {@code level}, one per item (the latest level's recipe). */
+    /** The crafts unlocked at {@code level}: per item the latest level's recipes, all of them (sticks from any planks). */
     public List<Craft> craftsUpTo(int level) {
-        return crafts.stream().map(Craft::item).distinct().map(item -> craft(item, level)).flatMap(Optional::stream).toList();
+        return crafts.stream()
+                .filter(craft -> craft(craft.item(), level).filter(best -> best.level() == craft.level()).isPresent())
+                .toList();
     }
 
     public List<Supply> suppliesUpTo(int level) {

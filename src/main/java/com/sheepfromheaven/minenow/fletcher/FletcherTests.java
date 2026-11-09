@@ -25,6 +25,14 @@ public final class FletcherTests {
                 "Each flint, stick and feather make four arrows, has " + fletcher.getInventory().countItem(Items.ARROW)));
     }
 
+    public static void fletcherMakesSticksFromAnyPlanks(GameTestHelper helper) {
+        Villager fletcher = spawnFletcher(helper);
+        fletcher.getInventory().addItem(new ItemStack(Items.SPRUCE_PLANKS, 2));
+
+        helper.succeedWhen(() -> helper.assertTrue(fletcher.getInventory().countItem(Items.STICK) == 4,
+                "Two spruce planks make four sticks, has " + fletcher.getInventory().countItem(Items.STICK)));
+    }
+
     public static void aJourneymanFletcherMakesBows(GameTestHelper helper) {
         Villager fletcher = spawnFletcher(helper);
         fletcher.setVillagerData(fletcher.getVillagerData().withLevel(3));

@@ -2,5 +2,6 @@
   "entity.minenow.villager.miner": "Miner",
   "block.minenow.furnace_minecart": "Furnace Minecart",
   "entity.minenow.villager.forester": "Forester",
-  "block.minenow.nursery": "Nursery"
+  "block.minenow.nursery": "Nursery",
+  "minenow.armor_stand.displayed_by": "This is %s's armor display"
 }
