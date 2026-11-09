@@ -96,6 +96,7 @@ public final class MineNow {
 
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
+            test(helper, TestGroup.FARMER, "farmer_gains_experience_from_harvesting", FarmerTests::farmerGainsExperienceFromHarvesting);
             test(helper, TestGroup.FARMER, "farmer_keeps_tending_after_brain_is_rebuilt", FarmerTests::farmerKeepsTendingAfterBrainIsRebuilt);
             test(helper, TestGroup.FARMER, "farmer_deposits_harvest_in_its_workshop_chest", FarmerTests::farmerDepositsHarvestInItsWorkshopChest);
             test(helper, TestGroup.FARMER, "farmer_without_hoe_leaves_ripe_crops_alone", FarmerTests::farmerWithoutHoeLeavesRipeCropsAlone);
@@ -121,6 +122,10 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "farmer_picks_up_a_hoe_thrown_to_it", FarmerTests::farmerPicksUpAHoeThrownToIt);
             test(helper, TestGroup.FARMER, "farmer_fetches_a_spare_hoe_from_its_home_chest", FarmerTests::farmerFetchesASpareHoeFromItsHomeChest);
             test(helper, TestGroup.TRADING, "hoeless_farmer_offers_to_buy_an_undamaged_hoe", FarmerTradeTests::hoelessFarmerOffersToBuyAnUndamagedHoe);
+            test(helper, TestGroup.VILLAGERS, "work_experience_levels_a_villager_up", com.sheepfromheaven.minenow.villager.WorkXpTests::workExperienceLevelsAVillagerUp);
+            test(helper, TestGroup.VILLAGERS, "work_experience_has_a_daily_cap", com.sheepfromheaven.minenow.villager.WorkXpTests::workExperienceHasADailyCap);
+            test(helper, TestGroup.VILLAGERS, "small_actions_add_up_to_whole_experience", com.sheepfromheaven.minenow.villager.WorkXpTests::smallActionsAddUpToWholeExperience);
+            test(helper, TestGroup.VILLAGERS, "unemployed_villagers_earn_no_work_experience", com.sheepfromheaven.minenow.villager.WorkXpTests::unemployedVillagersEarnNoWorkExperience);
             test(helper, TestGroup.VILLAGER_TRADING, "starting_purse_comes_with_the_job", com.sheepfromheaven.minenow.villager.EconomyTests::startingPurseComesWithTheJob);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_gets_its_purse_only_once", com.sheepfromheaven.minenow.villager.EconomyTests::aVillagerGetsItsPurseOnlyOnce);
             test(helper, TestGroup.VILLAGER_TRADING, "villager_keeps_food_and_tool_money_when_buying_from_players", com.sheepfromheaven.minenow.villager.EconomyTests::villagerKeepsFoodAndToolMoneyWhenBuyingFromPlayers);
@@ -167,6 +172,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "wealthy_villager_buys_food_to_start_a_family", MealsTests::wealthyVillagerBuysFoodToStartAFamily);
             test(helper, TestGroup.VILLAGER_TRADING, "poor_villager_keeps_its_emeralds", MealsTests::poorVillagerKeepsItsEmeralds);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_crafts_a_tool_at_its_smithing_table", ToolsmithTests::toolsmithCraftsAToolAtItsSmithingTable);
+            test(helper, TestGroup.TOOLSMITH, "toolsmith_gains_experience_from_crafting", ToolsmithTests::toolsmithGainsExperienceFromCrafting);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_keeps_one_of_each_tool_in_stock", ToolsmithTests::toolsmithKeepsOneOfEachToolInStock);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_sells_its_tools_to_players", ToolsmithTests::toolsmithSellsItsToolsToPlayers);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_charges_for_materials_and_labor", ToolsmithTests::toolsmithChargesForMaterialsAndLabor);

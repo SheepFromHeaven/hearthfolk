@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.fisherman;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.ToolCare;
@@ -194,6 +195,7 @@ public class GoFishing extends Behavior<Villager> {
         level.playSound(null, BlockPos.containing(at), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 1.0F);
         level.sendParticles(ParticleTypes.FISHING, at.x, at.y + 0.2, at.z, 6, 0.2, 0.0, 0.2, 0.05);
         if (body.getRandom().nextFloat() < ToolCare.wearChance(body.getVillagerData().level())) Tools.wear(level, body);
+        WorkXp.award(body, WorkXp.CAUGHT);
     }
 
     private void advance(ServerLevel level, Villager body, long timestamp) {
