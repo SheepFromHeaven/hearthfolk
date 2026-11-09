@@ -103,6 +103,10 @@ public final class Gear {
         return bow && (!quiver(villager).isEmpty() || villager.getInventory().hasAnyMatching(stack -> stack.is(Items.ARROW)));
     }
 
+    /** Armed with a bow rather than a sword: what {@link PanicOrFight} shoots with. */
+    static boolean shoots(Villager villager) {
+        return isArmed(villager) && !sidearm(villager).is(ItemTags.SWORDS);
+    }
 
     /** Armor wears down with the blows it takes, the way a player's does. */
     public static void onDamage(LivingDamageEvent.Post event) {

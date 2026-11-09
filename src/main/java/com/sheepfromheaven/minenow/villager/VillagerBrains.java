@@ -71,7 +71,9 @@ public final class VillagerBrains {
 
     /** Vanilla's, with {@link PanicOrFight} in place of its panic trigger. */
     private static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> corePackage(Holder<VillagerProfession> profession) {
-        return VillagerGoalPackages.getCorePackage(profession, SPEED).stream()
+        return java.util.stream.Stream.concat(
+                        java.util.stream.Stream.of(Pair.<Integer, BehaviorControl<? super Villager>>of(0, new Eyes())),
+                        VillagerGoalPackages.getCorePackage(profession, SPEED).stream())
                 .map(pair -> pair.getSecond() instanceof VillagerPanicTrigger
                         ? Pair.<Integer, BehaviorControl<? super Villager>>of(pair.getFirst(), new PanicOrFight())
                         : Pair.<Integer, BehaviorControl<? super Villager>>of(pair.getFirst(), pair.getSecond()))
