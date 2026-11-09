@@ -1,14 +1,13 @@
-package com.sheepfromheaven.minenow.leatherworker;
+package com.sheepfromheaven.minenow.villager;
 
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.MineNow;
-import com.sheepfromheaven.minenow.villager.Economy;
-import com.sheepfromheaven.minenow.villager.Walking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -38,45 +37,51 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
+import java.util.function.Function;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * The leatherworker's tanning racks: item frames on the walls within {@link #RANGE} blocks of its cauldron (up to
- * {@link #HEIGHT} above it) holding leather or rabbit hide from its goods, as many as its level. It uses empty frames
- * the player hung there first and only hangs frames of its own when there aren't enough. A rack is locked while its
- * leatherworker lives (players can't take the hide, right-clicking says whose it is); breaking it costs nothing: the hide
- * goes back to the leatherworker, and a frame it hung itself too (a player's frame drops as usual).
+ * A craftsman's wall displays: item frames on the walls within {@link #RANGE} blocks of its job block (up to
+ * {@link #HEIGHT} above it), as many as its level, each holding something from its goods that {@code choice} picks (the
+ * villager's hides on tanning racks, the weaponsmith's best swords). It uses empty frames the player hung there
+ * first and only hangs frames of its own when there aren't enough. A display is locked while its villager lives
+ * (players can't take the item, right-clicking says whose it is); breaking it costs nothing: the item goes back to the
+ * villager, and a frame it hung itself too (a player's frame drops as usual).
  */
-public class TanningRacks extends Behavior<Villager> {
+public class WallDisplays extends Behavior<Villager> {
     private static final int RANGE = 6;
     private static final int HEIGHT = 2;
     private static final double REACH = 3.0;
     private static final float SPEED = 0.5F;
     private static final int RESCAN = 200;
     private static final int GIVE_UP_AFTER_TICKS = 300;
-    private static final List<Item> HIDES = List.of(Items.RABBIT_HIDE, Items.LEATHER);
 
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MineNow.MOD_ID);
     static final Supplier<AttachmentType<UUID>> RACKED_BY = ATTACHMENT_TYPES.register("racked_by",
-            () -> AttachmentType.builder(() -> new UUID(0L, 0L)).serialize(UUIDUtil.CODEC.fieldOf("leatherworker")).build());
-    /** Set on a frame the leatherworker hung itself, which goes back to it when broken; a player's frame is the player's. */
+            () -> AttachmentType.builder(() -> new UUID(0L, 0L)).serialize(UUIDUtil.CODEC.fieldOf("villager")).build());
+    /** Set on a frame the villager hung itself, which goes back to it when broken; a player's frame is the player's. */
     static final Supplier<AttachmentType<Boolean>> OWN_FRAME = ATTACHMENT_TYPES.register("own_frame",
             () -> AttachmentType.builder(() -> false).serialize(com.mojang.serialization.Codec.BOOL.fieldOf("own")).build());
 
+    private final ResourceKey<VillagerProfession> profession;
+    private final Function<Villager, ItemStack> choice;
     private @Nullable ItemFrame frame;
     private @Nullable BlockPos spot;
     private @Nullable Direction facing;
     private long since;
     private long nextStartAllowed;
 
-    public TanningRacks() {
+    /** {@code choice} gives the stack in its inventory to hang next, or an empty stack when it has nothing to show. */
+    public WallDisplays(ResourceKey<VillagerProfession> profession, Function<Villager, ItemStack> choice) {
         super(ImmutableMap.of(
                 MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT,
                 MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT
         ), GIVE_UP_AFTER_TICKS + 20);
+        this.profession = profession;
+        this.choice = choice;
     }
 
     public static void register(IEventBus modBus) {
@@ -86,7 +91,7 @@ public class TanningRacks extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.LEATHERWORKER) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(profession) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + RESCAN;
         return pick(level, body);
     }
@@ -110,10 +115,10 @@ public class TanningRacks extends Behavior<Villager> {
             if (!Walking.towards(body, at)) walk(body);
             return;
         }
-        Optional<Item> hide = HIDES.stream().filter(item -> body.getInventory().countItem(item) > 0).findFirst();
-        if (hide.isPresent()) {
+        ItemStack shown = choice.apply(body);
+        if (!shown.isEmpty()) {
             if (frame != null && frame.isAlive() && frame.getItem().isEmpty()) {
-                hang(level, body, frame, hide.get());
+                hang(level, body, frame, shown);
             } else if (spot != null && facing != null && body.getInventory().countItem(Items.ITEM_FRAME) > 0) {
                 ItemFrame placed = new ItemFrame(level, spot, facing);
                 if (placed.survives()) {
@@ -121,7 +126,7 @@ public class TanningRacks extends Behavior<Villager> {
                     placed.setData(OWN_FRAME, true);
                     level.addFreshEntity(placed);
                     level.playSound(null, spot, SoundEvents.ITEM_FRAME_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
-                    hang(level, body, placed, hide.get());
+                    hang(level, body, placed, shown);
                 }
             }
         }
@@ -137,9 +142,8 @@ public class TanningRacks extends Behavior<Villager> {
         body.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
     }
 
-    private static void hang(ServerLevel level, Villager body, ItemFrame rack, Item hide) {
-        take(body, hide);
-        rack.setItem(new ItemStack(hide), false);
+    private static void hang(ServerLevel level, Villager body, ItemFrame rack, ItemStack shown) {
+        rack.setItem(shown.split(1), false);
         rack.setData(RACKED_BY, body.getUUID());
         level.playSound(null, rack.blockPosition(), SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
         body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
@@ -149,13 +153,13 @@ public class TanningRacks extends Behavior<Villager> {
         body.getInventory().getItems().stream().filter(stack -> stack.is(item)).findFirst().ifPresent(stack -> stack.shrink(1));
     }
 
-    /** An empty rack of its own to refill, else an empty frame of the player's, else a free wall spot, while under its limit. */
+    /** An empty display of its own to refill, else an empty frame of the player's, else a free wall spot, while under its limit. */
     private boolean pick(ServerLevel level, Villager body) {
         frame = null;
         spot = null;
-        Optional<BlockPos> cauldron = body.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
-        if (cauldron.isEmpty() || HIDES.stream().noneMatch(item -> body.getInventory().countItem(item) > 0)) return false;
-        AABB area = new AABB(cauldron.get()).inflate(RANGE, 0, RANGE).expandTowards(0, HEIGHT, 0);
+        Optional<BlockPos> site = body.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
+        if (site.isEmpty() || choice.apply(body).isEmpty()) return false;
+        AABB area = new AABB(site.get()).inflate(RANGE, 0, RANGE).expandTowards(0, HEIGHT, 0);
         List<ItemFrame> frames = level.getEntitiesOfClass(ItemFrame.class, area, ItemFrame::isAlive);
         List<ItemFrame> mine = frames.stream().filter(rack -> owner(level, rack) == body).toList();
         Comparator<ItemFrame> nearest = Comparator.comparingDouble(rack -> rack.distanceToSqr(body));
@@ -171,13 +175,13 @@ public class TanningRacks extends Behavior<Villager> {
             return true;
         }
         if (body.getInventory().countItem(Items.ITEM_FRAME) == 0) return false;
-        for (BlockPos pos : BlockPos.betweenClosed(cauldron.get().offset(-RANGE, 1, -RANGE), cauldron.get().offset(RANGE, HEIGHT, RANGE))) {
+        for (BlockPos pos : BlockPos.betweenClosed(site.get().offset(-RANGE, 1, -RANGE), site.get().offset(RANGE, HEIGHT, RANGE))) {
             if (!level.getBlockState(pos).isAir()) continue;
             for (Direction side : Direction.Plane.HORIZONTAL) {
                 BlockPos wall = pos.relative(side.getOpposite());
                 if (!level.getBlockState(wall).isFaceSturdy(level, wall, side)) continue;
                 if (!level.getEntitiesOfClass(net.minecraft.world.entity.decoration.HangingEntity.class, new AABB(pos)).isEmpty()) continue;
-                if (spot == null || pos.distSqr(cauldron.get()) < spot.distSqr(cauldron.get())) {
+                if (spot == null || pos.distSqr(site.get()) < spot.distSqr(site.get())) {
                     spot = pos.immutable();
                     facing = side;
                 }
@@ -189,7 +193,7 @@ public class TanningRacks extends Behavior<Villager> {
     static @Nullable Villager owner(ServerLevel level, ItemFrame rack) {
         if (!rack.hasData(RACKED_BY)) return null;
         if (level.getEntity(rack.getData(RACKED_BY)) instanceof Villager villager && villager.isAlive()
-                && villager.getVillagerData().profession().is(VillagerProfession.LEATHERWORKER)) {
+                && !villager.getVillagerData().profession().is(VillagerProfession.NONE) && !villager.getVillagerData().profession().is(VillagerProfession.NITWIT)) {
             return villager;
         }
         rack.removeData(RACKED_BY);
@@ -198,23 +202,23 @@ public class TanningRacks extends Behavior<Villager> {
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
         if (!(event.getTarget() instanceof ItemFrame rack) || !(rack.level() instanceof ServerLevel level)) return;
-        Villager leatherworker = owner(level, rack);
-        if (leatherworker == null) return;
+        Villager villager = owner(level, rack);
+        if (villager == null) return;
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.FAIL);
-        event.getEntity().sendOverlayMessage(Component.translatableWithFallback("minenow.rack.owned_by", "These are %s's tanning racks", leatherworker.getDisplayName()));
+        event.getEntity().sendOverlayMessage(Component.translatableWithFallback("minenow.display.owned_by", "This is %s's display", villager.getDisplayName()));
     }
 
-    /** Breaking a rack costs nothing: the hide goes back to its leatherworker, and a frame it hung too. */
+    /** Breaking a display costs nothing: the item goes back to its villager, and a frame it hung itself too. */
     public static void onAttackEntity(AttackEntityEvent event) {
         if (!(event.getTarget() instanceof ItemFrame rack) || !(rack.level() instanceof ServerLevel level)) return;
-        Villager leatherworker = owner(level, rack);
-        if (leatherworker == null) return;
+        Villager villager = owner(level, rack);
+        if (villager == null) return;
         event.setCanceled(true);
-        if (!rack.getItem().isEmpty()) Economy.give(level, leatherworker, rack.getItem().copy());
+        if (!rack.getItem().isEmpty()) Economy.give(level, villager, rack.getItem().copy());
         rack.setItem(ItemStack.EMPTY, false);
         if (rack.getData(OWN_FRAME)) {
-            Economy.give(level, leatherworker, new ItemStack(Items.ITEM_FRAME));
+            Economy.give(level, villager, new ItemStack(Items.ITEM_FRAME));
             rack.discard();
         } else {
             rack.removeData(RACKED_BY);
