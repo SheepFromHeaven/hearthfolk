@@ -10,30 +10,39 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.equine.Mule;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SwingAnimation;
+import net.minecraft.world.item.trading.ItemCost;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * The village's exports: goods only players would otherwise buy ({@code #minenow:exports}: armor, swords, shields, bows,
- * saddles, bundles, ...). A wandering trader near a villager holding some walks over and buys them at the villager's
- * price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn without a player. And the more
- * such goods a village holds near a player, the likelier a trader turns up ({@link #visitChance}), on top of vanilla's
- * own wandering trader.
+ * saddles, bundles, ...). The more such goods a village holds near a player, the likelier a travelling merchant turns up
+ * ({@link #visitChance}): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
+ * the village can't make ({@link #WARES}) instead of vanilla's random trades. It walks to the villagers holding export
+ * goods and buys them at their price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn
+ * without a player. Vanilla's own wandering trader stays vanilla.
  */
 public final class Exports {
     static final TagKey<Item> GOODS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "exports"));
@@ -48,10 +57,24 @@ public final class Exports {
     private static final int SHOP_RANGE = 24;
     private static final double REACH = 3.0;
 
+    private static final int MULES = 2;
+    private static final int STAY = 24000;
+    private static final List<MerchantOffer> WARES = List.of(
+            ware(Items.STRING, 8), ware(Items.SUGAR_CANE, 8), ware(Items.COCOA_BEANS, 8),
+            ware(Items.SWEET_BERRIES, 8), ware(Items.HONEYCOMB, 3), ware(Items.NETHER_WART, 4));
+
     private static final Map<UUID, Integer> SPENT = new HashMap<>();
     private static long lastVisit = Long.MIN_VALUE;
 
     private Exports() {}
+
+    private static MerchantOffer ware(Item item, int perEmerald) {
+        return new MerchantOffer(new ItemCost(Items.EMERALD), new ItemStack(item, perEmerald), 8, 1, 0.05F);
+    }
+
+    static boolean isMerchant(WanderingTrader trader) {
+        return trader.getData(ModVillagers.TRAVELLING_MERCHANT);
+    }
 
     /** How likely a check (once a minute) brings an extra trader, for goods worth {@code surplus} emeralds. */
     static double visitChance(int surplus) {
@@ -71,7 +94,7 @@ public final class Exports {
         return worth;
     }
 
-    /** Sends a wandering trader to the village, onto open ground within 8 blocks of this villager and 3 of its height; null if there's no room. */
+    /** Sends a travelling merchant to the village, onto open ground within 8 blocks of this villager and 3 of its height; null if there's no room. */
     static @Nullable WanderingTrader sendTrader(ServerLevel level, Villager villager) {
         for (int attempt = 0; attempt < 20; attempt++) {
             int x = villager.getBlockX() + level.getRandom().nextInt(17) - 8;
@@ -85,8 +108,20 @@ public final class Exports {
             if (pos == null) continue;
             WanderingTrader trader = EntityTypes.WANDERING_TRADER.spawn(level, pos, EntitySpawnReason.EVENT);
             if (trader == null) continue;
-            trader.setDespawnDelay(24000);
+            trader.setData(ModVillagers.TRAVELLING_MERCHANT, true);
+            trader.setCustomName(Component.literal("Travelling Merchant"));
+            MerchantOffers offers = trader.getOffers();
+            offers.clear();
+            WARES.forEach(ware -> offers.add(ware.copy()));
+            trader.setDespawnDelay(STAY);
             trader.setWanderTarget(villager.blockPosition());
+            for (int i = 0; i < MULES; i++) {
+                Mule mule = EntityTypes.MULE.spawn(level, pos, EntitySpawnReason.EVENT);
+                if (mule == null) continue;
+                mule.setChest(true);
+                mule.setData(ModVillagers.PACK_MULE, true);
+                mule.setLeashedTo(trader, true);
+            }
             return trader;
         }
         return null;
@@ -107,9 +142,22 @@ public final class Exports {
         }
     }
 
-    /** A wandering trader walks to the nearest villager with export goods and buys them, within its budget for the visit. */
+    /** A travelling merchant's mules leave with it, rather than stay behind as free mules. */
+    public static void onEntityLeave(EntityLeaveLevelEvent event) {
+        if (!(event.getEntity() instanceof WanderingTrader trader) || !(event.getLevel() instanceof ServerLevel level) || !isMerchant(trader)) return;
+        Entity.RemovalReason reason = trader.getRemovalReason();
+        if (reason == null || !reason.shouldDestroy()) return;
+        level.getEntitiesOfClass(Mule.class, trader.getBoundingBox().inflate(16), mule -> mule.getData(ModVillagers.PACK_MULE) && mule.getLeashHolder() == trader)
+                .forEach(Entity::discard);
+    }
+
+    /** A travelling merchant walks to the nearest villager with export goods and buys them, within its budget for the visit. */
     public static void onEntityTick(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof WanderingTrader trader) || !(trader.level() instanceof ServerLevel level) || trader.tickCount % 20 != 0) return;
+        if (event.getEntity() instanceof Mule mule && !mule.level().isClientSide() && mule.getData(ModVillagers.PACK_MULE) && !mule.mayBeLeashed() && !mule.isTamed()) {
+            mule.discard();
+            return;
+        }
+        if (!(event.getEntity() instanceof WanderingTrader trader) || !(trader.level() instanceof ServerLevel level) || trader.tickCount % 20 != 0 || !isMerchant(trader)) return;
         int budget = TRADER_BUDGET - SPENT.getOrDefault(trader.getUUID(), 0);
         if (budget <= 0 || trader.isTrading()) return;
         Villager seller = level.getEntitiesOfClass(Villager.class, new AABB(trader.blockPosition()).inflate(SHOP_RANGE), villager -> villager.isAlive() && !villager.isSleeping() && surplus(level, villager) > 0)

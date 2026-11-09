@@ -21,11 +21,11 @@ public final class ExportTests {
         Villager armorer = spawnArmorer(helper);
         armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
         armorer.getInventory().addItem(new ItemStack(Items.IRON_HELMET));
-        helper.spawn(EntityTypes.WANDERING_TRADER, new BlockPos(14, 1, 12));
+        helper.assertTrue(Exports.sendTrader(helper.getLevel(), armorer) != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> {
             helper.assertTrue(armorer.getInventory().countItem(Items.IRON_CHESTPLATE) + armorer.getInventory().countItem(Items.IRON_HELMET) < 2,
-                    "The wandering trader buys the armorer's armor to take away, it still has " + armorer.getInventory().countItem(Items.IRON_CHESTPLATE) + " chestplates, " + armorer.getInventory().countItem(Items.IRON_HELMET) + " helmets");
+                    "The travelling merchant buys the armorer's armor to take away, it still has " + armorer.getInventory().countItem(Items.IRON_CHESTPLATE) + " chestplates, " + armorer.getInventory().countItem(Items.IRON_HELMET) + " helmets");
             helper.assertTrue(Economy.emeralds(helper.getLevel(), armorer) >= 2, "...paying new emeralds into the village, it has " + Economy.emeralds(helper.getLevel(), armorer));
         });
     }
@@ -39,6 +39,38 @@ public final class ExportTests {
 
         helper.assertTrue(trader != null && trader.distanceTo(armorer) <= 16, "A wandering trader comes to the village with goods to export, " + trader);
         helper.succeed();
+    }
+
+    public static void aTravellingMerchantLooksAndTradesUnlikeAWanderingTrader(GameTestHelper helper) {
+        Villager armorer = spawnArmorer(helper);
+        for (int i = 0; i < 4; i++) armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
+
+        WanderingTrader merchant = Exports.sendTrader(helper.getLevel(), armorer);
+
+        helper.assertTrue(merchant != null && Exports.isMerchant(merchant), "A travelling merchant comes");
+        helper.assertTrue(merchant.hasCustomName() && merchant.getCustomName().getString().equals("Travelling Merchant"), "...named so, " + merchant.getCustomName());
+        var mules = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.equine.Mule.class, merchant.getBoundingBox().inflate(8), mule -> mule.getLeashHolder() == merchant);
+        helper.assertTrue(mules.size() == 2 && mules.stream().allMatch(net.minecraft.world.entity.animal.equine.AbstractChestedHorse::hasChest), "...with two pack mules on leads, has " + mules.size());
+        helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.equine.TraderLlama.class, merchant.getBoundingBox().inflate(16)).isEmpty(), "...and no trader llamas");
+        var sold = merchant.getOffers().stream().map(offer -> offer.getResult().getItem()).toList();
+        helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART).contains(item)),
+                "...selling goods from afar the village can't make, " + sold);
+        merchant.discard();
+        helper.runAfterDelay(2, () -> {
+            helper.assertTrue(mules.stream().noneMatch(net.minecraft.world.entity.Entity::isAlive), "Its mules leave with it");
+            helper.succeed();
+        });
+    }
+
+    public static void aPlainWanderingTraderDoesNotBuyExports(GameTestHelper helper) {
+        Villager armorer = spawnArmorer(helper);
+        armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
+        helper.spawn(EntityTypes.WANDERING_TRADER, new BlockPos(7, 1, 12));
+
+        helper.runAfterDelay(400, () -> {
+            helper.assertTrue(armorer.getInventory().countItem(Items.IRON_CHESTPLATE) == 1, "Only the travelling merchant buys exports; vanilla's wandering trader stays vanilla");
+            helper.succeed();
+        });
     }
 
     private static Villager spawnArmorer(GameTestHelper helper) {
