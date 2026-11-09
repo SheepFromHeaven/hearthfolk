@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golem_building",
+  "function": "minenow:breaking_a_half_built_golem_costs_reputation",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

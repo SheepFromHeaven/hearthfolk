@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golems",
+  "function": "minenow:a_golemsmith_mends_a_hurt_golem_with_ingots",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golem_building",
+  "function": "minenow:a_golemsmith_keeps_its_iron_when_theres_no_room_for_a_golem",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1800
+}

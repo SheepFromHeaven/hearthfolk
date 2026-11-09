@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golems",
+  "function": "minenow:a_golemsmith_leaves_a_healthy_golem_alone",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

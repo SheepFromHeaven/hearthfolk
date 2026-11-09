@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "minenow:block/golem_workshop"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:golem_building",
+  "function": "minenow:breaking_your_own_iron_block_costs_nothing",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}
