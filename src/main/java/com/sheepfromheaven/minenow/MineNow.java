@@ -201,6 +201,12 @@ public final class MineNow {
             test(helper, TestGroup.ARMORER, "a_novice_armorer_makes_copper_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::aNoviceArmorerMakesCopperArmor);
             test(helper, TestGroup.SMELTER, "a_blast_furnace_makes_a_smelter", com.sheepfromheaven.minenow.smelter.SmelterTests::aBlastFurnaceMakesASmelter);
             test(helper, TestGroup.MASON, "a_novice_mason_cuts_cobblestone", com.sheepfromheaven.minenow.mason.MasonTests::aNoviceMasonCutsCobblestone);
+            test(helper, TestGroup.LEATHERWORKER, "a_novice_leatherworker_makes_leather_armor", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aNoviceLeatherworkerMakesLeatherArmor);
+            test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_turns_rabbit_hides_into_leather", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerTurnsRabbitHidesIntoLeather);
+            test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_grinds_bones_into_bone_meal", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerGrindsBonesIntoBoneMeal);
+            test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_bone_meals_tall_flowers_for_dye", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerBoneMealsTallFlowersForDye);
+            test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_dyes_its_leather_armor", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerDyesItsLeatherArmor);
+            test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_dresses_a_stand_with_its_leather_armor", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerDressesAStandWithItsLeatherArmor);
             test(helper, TestGroup.MASON, "an_apprentice_mason_cuts_stone_bricks", com.sheepfromheaven.minenow.mason.MasonTests::anApprenticeMasonCutsStoneBricks);
             test(helper, TestGroup.SMELTER, "smelter_smelts_cobblestone_into_stone", com.sheepfromheaven.minenow.mason.MasonTests::smelterSmeltsCobblestoneIntoStone);
             test(helper, TestGroup.MASON, "a_mason_paves_dirt_paths_while_its_stonecutter_is_powered", com.sheepfromheaven.minenow.mason.MasonTests::aMasonPavesDirtPathsWhileItsStonecutterIsPowered);
