@@ -1,7 +1,7 @@
 {
   "type": "minecraft:function",
   "environment": "minecraft:default",
-  "function": "minenow:players_cannot_strip_or_break_an_armorers_stand",
+  "function": "minenow:breaking_an_armorers_stand_is_griefing",
   "structure": "minenow:field_24x6x24",
   "max_ticks": 1200
 }

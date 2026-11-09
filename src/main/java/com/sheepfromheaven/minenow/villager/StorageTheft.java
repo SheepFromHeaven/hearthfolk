@@ -37,7 +37,7 @@ import java.util.UUID;
  * two checks was taken by something else: a hopper or hopper minecart underneath. Its placer is the thief.
  */
 public final class StorageTheft {
-    static final int BREAK_GOSSIP = 25;
+    public static final int BREAK_GOSSIP = 25;
     private static final int MAX_DRAIN_GOSSIP_PER_CHECK = 25;
 
     private record PendingCart(ResourceKey<Level> dimension, BlockPos rail, UUID player, long tick) {}

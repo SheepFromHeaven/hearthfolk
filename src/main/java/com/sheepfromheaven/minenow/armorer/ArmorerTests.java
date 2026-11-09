@@ -65,23 +65,48 @@ public final class ArmorerTests {
         });
     }
 
-    public static void playersCannotStripOrBreakAnArmorersStand(GameTestHelper helper) {
+    public static void playersCannotTakeTheArmorOffAnArmorersStand(GameTestHelper helper) {
         Villager armorer = spawnArmorer(helper);
         armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
         ArmorStand stand = helper.spawn(EntityTypes.ARMOR_STAND, STAND);
-        @SuppressWarnings("removal")
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
-        player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        ServerPlayer player = survivalPlayer(helper);
 
         helper.succeedWhen(() -> {
             helper.assertTrue(stand.getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE), "The armorer dresses the stand first");
             player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             player.interactOn(stand, InteractionHand.MAIN_HAND, stand.position().add(0, 1.2, 0));
             helper.assertTrue(stand.getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE), "A player can't take the armor off an armorer's stand");
-            player.attack(stand);
-            player.attack(stand);
-            helper.assertTrue(stand.isAlive(), "...nor break the stand");
         });
+    }
+
+    public static void breakingAnArmorersStandIsGriefing(GameTestHelper helper) {
+        Villager armorer = spawnArmorer(helper);
+        armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
+        ArmorStand stand = helper.spawn(EntityTypes.ARMOR_STAND, STAND);
+        ServerPlayer player = survivalPlayer(helper);
+        boolean[] broken = {false};
+
+        helper.succeedWhen(() -> {
+            if (!broken[0]) {
+                helper.assertTrue(stand.getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE), "The armorer dresses the stand first");
+                player.attack(stand);
+                player.attack(stand);
+                broken[0] = true;
+            }
+            helper.assertFalse(stand.isAlive(), "A player can still break the stand");
+            int reputation = armorer.getGossips().getReputation(player.getUUID(), type -> true);
+            helper.assertTrue(reputation < 0, "...but the armorer holds it against them, reputation " + reputation);
+            helper.assertTrue(armorer.getInventory().countItem(Items.IRON_CHESTPLATE) == 1, "The armor on display goes back to the armorer, has " + armorer.getInventory().countItem(Items.IRON_CHESTPLATE));
+            helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(), item -> item.getItem().is(Items.IRON_CHESTPLATE)).isEmpty(),
+                    "...rather than dropping for the player to take");
+        });
+    }
+
+    private static ServerPlayer survivalPlayer(GameTestHelper helper) {
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        return player;
     }
 
     static Villager spawnArmorer(GameTestHelper helper) {

@@ -1,6 +1,17 @@
 package com.sheepfromheaven.minenow.armorer;
 
 import com.sheepfromheaven.minenow.MineNow;
+import com.sheepfromheaven.minenow.villager.Economy;
+import com.sheepfromheaven.minenow.villager.StorageTheft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -26,8 +37,9 @@ import java.util.function.Supplier;
 
 /**
  * The armorer (vanilla's, at its blast furnace) shows off the armor it makes on armor stands near its workstation
- * ({@link ShowArmor}). A stand it dressed is its display: while that armorer lives, players can't take the armor or
- * break the stand, and right-clicking it says whose display it is.
+ * ({@link ShowArmor}). A stand it dressed is its display: while that armorer lives, players can't take the armor, and
+ * right-clicking it says whose display it is. Breaking it is griefing, like breaking a villager's chest: the armorer
+ * holds it against the player and gets its armor back.
  */
 public final class Armorer {
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MineNow.MOD_ID);
@@ -36,6 +48,12 @@ public final class Armorer {
             () -> AttachmentType.builder(() -> new UUID(0L, 0L))
                     .serialize(UUIDUtil.CODEC.fieldOf("armorer"))
                     .build());
+
+    private static final int BLAME_TICKS = 100;
+    private static final Map<UUID, Attack> LAST_ATTACK = new HashMap<>();
+
+    /** Who last hit or shot an armorer's display, and what it showed then: whoever breaks it is blamed and the armor returned. */
+    private record Attack(UUID player, long tick, List<ItemStack> armor) {}
 
     private Armorer() {}
 
@@ -79,6 +97,36 @@ public final class Armorer {
     }
 
     public static void onAttackEntity(AttackEntityEvent event) {
-        if (event.getTarget() instanceof ArmorStand stand && stand.level() instanceof ServerLevel level && owner(level, stand) != null) event.setCanceled(true);
+        if (event.getTarget() instanceof ArmorStand stand) remember(stand, event.getEntity());
+    }
+
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        if (event.getRayTraceResult() instanceof EntityHitResult hit && hit.getEntity() instanceof ArmorStand stand && event.getProjectile().getOwner() instanceof Player player) {
+            remember(stand, player);
+        }
+    }
+
+    /** Breaking an armorer's display is griefing, like breaking a villager's chest; the armor on it goes back to the armorer. */
+    public static void onEntityLeave(EntityLeaveLevelEvent event) {
+        if (!(event.getEntity() instanceof ArmorStand stand) || !(event.getLevel() instanceof ServerLevel level)) return;
+        Attack attack = LAST_ATTACK.remove(stand.getUUID());
+        if (stand.getRemovalReason() != Entity.RemovalReason.KILLED) return;
+        Villager armorer = owner(level, stand);
+        if (armorer == null || attack == null || level.getGameTime() - attack.tick() > BLAME_TICKS) return;
+        StorageTheft.punish(level, armorer, attack.player(), StorageTheft.BREAK_GOSSIP);
+        for (ItemStack piece : attack.armor()) {
+            level.getEntitiesOfClass(ItemEntity.class, stand.getBoundingBox().inflate(2.0), item -> item.isAlive() && ItemStack.isSameItemSameComponents(item.getItem(), piece))
+                    .stream().findFirst().ifPresent(item -> {
+                        Economy.give(level, armorer, item.getItem().copy());
+                        item.discard();
+                    });
+        }
+    }
+
+    private static void remember(ArmorStand stand, Player player) {
+        if (!(stand.level() instanceof ServerLevel level) || owner(level, stand) == null) return;
+        List<ItemStack> armor = EquipmentSlot.VALUES.stream().filter(slot -> slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR)
+                .map(stand::getItemBySlot).filter(stack -> !stack.isEmpty()).map(ItemStack::copy).toList();
+        LAST_ATTACK.put(stand.getUUID(), new Attack(player.getUUID(), level.getGameTime(), armor));
     }
 }
