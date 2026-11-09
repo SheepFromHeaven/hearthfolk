@@ -137,19 +137,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return gear(level, buyer);
-        if (!Unloading.ownsTool(level, buyer) && (table.get().toolTag().isPresent() || !table.get().tools().isEmpty())) {
-            int wallet = Economy.emeralds(level, buyer) - Economy.FOOD_MONEY;
-            Optional<Deal> tool = sellers(level, buyer).stream()
-                    .flatMap(seller -> TradeTable.forVillager(seller).stream()
-                            .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
-                                    .filter(craft -> sellerTable.craftPrice(craft).emeralds() <= wallet && table.get().isToolItem(new ItemStack(craft.item()))
-                                            && Economy.count(level, seller, craft.item()) > 0)
-                                    .max(Comparator.comparingInt(craft -> sellerTable.craftPrice(craft).emeralds()))
-                                    .map(craft -> new Deal(seller, craft.item(), sellerTable.craftPrice(craft), 1, wallet))
-                                    .stream()))
-                    .findFirst();
-            if (tool.isPresent()) return tool;
-        }
+        Optional<Deal> tool = toolDeal(level, buyer, table.get());
+        if (tool.isPresent()) return tool;
         for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
             int held = buyer.getInventory().countItem(supply.item());
             if (held >= supply.price().count()) continue;
@@ -159,6 +148,25 @@ public class BuyFromVillagers extends Behavior<Villager> {
             if (deal.isPresent()) return deal;
         }
         return gear(level, buyer);
+    }
+
+    /** Whether a villager nearby has a tool of its trade it can afford, so it goes to buy it (see {@link SeekTool}). */
+    static boolean canBuyToolFromAVillager(ServerLevel level, Villager buyer) {
+        return TradeTable.forVillager(buyer).flatMap(table -> toolDeal(level, buyer, table)).isPresent();
+    }
+
+    private static Optional<Deal> toolDeal(ServerLevel level, Villager buyer, TradeTable table) {
+        if (!IdleReason.requiresTool(table) || Unloading.ownsTool(level, buyer)) return Optional.empty();
+        int wallet = Economy.emeralds(level, buyer) - Economy.FOOD_MONEY;
+        return sellers(level, buyer).stream()
+                .flatMap(seller -> TradeTable.forVillager(seller).stream()
+                        .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
+                                .filter(craft -> sellerTable.craftPrice(craft).emeralds() <= wallet && table.isToolItem(new ItemStack(craft.item()))
+                                        && Economy.count(level, seller, craft.item()) > 0)
+                                .max(Comparator.comparingInt(craft -> sellerTable.craftPrice(craft).emeralds()))
+                                .map(craft -> new Deal(seller, craft.item(), sellerTable.craftPrice(craft), 1, wallet))
+                                .stream()))
+                .findFirst();
     }
 
     /** The most protective armor (or, once fully armored, the best sword, or a bow and arrows for an archer) the nearest seller has that it can afford. */

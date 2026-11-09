@@ -65,6 +65,14 @@ public final class Unloading {
         return nearestWorkshopWithRoom(level, villager, surplus);
     }
 
+    /** Whether any of its chests has room for something it has to unload. */
+    public static boolean chestHasRoomForSurplus(ServerLevel level, Villager villager) {
+        List<ItemStack> surplus = surplus(villager);
+        return Workshop.allChests(level, villager).stream()
+                .filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock)
+                .anyMatch(pos -> surplus.stream().anyMatch(stack -> hasRoom(HomeStorage.chestContainer(level, pos), stack)));
+    }
+
     private static Optional<BlockPos> nearestWorkshopWithRoom(ServerLevel level, Villager villager, List<ItemStack> goods) {
         if (goods.isEmpty()) return Optional.empty();
         return Workshop.chestsOf(level, villager).stream()
