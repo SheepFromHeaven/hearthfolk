@@ -144,12 +144,19 @@ public final class VillageSoak {
 
         try {
             Files.createDirectories(out);
-            Files.writeString(out.resolve("days.csv"), "day,profession,alive,emeralds,food,goods,export_goods,hungry,idle,idle_reasons\n");
+            Files.writeString(out.resolve("days.csv"), "day,profession,alive,emeralds,food,goods,export_goods,starving,idle,idle_reasons\n");
         } catch (IOException e) {
             throw new IllegalStateException("Cannot write the soak report to " + out, e);
         }
 
         long totalTicks = (long) days * DAY;
+        Set<String> trace = new HashSet<>(List.of(System.getProperty("minenow.soak.trace", "").split(",")));
+        trace.remove("");
+        try {
+            Files.deleteIfExists(out.resolve("trace.txt"));
+        } catch (IOException e) {
+            LOGGER.error("Cannot clear the soak trace", e);
+        }
         LOGGER.info("[soak] village built, running {} ticks", totalTicks);
         Set<UUID> merchantsSeen = new HashSet<>();
         long[] tick = {0};
@@ -165,6 +172,7 @@ public final class VillageSoak {
                     merchantsSeen.add(trader.getUUID());
                 }
             }
+            if (!trace.isEmpty() && tick[0] % 1200 == 0) trace(level, helper, out, tick[0], residents, trace);
             if (tick[0] % 2000 == 0) {
                 double seconds = (System.nanoTime() - started) / 1e9;
                 LOGGER.info("[soak] tick {} ({} ticks/s, sprinting {})", tick[0], String.format("%.0f", tick[0] / Math.max(seconds, 0.001)),
@@ -226,8 +234,10 @@ public final class VillageSoak {
             case FARMER -> {
                 station = at(ox, oz, 3, 1, 5);
                 spawn = at(ox, oz, 2, 1, 5);
-                BlockState ripe = ((CropBlock) Blocks.WHEAT).getStateForAge(((CropBlock) Blocks.WHEAT).getMaxAge());
+                CropBlock[] crops = {(CropBlock) Blocks.WHEAT, (CropBlock) Blocks.CARROTS, (CropBlock) Blocks.POTATOES, (CropBlock) Blocks.BEETROOTS};
                 for (int x = 4; x <= 10; x++) {
+                    CropBlock crop = crops[x % crops.length];
+                    BlockState ripe = crop.getStateForAge(crop.getMaxAge());
                     for (int z = 2; z <= 8; z++) {
                         if (x == 7 && z == 5) {
                             set(helper, ox, oz, x, 0, z, Blocks.WATER);
@@ -323,6 +333,30 @@ public final class VillageSoak {
 
     // ---------------------------------------------------------------- measuring
 
+    /** Hasn't eaten for a whole day: a missed meal or two, not just waiting for breakfast. */
+    private static boolean starving(Villager villager) {
+        long last = villager.getExistingData(ModVillagers.LAST_MEAL).orElse(villager.level().getGameTime());
+        return villager.level().getGameTime() - last > DAY;
+    }
+
+    private static void trace(ServerLevel level, GameTestHelper helper, Path out, long tick, List<Resident> residents, Set<String> who) {
+        StringBuilder line = new StringBuilder();
+        for (Resident resident : residents) {
+            if (!who.contains(resident.name())) continue;
+            Villager v = resident.villager();
+            line.append(tick).append(' ').append(resident.name()).append(" at ").append(helper.relativePos(v.blockPosition()).toShortString())
+                    .append(' ').append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
+                    .append(' ').append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList())
+                    .append(" walk=").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(w -> w.getTarget().currentBlockPosition().toShortString()).orElse("-"))
+                    .append(" goods=").append(list(v.getInventory())).append('\n');
+        }
+        try {
+            Files.writeString(out.resolve("trace.txt"), line, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            LOGGER.error("Cannot append to the soak trace", e);
+        }
+    }
+
     private static List<Container> containers(ServerLevel level, Villager villager) {
         List<Container> all = new ArrayList<>();
         all.add(villager.getInventory());
@@ -360,7 +394,7 @@ public final class VillageSoak {
             if (!v.isAlive()) continue;
             Tally t = tally(level, v);
             List<IdleReason> idle = IdleReason.of(level, v);
-            int[] add = {1, t.emeralds(), t.food(), t.goods(), t.exportGoods(), Meals.isHungry(v) ? 1 : 0, idle.isEmpty() ? 0 : 1, 0};
+            int[] add = {1, t.emeralds(), t.food(), t.goods(), t.exportGoods(), starving(v) ? 1 : 0, idle.isEmpty() ? 0 : 1, 0};
             for (int i = 0; i < 7; i++) {
                 row[i] += add[i];
                 all[i] += add[i];
@@ -387,7 +421,7 @@ public final class VillageSoak {
         } catch (IOException e) {
             LOGGER.error("Cannot append to the soak report", e);
         }
-        LOGGER.info("[soak] day {}: alive {}/{} emeralds {} food {} goods {} exports {} hungry {} idle {} merchants {}",
+        LOGGER.info("[soak] day {}: alive {}/{} emeralds {} food {} goods {} exports {} starving {} idle {} merchants {}",
                 day, all[0], residents.size(), all[1], all[2], all[3], all[4], all[5], all[6], merchants);
     }
 
@@ -399,7 +433,9 @@ public final class VillageSoak {
                     .append(v.getVillagerData().level()).append(v.isAlive() ? "" : " DEAD").append(" at ")
                     .append(helper.relativePos(v.blockPosition()).toShortString()).append('\n');
             if (!v.isAlive()) continue;
-            text.append("  idle: ").append(IdleReason.of(level, v)).append(", hungry: ").append(Meals.isHungry(v)).append('\n');
+            text.append("  idle: ").append(IdleReason.of(level, v)).append(", starving: ").append(starving(v)).append('\n');
+            text.append("  activity: ").append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
+                    .append(", running: ").append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()).append('\n');
             text.append("  pockets: ").append(list(v.getInventory())).append('\n');
             for (BlockPos chest : Storage.chests(level, v)) {
                 Container container = HomeStorage.chestContainer(level, chest);

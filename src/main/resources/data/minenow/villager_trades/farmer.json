@@ -68,6 +68,20 @@
       "level": 1
     }
   ],
+  "crafts": [
+    {
+      "item": "minecraft:bread",
+      "materials": [
+        {
+          "item": "minecraft:wheat",
+          "count": 3
+        }
+      ],
+      "labor": 0.05,
+      "stock": 16,
+      "level": 1
+    }
+  ],
   "default_produce": {
     "items": "#c:crops",
     "price": 0.05

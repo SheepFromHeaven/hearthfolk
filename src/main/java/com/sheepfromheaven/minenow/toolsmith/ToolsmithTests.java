@@ -120,6 +120,19 @@ public final class ToolsmithTests {
                         + miner.getInventory().countItem(Items.STONE_PICKAXE) + " and " + miner.getInventory().countItem(Items.EMERALD) + " emeralds"));
     }
 
+    public static void toolsmithBuysWhatAWoodenPickaxeDug(GameTestHelper helper) {
+        Villager toolsmith = spawnToolsmith(helper);
+        toolsmith.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+        BlockPos cart = new BlockPos(19, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.COBBLESTONE, Items.WOODEN_PICKAXE.components().getOrDefault(net.minecraft.core.component.DataComponents.MAX_DAMAGE, 59)));
+
+        helper.succeedWhen(() -> helper.assertTrue(toolsmith.getInventory().countItem(Items.COBBLESTONE) > 0,
+                "A wooden pickaxe digs enough for the miner to sell the toolsmith a batch of cobblestone, so it can make the next pickaxe; miner has "
+                        + miner.getInventory().countItem(Items.COBBLESTONE)));
+    }
+
     static Villager spawnToolsmith(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

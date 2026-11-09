@@ -129,7 +129,8 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_at_work_is_due_a_cue", IdleCueTests::aVillagerAtWorkIsDueACue);
             test(helper, TestGroup.VILLAGERS, "a_villager_outside_work_hours_shows_no_cue", IdleCueTests::aVillagerOutsideWorkHoursShowsNoCue);
             test(helper, TestGroup.FARMER, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
-            test(helper, TestGroup.FARMER, "farmer_does_not_bake_bread_or_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotBakeBreadOrCompostSeedsAtTheComposter);
+            test(helper, TestGroup.FARMER, "farmer_does_not_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotCompostSeedsAtTheComposter);
+            test(helper, TestGroup.FARMER, "farmer_bakes_bread_from_its_wheat", FarmerTests::farmerBakesBreadFromItsWheat);
             test(helper, TestGroup.FARMER, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);
             test(helper, TestGroup.TRADING, "farmer_buys_bone_meal_in_batches_of_eight_up_to_thirty_two", FarmerTradeTests::farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo);
             test(helper, TestGroup.FARMER, "novice_farmer_only_works_ten_blocks_out", FarmerTests::noviceFarmerOnlyWorksTenBlocksOut);
@@ -198,6 +199,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "toolsmith_charges_for_materials_and_labor", ToolsmithTests::toolsmithChargesForMaterialsAndLabor);
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
             test(helper, TestGroup.TOOLSMITH, "miner_without_a_pickaxe_buys_one_from_the_toolsmith", ToolsmithTests::minerWithoutAPickaxeBuysOneFromTheToolsmith);
+            test(helper, TestGroup.TOOLSMITH, "toolsmith_buys_what_a_wooden_pickaxe_dug", ToolsmithTests::toolsmithBuysWhatAWoodenPickaxeDug);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
             test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);

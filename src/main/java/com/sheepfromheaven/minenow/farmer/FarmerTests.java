@@ -321,7 +321,21 @@ public final class FarmerTests {
         helper.succeed();
     }
 
-    public static void farmerDoesNotBakeBreadOrCompostSeedsAtTheComposter(GameTestHelper helper) {
+    public static void farmerBakesBreadFromItsWheat(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 30));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(farmer.getInventory().countItem(Items.BREAD) >= 2, "The farmer bakes bread for the village to eat, has " + farmer.getInventory().countItem(Items.BREAD));
+            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT) == 30 - 3 * farmer.getInventory().countItem(Items.BREAD),
+                    "...three wheat a loaf, has " + farmer.getInventory().countItem(Items.WHEAT) + " wheat");
+        });
+    }
+
+    public static void farmerDoesNotCompostSeedsAtTheComposter(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
@@ -334,8 +348,6 @@ public final class FarmerTests {
         });
 
         helper.runAfterDelay(2300, () -> {
-            helper.assertTrue(farmer.getInventory().countItem(Items.BREAD) == 0, "The farmer should not bake its wheat into bread");
-            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT) == 30, "Wheat should stay sellable, has " + farmer.getInventory().countItem(Items.WHEAT));
             helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) == 64, "Seeds should not be composted, has " + farmer.getInventory().countItem(Items.WHEAT_SEEDS));
             helper.assertTrue(helper.getBlockState(COMPOSTER).getValue(net.minecraft.world.level.block.ComposterBlock.LEVEL) == 0, "The composter should stay empty");
             helper.succeed();
