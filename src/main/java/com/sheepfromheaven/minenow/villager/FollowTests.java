@@ -43,6 +43,7 @@ public final class FollowTests {
         GameTestHelpers.fence(helper);
         helper.setBlock(VILLAGER.west(2), Blocks.COMPOSTER);
         Villager farmer = GameTestHelpers.spawnEmployed(helper, VILLAGER, VILLAGER.west(2), VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new net.minecraft.world.item.ItemStack(Items.IRON_HOE));
         ServerPlayer player = playerHolding(helper, Items.EMERALD);
         boolean[] followed = {false};
         helper.onEachTick(() -> followed[0] |= farmer.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET)
