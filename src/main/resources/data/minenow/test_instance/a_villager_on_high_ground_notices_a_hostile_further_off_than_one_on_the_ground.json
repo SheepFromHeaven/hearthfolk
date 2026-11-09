@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:a_villager_on_high_ground_notices_a_hostile_further_off_than_one_on_the_ground",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

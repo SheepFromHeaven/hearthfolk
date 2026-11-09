@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.shepherd;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.ToolCare;
@@ -161,6 +162,7 @@ public class ShearSheep extends Behavior<Villager> {
         }
         sheep.setSheared(true);
         if (body.getRandom().nextFloat() < ToolCare.wearChance(body.getVillagerData().level())) Tools.wear(level, body);
+        WorkXp.award(body, WorkXp.SHEARED);
         advance(level, body, timestamp);
     }
 

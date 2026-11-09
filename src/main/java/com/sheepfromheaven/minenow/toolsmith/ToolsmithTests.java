@@ -37,6 +37,16 @@ public final class ToolsmithTests {
         });
     }
 
+    public static void toolsmithGainsExperienceFromCrafting(GameTestHelper helper) {
+        Villager toolsmith = spawnToolsmith(helper);
+        toolsmith.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 2));
+        toolsmith.getInventory().addItem(new ItemStack(Items.STICK, 2));
+        com.sheepfromheaven.minenow.gametest.GameTestHelpers.allowWorkXp(toolsmith);
+
+        helper.succeedWhen(() -> helper.assertTrue(toolsmith.getVillagerXp() > 0,
+                "A crafter should earn experience from crafting, xp " + toolsmith.getVillagerXp()));
+    }
+
     public static void toolsmithKeepsOneOfEachToolInStock(GameTestHelper helper) {
         Villager toolsmith = spawnToolsmith(helper);
         toolsmith.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 8));

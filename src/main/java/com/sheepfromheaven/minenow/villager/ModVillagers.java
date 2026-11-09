@@ -43,6 +43,24 @@ public final class ModVillagers {
                     .copyOnDeath()
                     .build());
 
+    public static final Supplier<AttachmentType<Integer>> WORK_XP_DAY = ATTACHMENT_TYPES.register("work_xp_day",
+            () -> AttachmentType.builder(() -> -1)
+                    .serialize(Codec.INT.fieldOf("day"))
+                    .copyOnDeath()
+                    .build());
+
+    public static final Supplier<AttachmentType<Double>> WORK_XP_TODAY = ATTACHMENT_TYPES.register("work_xp_today",
+            () -> AttachmentType.builder(() -> 0.0)
+                    .serialize(Codec.DOUBLE.fieldOf("xp"))
+                    .copyOnDeath()
+                    .build());
+
+    public static final Supplier<AttachmentType<Double>> WORK_XP_PROGRESS = ATTACHMENT_TYPES.register("work_xp_progress",
+            () -> AttachmentType.builder(() -> 0.0)
+                    .serialize(Codec.DOUBLE.fieldOf("xp"))
+                    .copyOnDeath()
+                    .build());
+
     /** The sword a villager keeps at its side, drawn only when it fights (see {@link Gear}). */
     public static final Supplier<AttachmentType<net.minecraft.world.item.ItemStack>> SIDEARM = ATTACHMENT_TYPES.register("sidearm",
             () -> AttachmentType.builder(() -> net.minecraft.world.item.ItemStack.EMPTY)

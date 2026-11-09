@@ -104,6 +104,7 @@ public final class MineNow {
 
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
+            test(helper, TestGroup.FARMER, "farmer_gains_experience_from_harvesting", FarmerTests::farmerGainsExperienceFromHarvesting);
             test(helper, TestGroup.FARMER, "farmer_keeps_tending_after_brain_is_rebuilt", FarmerTests::farmerKeepsTendingAfterBrainIsRebuilt);
             test(helper, TestGroup.FARMER, "farmer_deposits_harvest_in_its_workshop_chest", FarmerTests::farmerDepositsHarvestInItsWorkshopChest);
             test(helper, TestGroup.FARMER, "farmer_without_hoe_leaves_ripe_crops_alone", FarmerTests::farmerWithoutHoeLeavesRipeCropsAlone);
@@ -139,6 +140,10 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "farmer_picks_up_a_hoe_thrown_to_it", FarmerTests::farmerPicksUpAHoeThrownToIt);
             test(helper, TestGroup.FARMER, "farmer_fetches_a_spare_hoe_from_its_home_chest", FarmerTests::farmerFetchesASpareHoeFromItsHomeChest);
             test(helper, TestGroup.TRADING, "hoeless_farmer_offers_to_buy_an_undamaged_hoe", FarmerTradeTests::hoelessFarmerOffersToBuyAnUndamagedHoe);
+            test(helper, TestGroup.VILLAGERS, "work_experience_levels_a_villager_up", com.sheepfromheaven.minenow.villager.WorkXpTests::workExperienceLevelsAVillagerUp);
+            test(helper, TestGroup.VILLAGERS, "work_experience_has_a_daily_cap", com.sheepfromheaven.minenow.villager.WorkXpTests::workExperienceHasADailyCap);
+            test(helper, TestGroup.VILLAGERS, "small_actions_add_up_to_whole_experience", com.sheepfromheaven.minenow.villager.WorkXpTests::smallActionsAddUpToWholeExperience);
+            test(helper, TestGroup.VILLAGERS, "unemployed_villagers_earn_no_work_experience", com.sheepfromheaven.minenow.villager.WorkXpTests::unemployedVillagersEarnNoWorkExperience);
             test(helper, TestGroup.VILLAGER_TRADING, "starting_purse_comes_with_the_job", com.sheepfromheaven.minenow.villager.EconomyTests::startingPurseComesWithTheJob);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_gets_its_purse_only_once", com.sheepfromheaven.minenow.villager.EconomyTests::aVillagerGetsItsPurseOnlyOnce);
             test(helper, TestGroup.VILLAGER_TRADING, "villager_keeps_food_and_tool_money_when_buying_from_players", com.sheepfromheaven.minenow.villager.EconomyTests::villagerKeepsFoodAndToolMoneyWhenBuyingFromPlayers);
@@ -186,6 +191,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "wealthy_villager_buys_food_to_start_a_family", MealsTests::wealthyVillagerBuysFoodToStartAFamily);
             test(helper, TestGroup.VILLAGER_TRADING, "poor_villager_keeps_its_emeralds", MealsTests::poorVillagerKeepsItsEmeralds);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_crafts_a_tool_at_its_smithing_table", ToolsmithTests::toolsmithCraftsAToolAtItsSmithingTable);
+            test(helper, TestGroup.TOOLSMITH, "toolsmith_gains_experience_from_crafting", ToolsmithTests::toolsmithGainsExperienceFromCrafting);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_keeps_one_of_each_tool_in_stock", ToolsmithTests::toolsmithKeepsOneOfEachToolInStock);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_sells_its_tools_to_players", ToolsmithTests::toolsmithSellsItsToolsToPlayers);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_charges_for_materials_and_labor", ToolsmithTests::toolsmithChargesForMaterialsAndLabor);
@@ -248,6 +254,13 @@ public final class MineNow {
             test(helper, TestGroup.DEFENCE, "an_armed_villager_chases_no_further_than_eight_blocks", com.sheepfromheaven.minenow.villager.GearTests::anArmedVillagerChasesNoFurtherThanEightBlocks);
             test(helper, TestGroup.DEFENCE, "armed_villagers_fight_raiders", com.sheepfromheaven.minenow.villager.GearTests::armedVillagersFightRaiders);
             test(helper, TestGroup.DEFENCE, "an_archer_shoots_hostiles", com.sheepfromheaven.minenow.villager.GearTests::anArcherShootsHostiles);
+            test(helper, TestGroup.DEFENCE, "the_bell_gathers_armed_villagers_at_the_meeting_point", com.sheepfromheaven.minenow.villager.GearTests::theBellGathersArmedVillagersAtTheMeetingPoint);
+            test(helper, TestGroup.DEFENCE, "an_archer_climbs_to_high_ground_when_the_bell_rings", com.sheepfromheaven.minenow.villager.GearTests::anArcherClimbsToHighGroundWhenTheBellRings);
+            test(helper, TestGroup.DEFENCE, "a_perched_archer_stays_up_and_shoots_raiders_further_than_it_would_on_the_ground", com.sheepfromheaven.minenow.villager.GearTests::aPerchedArcherStaysUpAndShootsRaidersFurtherThanItWouldOnTheGround);
+            test(helper, TestGroup.DEFENCE, "an_archer_without_high_ground_gathers_at_the_bell", com.sheepfromheaven.minenow.villager.GearTests::anArcherWithoutHighGroundGathersAtTheBell);
+            test(helper, TestGroup.DEFENCE, "an_archer_climbs_into_a_roofed_tower", com.sheepfromheaven.minenow.villager.GearTests::anArcherClimbsIntoARoofedTower);
+            test(helper, TestGroup.DEFENCE, "an_archer_prefers_a_marked_post_to_higher_ground", com.sheepfromheaven.minenow.villager.GearTests::anArcherPrefersAMarkedPostToHigherGround);
+            test(helper, TestGroup.DEFENCE, "a_villager_on_high_ground_notices_a_hostile_further_off_than_one_on_the_ground", com.sheepfromheaven.minenow.villager.GearTests::aVillagerOnHighGroundNoticesAHostileFurtherOffThanOneOnTheGround);
             test(helper, TestGroup.DEFENCE, "a_fallen_villagers_gear_drops", com.sheepfromheaven.minenow.villager.GearTests::aFallenVillagersGearDrops);
             test(helper, TestGroup.WEAPONSMITH, "a_novice_weaponsmith_makes_stone_swords", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aNoviceWeaponsmithMakesStoneSwords);
             test(helper, TestGroup.WEAPONSMITH, "a_weaponsmith_grinds_two_worn_swords_into_one", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aWeaponsmithGrindsTwoWornSwordsIntoOne);

@@ -90,6 +90,7 @@ public class CraftAtWorkstation extends Behavior<Villager> {
             for (TradeTable.Material material : craft.materials()) Economy.take(level, body, material.item(), material.count());
             Economy.give(level, body, new ItemStack(craft.item(), craft.count()));
             for (int use = 0; use < craft.toolUses(); use++) Tools.wear(level, body);
+            WorkXp.award(body, WorkXp.CRAFTED);
         }
         craft = null;
     }

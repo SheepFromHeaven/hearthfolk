@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.armorer;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Economy;
 import net.minecraft.core.BlockPos;
@@ -95,6 +96,7 @@ public class ShowArmor extends Behavior<Villager> {
             stand.setItemSlot(slot, piece.split(1));
             stand.setData(Armorer.DISPLAYED_BY, body.getUUID());
             if (!old.isEmpty()) Economy.give(level, body, old);
+            WorkXp.award(body, WorkXp.DISPLAYED);
             body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
             level.playSound(null, stand, SoundEvents.ARMOR_EQUIP_GENERIC.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
         }

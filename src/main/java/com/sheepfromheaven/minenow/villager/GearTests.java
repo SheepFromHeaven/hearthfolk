@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.villager;
 
 import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -219,6 +220,27 @@ public final class GearTests {
         });
     }
 
+    public static void aVillagerOnHighGroundNoticesAHostileFurtherOffThanOneOnTheGround(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        for (int x = 4; x <= 6; x++) for (int z = 4; z <= 6; z++) for (int y = 1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.STONE_BRICKS);
+        Villager high = helper.spawn(EntityTypes.VILLAGER, new BlockPos(5, 4, 5));
+        Villager low = helper.spawn(EntityTypes.VILLAGER, new BlockPos(13, 1, 14));
+        for (Villager villager : new Villager[]{high, low}) villager.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(0.0);
+        standing(helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(15, 1, 5)));
+        boolean[] panicked = {false, false};
+
+        helper.onEachTick(() -> {
+            panicked[0] |= high.getBrain().isActive(Activity.PANIC);
+            panicked[1] |= low.getBrain().isActive(Activity.PANIC);
+        });
+        helper.runAfterDelay(100, () -> {
+            helper.assertTrue(panicked[0], "A villager three blocks up notices a zombie 10 blocks away, though vanilla's sensor stops at 8");
+            helper.assertTrue(!panicked[1], "...one on the ground doesn't");
+            helper.succeed();
+        });
+    }
+
     public static void aFallenVillagersGearDrops(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(12, 1, 12));
@@ -233,6 +255,123 @@ public final class GearTests {
             helper.assertTrue(items.stream().anyMatch(stack -> stack.is(Items.IRON_SWORD)), "...and its sword, " + items);
             helper.succeed();
         });
+    }
+
+
+    private static final BlockPos BELL = new BlockPos(14, 1, 20);
+
+    public static void theBellGathersArmedVillagersAtTheMeetingPoint(GameTestHelper helper) {
+        Villager swordsman = farmer(helper, COMPOSTER_2);
+        Gear.wear(swordsman, new ItemStack(Items.IRON_SWORD));
+        Villager farmer = farmer(helper, COMPOSTER);
+        helper.setBlock(BELL, Blocks.BELL);
+        for (Villager villager : new Villager[]{swordsman, farmer}) {
+            villager.getBrain().setMemory(MemoryModuleType.MEETING_POINT, GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(BELL)));
+        }
+
+        boolean[] unarmed = {false, false};
+
+        helper.runAfterDelay(20, () -> ((net.minecraft.world.level.block.BellBlock) Blocks.BELL).attemptToRing(helper.getLevel(), helper.absolutePos(BELL), net.minecraft.core.Direction.EAST));
+        helper.onEachTick(() -> {
+            unarmed[0] |= farmer.getBrain().isActive(Activity.HIDE);
+            unarmed[1] |= farmer.getBrain().isActive(Activity.FIGHT);
+        });
+        helper.succeedWhen(() -> {
+            var bell = net.minecraft.world.phys.Vec3.atBottomCenterOf(helper.absolutePos(BELL));
+            helper.assertTrue(swordsman.position().distanceTo(bell) <= 4.0, "The armed villager gathers at the bell, " + swordsman.position().distanceTo(bell) + " blocks away");
+            helper.assertTrue(unarmed[0] && !unarmed[1], "...an unarmed one hides as in vanilla instead");
+        });
+    }
+
+    public static void anArcherClimbsToHighGroundWhenTheBellRings(GameTestHelper helper) {
+        Villager archer = archerAtBell(helper);
+        BlockPos platform = tower(helper);
+
+        helper.runAfterDelay(20, () -> ring(helper));
+        helper.succeedWhen(() -> {
+            helper.assertTrue(archer.onGround() && archer.blockPosition().getY() >= helper.absolutePos(platform).getY(),
+                    "The archer climbs the stairs to the tower top, standing at " + archer.blockPosition());
+            helper.assertTrue(archer.position().distanceTo(net.minecraft.world.phys.Vec3.atBottomCenterOf(helper.absolutePos(BELL))) > 4.0, "...instead of waiting at the bell");
+        });
+    }
+
+    public static void aPerchedArcherStaysUpAndShootsRaidersFurtherThanItWouldOnTheGround(GameTestHelper helper) {
+        Villager archer = archerAtBell(helper);
+        BlockPos platform = tower(helper);
+        helper.runAfterDelay(20, () -> ring(helper));
+        Monster[] pillager = new Monster[1];
+
+        helper.runAfterDelay(300, () -> {
+            helper.assertTrue(archer.blockPosition().getY() >= helper.absolutePos(platform).getY(), "The archer is on the tower by now, at " + archer.blockPosition());
+            pillager[0] = standing(helper.spawnWithNoFreeWill(EntityTypes.PILLAGER, new BlockPos(2, 1, 15)));
+        });
+        helper.onEachTick(() -> {
+            if (pillager[0] != null) helper.assertTrue(archer.blockPosition().getY() >= helper.absolutePos(platform).getY(), "The archer holds the tower and doesn't go down to the pillager");
+        });
+        helper.succeedWhen(() -> helper.assertTrue(pillager[0] != null && (!pillager[0].isAlive() || pillager[0].getHealth() < pillager[0].getMaxHealth()),
+                "From the tower it sees and shoots a pillager 15 blocks off, beyond what the villager sensor reports"));
+    }
+
+    public static void anArcherClimbsIntoARoofedTower(GameTestHelper helper) {
+        Villager archer = archerAtBell(helper);
+        BlockPos platform = tower(helper);
+        for (int x = 17; x <= 20; x++) for (int z = 14; z <= 16; z++) helper.setBlock(x, 7, z, Blocks.STONE);
+
+        helper.runAfterDelay(20, () -> ring(helper));
+        helper.runAfterDelay(300, () -> {
+            helper.assertTrue(helper.getBlockState(new BlockPos(19, 7, 15)).is(Blocks.STONE), "The tower has its roof");
+            helper.assertTrue(archer.onGround() && archer.blockPosition().getY() >= helper.absolutePos(platform).getY() && archer.blockPosition().getX() >= helper.absolutePos(new BlockPos(17, 0, 0)).getX(),
+                    "A roof doesn't keep the archer off the tower top, standing at " + archer.blockPosition());
+            helper.succeed();
+        });
+    }
+
+    public static void anArcherPrefersAMarkedPostToHigherGround(GameTestHelper helper) {
+        Villager archer = archerAtBell(helper);
+        tower(helper);
+        helper.setBlock(15, 2, 15, Blocks.HAY_BLOCK);
+
+        helper.runAfterDelay(20, () -> ring(helper));
+        helper.runAfterDelay(300, () -> {
+            var post = net.minecraft.world.phys.Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(15, 3, 15)));
+            helper.assertTrue(archer.position().distanceTo(post) <= 1.5,
+                    "The archer holds the hay bale post instead of the taller tower, at " + archer.position() + " not " + post);
+            helper.succeed();
+        });
+    }
+
+    public static void anArcherWithoutHighGroundGathersAtTheBell(GameTestHelper helper) {
+        Villager archer = archerAtBell(helper);
+
+        helper.runAfterDelay(20, () -> ring(helper));
+        helper.succeedWhen(() -> helper.assertTrue(archer.position().distanceTo(net.minecraft.world.phys.Vec3.atBottomCenterOf(helper.absolutePos(BELL))) <= 4.0,
+                "With nothing to climb the archer waits at the bell, " + archer.position().distanceTo(net.minecraft.world.phys.Vec3.atBottomCenterOf(helper.absolutePos(BELL)))));
+    }
+
+    /** A level 5 archer (steady aim) at the field's west end, its meeting point the bell. */
+    private static Villager archerAtBell(GameTestHelper helper) {
+        Villager archer = farmer(helper, new BlockPos(6, 1, 6));
+        archer.setVillagerData(archer.getVillagerData().withLevel(5));
+        archer.setData(ModVillagers.ARCHER, true);
+        Gear.wear(archer, new ItemStack(Items.BOW));
+        Gear.wear(archer, new ItemStack(Items.ARROW, 32));
+        helper.setBlock(BELL, Blocks.BELL);
+        archer.getBrain().setMemory(MemoryModuleType.MEETING_POINT, GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(BELL)));
+        return archer;
+    }
+
+    private static void ring(GameTestHelper helper) {
+        ((net.minecraft.world.level.block.BellBlock) Blocks.BELL).attemptToRing(helper.getLevel(), helper.absolutePos(BELL), net.minecraft.core.Direction.EAST);
+    }
+
+    /** A ramp of full blocks, one higher each step, up to a 3x3 tower top; its floor is four blocks above the ground. Returns a standing cell on top. */
+    private static BlockPos tower(GameTestHelper helper) {
+        for (int x = 14; x <= 20; x++) {
+            int height = Math.min(x - 13, 4);
+            for (int z = x < 18 ? 15 : 14; z <= (x < 18 ? 15 : 16); z++) for (int y = 1; y <= height; y++) helper.setBlock(x, y, z, Blocks.STONE_BRICKS);
+        }
+        for (int x = 14; x <= 20; x++) for (int z = 14; z <= 16; z++) helper.setBlock(x, 6, z, Blocks.AIR);
+        return new BlockPos(19, 5, 15);
     }
 
     /** A mob with no AI slides far from every knockback, out of the fight; a live one walks back in. */

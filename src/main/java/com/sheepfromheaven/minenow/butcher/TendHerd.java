@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.butcher;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.villager.FurnaceTending;
@@ -157,6 +158,7 @@ public class TendHerd extends Behavior<Villager> {
         if (landed < Butchering.swings(animal.getHealth(), Butchering.attackDamage(axe))) return;
         swingsLanded.remove(animal.getUUID());
         animal.hurtServer(level, level.damageSources().mobAttack(body), Float.MAX_VALUE);
+        WorkXp.award(body, WorkXp.CULLED);
         advance(level, body, timestamp);
     }
 

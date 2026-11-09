@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.forester;
 
+import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.miner.Mining;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
@@ -177,6 +178,7 @@ public class FellTrees extends Behavior<Villager> {
             if (!rest.isEmpty()) Block.popResource(level, body.blockPosition(), rest);
         }
         Tools.wear(level, body);
+        WorkXp.award(body, WorkXp.FELLED);
     }
 
     /** A sapling on every stump it has one for; the rest it remembers for later. */
