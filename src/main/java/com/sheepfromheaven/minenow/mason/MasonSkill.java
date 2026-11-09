@@ -2,7 +2,7 @@ package com.sheepfromheaven.minenow.mason;
 
 /** What a mason's level improves: how far from its stonecutter it paves roads (not at all as a novice), and with what. */
 public final class MasonSkill {
-    private static final int[] ROAD_RANGE = {0, 12, 16, 20, 24};
+    private static final int[] ROAD_RANGE = {0, 32, 48, 64, 96};
 
     private MasonSkill() {}
 

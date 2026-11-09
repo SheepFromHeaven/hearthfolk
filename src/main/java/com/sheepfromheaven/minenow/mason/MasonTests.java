@@ -103,6 +103,25 @@ public final class MasonTests {
         });
     }
 
+    public static void aMasonFollowsItsRoadsAndLeavesStrayPathsAlone(GameTestHelper helper) {
+        Villager mason = spawnMason(helper, 2);
+        mason.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
+        mason.getInventory().addItem(new ItemStack(Items.GRAVEL, 32));
+        for (int x = 6; x <= 20; x++) helper.setBlock(new BlockPos(x, 0, 14), Blocks.DIRT_PATH);
+        for (int z = 15; z <= 21; z++) helper.setBlock(new BlockPos(20, 0, z), Blocks.DIRT_PATH);
+        BlockPos stray = new BlockPos(14, 0, 20);
+        helper.setBlock(stray, Blocks.DIRT_PATH);
+        helper.setBlock(STONECUTTER.north(), Blocks.REDSTONE_BLOCK);
+
+        helper.succeedWhen(() -> {
+            for (int z = 15; z <= 21; z++) {
+                var state = helper.getBlockState(new BlockPos(20, 0, z));
+                helper.assertTrue(state.is(TIER_2), "It follows the road around the corner to its far end, at z " + z + " it's " + state.getBlock().getName().getString());
+            }
+            helper.assertTrue(helper.getBlockState(stray).is(Blocks.DIRT_PATH), "A path not joined to its roads is left alone");
+        });
+    }
+
     /** A dirt path along z 14 from x {@code from}, sunk into the floor. */
     private static void road(GameTestHelper helper, int from, int length) {
         for (int x = from; x < from + length; x++) helper.setBlock(new BlockPos(x, 0, 14), Blocks.DIRT_PATH);

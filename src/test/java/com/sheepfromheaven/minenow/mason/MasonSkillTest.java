@@ -10,8 +10,8 @@ class MasonSkillTest {
     @Test
     void aNovicePavesNothingAndTheRangeGrows() {
         assertEquals(0, MasonSkill.roadRange(1));
-        assertEquals(12, MasonSkill.roadRange(2));
-        assertEquals(24, MasonSkill.roadRange(5));
+        assertEquals(32, MasonSkill.roadRange(2));
+        assertEquals(96, MasonSkill.roadRange(5));
     }
 
     @Test

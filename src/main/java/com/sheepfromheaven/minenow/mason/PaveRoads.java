@@ -4,6 +4,10 @@ import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.Walking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -27,7 +31,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -36,16 +43,20 @@ import java.util.Optional;
 
 /**
  * While a redstone signal reaches its stonecutter, a mason from apprentice on paves the roads the player shovelled
- * within {@link MasonSkill#roadRange} of it: each dirt path becomes cobblestone or gravel, or from journeyman stone
+ * that join the road network around its workshop ({@link #roads}), within {@link MasonSkill#roadRange} of it: each dirt path becomes cobblestone or gravel, or from journeyman stone
  * bricks or slabs, as {@link RoadPattern} has it for that spot, and a journeyman lays stone on the cobblestone and gravel
  * it paved before ({@link Mason#PAVED}). It only ever replaces dirt paths and its own paving, with blocks from its goods.
  */
 public class PaveRoads extends Behavior<Villager> {
     private static final int HEIGHT = 4;
+    private static final int START = 8;
+    private static final int MAX_NETWORK = 8192;
+    private static final TagKey<Block> TIER_2 = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minenow", "villager_roads/tier_2"));
+    private static final TagKey<Block> TIER_3 = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minenow", "villager_roads/tier_3"));
     private static final double REACH = 3.0;
     private static final float SPEED = 0.5F;
     private static final int RESCAN = 60;
-    private static final int GIVE_UP_AFTER_TICKS = 300;
+    private static final int GIVE_UP_AFTER_TICKS = 1200;
     private static final int UNREACHABLE_COOLDOWN = 1200;
     private static final int MAX_REMEMBERED = 1024;
     private static final Map<RoadPattern.Material, Item> ITEMS = Map.of(
@@ -138,8 +149,8 @@ public class PaveRoads extends Behavior<Villager> {
         long now = level.getGameTime();
         unreachable.values().removeIf(until -> until < now);
         List<BlockPos> candidates = new ArrayList<>();
-        for (BlockPos pos : BlockPos.betweenClosed(site.get().offset(-range, -HEIGHT, -range), site.get().offset(range, HEIGHT, range))) {
-            if (level.getBlockState(pos).is(Blocks.DIRT_PATH)) candidates.add(pos.immutable());
+        for (BlockPos pos : roads(level, site.get(), range)) {
+            if (level.getBlockState(pos).is(Blocks.DIRT_PATH)) candidates.add(pos);
         }
         if (MasonSkill.laysStone(body.getVillagerData().level())) candidates.addAll(body.getData(Mason.PAVED));
         for (BlockPos pos : candidates.stream().sorted(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position()))).toList()) {
@@ -151,6 +162,37 @@ public class PaveRoads extends Behavior<Villager> {
             return true;
         }
         return false;
+    }
+
+    /**
+     * The road network around its workshop: road blocks (any tier, so paved stretches still join it) near its
+     * stonecutter and everything joined to them, a step up or down allowed, within {@code range} of it and only in
+     * loaded chunks. Following the roads rather than scanning the whole area keeps a long reach cheap.
+     */
+    private static Set<BlockPos> roads(ServerLevel level, BlockPos site, int range) {
+        Set<BlockPos> found = new HashSet<>();
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        for (BlockPos pos : BlockPos.betweenClosed(site.offset(-START, -HEIGHT, -START), site.offset(START, HEIGHT, START))) {
+            if (isRoad(level, pos) && found.add(pos.immutable())) queue.add(pos.immutable());
+        }
+        while (!queue.isEmpty() && found.size() < MAX_NETWORK) {
+            BlockPos pos = queue.poll();
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    BlockPos next = pos.relative(side).above(dy);
+                    if (Math.abs(next.getX() - site.getX()) > range || Math.abs(next.getZ() - site.getZ()) > range || Math.abs(next.getY() - site.getY()) > range) continue;
+                    if (found.contains(next) || !level.isLoaded(next) || !isRoad(level, next)) continue;
+                    found.add(next);
+                    queue.add(next);
+                }
+            }
+        }
+        return found;
+    }
+
+    private static boolean isRoad(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.is(Blocks.DIRT_PATH) || state.is(TIER_2) || state.is(TIER_3);
     }
 
     /** A dirt path with room to walk on it, or cobblestone or gravel it laid itself and would now lay stone on. */
