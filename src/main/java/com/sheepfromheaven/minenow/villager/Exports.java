@@ -32,7 +32,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,7 +39,7 @@ import java.util.UUID;
  * The village's exports: goods only players would otherwise buy ({@code #minenow:exports}: armor, swords, shields, bows,
  * saddles, bundles, ...). The more such goods a village holds near a player, the likelier a travelling merchant turns up
  * ({@link #visitChance}): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
- * the village can't make ({@link #WARES}) instead of vanilla's random trades. It walks to the villagers holding export
+ * the village can't make ({@link #wares}) instead of vanilla's random trades. It walks to the villagers holding export
  * goods and buys them at their price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn
  * without a player. Vanilla's own wandering trader stays vanilla.
  */
@@ -59,14 +58,17 @@ public final class Exports {
 
     private static final int MULES = 2;
     private static final int STAY = 24000;
-    private static final List<MerchantOffer> WARES = List.of(
-            ware(Items.STRING, 8), ware(Items.SUGAR_CANE, 8), ware(Items.COCOA_BEANS, 8),
-            ware(Items.SWEET_BERRIES, 8), ware(Items.HONEYCOMB, 3), ware(Items.NETHER_WART, 4));
 
     private static final Map<UUID, Integer> SPENT = new HashMap<>();
     private static long lastVisit = Long.MIN_VALUE;
 
     private Exports() {}
+
+    /** Goods from afar the village can't make, and how many the merchant sells for an emerald. */
+    private static Map<Item, Integer> wares() {
+        return Map.of(Items.STRING, 8, Items.SUGAR_CANE, 8, Items.COCOA_BEANS, 8,
+                Items.SWEET_BERRIES, 8, Items.HONEYCOMB, 3, Items.NETHER_WART, 4);
+    }
 
     private static MerchantOffer ware(Item item, int perEmerald) {
         return new MerchantOffer(new ItemCost(Items.EMERALD), new ItemStack(item, perEmerald), 8, 1, 0.05F);
@@ -112,7 +114,7 @@ public final class Exports {
             trader.setCustomName(Component.literal("Travelling Merchant"));
             MerchantOffers offers = trader.getOffers();
             offers.clear();
-            WARES.forEach(ware -> offers.add(ware.copy()));
+            wares().forEach((item, perEmerald) -> offers.add(ware(item, perEmerald)));
             trader.setDespawnDelay(STAY);
             trader.setWanderTarget(villager.blockPosition());
             for (int i = 0; i < MULES; i++) {
