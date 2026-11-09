@@ -1,6 +1,14 @@
 package com.sheepfromheaven.minenow.villager;
 
 import com.sheepfromheaven.minenow.MineNow;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -32,6 +40,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,7 +49,7 @@ import java.util.UUID;
  * The village's exports: goods only players would otherwise buy ({@code #minenow:exports}: armor, swords, shields, bows,
  * saddles, bundles, ...). The more such goods a village holds near a player, the likelier a travelling merchant turns up
  * ({@link #visitChance}): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
- * the village can't make ({@link #wares}) instead of vanilla's random trades. It walks to the villagers holding export
+ * the village can't make ({@code data/<namespace>/travelling_merchant/*.json}, all files merged) instead of vanilla's random trades. It walks to the villagers holding export
  * goods and buys them at their price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn
  * without a player. Vanilla's own wandering trader stays vanilla.
  */
@@ -64,14 +74,24 @@ public final class Exports {
 
     private Exports() {}
 
-    /** Goods from afar the village can't make, and how many the merchant sells for an emerald. */
-    private static Map<Item, Integer> wares() {
-        return Map.of(Items.STRING, 8, Items.SUGAR_CANE, 8, Items.COCOA_BEANS, 8,
-                Items.SWEET_BERRIES, 8, Items.HONEYCOMB, 3, Items.NETHER_WART, 4);
+    private record Ware(Identifier item, double price) {
+        static final Codec<Ware> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Identifier.CODEC.fieldOf("item").forGetter(Ware::item),
+                Codec.DOUBLE.fieldOf("price").forGetter(Ware::price)
+        ).apply(i, Ware::new));
     }
 
-    private static MerchantOffer ware(Item item, int perEmerald) {
-        return new MerchantOffer(new ItemCost(Items.EMERALD), new ItemStack(item, perEmerald), 8, 1, 0.05F);
+    private record WareList(List<Ware> wares) {
+        static final Codec<WareList> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Ware.CODEC.listOf().fieldOf("wares").forGetter(WareList::wares)
+        ).apply(i, WareList::new));
+    }
+
+    private static volatile Map<Identifier, Double> wares = Map.of();
+
+    private static MerchantOffer ware(Item item, double price) {
+        Price deal = Price.of(price);
+        return new MerchantOffer(new ItemCost(Items.EMERALD, deal.emeralds()), new ItemStack(item, deal.count()), 8, 1, 0.05F);
     }
 
     static boolean isMerchant(WanderingTrader trader) {
@@ -114,7 +134,7 @@ public final class Exports {
             trader.setCustomName(Component.literal("Travelling Merchant"));
             MerchantOffers offers = trader.getOffers();
             offers.clear();
-            wares().forEach((item, perEmerald) -> offers.add(ware(item, perEmerald)));
+            wares.forEach((id, price) -> BuiltInRegistries.ITEM.getOptional(id).ifPresent(item -> offers.add(ware(item, price))));
             trader.setDespawnDelay(STAY);
             trader.setWanderTarget(villager.blockPosition());
             for (int i = 0; i < MULES; i++) {
@@ -141,6 +161,23 @@ public final class Exports {
             villagers.stream().max(Comparator.comparingInt(villager -> surplus(level, villager))).ifPresent(villager -> {
                 if (sendTrader(level, villager) != null) lastVisit = level.getGameTime();
             });
+        }
+    }
+
+    public static void onAddReloadListeners(AddServerReloadListenersEvent event) {
+        event.addListener(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "travelling_merchant"), new Loader());
+    }
+
+    private static final class Loader extends SimpleJsonResourceReloadListener<WareList> {
+        Loader() {
+            super(WareList.CODEC, FileToIdConverter.json("travelling_merchant"));
+        }
+
+        @Override
+        protected void apply(Map<Identifier, WareList> lists, ResourceManager manager, ProfilerFiller profiler) {
+            Map<Identifier, Double> merged = new LinkedHashMap<>();
+            lists.values().forEach(list -> list.wares().forEach(ware -> merged.put(ware.item(), ware.price())));
+            wares = Map.copyOf(merged);
         }
     }
 

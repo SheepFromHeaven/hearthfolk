@@ -76,6 +76,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(ProfessionTrades::onTrade);
         NeoForge.EVENT_BUS.addListener(TradeTable::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(VillagerNames::onAddReloadListeners);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(VillagerNames::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onEntityTick);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onDeath);

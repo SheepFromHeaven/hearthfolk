@@ -55,6 +55,9 @@ public final class ExportTests {
         var sold = merchant.getOffers().stream().map(offer -> offer.getResult().getItem()).toList();
         helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART).contains(item)),
                 "...selling goods from afar the village can't make, " + sold);
+        var string = merchant.getOffers().stream().filter(offer -> offer.getResult().is(Items.STRING)).findFirst().orElseThrow();
+        helper.assertTrue(string.getResult().getCount() == 8 && string.getCostA().getCount() == 1 && string.getCostA().is(Items.EMERALD),
+                "...at the data file's price, 8 string for an emerald, not " + string.getResult().getCount() + " for " + string.getCostA().getCount());
         merchant.discard();
         helper.runAfterDelay(2, () -> {
             helper.assertTrue(mules.stream().noneMatch(net.minecraft.world.entity.Entity::isAlive), "Its mules leave with it");
