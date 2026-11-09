@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:worn_armor_protects_and_wears_down",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

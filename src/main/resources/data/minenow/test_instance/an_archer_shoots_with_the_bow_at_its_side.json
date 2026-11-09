@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:an_archer_shoots_with_the_bow_at_its_side",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

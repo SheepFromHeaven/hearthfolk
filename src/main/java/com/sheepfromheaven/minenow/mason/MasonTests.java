@@ -15,8 +15,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-import java.util.HashSet;
-import java.util.Set;
 
 public final class MasonTests {
     private static final BlockPos STONECUTTER = new BlockPos(5, 1, 12);
@@ -89,17 +87,14 @@ public final class MasonTests {
         helper.setBlock(STONECUTTER.north(), Blocks.REDSTONE_BLOCK);
 
         helper.succeedWhen(() -> {
-            Set<Block> used = new HashSet<>();
-            int stone = 0;
             for (int x = 6; x < 18; x++) {
-                var state = helper.getBlockState(new BlockPos(x, 0, 14));
+                BlockPos spot = new BlockPos(x, 0, 14);
+                var state = helper.getBlockState(spot);
                 helper.assertFalse(state.is(Blocks.DIRT_PATH), "The whole path gets paved, at x " + x + " it's still a dirt path");
-                helper.assertTrue(state.is(TIER_2) || state.is(TIER_3), "...with road blocks, at x " + x + " it's " + state.getBlock().getName().getString());
-                used.add(state.getBlock());
-                if (state.is(TIER_3)) stone++;
+                RoadPattern.Material wanted = RoadPattern.material(net.minecraft.util.Mth.getSeed(helper.absolutePos(spot)), true);
+                boolean stone = wanted == RoadPattern.Material.STONE_BRICKS || wanted == RoadPattern.Material.STONE_BRICK_SLAB;
+                helper.assertTrue(state.is(stone ? TIER_3 : TIER_2), "A journeyman lays stone where its pattern wants stone and leaves the rest cobblestone or gravel, at x " + x + " it wants " + wanted + " and laid " + state.getBlock().getName().getString());
             }
-            helper.assertTrue(stone >= 6, "A journeyman lays mostly stone bricks and slabs, " + stone + " of 12");
-            helper.assertTrue(used.size() >= 2, "...in an irregular mix rather than one block, used " + used);
         });
     }
 

@@ -36,7 +36,8 @@ import java.util.Optional;
  * Dev tooling for the {@code gametestPlayground} run ({@code -Dminenow.gametestPlayground=true}): on every login, lays
  * out every {@code minenow:*} test instance in a district per {@link TestGroup} (coloured wool floor and sign), each far from
  * the others and reached through a portal in the hub where the player starts, idle, each with a floating label (readable name,
- * and the failure message once it fails; the block's beacon shows the status), plus an overview board at the start. {@code /minenow playground runall} starts them all.
+ * and the failure message once it fails; the block's beacon shows the status), plus an overview board at the start and,
+ * behind the arrival point, a lineup of frozen villagers to inspect ({@link PlaygroundShowcase}). {@code /minenow playground runall} starts them all.
  */
 public final class GametestPlayground {
     public static final String PROPERTY = "minenow.gametestPlayground";
@@ -75,6 +76,7 @@ public final class GametestPlayground {
                 .sorted(java.util.Comparator.comparing(test -> test.key().identifier().getPath()))
                 .toList();
         if (tests.isEmpty()) return;
+        level.getGameRules().set(net.minecraft.world.level.gamerules.GameRules.SPAWN_MOBS, false, level.getServer());
 
         PLOTS.forEach(plot -> plot.label().discard());
         PLOTS.clear();
@@ -130,12 +132,14 @@ public final class GametestPlayground {
                     PlaygroundLabels.testLabel(plannedPlot.test(), PlaygroundLabels.State.NOT_RUN, Optional.empty()), 2.0F)));
         }
         board = PlaygroundLabels.spawn(level, Vec3.atBottomCenterOf(origin).add(0, 6, -6), Component.literal("MineNow gametests"), 2.5F);
+        PlaygroundShowcase.build(level, origin);
         refresh();
     }
 
     public static void onServerTick(ServerTickEvent.Post event) {
         if (!enabled() || PLOTS.isEmpty()) return;
         usePortals(PLOTS.getFirst().level());
+        PlaygroundShowcase.tick(event.getServer());
         if (event.getServer().getTickCount() % REFRESH_INTERVAL == 0) refresh();
     }
 

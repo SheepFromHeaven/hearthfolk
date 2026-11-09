@@ -22,6 +22,12 @@ public final class MineNowClient {
     }
 
     @SubscribeEvent
+    static void onRegisterLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(SwingingVillagerRenderer.SwingingVillagerModel.LAYER, SwingingVillagerRenderer.SwingingVillagerModel::layer);
+        event.registerLayerDefinition(SwingingVillagerRenderer.SwingingVillagerModel.NO_HAT_LAYER, SwingingVillagerRenderer.SwingingVillagerModel::noHatLayer);
+    }
+
+    @SubscribeEvent
     static void onScreenInit(ScreenEvent.Init.Post event) {
         GametestPlaygroundWorld.onScreenInit(event);
     }

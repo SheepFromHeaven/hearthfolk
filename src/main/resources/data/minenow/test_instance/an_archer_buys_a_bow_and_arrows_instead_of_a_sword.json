@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:an_archer_buys_a_bow_and_arrows_instead_of_a_sword",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

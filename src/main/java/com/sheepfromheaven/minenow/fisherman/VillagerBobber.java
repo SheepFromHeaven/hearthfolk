@@ -20,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fisherman's bobber. Vanilla's fishing hook only works for players, so this is our own: it flies to the water,
@@ -30,6 +31,7 @@ public class VillagerBobber extends Projectile {
     public enum State { FLYING, FLOATING, APPROACHING, BITING }
 
     private static final EntityDataAccessor<Integer> DATA_STATE = SynchedEntityData.defineId(VillagerBobber.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_OWNER = SynchedEntityData.defineId(VillagerBobber.class, EntityDataSerializers.INT);
     private static final double GRAVITY = 0.03;
     private static final int FLIGHT_TICKS = 12;
     static final int SHORTEST_BITE = 20;
@@ -51,6 +53,7 @@ public class VillagerBobber extends Projectile {
     public static VillagerBobber cast(ServerLevel level, Villager owner, Vec3 target, int lureTicks) {
         VillagerBobber bobber = new VillagerBobber(FishermanEntities.VILLAGER_BOBBER.get(), level);
         bobber.setOwner(owner);
+        bobber.entityData.set(DATA_OWNER, owner.getId());
         bobber.lureTicks = lureTicks;
         Vec3 from = owner.getEyePosition().add(owner.getLookAngle().scale(0.6));
         bobber.setPos(from);
@@ -75,6 +78,15 @@ public class VillagerBobber extends Projectile {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_STATE, State.FLYING.ordinal());
+        builder.define(DATA_OWNER, 0);
+    }
+
+    /** The spawn packet names the owner once; a client that gets the bobber before its villager finds the owner here later. */
+    @Override
+    public @Nullable Entity getOwner() {
+        Entity owner = super.getOwner();
+        if (owner == null && level().isClientSide()) owner = level().getEntity(entityData.get(DATA_OWNER));
+        return owner;
     }
 
     @Override

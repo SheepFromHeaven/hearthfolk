@@ -17,7 +17,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.phys.Vec3;
 
-/** Vanilla's fishing hook look, with the line running to the rod in the villager's crossed arms. */
+/** Vanilla's fishing hook look, with the line running to the tip of the rod in the villager's right hand. */
 public class VillagerBobberRenderer extends EntityRenderer<VillagerBobber, FishingHookRenderState> {
     private static final Identifier TEXTURE = Identifier.withDefaultNamespace("textures/entity/fishing/fishing_hook.png");
     private static final RenderType RENDER_TYPE = RenderTypes.entityCutoutCull(TEXTURE);
@@ -69,11 +69,11 @@ public class VillagerBobberRenderer extends EntityRenderer<VillagerBobber, Fishi
             return;
         }
         float bodyYaw = Mth.lerp(partialTicks, owner.yBodyRotO, owner.yBodyRot) * Mth.DEG_TO_RAD;
-        double forward = 0.4 * owner.getScale();
-        double left = 0.2 * owner.getScale();
+        double forward = 0.95 * owner.getScale();
+        double left = -0.32 * owner.getScale();
         double sin = Mth.sin(bodyYaw);
         double cos = Mth.cos(bodyYaw);
-        Vec3 rodTip = owner.getPosition(partialTicks).add(-sin * forward + cos * left, 1.45 * owner.getScale(), cos * forward + sin * left);
+        Vec3 rodTip = owner.getPosition(partialTicks).add(-sin * forward + cos * left, 1.275 * owner.getScale(), cos * forward + sin * left);
         state.lineOriginOffset = rodTip.subtract(entity.getPosition(partialTicks).add(0.0, 0.25, 0.0));
     }
 

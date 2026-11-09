@@ -37,7 +37,12 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     /** Buys lots of the seller's {@code price} (so many items for so many emeralds), up to {@code room} items. */
     /** {@code budget}: the emeralds the buyer may spend on it (food may use its food money, supplies only what's above its reserve). */
-    private record Deal(Villager seller, Item item, Price price, int room, int budget) {}
+    /** {@code wear}: gear it puts on (see {@link Gear}) rather than goods it keeps. */
+    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear) {
+        Deal(Villager seller, Item item, Price price, int room, int budget) {
+            this(seller, item, price, room, budget, false);
+        }
+    }
 
     private @Nullable Deal deal;
     private long startedAt;
@@ -71,6 +76,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (buyer.distanceTo(deal.seller()) <= REACH) {
             trade(level, buyer, deal);
             deal = null;
+            nextStartAllowed = timestamp;
             return;
         }
         if (!walkingToSeller(buyer)) walk(buyer);
@@ -97,8 +103,13 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (lots <= 0) return;
         int paid = Economy.take(level, buyer, Items.EMERALD, lots * price.emeralds());
         Economy.give(level, seller, new ItemStack(Items.EMERALD, paid));
-        int handed = Economy.take(level, seller, deal.item(), lots * price.count());
-        Economy.give(level, buyer, new ItemStack(deal.item(), handed));
+        if (deal.wear()) {
+            if (deal.item() == Items.ARROW) Gear.wear(buyer, new ItemStack(Items.ARROW, Economy.take(level, seller, Items.ARROW, lots * price.count())));
+            else Gear.wear(buyer, Economy.takeOne(level, seller, deal.item()));
+        } else {
+            int handed = Economy.take(level, seller, deal.item(), lots * price.count());
+            Economy.give(level, buyer, new ItemStack(deal.item(), handed));
+        }
         buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(seller, true));
         seller.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(buyer, true));
         buyer.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
@@ -125,7 +136,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             if (food.isPresent()) return food;
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
-        if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return Optional.empty();
+        if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return gear(level, buyer);
         if (!Unloading.ownsTool(level, buyer) && (table.get().toolTag().isPresent() || !table.get().tools().isEmpty())) {
             int wallet = Economy.emeralds(level, buyer) - Economy.FOOD_MONEY;
             Optional<Deal> tool = sellers(level, buyer).stream()
@@ -147,7 +158,21 @@ public class BuyFromVillagers extends Behavior<Villager> {
                     .findFirst();
             if (deal.isPresent()) return deal;
         }
-        return Optional.empty();
+        return gear(level, buyer);
+    }
+
+    /** The most protective armor (or, once fully armored, the best sword, or a bow and arrows for an archer) the nearest seller has that it can afford. */
+    private static Optional<Deal> gear(ServerLevel level, Villager buyer) {
+        int budget = Gear.budget(level, buyer);
+        if (budget <= 0) return Optional.empty();
+        return sellers(level, buyer).stream()
+                .flatMap(seller -> Economy.items(level, seller).stream()
+                        .filter(item -> Gear.wants(buyer, new ItemStack(item)))
+                        .flatMap(item -> offer(level, seller, item, Gear.room(buyer, new ItemStack(item)), budget).stream())
+                        .max(Comparator.comparingDouble(deal -> Gear.worth(new ItemStack(deal.item()))))
+                        .map(deal -> new Deal(deal.seller(), deal.item(), deal.price(), deal.room(), budget, true))
+                        .stream())
+                .findFirst();
     }
 
     private static java.util.List<Villager> sellers(ServerLevel level, Villager buyer) {

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:an_armed_villager_chases_no_further_than_eight_blocks",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

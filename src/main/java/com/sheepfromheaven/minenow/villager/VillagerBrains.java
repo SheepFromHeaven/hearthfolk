@@ -31,6 +31,7 @@ import net.minecraft.world.entity.ai.behavior.ValidateNearbyPoi;
 import net.minecraft.world.entity.ai.behavior.VillageBoundRandomStroll;
 import net.minecraft.world.entity.ai.behavior.VillagerGoalPackages;
 import net.minecraft.world.entity.ai.behavior.VillagerMakeLove;
+import net.minecraft.world.entity.ai.behavior.VillagerPanicTrigger;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
@@ -42,8 +43,9 @@ import java.util.Set;
 
 /**
  * Brains can't drop a single behaviour, so every adult villager's brain is rebuilt from vanilla's own packages (as
- * listed in Villager.BRAIN_PROVIDER), changed in two places: MEET and IDLE leave out TradeWithVillager (villagers
- * handing each other food and goods, which would bypass trading), and farmers get {@link FarmerWork}'s WORK package.
+ * listed in Villager.BRAIN_PROVIDER), changed in three places: MEET and IDLE leave out TradeWithVillager (villagers
+ * handing each other food and goods, which would bypass trading), farmers get {@link FarmerWork}'s WORK package, and
+ * CORE has {@link PanicOrFight} instead of the panic trigger (with a FIGHT activity for it).
  * Only safe on a brain that hasn't ticked yet, since running behaviours would never be stopped.
  */
 public final class VillagerBrains {
@@ -55,7 +57,8 @@ public final class VillagerBrains {
         Holder<VillagerProfession> profession = villager.getVillagerData().profession();
         var work = FarmerRules.isFarmer(villager) ? FarmerWork.workPackage() : VillagerGoalPackages.getWorkPackage(profession, SPEED);
         brain.removeAllBehaviors();
-        brain.addActivity(Activity.CORE, VillagerGoalPackages.getCorePackage(profession, SPEED), ImmutableSet.of(), Set.of());
+        brain.addActivity(Activity.CORE, corePackage(profession), ImmutableSet.of(), Set.of());
+        brain.addActivity(Activity.FIGHT, ImmutableList.of(Pair.of(99, new DoNothing(20, 40))), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.WORK, work, ImmutableSet.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)), Set.of());
         brain.addActivity(Activity.MEET, meetPackage(), ImmutableSet.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)), Set.of());
         brain.addActivity(Activity.REST, VillagerGoalPackages.getRestPackage(SPEED), ImmutableSet.of(), Set.of());
@@ -64,6 +67,15 @@ public final class VillagerBrains {
         brain.addActivity(Activity.PRE_RAID, VillagerGoalPackages.getPreRaidPackage(SPEED), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.RAID, VillagerGoalPackages.getRaidPackage(SPEED), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.HIDE, VillagerGoalPackages.getHidePackage(SPEED), ImmutableSet.of(), Set.of());
+    }
+
+    /** Vanilla's, with {@link PanicOrFight} in place of its panic trigger. */
+    private static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> corePackage(Holder<VillagerProfession> profession) {
+        return VillagerGoalPackages.getCorePackage(profession, SPEED).stream()
+                .map(pair -> pair.getSecond() instanceof VillagerPanicTrigger
+                        ? Pair.<Integer, BehaviorControl<? super Villager>>of(pair.getFirst(), new PanicOrFight())
+                        : Pair.<Integer, BehaviorControl<? super Villager>>of(pair.getFirst(), pair.getSecond()))
+                .collect(ImmutableList.toImmutableList());
     }
 
     private static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> meetPackage() {

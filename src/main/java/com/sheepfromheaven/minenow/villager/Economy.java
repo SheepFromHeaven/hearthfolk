@@ -76,6 +76,28 @@ public final class Economy {
         return taken;
     }
 
+    /** One of the item as it is (dye, wear and all), from its inventory first, then its chests; empty if it has none. */
+    public static ItemStack takeOne(ServerLevel level, Villager villager, Item item) {
+        ItemStack taken = takeOneFrom(villager.getInventory(), item);
+        for (BlockPos pos : Workshop.allChests(level, villager)) {
+            if (!taken.isEmpty()) break;
+            Container chest = HomeStorage.chestContainer(level, pos);
+            if (chest == null || chest.countItem(item) == 0) continue;
+            StorageTheft.check(level, villager, pos);
+            taken = takeOneFrom(chest, item);
+            chest.setChanged();
+            StorageTheft.recordContents(level, pos);
+        }
+        return taken;
+    }
+
+    private static ItemStack takeOneFrom(Container container, Item item) {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            if (container.getItem(i).is(item)) return container.removeItem(i, 1);
+        }
+        return ItemStack.EMPTY;
+    }
+
     /** Into its inventory, then the chest the item belongs in (food and emeralds home, trade goods the workshop), then any. */
     public static void give(ServerLevel level, Villager villager, ItemStack stack) {
         ItemStack rest = villager.getInventory().addItem(stack);
