@@ -23,7 +23,7 @@ public class PickUpGiftedTool extends Behavior<Villager> {
     private long nextSearch;
 
     public PickUpGiftedTool() {
-        super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT), 300);
+        super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.REGISTERED), 300);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class PickUpGiftedTool extends Behavior<Villager> {
     @Override
     protected void tick(ServerLevel level, Villager body, long timestamp) {
         if (target == null || body.distanceToSqr(target) > 2.25) {
-            if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) start(level, body, timestamp);
+            if (!walkingToTarget(body)) start(level, body, timestamp);
             return;
         }
         ItemStack hoe = target.getItem().split(1);
@@ -59,6 +59,11 @@ public class PickUpGiftedTool extends Behavior<Villager> {
         if (!rest.isEmpty()) target.getItem().grow(rest.getCount());
         if (target.getItem().isEmpty()) target.discard();
         body.take(target, 1);
+    }
+
+    private boolean walkingToTarget(Villager body) {
+        return body.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                .filter(walk -> walk.getTarget() instanceof EntityTracker tracker && tracker.getEntity() == target).isPresent();
     }
 
     private static boolean hasTool(Villager body) {

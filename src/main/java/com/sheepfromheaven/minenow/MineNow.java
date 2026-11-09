@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow;
 
 import com.sheepfromheaven.minenow.dev.GametestPlayground;
 import com.sheepfromheaven.minenow.farmer.FarmerReport;
+import com.sheepfromheaven.minenow.villager.IdleCueTests;
 import com.sheepfromheaven.minenow.farmer.FarmerRules;
 import com.sheepfromheaven.minenow.farmer.FarmerTests;
 import com.sheepfromheaven.minenow.fisherman.FishermanEntities;
@@ -69,7 +70,9 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
         NeoForge.EVENT_BUS.addListener(Roads::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(Roads::onAddReloadListeners);
-        NeoForge.EVENT_BUS.addListener(FarmerReport::onRegisterCommands);
+        FarmerReport.register();
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleReport::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleCues::onEntityTick);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onFarmlandTrample);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(ProfessionTrades::onEntityInteract);
@@ -109,6 +112,16 @@ public final class MineNow {
             test(helper, TestGroup.TRADING, "crops_without_a_price_sell_at_the_default_rate", FarmerTradeTests::cropsWithoutAPriceSellAtTheDefaultRate);
             test(helper, TestGroup.FARMER, "farmer_retills_farmland_that_was_trampled", FarmerTests::farmerRetillsFarmlandThatWasTrampled);
             test(helper, TestGroup.FARMER, "farmer_with_a_full_inventory_still_harvests", FarmerTests::farmerWithAFullInventoryStillHarvests);
+            test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_is_diagnosed", IdleCueTests::aWorkerWithoutItsToolIsDiagnosed);
+            test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_holds_up_an_emerald", IdleCueTests::aWorkerWithoutItsToolHoldsUpAnEmerald);
+            test(helper, TestGroup.VILLAGERS, "a_broke_worker_without_its_tool_holds_no_emerald", IdleCueTests::aBrokeWorkerWithoutItsToolHoldsNoEmerald);
+            test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_seeks_out_a_nearby_player", IdleCueTests::aWorkerWithoutItsToolSeeksOutANearbyPlayer);
+            test(helper, TestGroup.VILLAGERS, "a_seeking_worker_picks_up_a_tool_thrown_to_it", IdleCueTests::aSeekingWorkerPicksUpAToolThrownToIt);
+            test(helper, TestGroup.VILLAGERS, "a_worker_with_nowhere_to_unload_shakes_its_head", IdleCueTests::aWorkerWithNowhereToUnloadShakesItsHead);
+            test(helper, TestGroup.VILLAGERS, "a_villager_with_room_to_unload_shows_no_cue", IdleCueTests::aVillagerWithRoomToUnloadShowsNoCue);
+            test(helper, TestGroup.VILLAGERS, "every_profession_is_diagnosed_not_just_the_farmer", IdleCueTests::everyProfessionIsDiagnosedNotJustTheFarmer);
+            test(helper, TestGroup.VILLAGERS, "a_villager_at_work_is_due_a_cue", IdleCueTests::aVillagerAtWorkIsDueACue);
+            test(helper, TestGroup.VILLAGERS, "a_villager_outside_work_hours_shows_no_cue", IdleCueTests::aVillagerOutsideWorkHoursShowsNoCue);
             test(helper, TestGroup.FARMER, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
             test(helper, TestGroup.FARMER, "farmer_does_not_bake_bread_or_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotBakeBreadOrCompostSeedsAtTheComposter);
             test(helper, TestGroup.FARMER, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);

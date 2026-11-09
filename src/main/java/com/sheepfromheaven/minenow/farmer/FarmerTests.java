@@ -314,7 +314,7 @@ public final class FarmerTests {
 
         String report = String.join("\n", FarmerReport.describe(helper.getLevel(), farmer).stream().map(c -> c.getString()).toList());
 
-        helper.assertTrue(report.contains("no hoe"), "Report should say the farmer has no hoe:\n" + report);
+        helper.assertTrue(report.contains("no tool"), "Report should say the farmer has no tool:\n" + report);
         helper.assertTrue(report.contains("work"), "Report should show the current activity:\n" + report);
         helper.assertTrue(report.contains("no home chest"), "Report should say there is no home chest:\n" + report);
         helper.assertTrue(report.contains("80 ripe"), "Report should count the ripe crops in the field:\n" + report);
