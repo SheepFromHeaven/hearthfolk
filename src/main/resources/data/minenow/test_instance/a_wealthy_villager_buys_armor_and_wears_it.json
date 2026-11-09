@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:a_wealthy_villager_buys_armor_and_wears_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

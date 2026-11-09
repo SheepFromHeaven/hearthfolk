@@ -43,6 +43,25 @@ public final class ModVillagers {
                     .copyOnDeath()
                     .build());
 
+    /** The sword a villager keeps at its side, drawn only when it fights (see {@link Gear}). */
+    public static final Supplier<AttachmentType<net.minecraft.world.item.ItemStack>> SIDEARM = ATTACHMENT_TYPES.register("sidearm",
+            () -> AttachmentType.builder(() -> net.minecraft.world.item.ItemStack.EMPTY)
+                    .serialize(net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.fieldOf("sword"))
+                    .build());
+
+    /** The arrows in a villager's quiver, for the bow at its side (see {@link Gear}). */
+    public static final Supplier<AttachmentType<net.minecraft.world.item.ItemStack>> QUIVER = ATTACHMENT_TYPES.register("quiver",
+            () -> AttachmentType.builder(() -> net.minecraft.world.item.ItemStack.EMPTY)
+                    .serialize(net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.fieldOf("arrows"))
+                    .build());
+
+    /** Whether a villager fights with a bow rather than a sword; fixed for life, decided from its UUID (see {@link Gear#prefersBow}). */
+    public static final Supplier<AttachmentType<Boolean>> ARCHER = ATTACHMENT_TYPES.register("archer",
+            () -> AttachmentType.builder(holder -> holder instanceof net.minecraft.world.entity.Entity entity && Gear.prefersBow(entity.getUUID()))
+                    .serialize(Codec.BOOL.fieldOf("archer"))
+                    .copyOnDeath()
+                    .build());
+
     /** A wandering trader sent by {@link Exports}: the village's travelling merchant, not vanilla's wandering trader. */
     public static final Supplier<AttachmentType<Boolean>> TRAVELLING_MERCHANT = ATTACHMENT_TYPES.register("travelling_merchant",
             () -> AttachmentType.builder(() -> false)

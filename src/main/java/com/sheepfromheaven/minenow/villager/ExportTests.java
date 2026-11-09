@@ -13,7 +13,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
 public final class ExportTests {
-    private static final BlockPos ANVIL = new BlockPos(5, 1, 12);
+    private static final BlockPos ANVIL = new BlockPos(11, 1, 12);
 
     private ExportTests() {}
 

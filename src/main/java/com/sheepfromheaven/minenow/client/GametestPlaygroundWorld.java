@@ -14,7 +14,7 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-/** For the {@code gametestPlayground} run: skips the title screen into a fresh creative, peaceful test world. */
+/** For the {@code gametestPlayground} run: skips the title screen into a fresh creative test world, on easy so tests can spawn hostiles (natural mob spawning is off, see GametestPlayground). */
 final class GametestPlaygroundWorld {
     private static final String LEVEL_ID = "minenow_gametest_playground";
     private static boolean triggered;
@@ -34,7 +34,7 @@ final class GametestPlaygroundWorld {
             }
         }
         var settings = new LevelSettings("MineNow Gametest Playground", GameType.CREATIVE,
-                new LevelSettings.DifficultySettings(Difficulty.PEACEFUL, false, false), true, WorldDataConfiguration.DEFAULT);
+                new LevelSettings.DifficultySettings(Difficulty.EASY, false, false), true, WorldDataConfiguration.DEFAULT);
         minecraft.createWorldOpenFlows().createFreshLevel(LEVEL_ID, settings, new WorldOptions(0L, false, false),
                 WorldPresets::createTestWorldDimensions, titleScreen);
     }

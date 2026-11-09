@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:armor_is_bought_before_a_sword",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}
