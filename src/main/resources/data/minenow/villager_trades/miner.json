@@ -105,10 +105,64 @@
     {
       "items": "#c:cobblestones",
       "max": 32
+    },
+    {
+      "items": "minecraft:gravel",
+      "max": 64
     }
   ],
   "default_produce": {
     "items": "#c:stones",
     "price": 0.0312
-  }
+  },
+  "crafts": [
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 10,
+      "level": 1
+    },
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 7,
+      "level": 2
+    },
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 4,
+      "level": 3
+    },
+    {
+      "item": "minecraft:flint",
+      "materials": [
+        {
+          "item": "minecraft:gravel",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "tool_uses": 1,
+      "level": 5
+    }
+  ]
 }

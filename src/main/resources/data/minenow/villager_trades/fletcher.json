@@ -54,9 +54,110 @@
       "price": 0.03,
       "max": 32,
       "level": 1
+    },
+    {
+      "item": "minecraft:flint",
+      "price": 0.2,
+      "max": 16
+    },
+    {
+      "item": "minecraft:feather",
+      "price": 0.0625,
+      "max": 32
+    },
+    {
+      "item": "minecraft:string",
+      "price": 0.1,
+      "max": 16,
+      "level": 3
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "price": 0.25,
+      "max": 4,
+      "level": 4
     }
   ],
   "crafts": [
+    {
+      "item": "minecraft:arrow",
+      "materials": [
+        {
+          "item": "minecraft:flint",
+          "count": 1
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 1
+        },
+        {
+          "item": "minecraft:feather",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "labor": 0.05,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:bow",
+      "materials": [
+        {
+          "item": "minecraft:stick",
+          "count": 3
+        },
+        {
+          "item": "minecraft:string",
+          "count": 3
+        }
+      ],
+      "labor": 0.5,
+      "level": 3
+    },
+    {
+      "item": "minecraft:tripwire_hook",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 1
+        },
+        {
+          "item": "minecraft:oak_planks",
+          "count": 1
+        }
+      ],
+      "count": 2,
+      "labor": 0.05,
+      "level": 4,
+      "stock": 2
+    },
+    {
+      "item": "minecraft:crossbow",
+      "materials": [
+        {
+          "item": "minecraft:stick",
+          "count": 3
+        },
+        {
+          "item": "minecraft:string",
+          "count": 2
+        },
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "item": "minecraft:tripwire_hook",
+          "count": 1
+        }
+      ],
+      "labor": 0.75,
+      "level": 4
+    },
     {
       "item": "minecraft:ladder",
       "materials": [

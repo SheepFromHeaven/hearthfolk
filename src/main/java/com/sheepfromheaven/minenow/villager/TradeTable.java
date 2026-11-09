@@ -148,14 +148,20 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
     private Optional<Price> sellPrice(Item item, int level, int depth) {
         Optional<Produce> entry = produce.stream().filter(crop -> crop.item() == item).findFirst();
         if (entry.isPresent()) return entry.get().level() <= level ? Optional.of(entry.get().price()) : Optional.empty();
-        Optional<Craft> craft = craft(item);
-        if (craft.isPresent()) return craft.get().level() <= level && depth < MAX_CRAFT_DEPTH ? Optional.of(craftPrice(craft.get(), depth)) : Optional.empty();
+        if (craft(item).isPresent()) {
+            return craft(item, level).filter(craft -> depth < MAX_CRAFT_DEPTH).map(craft -> craftPrice(craft, depth));
+        }
         return defaultProduce.filter(fallback -> fallback.level() <= level && fallback.items().contains(item.builtInRegistryHolder()))
                 .map(DefaultProduce::price);
     }
 
     public Optional<Craft> craft(Item item) {
         return crafts.stream().filter(craft -> craft.item() == item).findFirst();
+    }
+
+    /** The recipe for {@code item} at {@code level}: a later level's entry for the same item replaces an earlier one. */
+    public Optional<Craft> craft(Item item, int level) {
+        return crafts.stream().filter(craft -> craft.item() == item && craft.level() <= level).max(java.util.Comparator.comparingInt(Craft::level));
     }
 
     /**
@@ -195,8 +201,9 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         return keeps.stream().filter(keep -> stack.is(keep.items())).mapToInt(Keep::max).max().orElse(0);
     }
 
+    /** The crafts unlocked at {@code level}, one per item (the latest level's recipe). */
     public List<Craft> craftsUpTo(int level) {
-        return crafts.stream().filter(craft -> craft.level() <= level).toList();
+        return crafts.stream().map(Craft::item).distinct().map(item -> craft(item, level)).flatMap(Optional::stream).toList();
     }
 
     public List<Supply> suppliesUpTo(int level) {

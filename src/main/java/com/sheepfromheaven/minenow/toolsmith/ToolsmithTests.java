@@ -31,7 +31,7 @@ public final class ToolsmithTests {
 
         helper.succeedWhen(() -> {
             helper.assertTrue(craftedAt[0] >= 0, "The toolsmith should craft a stone hoe from 2 cobblestone and 2 sticks");
-            helper.assertTrue(craftedAt[0] >= com.sheepfromheaven.minenow.villager.CraftAtWorkstation.CRAFT_TICKS, "Crafting takes time, done on tick " + craftedAt[0]);
+            helper.assertTrue(craftedAt[0] >= com.sheepfromheaven.minenow.villager.CraftSkill.ticks(1), "Crafting takes time, done on tick " + craftedAt[0]);
             helper.assertTrue(toolsmith.getInventory().countItem(Items.COBBLESTONE) == 0 && toolsmith.getInventory().countItem(Items.STICK) == 0,
                     "The materials are used up");
         });

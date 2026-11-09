@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:miner_knaps_gravel_into_flint_at_its_cart",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 3600
+}

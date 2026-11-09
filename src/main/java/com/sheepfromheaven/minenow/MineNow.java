@@ -187,6 +187,12 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "a_redstone_signal_cannot_take_the_miner_past_its_levels_depth", MinerTests::aRedstoneSignalCannotTakeTheMinerPastItsLevelsDepth);
             test(helper, TestGroup.MINER, "miner_seals_lava_it_uncovers", MinerTests::minerSealsLavaItUncovers);
             test(helper, TestGroup.MINER, "miner_walls_off_a_cave", MinerTests::minerWallsOffACave);
+            test(helper, TestGroup.MINER, "miner_knaps_gravel_into_flint_at_its_cart", MinerTests::minerKnapsGravelIntoFlintAtItsCart);
+            test(helper, TestGroup.MINER, "better_miners_knap_flint_with_fewer_tries", MinerTests::betterMinersKnapFlintWithFewerTries);
+            test(helper, TestGroup.FLETCHER, "fletcher_makes_arrows_from_flint_sticks_and_feathers", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherMakesArrowsFromFlintSticksAndFeathers);
+            test(helper, TestGroup.FLETCHER, "a_journeyman_fletcher_makes_bows", com.sheepfromheaven.minenow.fletcher.FletcherTests::aJourneymanFletcherMakesBows);
+            test(helper, TestGroup.FLETCHER, "a_novice_fletcher_makes_no_bows", com.sheepfromheaven.minenow.fletcher.FletcherTests::aNoviceFletcherMakesNoBows);
+            test(helper, TestGroup.FLETCHER, "fletcher_practises_at_a_target_and_collects_its_arrows", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherPractisesAtATargetAndCollectsItsArrows);
             test(helper, TestGroup.MINER, "miner_digs_new_emeralds_out_of_emerald_ore", MinerTests::minerDigsNewEmeraldsOutOfEmeraldOre);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);

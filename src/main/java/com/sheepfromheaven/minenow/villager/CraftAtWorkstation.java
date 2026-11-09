@@ -23,12 +23,12 @@ import org.jspecify.annotations.Nullable;
 import java.util.Optional;
 
 /**
- * A villager whose trade file lists {@code crafts} keeps each of them (unlocked at its level) in stock: when its goods
+ * A villager whose trade file lists {@code crafts} (and is near its workstation, so not down a mine) keeps each of them (unlocked at its level) in stock: when its goods
  * hold fewer than the craft's {@code stock} and it carries the materials, it walks to its workstation and hammers for
- * {@link #CRAFT_TICKS} before the item is made, wearing the tool of its trade where the craft needs it ({@code tool_uses}). Lives in CORE after MoveToTargetSink, like the other trades.
+ * as long as its level dictates ({@link CraftSkill}) before the item is made, wearing the tool of its trade where the craft needs it ({@code tool_uses}). Lives in CORE after MoveToTargetSink, like the other trades.
  */
 public class CraftAtWorkstation extends Behavior<Villager> {
-    public static final int CRAFT_TICKS = 100;
+    private static final double NEAR = 24.0;
     private static final int SWING_EVERY = 10;
     private static final float SPEED = 0.5F;
     private static final double REACH = 2.0;
@@ -51,6 +51,8 @@ public class CraftAtWorkstation extends Behavior<Villager> {
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading() || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + IDLE_RESCAN_DELAY;
+        Optional<BlockPos> station = workstation(level, body);
+        if (station.isEmpty() || station.get().distToCenterSqr(body.position()) > NEAR * NEAR || Math.abs(station.get().getY() - body.getY()) > 3) return false;
         craft = nextCraft(level, body).orElse(null);
         return craft != null;
     }
@@ -83,7 +85,7 @@ public class CraftAtWorkstation extends Behavior<Villager> {
             SoundEvent sound = body.getVillagerData().profession().value().workSound();
             level.playSound(null, station, sound != null ? sound : SoundEvents.SMITHING_TABLE_USE, SoundSource.BLOCKS, 0.4F, 0.9F + body.getRandom().nextFloat() * 0.2F);
         }
-        if (++hammering < CRAFT_TICKS) return;
+        if (++hammering < CraftSkill.ticks(body.getVillagerData().level())) return;
         if (hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body))) {
             for (TradeTable.Material material : craft.materials()) Economy.take(level, body, material.item(), material.count());
             Economy.give(level, body, new ItemStack(craft.item(), craft.count()));

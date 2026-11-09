@@ -372,6 +372,25 @@ public final class MinerTests {
                 "Emerald ore it digs is new money for the village, has " + count(miner, Items.EMERALD) + " emeralds; ore " + helper.getBlockState(new BlockPos(8, 2, 12)).getBlock().getName().getString()));
     }
 
+    public static void minerKnapsGravelIntoFlintAtItsCart(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.GRAVEL, 4));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(count(miner, Items.FLINT) >= 1, "The miner knaps flint out of its gravel at its cart, has " + count(miner, Items.FLINT) + " flint, " + count(miner, Items.GRAVEL) + " gravel");
+            helper.assertTrue(pickaxe(miner).getDamageValue() >= 10 * count(miner, Items.FLINT), "A novice needs about ten tries a flint, each wearing its pickaxe, damage " + pickaxe(miner).getDamageValue());
+        });
+    }
+
+    public static void betterMinersKnapFlintWithFewerTries(GameTestHelper helper) {
+        var table = com.sheepfromheaven.minenow.villager.TradeTable.forProfession(Miner.PROFESSION).orElseThrow();
+        double novice = table.sellPrice(Items.FLINT, 1).orElseThrow().perItem();
+        double master = table.sellPrice(Items.FLINT, 5).orElseThrow().perItem();
+        helper.assertTrue(master < novice, "Fewer tries mean less pickaxe wear, so a master's flint is cheaper, " + master + " vs " + novice);
+        helper.succeed();
+    }
+
     public static void minerUsesMoreFurnacesAtHigherLevels(GameTestHelper helper) {
         Villager miner = spawnMiner(helper);
         miner.setVillagerData(miner.getVillagerData().withLevel(3));
