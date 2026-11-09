@@ -131,6 +131,7 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
             test(helper, TestGroup.FARMER, "farmer_does_not_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotCompostSeedsAtTheComposter);
             test(helper, TestGroup.FARMER, "farmer_bakes_bread_from_its_wheat", FarmerTests::farmerBakesBreadFromItsWheat);
+            test(helper, TestGroup.FARMER, "a_hungry_villager_buys_the_farmers_bread", FarmerTests::aHungryVillagerBuysTheFarmersBread);
             test(helper, TestGroup.FARMER, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);
             test(helper, TestGroup.TRADING, "farmer_buys_bone_meal_in_batches_of_eight_up_to_thirty_two", FarmerTradeTests::farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo);
             test(helper, TestGroup.FARMER, "novice_farmer_only_works_ten_blocks_out", FarmerTests::noviceFarmerOnlyWorksTenBlocksOut);
@@ -200,6 +201,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
             test(helper, TestGroup.TOOLSMITH, "miner_without_a_pickaxe_buys_one_from_the_toolsmith", ToolsmithTests::minerWithoutAPickaxeBuysOneFromTheToolsmith);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_buys_what_a_wooden_pickaxe_dug", ToolsmithTests::toolsmithBuysWhatAWoodenPickaxeDug);
+            test(helper, TestGroup.TOOLSMITH, "miner_buys_a_wooden_pickaxe_the_toolsmith_made_from_planks", ToolsmithTests::minerBuysAWoodenPickaxeTheToolsmithMadeFromPlanks);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
             test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);

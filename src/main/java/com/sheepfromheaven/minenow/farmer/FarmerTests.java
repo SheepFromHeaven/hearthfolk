@@ -344,6 +344,22 @@ public final class FarmerTests {
         });
     }
 
+    public static void aHungryVillagerBuysTheFarmersBread(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 64));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 32));
+        Villager hungry = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(4, 1, 4));
+        hungry.getInventory().addItem(new ItemStack(Items.EMERALD, 3));
+        com.sheepfromheaven.minenow.villager.Meals.makeHungry(hungry);
+
+        helper.succeedWhen(() -> helper.assertTrue(hungry.getInventory().countItem(Items.EMERALD) < 3,
+                "The farmer bakes more bread than it keeps for itself, so a hungry villager can buy some; farmer has "
+                        + farmer.getInventory().countItem(Items.BREAD) + " bread"));
+    }
+
     public static void farmerDoesNotCompostSeedsAtTheComposter(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
