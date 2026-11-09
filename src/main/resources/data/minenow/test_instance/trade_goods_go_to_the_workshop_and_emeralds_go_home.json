@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:trade_goods_go_to_the_workshop_and_emeralds_go_home",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

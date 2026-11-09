@@ -83,7 +83,7 @@ public class SmeltOres extends Behavior<Villager> {
     protected void tick(ServerLevel level, Villager body, long timestamp) {
         if (target == null) return;
         if (body.distanceToSqr(Vec3.atBottomCenterOf(target)) > 4.0 || Math.abs(target.getY() - body.getY()) > 1.5) {
-            if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) walk(body);
+            if (!com.sheepfromheaven.minenow.villager.Walking.towards(body, target)) walk(body);
             return;
         }
         if (unloading) {
@@ -114,7 +114,7 @@ public class SmeltOres extends Behavior<Villager> {
         Optional<BlockPos> site = body.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
         if (site.isEmpty()) return false;
         if (Unloading.shouldUnload(body)) {
-            Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
+            Optional<BlockPos> home = Unloading.unloadTarget(level, body);
             if (home.isPresent()) {
                 target = home.get();
                 unloading = true;

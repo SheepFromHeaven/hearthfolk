@@ -43,7 +43,7 @@ public final class FarmerTests {
                 helper.assertTrue(!((CropBlock) state.getBlock()).isMaxAge(state), "Expected crop at " + pos + " to be harvested")));
     }
 
-    public static void farmerDepositsHarvestInOwnChestAtHome(GameTestHelper helper) {
+    public static void farmerDepositsHarvestInItsWorkshopChest(GameTestHelper helper) {
         setUpFarm(helper, true);
         helper.setBlock(HOME_CHEST, Blocks.CHEST);
         Villager farmer = spawnFarmer(helper);
@@ -51,9 +51,9 @@ public final class FarmerTests {
 
         helper.succeedWhen(() -> {
             int crops = (FIELD_MAX - FIELD_MIN + 1) * (FIELD_MAX - FIELD_MIN + 1) - 1;
-            int atHome = countWheat(helper, HOME_CHEST);
-            helper.assertTrue(atHome >= crops - 8, "Expected about " + crops + " wheat in the farmer's own chest, found " + atHome);
-            helper.assertTrue(countWheat(helper, CHEST_NEAR_COMPOSTER) == 0, "Farmer should not use a chest it doesn't own");
+            int atWorkshop = countWheat(helper, CHEST_NEAR_COMPOSTER);
+            helper.assertTrue(atWorkshop >= crops - 8, "Expected about " + crops + " wheat in the chest by the composter, its workshop chest, found " + atWorkshop);
+            helper.assertTrue(countWheat(helper, HOME_CHEST) == 0, "The harvest is trade goods, so none of it goes home");
             helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) > 0, "Farmer should keep seeds for replanting");
             helper.assertTrue(Hoes.has(farmer), "Farmer should keep its hoe when depositing");
         });

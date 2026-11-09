@@ -101,7 +101,7 @@ public class ShearSheep extends Behavior<Villager> {
                 advance(level, body, timestamp);
             } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
                 advance(level, body, timestamp);
-            } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+            } else if (!com.sheepfromheaven.minenow.villager.Walking.towards(body, chest)) {
                 walk(body);
             }
             return;
@@ -180,7 +180,7 @@ public class ShearSheep extends Behavior<Villager> {
         long now = level.getGameTime();
         unreachableSheep.values().removeIf(until -> until < now);
         if (Unloading.shouldUnload(body) || (!Tools.has(body) && Unloading.depositableCount(body) > 0)) {
-            Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
+            Optional<BlockPos> home = Unloading.unloadTarget(level, body);
             if (home.isPresent()) {
                 chest = home.get();
                 return true;

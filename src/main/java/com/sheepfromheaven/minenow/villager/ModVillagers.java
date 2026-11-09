@@ -49,6 +49,12 @@ public final class ModVillagers {
                     .serialize(UUIDUtil.CODEC.fieldOf("villager"))
                     .build());
 
+    /** The chests of a villager's workshop storage (see {@link Workshop}). */
+    public static final Supplier<AttachmentType<java.util.List<net.minecraft.core.BlockPos>>> WORKSHOP = ATTACHMENT_TYPES.register("workshop",
+            () -> AttachmentType.<java.util.List<net.minecraft.core.BlockPos>>builder(() -> java.util.List.of())
+                    .serialize(net.minecraft.core.BlockPos.CODEC.listOf().fieldOf("chests"))
+                    .build());
+
     public static final Supplier<AttachmentType<Long>> LAST_MEAL = ATTACHMENT_TYPES.register("last_meal",
             () -> AttachmentType.builder(() -> 0L)
                     .serialize(Codec.LONG.fieldOf("time"))

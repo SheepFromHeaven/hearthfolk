@@ -209,7 +209,7 @@ public class DigQuarry extends Behavior<Villager> {
         long now = level.getGameTime();
         unreachable.values().removeIf(until -> until < now);
         if (Unloading.shouldUnload(body)) {
-            Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
+            Optional<BlockPos> home = Unloading.unloadTarget(level, body);
             if (home.isPresent()) {
                 chest = home.get();
                 return true;

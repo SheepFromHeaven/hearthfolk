@@ -124,7 +124,7 @@ public class TendHerd extends Behavior<Villager> {
         if (timestamp - targetSince > GIVE_UP_AFTER_TICKS || (animal != null && pathCannotReach(body))) {
             if (animal != null && !swingsLanded.containsKey(animal.getUUID())) unreachable.put(animal.getUUID(), timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
-        } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+        } else if (animal != null ? !body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET) : block != null && !com.sheepfromheaven.minenow.villager.Walking.towards(body, block)) {
             walk(body);
         }
     }
@@ -201,7 +201,7 @@ public class TendHerd extends Behavior<Villager> {
         unreachable.values().removeIf(until -> until < now);
         swingsLanded.keySet().removeIf(id -> level.getEntity(id) == null);
         if (Unloading.shouldUnload(body)) {
-            Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
+            Optional<BlockPos> home = Unloading.unloadTarget(level, body);
             if (home.isPresent()) return target(Task.DEPOSIT, null, home.get());
         }
         if (FurnaceTending.needsTending(level, body, smoker.get(), RecipeType.SMOKING, stack -> true)) return target(Task.SMOKE, null, smoker.get());

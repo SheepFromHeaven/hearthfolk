@@ -236,11 +236,17 @@ public class TendFields extends Behavior<Villager> {
     }
 
     static boolean homeChestHasHoe(ServerLevel level, Villager body) {
-        return HomeStorage.storageIn(level, body).map(pos -> HomeStorage.chestContainer(level, pos)).map(chest -> Hoes.slot(chest) >= 0).orElse(false);
+        return chestWithHoe(level, body).isPresent();
+    }
+
+    private static Optional<BlockPos> chestWithHoe(ServerLevel level, Villager body) {
+        return com.sheepfromheaven.minenow.villager.Storage.chests(level, body).stream()
+                .filter(pos -> { var chest = HomeStorage.chestContainer(level, pos); return chest != null && Hoes.slot(chest) >= 0; })
+                .findFirst();
     }
 
     private boolean targetHomeChest(ServerLevel level, Villager body, Task chestTask) {
-        Optional<BlockPos> chest = HomeStorage.storageIn(level, body)
+        Optional<BlockPos> chest = (chestTask == Task.FETCH_HOE ? chestWithHoe(level, body) : Unloading.unloadTarget(level, body))
                 .filter(pos -> !unreachable.containsKey(pos) && level.getBlockState(pos).getBlock() instanceof ChestBlock);
         if (chest.isEmpty()) return false;
         target = chest.get();

@@ -225,7 +225,7 @@ public class FellTrees extends Behavior<Villager> {
         long now = level.getGameTime();
         unreachable.values().removeIf(until -> until < now);
         if (Unloading.shouldUnload(body) || (!Tools.has(body) && Unloading.depositableCount(body) > 0)) {
-            Optional<BlockPos> home = HomeStorage.storageIn(level, body).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
+            Optional<BlockPos> home = Unloading.unloadTarget(level, body);
             if (home.isPresent()) {
                 chest = home.get();
                 return true;

@@ -74,7 +74,7 @@ public final class HomeStorage {
     private static Optional<Villager> ownerOf(ServerLevel level, BlockPos chest) {
         List<BlockPos> halves = halves(level, chest);
         return level.getEntitiesOfClass(Villager.class, new AABB(chest).inflate(OWNER_SEARCH_RADIUS),
-                villager -> storageIn(level, villager).filter(halves::contains).isPresent()).stream().findFirst();
+                villager -> storageIn(level, villager).filter(halves::contains).isPresent() || halves.stream().anyMatch(half -> Workshop.isWorkshopChest(level, villager, half))).stream().findFirst();
     }
 
     public static void onEntityTick(EntityTickEvent.Pre event) {
@@ -89,11 +89,13 @@ public final class HomeStorage {
             takeAllHalves(level, chest);
             StorageTheft.check(level, villager, chest);
         });
+        Workshop.tick(level, villager);
     }
 
     public static void onDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof Villager villager && villager.level() instanceof ServerLevel level) {
             release(level, villager);
+            Workshop.release(level, villager);
             Belongings.release(level, villager);
         }
     }
@@ -101,12 +103,17 @@ public final class HomeStorage {
     public static void onConversion(LivingConversionEvent.Post event) {
         if (event.getEntity() instanceof Villager villager && villager.level() instanceof ServerLevel level) {
             release(level, villager);
+            Workshop.release(level, villager);
             Belongings.release(level, villager);
         }
     }
 
     public static void onBreak(BreakBlockEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !(event.getState().getBlock() instanceof ChestBlock)) return;
+        for (Villager owner : level.getEntitiesOfClass(Villager.class, new AABB(event.getPos()).inflate(OWNER_SEARCH_RADIUS),
+                villager -> Workshop.isWorkshopChest(level, villager, event.getPos()))) {
+            Workshop.broken(level, owner, event.getPos());
+        }
         List<BlockPos> halves = halves(level, event.getPos());
         for (Villager owner : level.getEntitiesOfClass(Villager.class, new AABB(event.getPos()).inflate(OWNER_SEARCH_RADIUS),
                 villager -> storageIn(level, villager).filter(halves::contains).isPresent())) {
@@ -141,7 +148,7 @@ public final class HomeStorage {
         });
     }
 
-    private static void takeAllHalves(ServerLevel level, BlockPos chest) {
+    static void takeAllHalves(ServerLevel level, BlockPos chest) {
         PoiManager pois = level.getPoiManager();
         for (BlockPos half : halves(level, chest)) {
             if (!half.equals(chest) && !isOccupiedStorage(level, half)) {
@@ -151,7 +158,7 @@ public final class HomeStorage {
         }
     }
 
-    private static boolean otherHalfIsFree(ServerLevel level, BlockPos chest) {
+    static boolean otherHalfIsFree(ServerLevel level, BlockPos chest) {
         return halves(level, chest).stream().allMatch(half -> half.equals(chest) || !isOccupiedStorage(level, half));
     }
 
@@ -162,11 +169,15 @@ public final class HomeStorage {
     public static void release(ServerLevel level, Villager villager) {
         Optional<BlockPos> chest = storageIn(level, villager);
         villager.removeData(ModVillagers.STORAGE);
-        if (chest.isEmpty()) return;
-        StorageTheft.forget(level, chest.get());
+        chest.ifPresent(pos -> releaseChest(level, pos));
+    }
+
+    /** Frees and unlocks a chest (both halves) a villager no longer keeps goods in. */
+    static void releaseChest(ServerLevel level, BlockPos chest) {
+        StorageTheft.forget(level, chest);
         PoiManager pois = level.getPoiManager();
-        for (BlockPos half : halves(level, chest.get())) {
-            if (pois.exists(half, HomeStorage::isStoragePoi)) pois.release(half);
+        for (BlockPos half : halves(level, chest)) {
+            if (pois.exists(half, HomeStorage::isStoragePoi) && isOccupiedStorage(level, half)) pois.release(half);
             setLocked(level, half, false);
         }
     }

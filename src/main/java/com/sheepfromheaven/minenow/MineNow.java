@@ -86,7 +86,7 @@ public final class MineNow {
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
             test(helper, TestGroup.FARMER, "farmer_keeps_tending_after_brain_is_rebuilt", FarmerTests::farmerKeepsTendingAfterBrainIsRebuilt);
-            test(helper, TestGroup.FARMER, "farmer_deposits_harvest_in_own_chest_at_home", FarmerTests::farmerDepositsHarvestInOwnChestAtHome);
+            test(helper, TestGroup.FARMER, "farmer_deposits_harvest_in_its_workshop_chest", FarmerTests::farmerDepositsHarvestInItsWorkshopChest);
             test(helper, TestGroup.FARMER, "farmer_without_hoe_leaves_ripe_crops_alone", FarmerTests::farmerWithoutHoeLeavesRipeCropsAlone);
             test(helper, TestGroup.FARMER, "only_the_field_connected_to_the_composter_is_farmed", FarmerTests::onlyTheFieldConnectedToTheComposterIsFarmed);
             test(helper, TestGroup.FARMER, "farmer_tills_connected_ground_near_water", FarmerTests::farmerTillsConnectedGroundNearWater);
@@ -228,6 +228,10 @@ public final class MineNow {
             test(helper, TestGroup.STORAGE, "right_clicking_an_owned_chest_says_who_owns_it", HomeStorageTests::rightClickingAnOwnedChestSaysWhoOwnsIt);
             test(helper, TestGroup.STORAGE, "breaking_a_home_chest_costs_nothing_and_its_goods_stay_the_owners", HomeStorageTests::breakingAHomeChestCostsNothingAndItsGoodsStayTheOwners);
             test(helper, TestGroup.STORAGE, "a_dead_owners_goods_are_free_to_take", HomeStorageTests::aDeadOwnersGoodsAreFreeToTake);
+            test(helper, TestGroup.STORAGE, "a_workshop_claims_as_many_chests_as_its_level_allows", com.sheepfromheaven.minenow.villager.WorkshopTests::aWorkshopClaimsAsManyChestsAsItsLevelAllows);
+            test(helper, TestGroup.STORAGE, "trapped_chests_are_never_claimed", com.sheepfromheaven.minenow.villager.WorkshopTests::trappedChestsAreNeverClaimed);
+            test(helper, TestGroup.STORAGE, "trade_goods_go_to_the_workshop_and_emeralds_go_home", com.sheepfromheaven.minenow.villager.WorkshopTests::tradeGoodsGoToTheWorkshopAndEmeraldsGoHome);
+            test(helper, TestGroup.STORAGE, "goods_in_a_workshop_chest_are_for_sale", com.sheepfromheaven.minenow.villager.WorkshopTests::goodsInAWorkshopChestAreForSale);
             test(helper, TestGroup.STORAGE, "a_hopper_swallowing_a_villagers_dropped_goods_is_theft_by_its_placer", HomeStorageTests::aHopperSwallowingAVillagersDroppedGoodsIsTheftByItsPlacer);
             test(helper, TestGroup.STORAGE, "owner_dying_releases_and_unlocks_its_chest", HomeStorageTests::ownerDyingReleasesAndUnlocksItsChest);
             test(helper, TestGroup.STORAGE, "placing_a_chest_next_to_an_owned_chest_extends_the_claim", HomeStorageTests::placingAChestNextToAnOwnedChestExtendsTheClaim);

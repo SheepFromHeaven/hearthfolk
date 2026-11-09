@@ -144,7 +144,7 @@ public class GoFishing extends Behavior<Villager> {
         reelIn(level, body, bobber.position());
         reelOut();
         recastAt = timestamp + RECAST_DELAY / 2;
-        if (Unloading.shouldUnload(body) && HomeStorage.storageIn(level, body).isPresent()) advance(level, body, timestamp);
+        if (Unloading.shouldUnload(body) && Unloading.unloadTarget(level, body).isPresent()) advance(level, body, timestamp);
     }
 
     private void cast(ServerLevel level, Villager body, long timestamp) {
@@ -225,8 +225,7 @@ public class GoFishing extends Behavior<Villager> {
     }
 
     private boolean targetHomeChest(ServerLevel level, Villager body) {
-        Optional<BlockPos> chest = HomeStorage.storageIn(level, body)
-                .filter(pos -> !unreachable.containsKey(pos) && level.getBlockState(pos).getBlock() instanceof ChestBlock);
+        Optional<BlockPos> chest = Unloading.unloadTarget(level, body).filter(pos -> !unreachable.containsKey(pos));
         if (chest.isEmpty()) return false;
         target = chest.get();
         task = Task.DEPOSIT;

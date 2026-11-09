@@ -9,9 +9,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 
+import java.util.List;
 import java.util.Optional;
 
-/** A villager's goods are what it carries plus what is in its home chest. */
+/** A villager's goods are what it carries plus what is in its home chest and its workshop chests. */
 public final class Economy {
     public static final int STARTING_PURSE = 6;
     public static final int FOOD_MONEY = 2;
@@ -24,16 +25,14 @@ public final class Economy {
 
     public static int count(ServerLevel level, Villager villager, Item item) {
         int total = villager.getInventory().countItem(item);
-        Container chest = homeChest(level, villager);
-        if (chest != null) total += chest.countItem(item);
+        for (Container chest : chests(level, villager)) total += chest.countItem(item);
         return total;
     }
 
     public static java.util.Set<Item> items(ServerLevel level, Villager villager) {
         java.util.Set<Item> items = new java.util.LinkedHashSet<>();
         villager.getInventory().getItems().stream().filter(stack -> !stack.isEmpty()).forEach(stack -> items.add(stack.getItem()));
-        Container chest = homeChest(level, villager);
-        if (chest != null) {
+        for (Container chest : chests(level, villager)) {
             for (int i = 0; i < chest.getContainerSize(); i++) {
                 if (!chest.getItem(i).isEmpty()) items.add(chest.getItem(i).getItem());
             }
@@ -65,25 +64,31 @@ public final class Economy {
 
     public static int take(ServerLevel level, Villager villager, Item item, int amount) {
         int taken = takeFrom(villager.getInventory(), item, amount);
-        Optional<BlockPos> chestPos = HomeStorage.storageIn(level, villager);
-        Container chest = homeChest(level, villager);
-        if (taken < amount && chest != null) {
-            StorageTheft.check(level, villager, chestPos.get());
+        for (BlockPos pos : Workshop.allChests(level, villager)) {
+            if (taken >= amount) break;
+            Container chest = HomeStorage.chestContainer(level, pos);
+            if (chest == null || chest.countItem(item) == 0) continue;
+            StorageTheft.check(level, villager, pos);
             taken += takeFrom(chest, item, amount - taken);
             chest.setChanged();
-            StorageTheft.recordContents(level, chestPos.get());
+            StorageTheft.recordContents(level, pos);
         }
         return taken;
     }
 
+    /** Into its inventory, then the chest the item belongs in (food and emeralds home, trade goods the workshop), then any. */
     public static void give(ServerLevel level, Villager villager, ItemStack stack) {
         ItemStack rest = villager.getInventory().addItem(stack);
-        Optional<BlockPos> chestPos = HomeStorage.storageIn(level, villager);
-        Container chest = homeChest(level, villager);
-        if (!rest.isEmpty() && chest != null) {
-            StorageTheft.check(level, villager, chestPos.get());
+        List<BlockPos> chests = new java.util.ArrayList<>(Workshop.allChests(level, villager));
+        boolean personal = Workshop.personal(rest);
+        chests.sort(java.util.Comparator.comparing(pos -> Workshop.isWorkshopChest(level, villager, pos) == personal));
+        for (BlockPos pos : chests) {
+            if (rest.isEmpty()) break;
+            Container chest = HomeStorage.chestContainer(level, pos);
+            if (chest == null) continue;
+            StorageTheft.check(level, villager, pos);
             rest = HopperBlockEntity.addItem(null, chest, rest, null);
-            StorageTheft.recordContents(level, chestPos.get());
+            StorageTheft.recordContents(level, pos);
         }
         if (!rest.isEmpty()) villager.spawnAtLocation(level, rest);
     }
@@ -98,7 +103,7 @@ public final class Economy {
         return taken;
     }
 
-    private static Container homeChest(ServerLevel level, Villager villager) {
-        return HomeStorage.storageIn(level, villager).map(pos -> HomeStorage.chestContainer(level, pos)).orElse(null);
+    private static List<Container> chests(ServerLevel level, Villager villager) {
+        return Workshop.allChests(level, villager).stream().map(pos -> HomeStorage.chestContainer(level, pos)).filter(java.util.Objects::nonNull).toList();
     }
 }
