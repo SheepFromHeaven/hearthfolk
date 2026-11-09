@@ -49,7 +49,10 @@ public final class FurnaceTending {
     public static void tend(ServerLevel level, Villager body, BlockPos pos, RecipeType<? extends AbstractCookingRecipe> type, Predicate<ItemStack> cooks, int share) {
         if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace)) return;
         ItemStack result = furnace.getItem(RESULT);
-        if (!result.isEmpty()) furnace.setItem(RESULT, body.getInventory().addItem(result.copy()));
+        if (!result.isEmpty()) {
+            furnace.setItem(RESULT, body.getInventory().addItem(result.copy()));
+            WorkXp.award(body, WorkXp.FURNACE_OUTPUT);
+        }
         for (ItemStack stack : body.getInventory().getItems()) {
             if (!cookable(level, stack, type, cooks)) continue;
             ItemStack input = furnace.getItem(INPUT);

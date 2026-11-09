@@ -80,8 +80,15 @@ public final class GameTestHelpers {
                 .orElseThrow(() -> helper.assertionException(jobSite, "test.error.expected_block", "job site POI"));
         villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, GlobalPos.of(level.dimension(), absJobSite));
         villager.setData(com.sheepfromheaven.minenow.villager.ModVillagers.PURSE_GRANTED, true);
+        villager.setData(com.sheepfromheaven.minenow.villager.ModVillagers.WORK_XP_DAY, (int) (level.getGameTime() / 24000L));
+        villager.setData(com.sheepfromheaven.minenow.villager.ModVillagers.WORK_XP_TODAY, (double) com.sheepfromheaven.minenow.villager.WorkXp.DAILY_CAP);
         villager.refreshBrain(level);
         return villager;
+    }
+
+    /** {@link #spawnEmployed} villagers have used up their day's work experience, so the skill level a test sets stays put; this gives it back. */
+    public static void allowWorkXp(Villager villager) {
+        villager.setData(com.sheepfromheaven.minenow.villager.ModVillagers.WORK_XP_TODAY, 0.0);
     }
 
     /** The emeralds a villager gets when it takes a job, which {@link #spawnEmployed} leaves out. */

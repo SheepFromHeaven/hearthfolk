@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:small_actions_add_up_to_whole_experience",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 20
+}
