@@ -1,0 +1,118 @@
+{
+  "profession": "minecraft:weaponsmith",
+  "supplies": [
+    {
+      "item": "minecraft:cobblestone",
+      "price": 0.0312,
+      "max": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "price": 0.0312,
+      "max": 16
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "price": 0.125,
+      "max": 8
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "price": 0.25,
+      "max": 8,
+      "level": 2
+    },
+    {
+      "item": "minecraft:diamond",
+      "price": 3,
+      "max": 4,
+      "level": 3
+    },
+    {
+      "item": "minecraft:iron_sword",
+      "price": 0.25,
+      "max": 4,
+      "level": 2
+    },
+    {
+      "item": "minecraft:iron_axe",
+      "price": 0.25,
+      "max": 4,
+      "level": 2
+    },
+    {
+      "item": "minecraft:diamond_sword",
+      "price": 1,
+      "max": 2,
+      "level": 3
+    },
+    {
+      "item": "minecraft:diamond_axe",
+      "price": 1,
+      "max": 2,
+      "level": 3
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:stone_sword",
+      "materials": [
+        {
+          "item": "minecraft:cobblestone",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_sword",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 1
+        }
+      ],
+      "labor": 0.3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:iron_sword",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 1
+        }
+      ],
+      "labor": 0.5,
+      "level": 2
+    },
+    {
+      "item": "minecraft:diamond_sword",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 1
+        }
+      ],
+      "labor": 1.0,
+      "level": 3
+    }
+  ]
+}

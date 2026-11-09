@@ -52,13 +52,13 @@ public final class MineNow {
         com.sheepfromheaven.minenow.armorer.Armorer.register(modBus);
         com.sheepfromheaven.minenow.smelter.Smelter.register(modBus);
         com.sheepfromheaven.minenow.mason.Mason.register(modBus);
-        com.sheepfromheaven.minenow.leatherworker.TanningRacks.register(modBus);
+        com.sheepfromheaven.minenow.villager.WallDisplays.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onEntityInteract);
-        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.leatherworker.TanningRacks::onEntityInteract);
-        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.leatherworker.TanningRacks::onAttackEntity);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.WallDisplays::onEntityInteract);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.WallDisplays::onAttackEntity);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.smelter.Smelter::onEntityTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onAttackEntity);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.armorer.Armorer::onProjectileImpact);
@@ -205,6 +205,9 @@ public final class MineNow {
             test(helper, TestGroup.SMELTER, "a_blast_furnace_makes_a_smelter", com.sheepfromheaven.minenow.smelter.SmelterTests::aBlastFurnaceMakesASmelter);
             test(helper, TestGroup.MASON, "a_novice_mason_cuts_cobblestone", com.sheepfromheaven.minenow.mason.MasonTests::aNoviceMasonCutsCobblestone);
             test(helper, TestGroup.LEATHERWORKER, "a_novice_leatherworker_makes_leather_armor", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aNoviceLeatherworkerMakesLeatherArmor);
+            test(helper, TestGroup.WEAPONSMITH, "a_novice_weaponsmith_makes_stone_swords", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aNoviceWeaponsmithMakesStoneSwords);
+            test(helper, TestGroup.WEAPONSMITH, "a_weaponsmith_grinds_two_worn_swords_into_one", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aWeaponsmithGrindsTwoWornSwordsIntoOne);
+            test(helper, TestGroup.WEAPONSMITH, "a_weaponsmith_hangs_its_best_swords_on_the_wall", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aWeaponsmithHangsItsBestSwordsOnTheWall);
             test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_hangs_as_many_tanning_racks_as_its_level", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerHangsAsManyTanningRacksAsItsLevel);
             test(helper, TestGroup.LEATHERWORKER, "a_leatherworkers_racks_are_locked_and_come_back_when_broken", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkersRacksAreLockedAndComeBackWhenBroken);
             test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_uses_your_empty_item_frames_first", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerUsesYourEmptyItemFramesFirst);
