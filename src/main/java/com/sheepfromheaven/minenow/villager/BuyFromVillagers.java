@@ -76,6 +76,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (buyer.distanceTo(deal.seller()) <= REACH) {
             trade(level, buyer, deal);
             deal = null;
+            nextStartAllowed = timestamp;
             return;
         }
         if (!walkingToSeller(buyer)) walk(buyer);
