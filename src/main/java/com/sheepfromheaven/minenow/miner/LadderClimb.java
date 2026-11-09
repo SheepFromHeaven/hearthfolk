@@ -20,10 +20,12 @@ final class LadderClimb {
     private static final double CENTERED = 0.45;
     private static final double CLIMB_SPEED = 0.2;
     private static final double STEP_SPEED = 0.15;
+    /** A quarry's cells lie within {@link Quarry#RANGE} of its cart, its tunnels further out. */
+    private static final int CART_SEARCH = 32;
 
     private LadderClimb() {}
 
-    /** Whether the villager is down in its mine, deeper than it could step up out of. */
+    /** Whether the villager is down in a mine (a miner: its own), deeper than it could step up out of. */
     static boolean inQuarry(ServerLevel level, Villager body) {
         return furnace(level, body).map(furnace -> Quarry.around(level, furnace).contains(body.blockPosition())).orElse(false);
     }
@@ -118,9 +120,16 @@ final class LadderClimb {
         body.getNavigation().stop();
     }
 
+    /** A miner's own cart; for anyone else the cart of the mine it stands in, since a buyer or a stroller can end up down someone's mine. */
     private static Optional<BlockPos> furnace(ServerLevel level, Villager body) {
-        return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
-                .filter(site -> site.dimension() == level.dimension())
-                .map(GlobalPos::pos);
+        if (body.getVillagerData().profession().is(Miner.PROFESSION)) {
+            return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
+                    .filter(site -> site.dimension() == level.dimension())
+                    .map(GlobalPos::pos);
+        }
+        return level.getPoiManager().findAll(poi -> poi.is(Miner.POI), pos -> pos.getY() > body.getBlockY(), body.blockPosition(), CART_SEARCH,
+                        net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY)
+                .filter(cart -> Quarry.around(level, cart).contains(body.blockPosition()))
+                .findFirst();
     }
 }

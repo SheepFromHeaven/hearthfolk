@@ -88,4 +88,9 @@ public final class Miner {
         level.gameEvent(event.getEntity(), GameEvent.BLOCK_PLACE, pos);
         stack.consume(1, event.getEntity());
     }
+
+    /** Down in a mine, where buyers can't follow without falling in. */
+    public static boolean isDownAMine(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager villager) {
+        return LadderClimb.inQuarry(level, villager);
+    }
 }

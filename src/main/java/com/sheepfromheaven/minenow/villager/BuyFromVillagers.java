@@ -185,7 +185,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private static java.util.List<Villager> sellers(ServerLevel level, Villager buyer) {
         return level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(SEARCH_RANGE),
-                        seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading() && !seller.isSleeping())
+                        seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading() && !seller.isSleeping()
+                                && !com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, seller))
                 .stream()
                 .sorted(Comparator.comparingDouble(buyer::distanceToSqr))
                 .toList();
