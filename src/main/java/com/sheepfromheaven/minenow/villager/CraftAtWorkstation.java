@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -79,12 +80,13 @@ public class CraftAtWorkstation extends Behavior<Villager> {
         body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(station));
         if (hammering % SWING_EVERY == 0) {
             body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
-            level.playSound(null, station, SoundEvents.SMITHING_TABLE_USE, SoundSource.BLOCKS, 0.4F, 0.9F + body.getRandom().nextFloat() * 0.2F);
+            SoundEvent sound = body.getVillagerData().profession().value().workSound();
+            level.playSound(null, station, sound != null ? sound : SoundEvents.SMITHING_TABLE_USE, SoundSource.BLOCKS, 0.4F, 0.9F + body.getRandom().nextFloat() * 0.2F);
         }
         if (++hammering < CRAFT_TICKS) return;
         if (hasMaterials(level, body, craft)) {
             for (TradeTable.Material material : craft.materials()) Economy.take(level, body, material.item(), material.count());
-            Economy.give(level, body, new ItemStack(craft.item()));
+            Economy.give(level, body, new ItemStack(craft.item(), craft.count()));
         }
         craft = null;
     }

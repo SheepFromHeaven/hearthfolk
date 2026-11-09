@@ -2,17 +2,313 @@
   "profession": "minenow:forester",
   "tool_tag": "#minecraft:axes",
   "tools": [
-    { "item": "minecraft:stone_axe", "price": 1, "level": 1 },
-    { "item": "minecraft:copper_axe", "price": 2, "level": 2 },
-    { "item": "minecraft:iron_axe", "price": 2, "level": 3 },
-    { "item": "minecraft:diamond_axe", "price": 4, "level": 4 },
-    { "item": "minecraft:netherite_axe", "price": 8, "level": 5 }
+    {
+      "item": "minecraft:stone_axe",
+      "price": 1,
+      "level": 1
+    },
+    {
+      "item": "minecraft:copper_axe",
+      "price": 2,
+      "level": 2
+    },
+    {
+      "item": "minecraft:iron_axe",
+      "price": 2,
+      "level": 3
+    },
+    {
+      "item": "minecraft:diamond_axe",
+      "price": 4,
+      "level": 4
+    },
+    {
+      "item": "minecraft:netherite_axe",
+      "price": 8,
+      "level": 5
+    }
   ],
   "produce": [
-    { "item": "minecraft:apple", "level": 1, "price": 0.25 }
+    {
+      "item": "minecraft:apple",
+      "level": 1,
+      "price": 0.25
+    },
+    {
+      "item": "minecraft:stick",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:ladder",
+      "level": 1,
+      "price": 0.125
+    },
+    {
+      "item": "minecraft:oak_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:spruce_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:birch_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:jungle_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:acacia_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:dark_oak_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:cherry_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:pale_oak_planks",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:mangrove_planks",
+      "level": 1,
+      "price": 0.0312
+    }
   ],
-  "default_produce": { "items": "#minecraft:logs", "price": 0.0625 },
+  "default_produce": {
+    "items": "#minecraft:logs",
+    "price": 0.0625
+  },
   "keeps": [
-    { "items": "#minecraft:saplings", "max": 16 }
+    {
+      "items": "#minecraft:saplings",
+      "max": 16
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:oak_planks",
+      "materials": [
+        {
+          "item": "minecraft:oak_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:spruce_planks",
+      "materials": [
+        {
+          "item": "minecraft:spruce_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:birch_planks",
+      "materials": [
+        {
+          "item": "minecraft:birch_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:jungle_planks",
+      "materials": [
+        {
+          "item": "minecraft:jungle_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:acacia_planks",
+      "materials": [
+        {
+          "item": "minecraft:acacia_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:dark_oak_planks",
+      "materials": [
+        {
+          "item": "minecraft:dark_oak_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:cherry_planks",
+      "materials": [
+        {
+          "item": "minecraft:cherry_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:pale_oak_planks",
+      "materials": [
+        {
+          "item": "minecraft:pale_oak_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:mangrove_planks",
+      "materials": [
+        {
+          "item": "minecraft:mangrove_log",
+          "count": 1
+        }
+      ],
+      "count": 4,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:ladder",
+      "materials": [
+        {
+          "item": "minecraft:stick",
+          "count": 7
+        }
+      ],
+      "count": 3,
+      "stock": 8
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:oak_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:spruce_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:birch_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:jungle_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:acacia_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:dark_oak_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:cherry_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:pale_oak_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    },
+    {
+      "item": "minecraft:stick",
+      "materials": [
+        {
+          "item": "minecraft:mangrove_planks",
+          "count": 2
+        }
+      ],
+      "count": 4,
+      "stock": 16
+    }
   ]
 }

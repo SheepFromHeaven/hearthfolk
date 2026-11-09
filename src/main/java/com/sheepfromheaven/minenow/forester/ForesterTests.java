@@ -120,6 +120,54 @@ public final class ForesterTests {
         });
     }
 
+    public static void foresterGathersWhatFallsFromItsTrees(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        drop(helper, new BlockPos(12, 1, 8), new ItemStack(Items.OAK_SAPLING, 2));
+        drop(helper, new BlockPos(13, 1, 15), new ItemStack(Items.APPLE));
+        drop(helper, new BlockPos(9, 1, 17), new ItemStack(Items.STICK, 2));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(forester.getInventory().countItem(Items.OAK_SAPLING) == 2, "It gathers the saplings in its grove, has " + forester.getInventory().countItem(Items.OAK_SAPLING));
+            helper.assertTrue(forester.getInventory().countItem(Items.APPLE) == 1, "...the apples");
+            helper.assertTrue(forester.getInventory().countItem(Items.STICK) == 2, "...and the sticks");
+        });
+    }
+
+    public static void foresterTurnsLogsIntoPlanksSticksAndLadders(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        forester.getInventory().addItem(new ItemStack(Items.OAK_LOG, 4));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(forester.getInventory().countItem(Items.LADDER) >= 3, "At its nursery it makes planks from logs, sticks from planks and ladders from sticks, has "
+                    + forester.getInventory().countItem(Items.LADDER) + " ladders, " + forester.getInventory().countItem(Items.STICK) + " sticks, "
+                    + forester.getInventory().countItem(Items.OAK_PLANKS) + " planks, " + forester.getInventory().countItem(Items.OAK_LOG) + " logs");
+        });
+    }
+
+    public static void minerBuysLaddersFromTheForester(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        forester.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        BlockPos cart = new BlockPos(18, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(miner.getInventory().countItem(Items.LADDER) >= 8, "The miner buys its ladders from the forester, has " + miner.getInventory().countItem(Items.LADDER));
+            helper.assertTrue(forester.getInventory().countItem(Items.EMERALD) >= 1, "The forester is paid");
+        });
+    }
+
+    private static void drop(GameTestHelper helper, BlockPos pos, ItemStack stack) {
+        var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), helper.absolutePos(pos).getX() + 0.5, helper.absolutePos(pos).getY(), helper.absolutePos(pos).getZ() + 0.5, stack);
+        item.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        helper.getLevel().addFreshEntity(item);
+    }
+
     private static Villager spawnForester(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

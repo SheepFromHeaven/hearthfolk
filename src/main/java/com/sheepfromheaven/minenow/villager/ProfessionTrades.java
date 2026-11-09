@@ -107,6 +107,7 @@ public final class ProfessionTrades {
             }
         }
         for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
+            if (table.hasProduceEntry(craft.item())) continue;
             int inStock = Economy.count(level, villager, craft.item());
             if (inStock > 0) {
                 offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, table.craftPrice(craft)), new ItemStack(craft.item()), inStock, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));

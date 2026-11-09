@@ -17,6 +17,7 @@ import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
@@ -24,6 +25,7 @@ import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -38,7 +40,7 @@ import java.util.Optional;
  * The forester fells the trees of its {@link Grove} within {@link ForesterSkill#groveRange} of its nursery: it walks
  * up to the trunk and cuts the tree log by log from the top down with its axe, each log taking a player's time for that
  * axe, the logs going straight into its inventory. On each stump it plants its nursery's sapling, or remembers the spot
- * until it has one ({@link Forester#REPLANT}). When its goods pile up it carries them to its home chest. Lives in CORE
+ * until it has one ({@link Forester#REPLANT}). It gathers the saplings, apples and sticks lying in its grove ({@link Forester#GATHERS}). When its goods pile up it carries them to its home chest. Lives in CORE
  * after MoveToTargetSink, like TendFields.
  */
 public class FellTrees extends Behavior<Villager> {
@@ -52,6 +54,7 @@ public class FellTrees extends Behavior<Villager> {
     private final Map<BlockPos, Long> unreachable = new HashMap<>();
     private Grove.@Nullable Tree tree;
     private @Nullable BlockPos plantAt;
+    private @Nullable ItemEntity gather;
     private @Nullable BlockPos chest;
     private long targetSince;
     private long nextStartAllowed;
@@ -82,7 +85,7 @@ public class FellTrees extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return (tree != null || plantAt != null || chest != null) && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && nursery(level, body).isPresent();
+        return (tree != null || plantAt != null || gather != null || chest != null) && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && nursery(level, body).isPresent();
     }
 
     @Override
@@ -95,6 +98,15 @@ public class FellTrees extends Behavior<Villager> {
             } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
                 advance(level, body, timestamp);
             } else if (!walkingTo(body, chest)) {
+                walk(body);
+            }
+            return;
+        }
+        if (gather != null) {
+            if (!gather.isAlive() || timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
+                if (gather.isAlive()) unreachable.put(gather.blockPosition(), timestamp + UNREACHABLE_COOLDOWN);
+                advance(level, body, timestamp);
+            } else if (!walkingTo(body, gather.blockPosition())) {
                 walk(body);
             }
             return;
@@ -138,6 +150,7 @@ public class FellTrees extends Behavior<Villager> {
     protected void stop(ServerLevel level, Villager body, long timestamp) {
         tree = null;
         plantAt = null;
+        gather = null;
         chest = null;
         progress = 0;
         body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
@@ -205,6 +218,7 @@ public class FellTrees extends Behavior<Villager> {
     private boolean pickTarget(ServerLevel level, Villager body) {
         tree = null;
         plantAt = null;
+        gather = null;
         chest = null;
         Optional<BlockPos> nursery = nursery(level, body);
         if (nursery.isEmpty()) return false;
@@ -225,6 +239,13 @@ public class FellTrees extends Behavior<Villager> {
                     .orElse(null);
             if (plantAt != null) return true;
         }
+        int range = ForesterSkill.groveRange(body.getVillagerData().level());
+        gather = level.getEntitiesOfClass(ItemEntity.class, new AABB(nursery.get()).inflate(range, Grove.HEIGHT, range),
+                        item -> Forester.GATHERS.contains(item.getItem().getItem()) && body.getInventory().canAddItem(item.getItem())
+                                && !unreachable.containsKey(item.blockPosition())).stream()
+                .min(Comparator.comparingDouble(body::distanceToSqr))
+                .orElse(null);
+        if (gather != null) return true;
         if (!Tools.has(body)) return false;
         tree = Grove.trees(level, nursery.get(), ForesterSkill.groveRange(body.getVillagerData().level())).stream()
                 .filter(candidate -> !unreachable.containsKey(candidate.base()))
@@ -255,7 +276,7 @@ public class FellTrees extends Behavior<Villager> {
     }
 
     private void walk(Villager body) {
-        BlockPos to = chest != null ? chest : plantAt != null ? plantAt : tree != null ? tree.base() : null;
+        BlockPos to = chest != null ? chest : gather != null ? gather.blockPosition() : plantAt != null ? plantAt : tree != null ? tree.base() : null;
         if (to == null) return;
         body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(to, SPEED, 1));
         body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(to));

@@ -84,14 +84,18 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         ).apply(i, Material::new));
     }
 
-    /** Made at the villager's workstation from {@code materials}, kept {@code stock} in its goods, sold for the materials plus {@code labor} ({@link #craftPrice}). */
-    public record Craft(Item item, List<Material> materials, double labor, int level, int stock) {
+    /**
+     * Made at the villager's workstation from {@code materials}, {@code count} at a time, kept {@code stock} in its goods,
+     * sold for the materials plus {@code labor} ({@link #craftPrice}), or at its {@code produce} price when it has one.
+     */
+    public record Craft(Item item, List<Material> materials, double labor, int level, int stock, int count) {
         static final Codec<Craft> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Craft::item),
                 Material.CODEC.listOf().fieldOf("materials").forGetter(Craft::materials),
                 Codec.DOUBLE.optionalFieldOf("labor", 0.0).forGetter(Craft::labor),
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Craft::level),
-                ExtraCodecs.POSITIVE_INT.optionalFieldOf("stock", 1).forGetter(Craft::stock)
+                ExtraCodecs.POSITIVE_INT.optionalFieldOf("stock", 1).forGetter(Craft::stock),
+                ExtraCodecs.POSITIVE_INT.optionalFieldOf("count", 1).forGetter(Craft::count)
         ).apply(i, Craft::new));
     }
 

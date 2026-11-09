@@ -13,7 +13,9 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -51,13 +53,19 @@ public final class Forester {
     public static final DeferredBlock<NurseryBlock> NURSERY = BLOCKS.registerBlock("nursery", NurseryBlock::new,
             properties -> properties.instabreak().noOcclusion());
 
+    /** What falls from its trees and it gathers: vanilla's villager pickup takes these once it walks over them. */
+    static final ImmutableSet<Item> GATHERS = ImmutableSet.<Item>builder()
+            .addAll(java.util.Arrays.stream(NurseryTree.values()).map(NurseryTree::sapling).toList())
+            .add(Items.APPLE, Items.STICK)
+            .build();
+
     static {
         POI_TYPES.register("forester", () -> new PoiType(ImmutableSet.copyOf(NURSERY.get().getStateDefinition().getPossibleStates()), 1, 1));
         PROFESSIONS.register("forester", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.forester"),
                 poi -> poi.is(POI),
                 poi -> poi.is(POI),
-                ImmutableSet.of(),
+                GATHERS,
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_FLETCHER,
                 Int2ObjectMap.ofEntries()));
