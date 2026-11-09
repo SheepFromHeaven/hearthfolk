@@ -36,6 +36,11 @@ final class Grove {
         BlockPos base() {
             return stumps.getFirst();
         }
+
+        /** A 2x2 tree (dark oak, giant spruce, big jungle), grown from four saplings. */
+        boolean big() {
+            return stumps.size() > 1;
+        }
     }
 
     static List<Tree> trees(ServerLevel level, BlockPos nursery, int range) {

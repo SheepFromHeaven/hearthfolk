@@ -168,12 +168,73 @@ public final class ForesterTests {
         helper.getLevel().addFreshEntity(item);
     }
 
+    public static void aJourneymanForesterLeavesBigTreesAlone(GameTestHelper helper) {
+        Villager forester = spawnForester(helper, NurseryTree.DARK_OAK);
+        forester.setVillagerData(forester.getVillagerData().withLevel(3));
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        BlockPos base = new BlockPos(12, 1, 12);
+        bigTree(helper, base);
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(bigTreeLogs(helper, base) == 12, "A 2x2 tree is expert work, " + bigTreeLogs(helper, base) + " of 12 logs left");
+            helper.succeed();
+        });
+    }
+
+    public static void anExpertForesterFellsABigTreeAndReplantsAllFourSaplings(GameTestHelper helper) {
+        Villager forester = spawnForester(helper, NurseryTree.DARK_OAK);
+        forester.setVillagerData(forester.getVillagerData().withLevel(4));
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        forester.getInventory().addItem(new ItemStack(Items.DARK_OAK_SAPLING, 4));
+        BlockPos base = new BlockPos(12, 1, 12);
+        bigTree(helper, base);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(bigTreeLogs(helper, base) == 0, "An expert fells the 2x2 tree, " + bigTreeLogs(helper, base) + " logs left");
+            int saplings = 0;
+            for (int dx = 0; dx <= 1; dx++) {
+                for (int dz = 0; dz <= 1; dz++) if (helper.getBlockState(base.offset(dx, 0, dz)).is(Blocks.DARK_OAK_SAPLING)) saplings++;
+            }
+            helper.assertTrue(saplings == 4, "...and puts four saplings back so it grows again, planted " + saplings);
+        });
+    }
+
+    /** A 2x2 dark oak: three logs high in each of four columns on dirt, with a crown of natural leaves. */
+    private static void bigTree(GameTestHelper helper, BlockPos base) {
+        for (int dx = 0; dx <= 1; dx++) {
+            for (int dz = 0; dz <= 1; dz++) {
+                helper.setBlock(base.offset(dx, -1, dz), Blocks.DIRT);
+                for (int y = 0; y < 3; y++) helper.setBlock(base.offset(dx, y, dz), Blocks.DARK_OAK_LOG);
+            }
+        }
+        for (int dx = -1; dx <= 2; dx++) {
+            for (int dz = -1; dz <= 2; dz++) {
+                BlockPos pos = base.offset(dx, 3, dz);
+                helper.setBlock(pos, Blocks.DARK_OAK_LEAVES.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.DISTANCE, 1));
+            }
+        }
+    }
+
+    private static int bigTreeLogs(GameTestHelper helper, BlockPos base) {
+        int logs = 0;
+        for (int dx = 0; dx <= 1; dx++) {
+            for (int dz = 0; dz <= 1; dz++) {
+                for (int y = 0; y < 3; y++) if (helper.getBlockState(base.offset(dx, y, dz)).is(net.minecraft.tags.BlockTags.LOGS)) logs++;
+            }
+        }
+        return logs;
+    }
+
     private static Villager spawnForester(GameTestHelper helper) {
+        return spawnForester(helper, NurseryTree.OAK);
+    }
+
+    private static Villager spawnForester(GameTestHelper helper, NurseryTree kind) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos nursery = new BlockPos(5, 2, 12);
         helper.setBlock(nursery.below(), Blocks.OAK_LOG);
-        helper.setBlock(nursery, Forester.nursery(NurseryTree.OAK));
+        helper.setBlock(nursery, Forester.nursery(kind));
         return GameTestHelpers.spawnEmployed(helper, nursery.east(2).below(), nursery, Forester.PROFESSION, Forester.POI);
     }
 

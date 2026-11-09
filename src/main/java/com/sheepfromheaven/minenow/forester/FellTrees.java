@@ -39,7 +39,7 @@ import java.util.Optional;
 /**
  * The forester fells the trees of its {@link Grove} within {@link ForesterSkill#groveRange} of its nursery: it walks
  * up to the trunk and cuts the tree log by log from the top down with its axe, each log taking a player's time for that
- * axe, the logs going straight into its inventory. On each stump it plants its nursery's sapling, or remembers the spot
+ * axe, the logs going straight into its inventory; trees on more than one stump (2x2) only from expert on ({@link ForesterSkill#fellsBigTrees}). On each stump it plants its nursery's sapling, or remembers the spot
  * until it has one ({@link Forester#REPLANT}). It gathers the saplings, apples and sticks lying in its grove ({@link Forester#GATHERS}). When its goods pile up it carries them to its home chest. Lives in CORE
  * after MoveToTargetSink, like TendFields.
  */
@@ -247,8 +247,9 @@ public class FellTrees extends Behavior<Villager> {
                 .orElse(null);
         if (gather != null) return true;
         if (!Tools.has(body)) return false;
-        tree = Grove.trees(level, nursery.get(), ForesterSkill.groveRange(body.getVillagerData().level())).stream()
-                .filter(candidate -> !unreachable.containsKey(candidate.base()))
+        boolean bigTrees = ForesterSkill.fellsBigTrees(body.getVillagerData().level());
+        tree = Grove.trees(level, nursery.get(), range).stream()
+                .filter(candidate -> !unreachable.containsKey(candidate.base()) && (bigTrees || !candidate.big()))
                 .min(Comparator.comparingDouble(candidate -> candidate.base().distToCenterSqr(body.position())))
                 .orElse(null);
         return tree != null;
