@@ -66,6 +66,11 @@
       "item": "minecraft:mangrove_log",
       "price": 0.0625,
       "max": 16
+    },
+    {
+      "item": "minecraft:cobblestone",
+      "price": 0.0312,
+      "max": 64
     }
   ],
   "produce": [
@@ -85,6 +90,10 @@
     {
       "item": "minecraft:charcoal",
       "price": 0.0833
+    },
+    {
+      "item": "minecraft:stone",
+      "price": 0.05
     }
   ]
 }

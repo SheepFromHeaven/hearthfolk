@@ -73,6 +73,16 @@
       "item": "minecraft:raw_gold",
       "level": 2,
       "price": 0.2
+    },
+    {
+      "item": "minecraft:cobbled_deepslate",
+      "level": 1,
+      "price": 0.0312
+    },
+    {
+      "item": "minecraft:gravel",
+      "level": 1,
+      "price": 0.03
     }
   ],
   "supplies": [

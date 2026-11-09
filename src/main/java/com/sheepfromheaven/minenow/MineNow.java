@@ -51,6 +51,7 @@ public final class MineNow {
         com.sheepfromheaven.minenow.forester.Forester.register(modBus);
         com.sheepfromheaven.minenow.armorer.Armorer.register(modBus);
         com.sheepfromheaven.minenow.smelter.Smelter.register(modBus);
+        com.sheepfromheaven.minenow.mason.Mason.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
@@ -199,6 +200,12 @@ public final class MineNow {
             test(helper, TestGroup.FLETCHER, "fletcher_makes_sticks_from_any_planks", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherMakesSticksFromAnyPlanks);
             test(helper, TestGroup.ARMORER, "a_novice_armorer_makes_copper_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::aNoviceArmorerMakesCopperArmor);
             test(helper, TestGroup.SMELTER, "a_blast_furnace_makes_a_smelter", com.sheepfromheaven.minenow.smelter.SmelterTests::aBlastFurnaceMakesASmelter);
+            test(helper, TestGroup.MASON, "a_novice_mason_cuts_cobblestone", com.sheepfromheaven.minenow.mason.MasonTests::aNoviceMasonCutsCobblestone);
+            test(helper, TestGroup.MASON, "an_apprentice_mason_cuts_stone_bricks", com.sheepfromheaven.minenow.mason.MasonTests::anApprenticeMasonCutsStoneBricks);
+            test(helper, TestGroup.SMELTER, "smelter_smelts_cobblestone_into_stone", com.sheepfromheaven.minenow.mason.MasonTests::smelterSmeltsCobblestoneIntoStone);
+            test(helper, TestGroup.MASON, "a_mason_paves_dirt_paths_while_its_stonecutter_is_powered", com.sheepfromheaven.minenow.mason.MasonTests::aMasonPavesDirtPathsWhileItsStonecutterIsPowered);
+            test(helper, TestGroup.MASON, "a_mason_leaves_paths_alone_without_a_signal", com.sheepfromheaven.minenow.mason.MasonTests::aMasonLeavesPathsAloneWithoutASignal);
+            test(helper, TestGroup.MASON, "a_journeyman_paves_a_natural_stone_road", com.sheepfromheaven.minenow.mason.MasonTests::aJourneymanPavesANaturalStoneRoad);
             test(helper, TestGroup.SMELTER, "an_anvil_makes_an_armorer", com.sheepfromheaven.minenow.smelter.SmelterTests::anAnvilMakesAnArmorer);
             test(helper, TestGroup.SMELTER, "smelter_smelts_raw_ore_in_its_blast_furnace", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterSmeltsRawOreInItsBlastFurnace);
             test(helper, TestGroup.SMELTER, "smelter_burns_logs_into_charcoal_in_a_furnace_beside_it", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBurnsLogsIntoCharcoalInAFurnaceBesideIt);
