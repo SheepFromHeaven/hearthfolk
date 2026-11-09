@@ -1,0 +1,124 @@
+package com.sheepfromheaven.minenow.villager;
+
+import com.google.common.collect.ImmutableMap;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.ai.behavior.Behavior;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import org.jspecify.annotations.Nullable;
+
+import java.util.Comparator;
+import java.util.UUID;
+import java.util.function.Supplier;
+
+/**
+ * A villager's goods stay its own when the player moves its chest: they drop as items only it can pick up (vanilla's
+ * item target keeps players off them) that never despawn, and it gathers them up again ({@link Gather}); its unloading
+ * then puts them in its next home chest. When the villager dies or turns into a zombie they become ordinary items.
+ */
+public final class Belongings {
+    private static final int SEARCH = 32;
+
+    private static final Supplier<AttachmentType<UUID>> BELONGS_TO = ModVillagers.BELONGS_TO;
+
+    private Belongings() {}
+
+    /** Drops everything in {@code container} at {@code pos} as {@code owner}'s, leaving the container empty. */
+    static void drop(ServerLevel level, BlockPos pos, Container container, Villager owner) {
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.removeItemNoUpdate(slot);
+            if (stack.isEmpty()) continue;
+            ItemEntity item = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
+            item.setTarget(owner.getUUID());
+            item.setUnlimitedLifetime();
+            item.setData(BELONGS_TO, owner.getUUID());
+            level.addFreshEntity(item);
+        }
+        container.setChanged();
+    }
+
+    /** A dead (or zombified) villager's goods are anyone's. */
+    static void release(ServerLevel level, Villager owner) {
+        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, new AABB(owner.blockPosition()).inflate(SEARCH * 2), item -> isOf(item, owner))) {
+            item.removeData(BELONGS_TO);
+            item.setTarget(null);
+        }
+    }
+
+    private static boolean isOf(ItemEntity item, Villager owner) {
+        return item.hasData(BELONGS_TO) && item.getData(BELONGS_TO).equals(owner.getUUID());
+    }
+
+    /** Any adult villager walks over to its own dropped goods and takes them back while it's awake. */
+    public static class Gather extends Behavior<Villager> {
+        private static final float SPEED = 0.5F;
+        private static final double REACH = 1.5;
+        private static final int RESCAN = 40;
+        private static final int GIVE_UP_AFTER_TICKS = 400;
+
+        private @Nullable ItemEntity target;
+        private long since;
+        private long nextStartAllowed;
+
+        public Gather() {
+            super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT), GIVE_UP_AFTER_TICKS);
+        }
+
+        @Override
+        protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
+            if (level.getGameTime() < nextStartAllowed || body.isSleeping() || body.isTrading() || body.getBrain().isActive(Activity.REST)) return false;
+            nextStartAllowed = level.getGameTime() + RESCAN;
+            target = level.getEntitiesOfClass(ItemEntity.class, new AABB(body.blockPosition()).inflate(SEARCH), item -> isOf(item, body) && body.getInventory().canAddItem(item.getItem()))
+                    .stream().min(Comparator.comparingDouble(body::distanceToSqr)).orElse(null);
+            return target != null;
+        }
+
+        @Override
+        protected void start(ServerLevel level, Villager body, long timestamp) {
+            since = timestamp;
+            walk(body);
+        }
+
+        @Override
+        protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
+            return target != null && target.isAlive() && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS;
+        }
+
+        @Override
+        protected void tick(ServerLevel level, Villager body, long timestamp) {
+            if (target == null) return;
+            if (body.position().distanceTo(target.position()) > REACH) {
+                if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) walk(body);
+                return;
+            }
+            ItemStack rest = body.getInventory().addItem(target.getItem().copy());
+            body.take(target, target.getItem().getCount() - rest.getCount());
+            if (rest.isEmpty()) target.discard();
+            else target.setItem(rest);
+            target = null;
+            nextStartAllowed = timestamp;
+        }
+
+        @Override
+        protected void stop(ServerLevel level, Villager body, long timestamp) {
+            target = null;
+            body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+        }
+
+        private void walk(Villager body) {
+            if (target == null) return;
+            Vec3 at = target.position();
+            body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(BlockPos.containing(at), SPEED, 0));
+        }
+    }
+}

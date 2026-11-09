@@ -43,6 +43,12 @@ public final class ModVillagers {
                     .copyOnDeath()
                     .build());
 
+    /** On a dropped item: the villager whose goods it is (see {@link Belongings}). */
+    public static final Supplier<AttachmentType<UUID>> BELONGS_TO = ATTACHMENT_TYPES.register("belongs_to",
+            () -> AttachmentType.builder(() -> new UUID(0L, 0L))
+                    .serialize(UUIDUtil.CODEC.fieldOf("villager"))
+                    .build());
+
     public static final Supplier<AttachmentType<Long>> LAST_MEAL = ATTACHMENT_TYPES.register("last_meal",
             () -> AttachmentType.builder(() -> 0L)
                     .serialize(Codec.LONG.fieldOf("time"))

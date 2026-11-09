@@ -74,26 +74,63 @@ public final class HomeStorageTests {
         }));
     }
 
-    public static void breakingAClaimedChestIsTheft(GameTestHelper helper) {
+    public static void breakingAHomeChestCostsNothingAndItsGoodsStayTheOwners(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);
+        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.COBBLESTONE, 10));
+        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(1, new ItemStack(Items.EMERALD, 3));
         Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
-        @SuppressWarnings("removal")
-        ServerPlayer thief = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = survivalPlayer(helper);
         boolean[] broken = {false};
 
         helper.onEachTick(() -> {
-            if (!broken[0] && HomeStorage.storageOf(owner).isPresent()) {
-                broken[0] = true;
-                thief.gameMode.destroyBlock(helper.absolutePos(CHEST));
-            }
+            if (broken[0] || HomeStorage.storageOf(owner).isEmpty()) return;
+            broken[0] = true;
+            player.gameMode.destroyBlock(helper.absolutePos(CHEST));
+            var dropped = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(), item -> item.getItem().is(Items.EMERALD));
+            helper.assertTrue(!dropped.isEmpty(), "The chest's goods drop when it breaks");
+            dropped.getFirst().setNoPickUpDelay();
+            dropped.getFirst().playerTouch(player);
+            helper.assertTrue(dropped.getFirst().isAlive() && player.getInventory().countItem(Items.EMERALD) == 0, "...but they're still the villager's, so the player can't pick them up");
         });
         helper.succeedWhen(() -> {
             helper.assertTrue(broken[0], "Chest was never claimed, so it was never broken");
-            int reputation = owner.getGossips().getReputation(thief.getUUID(), type -> true);
-            helper.assertTrue(reputation < 0, "Owner should think worse of the thief, reputation=" + reputation);
+            int reputation = owner.getGossips().getReputation(player.getUUID(), type -> true);
+            helper.assertTrue(reputation == 0, "Moving a villager's chest isn't theft, reputation " + reputation);
             helper.assertTrue(HomeStorage.storageOf(owner).isEmpty(), "Owner should forget a chest that no longer exists");
+            helper.assertTrue(owner.getInventory().countItem(Items.EMERALD) == 3 && owner.getInventory().countItem(Items.COBBLESTONE) == 10,
+                    "The owner gathers its goods up again, has " + owner.getInventory().countItem(Items.EMERALD) + " emeralds, " + owner.getInventory().countItem(Items.COBBLESTONE) + " cobblestone");
         });
+    }
+
+    public static void aDeadOwnersGoodsAreFreeToTake(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.CHEST);
+        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.EMERALD, 3));
+        Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        ServerPlayer player = survivalPlayer(helper);
+        boolean[] done = {false};
+
+        helper.onEachTick(() -> {
+            if (done[0] || HomeStorage.storageOf(owner).isEmpty()) return;
+            done[0] = true;
+            player.gameMode.destroyBlock(helper.absolutePos(CHEST));
+            owner.kill(helper.getLevel());
+            var dropped = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(), item -> item.getItem().is(Items.EMERALD));
+            dropped.forEach(item -> {
+                item.setNoPickUpDelay();
+                item.playerTouch(player);
+            });
+            helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 3, "Once the owner is dead its goods are anyone's, the player picked up " + player.getInventory().countItem(Items.EMERALD));
+            helper.succeed();
+        });
+    }
+
+    private static ServerPlayer survivalPlayer(GameTestHelper helper) {
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        return player;
     }
 
     public static void ownerDyingReleasesAndUnlocksItsChest(GameTestHelper helper) {
@@ -159,7 +196,7 @@ public final class HomeStorageTests {
 
     private static void assertKeptRemainingHalf(GameTestHelper helper, Villager owner, ServerPlayer thief, BlockPos remaining) {
         {
-            helper.assertTrue(owner.getGossips().getReputation(thief.getUUID(), type -> true) < 0, "Breaking half the chest is still theft");
+            helper.assertTrue(owner.getGossips().getReputation(thief.getUUID(), type -> true) == 0, "Breaking half the chest isn't theft either");
             helper.assertTrue(HomeStorage.storageOf(owner).map(pos -> pos.pos().equals(helper.absolutePos(remaining))).orElse(false),
                     "Owner should keep the remaining half, has " + HomeStorage.storageOf(owner));
             helper.assertTrue(helper.getBlockEntity(remaining, ChestBlockEntity.class).isLocked(), "Remaining half should stay locked");

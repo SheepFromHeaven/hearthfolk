@@ -202,7 +202,7 @@ public final class MineNow {
             test(helper, TestGroup.ARMORER, "armorer_dresses_an_armor_stand_with_its_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerDressesAnArmorStandWithItsArmor);
             test(helper, TestGroup.ARMORER, "armorer_shows_its_best_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerShowsItsBestArmor);
             test(helper, TestGroup.ARMORER, "players_cannot_take_the_armor_off_an_armorers_stand", com.sheepfromheaven.minenow.armorer.ArmorerTests::playersCannotTakeTheArmorOffAnArmorersStand);
-            test(helper, TestGroup.ARMORER, "breaking_an_armorers_stand_is_griefing", com.sheepfromheaven.minenow.armorer.ArmorerTests::breakingAnArmorersStandIsGriefing);
+            test(helper, TestGroup.ARMORER, "breaking_an_armorers_stand_costs_nothing_and_returns_its_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::breakingAnArmorersStandCostsNothingAndReturnsItsArmor);
             test(helper, TestGroup.FLETCHER, "a_novice_fletcher_makes_no_bows", com.sheepfromheaven.minenow.fletcher.FletcherTests::aNoviceFletcherMakesNoBows);
             test(helper, TestGroup.FLETCHER, "fletcher_practises_at_a_target_and_collects_its_arrows", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherPractisesAtATargetAndCollectsItsArrows);
             test(helper, TestGroup.MINER, "miner_digs_new_emeralds_out_of_emerald_ore", MinerTests::minerDigsNewEmeraldsOutOfEmeraldOre);
@@ -220,7 +220,8 @@ public final class MineNow {
             test(helper, TestGroup.STORAGE, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
             test(helper, TestGroup.STORAGE, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);
             test(helper, TestGroup.STORAGE, "right_clicking_an_owned_chest_says_who_owns_it", HomeStorageTests::rightClickingAnOwnedChestSaysWhoOwnsIt);
-            test(helper, TestGroup.STORAGE, "breaking_a_claimed_chest_is_theft", HomeStorageTests::breakingAClaimedChestIsTheft);
+            test(helper, TestGroup.STORAGE, "breaking_a_home_chest_costs_nothing_and_its_goods_stay_the_owners", HomeStorageTests::breakingAHomeChestCostsNothingAndItsGoodsStayTheOwners);
+            test(helper, TestGroup.STORAGE, "a_dead_owners_goods_are_free_to_take", HomeStorageTests::aDeadOwnersGoodsAreFreeToTake);
             test(helper, TestGroup.STORAGE, "owner_dying_releases_and_unlocks_its_chest", HomeStorageTests::ownerDyingReleasesAndUnlocksItsChest);
             test(helper, TestGroup.STORAGE, "placing_a_chest_next_to_an_owned_chest_extends_the_claim", HomeStorageTests::placingAChestNextToAnOwnedChestExtendsTheClaim);
             test(helper, TestGroup.STORAGE, "breaking_one_half_of_an_owned_double_chest_keeps_the_other_half", HomeStorageTests::breakingOneHalfOfAnOwnedDoubleChestKeepsTheOtherHalf);

@@ -18,7 +18,6 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -93,20 +92,25 @@ public final class HomeStorage {
     }
 
     public static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof Villager villager && villager.level() instanceof ServerLevel level) release(level, villager);
+        if (event.getEntity() instanceof Villager villager && villager.level() instanceof ServerLevel level) {
+            release(level, villager);
+            Belongings.release(level, villager);
+        }
     }
 
     public static void onConversion(LivingConversionEvent.Post event) {
-        if (event.getEntity() instanceof Villager villager && villager.level() instanceof ServerLevel level) release(level, villager);
+        if (event.getEntity() instanceof Villager villager && villager.level() instanceof ServerLevel level) {
+            release(level, villager);
+            Belongings.release(level, villager);
+        }
     }
 
     public static void onBreak(BreakBlockEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !(event.getState().getBlock() instanceof ChestBlock)) return;
         List<BlockPos> halves = halves(level, event.getPos());
-        Player thief = event.getPlayer();
         for (Villager owner : level.getEntitiesOfClass(Villager.class, new AABB(event.getPos()).inflate(OWNER_SEARCH_RADIUS),
                 villager -> storageIn(level, villager).filter(halves::contains).isPresent())) {
-            StorageTheft.punish(level, owner, thief.getUUID(), StorageTheft.BREAK_GOSSIP);
+            if (level.getBlockEntity(event.getPos()) instanceof Container container) Belongings.drop(level, event.getPos(), container, owner);
             Optional<BlockPos> remaining = halves.stream().filter(half -> !half.equals(event.getPos())).findFirst();
             if (remaining.isPresent()) {
                 PoiManager pois = level.getPoiManager();

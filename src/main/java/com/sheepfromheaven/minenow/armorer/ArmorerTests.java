@@ -79,7 +79,7 @@ public final class ArmorerTests {
         });
     }
 
-    public static void breakingAnArmorersStandIsGriefing(GameTestHelper helper) {
+    public static void breakingAnArmorersStandCostsNothingAndReturnsItsArmor(GameTestHelper helper) {
         Villager armorer = spawnArmorer(helper);
         armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
         ArmorStand stand = helper.spawn(EntityTypes.ARMOR_STAND, STAND);
@@ -95,7 +95,7 @@ public final class ArmorerTests {
             }
             helper.assertFalse(stand.isAlive(), "A player can still break the stand");
             int reputation = armorer.getGossips().getReputation(player.getUUID(), type -> true);
-            helper.assertTrue(reputation < 0, "...but the armorer holds it against them, reputation " + reputation);
+            helper.assertTrue(reputation == 0, "Moving a display isn't griefing, reputation " + reputation);
             helper.assertTrue(armorer.getInventory().countItem(Items.IRON_CHESTPLATE) == 1, "The armor on display goes back to the armorer, has " + armorer.getInventory().countItem(Items.IRON_CHESTPLATE));
             helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(), item -> item.getItem().is(Items.IRON_CHESTPLATE)).isEmpty(),
                     "...rather than dropping for the player to take");
