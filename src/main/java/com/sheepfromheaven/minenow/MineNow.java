@@ -98,6 +98,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(StorageTheft::onEntityJoin);
 
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
+            helper.register(com.sheepfromheaven.minenow.soak.VillageSoak.ID, com.sheepfromheaven.minenow.soak.VillageSoak::run);
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
             test(helper, TestGroup.FARMER, "farmer_keeps_tending_after_brain_is_rebuilt", FarmerTests::farmerKeepsTendingAfterBrainIsRebuilt);
             test(helper, TestGroup.FARMER, "farmer_deposits_harvest_in_its_workshop_chest", FarmerTests::farmerDepositsHarvestInItsWorkshopChest);
@@ -184,6 +185,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "toolsmith_sells_its_tools_to_players", ToolsmithTests::toolsmithSellsItsToolsToPlayers);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_charges_for_materials_and_labor", ToolsmithTests::toolsmithChargesForMaterialsAndLabor);
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
+            test(helper, TestGroup.TOOLSMITH, "miner_without_a_pickaxe_buys_one_from_the_toolsmith", ToolsmithTests::minerWithoutAPickaxeBuysOneFromTheToolsmith);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
             test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);
@@ -305,6 +307,6 @@ public final class MineNow {
 
     private static void test(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> helper, TestGroup group, String name, Consumer<GameTestHelper> test) {
         TestGroup.assign(name, group);
-        helper.register(Identifier.fromNamespaceAndPath(MOD_ID, name), test);
+        helper.register(Identifier.fromNamespaceAndPath(MOD_ID, name), Boolean.getBoolean("minenow.soak.only") ? skipped -> { skipped.succeed(); assert name != null; } : test);
     }
 }

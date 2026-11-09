@@ -42,6 +42,13 @@ neoForge {
                 layout.projectDirectory.file('build/test-report.xml').asFile.absolutePath
             ])
         }
+
+        villageSoak {
+            type = 'gameTestServer'
+            systemProperty 'minenow.soak.only', 'true'
+            systemProperty 'minenow.soak.days', providers.gradleProperty('soakDays').orElse('50').get()
+            systemProperty 'minenow.soak.out', layout.projectDirectory.dir('soak-report').asFile.absolutePath
+        }
     }
 
     mods {

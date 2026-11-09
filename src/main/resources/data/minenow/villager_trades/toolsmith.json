@@ -32,6 +32,21 @@
       "level": 1
     },
     {
+      "item": "minecraft:stone_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:cobblestone",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.5,
+      "level": 1
+    },
+    {
       "item": "minecraft:fishing_rod",
       "materials": [
         {
@@ -88,6 +103,21 @@
       "level": 2
     },
     {
+      "item": "minecraft:copper_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:copper_ingot",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 1,
+      "level": 2
+    },
+    {
       "item": "minecraft:iron_hoe",
       "materials": [
         {
@@ -118,6 +148,21 @@
       "level": 3
     },
     {
+      "item": "minecraft:iron_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:iron_ingot",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 1,
+      "level": 3
+    },
+    {
       "item": "minecraft:diamond_hoe",
       "materials": [
         {
@@ -134,6 +179,21 @@
     },
     {
       "item": "minecraft:diamond_axe",
+      "materials": [
+        {
+          "item": "minecraft:diamond",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 2,
+      "level": 4
+    },
+    {
+      "item": "minecraft:diamond_pickaxe",
       "materials": [
         {
           "item": "minecraft:diamond",
