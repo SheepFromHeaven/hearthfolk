@@ -116,6 +116,10 @@ final class Quarry {
         return top;
     }
 
+    Set<BlockPos> outline() {
+        return outline;
+    }
+
     boolean isEmpty() {
         return outline.isEmpty();
     }

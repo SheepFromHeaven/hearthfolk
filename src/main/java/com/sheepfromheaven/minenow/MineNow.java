@@ -232,6 +232,7 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);
             test(helper, TestGroup.MINER, "a_villager_that_falls_into_a_mine_climbs_out_by_the_ladder", MinerTests::aVillagerThatFallsIntoAMineClimbsOutByTheLadder);
+            test(helper, TestGroup.MINER, "villagers_do_not_walk_into_a_mine", MinerTests::villagersDoNotWalkIntoAMine);
             test(helper, TestGroup.MINER, "a_miner_in_another_miners_mine_climbs_out", MinerTests::aMinerInAnotherMinersMineClimbsOut);
             test(helper, TestGroup.MINER, "a_worker_headed_for_its_job_site_still_climbs_out_of_a_mine", MinerTests::aWorkerHeadedForItsJobSiteStillClimbsOutOfAMine);
             test(helper, TestGroup.MINER, "a_villager_diagonal_to_the_ladder_still_climbs_out", MinerTests::aVillagerDiagonalToTheLadderStillClimbsOut);

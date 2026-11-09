@@ -317,6 +317,26 @@ public final class MinerTests {
         });
     }
 
+    public static void villagersDoNotWalkIntoAMine(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        Villager walker = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(13, 4, 12));
+        BlockPos bottom = helper.absolutePos(new BlockPos(8, 1, 12));
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+        helper.onEachTick(() -> {
+            walker.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET,
+                    new net.minecraft.world.entity.ai.memory.WalkTarget(bottom, 0.5F, 0));
+            helper.assertTrue(walker.getY() >= surface, "A villager never walks into a mine it can't climb out of, at " + helper.relativePos(walker.blockPosition()).toShortString());
+        });
+
+        helper.runAfterDelay(300, helper::succeed);
+    }
+
     public static void aVillagerThatFallsIntoAMineClimbsOutByTheLadder(GameTestHelper helper) {
         spawnMiner(helper);
         quarry(helper);

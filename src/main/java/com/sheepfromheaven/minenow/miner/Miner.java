@@ -123,6 +123,14 @@ public final class Miner {
         if (!(event.getEntity() instanceof net.minecraft.world.entity.npc.villager.Villager villager)
                 || !(villager.level() instanceof net.minecraft.server.level.ServerLevel level)
                 || !villager.getVillagerData().profession().is(PROFESSION)) return;
+        LadderClimb.ownCart(level, villager).ifPresent(cart -> {
+            if (villager.tickCount % 100 == 0 || !SHAFTS.containsKey(cart)) {
+                Quarry quarry = Quarry.around(level, cart);
+                if (quarry.isEmpty()) SHAFTS.remove(cart);
+                else SHAFTS.put(cart, new Shaft(level.dimension(), quarry.outline().stream().map(cell -> net.minecraft.core.BlockPos.asLong(cell.getX(), 0, cell.getZ()))
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet()), quarry.top()));
+            }
+        });
         if (villager.tickCount % 20 == 0) {
             if (LadderClimb.inQuarry(level, villager)) UNDERGROUND.put(villager.getUUID(), true);
             else UNDERGROUND.remove(villager.getUUID());
@@ -130,5 +138,20 @@ public final class Miner {
         if (UNDERGROUND.containsKey(villager.getUUID())) {
             villager.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
         }
+    }
+
+    private record Shaft(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension, java.util.Set<Long> columns, int top) {}
+
+    /** The open shafts of the mines miners are working, by cart, so pathfinding can keep everyone else out of them. */
+    private static final java.util.Map<net.minecraft.core.BlockPos, Shaft> SHAFTS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Down in the open shaft of a mine (below its rim), where a villager that isn't a miner can't climb out. */
+    public static boolean inShaft(net.minecraft.world.level.Level level, int x, int y, int z) {
+        if (SHAFTS.isEmpty()) return false;
+        long column = net.minecraft.core.BlockPos.asLong(x, 0, z);
+        for (Shaft shaft : SHAFTS.values()) {
+            if (y <= shaft.top() && shaft.dimension() == level.dimension() && shaft.columns().contains(column)) return true;
+        }
+        return false;
     }
 }
