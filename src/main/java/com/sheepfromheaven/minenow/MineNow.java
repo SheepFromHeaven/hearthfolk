@@ -330,6 +330,7 @@ public final class MineNow {
             test(helper, TestGroup.SMELTER, "smelter_uses_more_furnaces_at_higher_levels", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterUsesMoreFurnacesAtHigherLevels);
             test(helper, TestGroup.SMELTER, "smelter_buys_raw_iron_from_the_miner", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBuysRawIronFromTheMiner);
             test(helper, TestGroup.VILLAGER_TRADING, "a_broke_smelter_gets_ore_on_credit_and_pays_it_back", com.sheepfromheaven.minenow.smelter.SmelterTests::aBrokeSmelterGetsOreOnCreditAndPaysItBack);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_smelter_buys_ore_from_a_miner_with_less_than_a_full_lot", com.sheepfromheaven.minenow.smelter.SmelterTests::aSmelterBuysOreFromAMinerWithLessThanAFullLot);
             test(helper, TestGroup.ARMORER, "an_apprentice_armorer_makes_shields_from_any_planks", com.sheepfromheaven.minenow.armorer.ArmorerTests::anApprenticeArmorerMakesShieldsFromAnyPlanks);
             test(helper, TestGroup.ARMORER, "armorer_dresses_an_armor_stand_with_its_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerDressesAnArmorStandWithItsArmor);
             test(helper, TestGroup.ARMORER, "armorer_shows_its_best_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::armorerShowsItsBestArmor);

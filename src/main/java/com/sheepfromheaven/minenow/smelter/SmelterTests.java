@@ -117,6 +117,19 @@ public final class SmelterTests {
         });
     }
 
+    public static void aSmelterBuysOreFromAMinerWithLessThanAFullLot(GameTestHelper helper) {
+        Villager smelter = spawnSmelter(helper);
+        smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        BlockPos cart = new BlockPos(18, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 12));
+
+        helper.succeedWhen(() -> helper.assertTrue(miner.getInventory().countItem(Items.RAW_IRON) < 12,
+                "Raw iron sells 20 for 3 emeralds; a miner with only 12 still sells an emerald's worth, has " + miner.getInventory().countItem(Items.RAW_IRON)));
+    }
+
     static Villager spawnSmelter(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

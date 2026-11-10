@@ -220,6 +220,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             if (buyer.getInventory().countItem(supply.item()) >= supply.price().count()) continue;
             Optional<Deal> lot = sellers(level, buyer).stream()
                     .flatMap(seller -> TradeTable.forVillager(seller).flatMap(sellerTable -> sellerTable.sellPrice(supply.item(), seller.getVillagerData().level()))
+                            .map(full -> lotFor(full, sellable(level, seller, supply.item())))
                             .filter(price -> price.emeralds() <= room && sellable(level, seller, supply.item()) >= price.count())
                             .map(price -> new Deal(seller, supply.item(), price, price.count(), 0, false, true)).stream())
                     .findFirst();
@@ -271,9 +272,19 @@ public class BuyFromVillagers extends Behavior<Villager> {
     }
 
     private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room, int budget) {
-        Optional<Price> price = TradeTable.forVillager(seller).flatMap(table -> table.sellPrice(item, seller.getVillagerData().level()));
+        Optional<Price> price = TradeTable.forVillager(seller).flatMap(table -> table.sellPrice(item, seller.getVillagerData().level()))
+                .map(lot -> lotFor(lot, sellable(level, seller, item)));
         if (price.isEmpty() || sellable(level, seller, item) < price.get().count() || budget < price.get().emeralds()) return Optional.empty();
         return Optional.of(new Deal(seller, item, price.get(), room, budget));
+    }
+
+    /**
+     * Prices are the smallest whole-emerald deal, so a cheap item comes in big lots (raw copper 50 for 3 emeralds); a
+     * seller holding less than a whole lot sells an emerald's share of it instead, rounded down in its favour.
+     */
+    static Price lotFor(Price lot, int sellable) {
+        if (sellable >= lot.count() || lot.emeralds() <= 1 || lot.count() / lot.emeralds() < 1) return lot;
+        return new Price(lot.count() / lot.emeralds(), 1);
     }
 
     private static int sellable(ServerLevel level, Villager seller, Item item) {
