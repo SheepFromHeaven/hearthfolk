@@ -38,11 +38,22 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** Buys lots of the seller's {@code price} (so many items for so many emeralds), up to {@code room} items. */
     /** {@code budget}: the emeralds the buyer may spend on it (food may use its food money, supplies only what's above its reserve). */
     /** {@code wear}: gear it puts on (see {@link Gear}) rather than goods it keeps. */
-    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear) {
+    /** {@code credit}: one lot it takes now and pays for later (see {@link #CREDIT_LIMIT}). */
+    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit) {
         Deal(Villager seller, Item item, Price price, int room, int budget) {
-            this(seller, item, price, room, budget, false);
+            this(seller, item, price, room, budget, false, false);
+        }
+
+        Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear) {
+            this(seller, item, price, room, budget, wear, false);
         }
     }
+
+    /**
+     * A craftsman too broke to buy what its trade needs (a tool, a supply) may take one lot on credit from a seller with
+     * a lot to spare, up to this many emeralds owed in all, and pays it back from its next earnings above its reserve. Without it a smelter with no ore or a butcher with no coal never earns the money to start.
+     */
+    static final int CREDIT_LIMIT = 3;
 
     private @Nullable Deal deal;
     private long startedAt;
@@ -56,7 +67,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
     protected boolean checkExtraStartConditions(ServerLevel level, Villager buyer) {
         if (level.getGameTime() < nextStartAllowed || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
         nextStartAllowed = level.getGameTime() + RETRY_DELAY;
-        deal = findDeal(level, buyer).orElse(null);
+        repayDebts(level, buyer);
+        deal = findDeal(level, buyer).or(() -> creditDeal(level, buyer)).orElse(null);
         return deal != null;
     }
 
@@ -98,11 +110,18 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static void trade(ServerLevel level, Villager buyer, Deal deal) {
         Villager seller = deal.seller();
         Price price = deal.price();
-        int lots = Math.min(Math.min(deal.budget(), Economy.emeralds(level, buyer)) / price.emeralds(),
+        int lots = deal.credit() ? (sellable(level, seller, deal.item()) >= price.count() ? 1 : 0)
+                : Math.min(Math.min(deal.budget(), Economy.emeralds(level, buyer)) / price.emeralds(),
                 Math.min(sellable(level, seller, deal.item()) / price.count(), Math.max(1, deal.room() / price.count())));
         if (lots <= 0) return;
-        int paid = Economy.take(level, buyer, Items.EMERALD, lots * price.emeralds());
-        Economy.give(level, seller, new ItemStack(Items.EMERALD, paid));
+        if (deal.credit()) {
+            java.util.Map<java.util.UUID, Integer> debts = new java.util.HashMap<>(buyer.getData(ModVillagers.DEBTS));
+            debts.merge(seller.getUUID(), price.emeralds(), Integer::sum);
+            buyer.setData(ModVillagers.DEBTS, java.util.Map.copyOf(debts));
+        } else {
+            int paid = Economy.take(level, buyer, Items.EMERALD, lots * price.emeralds());
+            Economy.give(level, seller, new ItemStack(Items.EMERALD, paid));
+        }
         if (deal.wear()) {
             if (deal.item() == Items.ARROW) Gear.wear(buyer, new ItemStack(Items.ARROW, Economy.take(level, seller, Items.ARROW, lots * price.count())));
             else Gear.wear(buyer, Economy.takeOne(level, seller, deal.item()));
@@ -159,6 +178,54 @@ public class BuyFromVillagers extends Behavior<Villager> {
             if (deal.isPresent()) return deal;
         }
         return gear(level, buyer);
+    }
+
+    static int debt(Villager villager) {
+        return villager.getData(ModVillagers.DEBTS).values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    /** Pays what it owes from anything above its reserve, so a debt never eats its food or tool money; a creditor that is gone is never paid. */
+    private static void repayDebts(ServerLevel level, Villager buyer) {
+        java.util.Map<java.util.UUID, Integer> debts = buyer.getData(ModVillagers.DEBTS);
+        if (debts.isEmpty()) return;
+        java.util.Map<java.util.UUID, Integer> left = new java.util.HashMap<>();
+        for (var entry : debts.entrySet()) {
+            if (!(level.getEntity(entry.getKey()) instanceof Villager creditor) || !creditor.isAlive()) continue;
+            int pay = Math.min(entry.getValue(), Math.max(0, Economy.spendable(level, buyer)));
+            if (pay > 0) Economy.give(level, creditor, new ItemStack(Items.EMERALD, Economy.take(level, buyer, Items.EMERALD, pay)));
+            if (entry.getValue() > pay) left.put(entry.getKey(), entry.getValue() - pay);
+        }
+        buyer.setData(ModVillagers.DEBTS, java.util.Map.copyOf(left));
+    }
+
+    /** A tool or one lot of a supply of its trade, on credit, when it can't pay for them and still owes little enough. */
+    private static Optional<Deal> creditDeal(ServerLevel level, Villager buyer) {
+        Optional<TradeTable> table = TradeTable.forVillager(buyer);
+        if (table.isEmpty() || !buyer.getBrain().isActive(Activity.WORK)) return Optional.empty();
+        int room = CREDIT_LIMIT - debt(buyer);
+        if (room <= 0) return Optional.empty();
+        if (IdleReason.requiresTool(table.get()) && !Unloading.ownsTool(level, buyer)) {
+            Optional<Deal> tool = sellers(level, buyer).stream()
+                    .flatMap(seller -> TradeTable.forVillager(seller).stream()
+                            .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
+                                    .filter(craft -> sellerTable.craftPrice(craft).emeralds() <= room && table.get().isToolItem(new ItemStack(craft.item()))
+                                            && Economy.count(level, seller, craft.item()) > 0)
+                                    .min(Comparator.comparingInt(craft -> sellerTable.craftPrice(craft).emeralds()))
+                                    .map(craft -> new Deal(seller, craft.item(), sellerTable.craftPrice(craft), 1, 0, false, true))
+                                    .stream()))
+                    .findFirst();
+            if (tool.isPresent()) return tool;
+        }
+        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+            if (buyer.getInventory().countItem(supply.item()) >= supply.price().count()) continue;
+            Optional<Deal> lot = sellers(level, buyer).stream()
+                    .flatMap(seller -> TradeTable.forVillager(seller).flatMap(sellerTable -> sellerTable.sellPrice(supply.item(), seller.getVillagerData().level()))
+                            .filter(price -> price.emeralds() <= room && sellable(level, seller, supply.item()) >= price.count())
+                            .map(price -> new Deal(seller, supply.item(), price, price.count(), 0, false, true)).stream())
+                    .findFirst();
+            if (lot.isPresent()) return lot;
+        }
+        return Optional.empty();
     }
 
     /** Whether a villager nearby has a tool of its trade it can afford, so it goes to buy it (see {@link SeekTool}). */

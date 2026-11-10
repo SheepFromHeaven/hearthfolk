@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_broke_smelter_gets_ore_on_credit_and_pays_it_back",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

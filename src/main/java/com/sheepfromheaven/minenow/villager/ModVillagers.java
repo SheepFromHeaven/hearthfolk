@@ -37,6 +37,12 @@ public final class ModVillagers {
                     .serialize(UUIDUtil.CODEC.fieldOf("player"))
                     .build());
 
+    /** What a villager owes other villagers, in emeralds by creditor, for goods it got on credit (see {@link BuyFromVillagers}). */
+    public static final Supplier<AttachmentType<java.util.Map<UUID, Integer>>> DEBTS = ATTACHMENT_TYPES.register("debts",
+            () -> AttachmentType.<java.util.Map<UUID, Integer>>builder(() -> java.util.Map.of())
+                    .serialize(Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.INT).fieldOf("debts"))
+                    .build());
+
     public static final Supplier<AttachmentType<Boolean>> PURSE_GRANTED = ATTACHMENT_TYPES.register("purse_granted",
             () -> AttachmentType.builder(() -> false)
                     .serialize(Codec.BOOL.fieldOf("granted"))

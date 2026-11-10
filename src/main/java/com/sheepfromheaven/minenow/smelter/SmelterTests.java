@@ -94,6 +94,29 @@ public final class SmelterTests {
         });
     }
 
+    public static void aBrokeSmelterGetsOreOnCreditAndPaysItBack(GameTestHelper helper) {
+        Villager smelter = spawnSmelter(helper);
+        smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
+        smelter.getInventory().addItem(new ItemStack(Items.COAL, 4));
+        BlockPos cart = new BlockPos(18, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.RAW_IRON, 20));
+        boolean[] gotOre = {false};
+        helper.onEachTick(() -> {
+            if (smelter.getInventory().countItem(Items.RAW_IRON) + smelter.getInventory().countItem(Items.IRON_INGOT) > 0 && !gotOre[0]) {
+                gotOre[0] = true;
+                smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 3));
+            }
+        });
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(gotOre[0], "A smelter with only its food money still gets raw iron from the miner, on credit");
+            helper.assertTrue(miner.getInventory().countItem(Items.EMERALD) >= 1, "...and pays the miner back once it has money, miner has " + miner.getInventory().countItem(Items.EMERALD));
+        });
+    }
+
     static Villager spawnSmelter(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

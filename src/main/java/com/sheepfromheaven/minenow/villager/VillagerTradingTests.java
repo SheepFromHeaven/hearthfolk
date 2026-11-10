@@ -53,7 +53,7 @@ public final class VillagerTradingTests {
 
         helper.runAfterDelay(600, () -> {
             helper.assertTrue(count(butcher, Items.EMERALD) == Economy.FOOD_MONEY + 1, "With only its food money and a new axe's price it buys no supplies, has " + count(butcher, Items.EMERALD));
-            helper.assertTrue(count(butcher, Items.WHEAT) == 0, "...so no wheat");
+            helper.assertTrue(count(butcher, Items.WHEAT) == 0 || BuyFromVillagers.debt(butcher) > 0, "...so any wheat it takes is on credit");
             helper.succeed();
         });
     }
