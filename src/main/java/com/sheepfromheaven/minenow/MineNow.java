@@ -246,6 +246,8 @@ public final class MineNow {
             test(helper, TestGroup.FORESTER, "a_journeyman_forester_leaves_big_trees_alone", com.sheepfromheaven.minenow.forester.ForesterTests::aJourneymanForesterLeavesBigTreesAlone);
             test(helper, TestGroup.FORESTER, "an_expert_forester_fells_a_big_tree_and_replants_all_four_saplings", com.sheepfromheaven.minenow.forester.ForesterTests::anExpertForesterFellsABigTreeAndReplantsAllFourSaplings);
             test(helper, TestGroup.FORESTER, "forester_gathers_what_falls_from_its_trees", com.sheepfromheaven.minenow.forester.ForesterTests::foresterGathersWhatFallsFromItsTrees);
+            test(helper, TestGroup.FORESTER, "forester_gives_up_on_what_it_cannot_reach_at_once", com.sheepfromheaven.minenow.forester.ForesterTests::foresterGivesUpOnWhatItCannotReachAtOnce);
+            test(helper, TestGroup.FORESTER, "a_forester_walks_to_the_foot_of_a_tree_without_searching_everywhere", com.sheepfromheaven.minenow.forester.ForesterTests::aForesterWalksToTheFootOfATreeWithoutSearchingEverywhere);
             test(helper, TestGroup.FORESTER, "forester_makes_planks_and_stripped_logs", com.sheepfromheaven.minenow.forester.ForesterTests::foresterMakesPlanksAndStrippedLogs);
             test(helper, TestGroup.VILLAGER_TRADING, "fletcher_turns_planks_into_sticks_and_ladders", com.sheepfromheaven.minenow.forester.ForesterTests::fletcherTurnsPlanksIntoSticksAndLadders);
             test(helper, TestGroup.VILLAGER_TRADING, "crafted_goods_are_sold_in_whole_emerald_batches", com.sheepfromheaven.minenow.forester.ForesterTests::craftedGoodsAreSoldInWholeEmeraldBatches);

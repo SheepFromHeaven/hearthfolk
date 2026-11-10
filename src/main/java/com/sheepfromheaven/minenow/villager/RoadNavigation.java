@@ -33,12 +33,25 @@ public class RoadNavigation extends GroundPathNavigation {
         return new PathFinder(this.nodeEvaluator, Math.max(maxVisitedNodes, MIN_VISITED_NODES));
     }
 
+    /** How many nodes the last path search expanded. */
+    public int lastSearchSize() {
+        return ((RoadNodeEvaluator) this.nodeEvaluator).visited;
+    }
+
     /** Jumping down costs more the higher the fall, so villagers take stairs, ramps and ladders down when there are any. */
     static float dropCost(int drop) {
         return drop < 2 ? 0.0F : 8.0F * (float) Math.pow(4.0, drop - 2);
     }
 
     private static class RoadNodeEvaluator extends WalkNodeEvaluator {
+        int visited;
+
+        @Override
+        public void prepare(net.minecraft.world.level.PathNavigationRegion region, Mob mob) {
+            super.prepare(region, mob);
+            visited = 0;
+        }
+
         @Override
         public PathType getPathType(PathfindingContext context, int x, int y, int z) {
             if (OpenFenceGates.canOpen(this.mob) && OpenFenceGates.isClosedGate(context.getBlockState(new BlockPos(x, y, z)))) {
@@ -49,6 +62,7 @@ public class RoadNavigation extends GroundPathNavigation {
 
         @Override
         public int getNeighbors(Node[] neighbors, Node pos) {
+            visited++;
             int count = super.getNeighbors(neighbors, pos);
             int kept = 0;
             for (int i = 0; i < count; i++) {
