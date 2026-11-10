@@ -1,7 +1,7 @@
 {
   "type": "minecraft:function",
   "environment": "minecraft:default",
-  "function": "minenow:a_farmer_harvests_its_field_before_it_bakes",
+  "function": "minenow:butcher_kills_no_more_than_its_daily_limit",
   "structure": "minenow:field_24x6x24",
-  "max_ticks": 4800
+  "max_ticks": 3000
 }

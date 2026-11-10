@@ -161,6 +161,14 @@ public final class LeatherworkerTests {
         });
     }
 
+    public static void aLeatherworkerCutsLeatherIntoString(GameTestHelper helper) {
+        Villager leatherworker = spawnLeatherworker(helper, 1);
+        leatherworker.getInventory().addItem(new ItemStack(Items.LEATHER, 3));
+
+        helper.succeedWhen(() -> helper.assertTrue(leatherworker.getInventory().countItem(Items.STRING) >= 8,
+                "At its cauldron the leatherworker cuts leather into string, 8 from each; has " + leatherworker.getInventory().countItem(Items.STRING) + " string"));
+    }
+
     static Villager spawnLeatherworker(GameTestHelper helper, int level) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

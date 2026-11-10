@@ -135,9 +135,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_outside_work_hours_shows_no_cue", IdleCueTests::aVillagerOutsideWorkHoursShowsNoCue);
             test(helper, TestGroup.FARMER, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
             test(helper, TestGroup.FARMER, "farmer_does_not_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotCompostSeedsAtTheComposter);
-            test(helper, TestGroup.FARMER, "a_farmer_harvests_its_field_before_it_bakes", FarmerTests::aFarmerHarvestsItsFieldBeforeItBakes);
-            test(helper, TestGroup.FARMER, "farmer_bakes_bread_from_its_wheat", FarmerTests::farmerBakesBreadFromItsWheat);
-            test(helper, TestGroup.FARMER, "a_hungry_villager_buys_the_farmers_bread", FarmerTests::aHungryVillagerBuysTheFarmersBread);
+            test(helper, TestGroup.FARMER, "a_farmer_does_not_bake_bread", FarmerTests::aFarmerDoesNotBakeBread);
             test(helper, TestGroup.FARMER, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);
             test(helper, TestGroup.TRADING, "farmer_buys_bone_meal_in_batches_of_eight_up_to_thirty_two", FarmerTradeTests::farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo);
             test(helper, TestGroup.FARMER, "novice_farmer_only_works_ten_blocks_out", FarmerTests::noviceFarmerOnlyWorksTenBlocksOut);
@@ -182,12 +180,13 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_never_buys_meat", ButcherTests::butcherNeverBuysMeat);
             test(helper, TestGroup.BUTCHER, "butcher_keeps_its_raw_meat_for_the_smoker", ButcherTests::butcherKeepsItsRawMeatForTheSmoker);
             test(helper, TestGroup.BUTCHER, "culling_takes_as_many_swings_as_the_axe_needs", ButcherTests::cullingTakesAsManySwingsAsTheAxeNeeds);
-            test(helper, TestGroup.BUTCHER, "butcher_culls_the_herd_down_to_six", ButcherTests::butcherCullsTheHerdDownToSix);
+            test(helper, TestGroup.BUTCHER, "butcher_culls_down_to_its_breeding_stock", ButcherTests::butcherCullsDownToItsBreedingStock);
             test(helper, TestGroup.BUTCHER, "butchers_and_shepherds_open_fence_gates_but_not_others", ButcherTests::butchersAndShepherdsOpenFenceGatesButNotOthers);
             test(helper, TestGroup.BUTCHER, "butcher_breeds_a_small_herd", ButcherTests::butcherBreedsASmallHerd);
             test(helper, TestGroup.BUTCHER, "butcher_buys_wheat_seeds_from_the_farmer_for_its_chickens", ButcherTests::butcherBuysWheatSeedsFromTheFarmerForItsChickens);
-            test(helper, TestGroup.BUTCHER, "butcher_turns_leather_into_string", ButcherTests::butcherTurnsLeatherIntoString);
+            test(helper, TestGroup.BUTCHER, "butcher_kills_no_more_than_its_daily_limit", ButcherTests::butcherKillsNoMoreThanItsDailyLimit);
             test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_buys_the_fishermans_leather", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerBuysTheFishermansLeather);
+            test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_cuts_leather_into_string", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerCutsLeatherIntoString);
             test(helper, TestGroup.BUTCHER, "butcher_leaves_sheep_and_named_animals_alone", ButcherTests::butcherLeavesSheepAndNamedAnimalsAlone);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
             test(helper, TestGroup.BUTCHER, "a_butcher_out_of_fuel_spends_its_tool_money_on_coal", ButcherTests::aButcherOutOfFuelSpendsItsToolMoneyOnCoal);

@@ -150,19 +150,19 @@
     {
       "item": "minecraft:wheat",
       "price": 0.0625,
-      "max": 32,
+      "max": 8,
       "level": 1
     },
     {
       "item": "minecraft:carrot",
       "price": 0.0625,
-      "max": 32,
+      "max": 8,
       "level": 1
     },
     {
       "item": "minecraft:wheat_seeds",
       "price": 0.0625,
-      "max": 32,
+      "max": 8,
       "level": 1
     },
     {
@@ -191,19 +191,5 @@
   "default_produce": {
     "items": "#c:foods/raw_meat",
     "price": 0.1
-  },
-  "crafts": [
-    {
-      "item": "minecraft:string",
-      "materials": [
-        {
-          "item": "minecraft:leather",
-          "count": 1
-        }
-      ],
-      "count": 8,
-      "labor": 0.1,
-      "level": 1
-    }
-  ]
+  }
 }
