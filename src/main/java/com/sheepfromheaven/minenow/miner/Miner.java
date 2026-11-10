@@ -100,6 +100,15 @@ public final class Miner {
     }
 
     /** Down a mine: a miner in its own (checked once a second), or anyone in a worked shaft. Cheap, since buyers ask it of every seller. */
+    /**
+     * Whether the miner breaks a block in its ladder's column that its pickaxe can't harvest, wasting it: only when no
+     * villager nearby sells a pickaxe that harvests it that it could pay for, with money or credit; else it waits and buys one.
+     */
+    public static java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> breaksThrough(net.minecraft.server.level.ServerLevel level,
+                                                                                                              net.minecraft.world.entity.npc.villager.Villager miner) {
+        return state -> !com.sheepfromheaven.minenow.villager.BuyFromVillagers.couldBuyTool(level, miner, pickaxe -> pickaxe.isCorrectToolForDrops(state));
+    }
+
     public static boolean isDownAMine(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager villager) {
         return UNDERGROUND.containsKey(villager.getUUID())
                 || SHAFTS.values().stream().anyMatch(shaft -> shaft.dimension() == level.dimension() && shaft.holds(villager.blockPosition()));
@@ -128,7 +137,7 @@ public final class Miner {
         int bottom = cart.get().getY() - MinerSkill.depth(miner.getVillagerData().level());
         int tunnels = MinerSkill.tunnelLength(miner.getVillagerData().level());
         java.util.List<net.minecraft.core.BlockPos> work = quarry.nextWork(level, bottom, miner.getInventory().getItem(slot), tunnels,
-                MineLayout.deepestPlatform(quarry.top(), level.getBestNeighborSignal(cart.get())), pos -> false);
+                MineLayout.deepestPlatform(quarry.top(), level.getBestNeighborSignal(cart.get())), pos -> false, breaksThrough(level, miner));
         java.util.Map<Integer, java.util.Set<net.minecraft.core.BlockPos>> floods = new java.util.HashMap<>();
         StringBuilder text = new StringBuilder(describeLadder(level, miner) + "; missing ladder " + quarry.missingLadder(level).map(p -> p.subtract(cart.get()).toShortString()).orElse("-")
                 + ", at " + miner.blockPosition().subtract(cart.get()).toShortString() + ", seal spots " + quarry.sealSpots(level, miner.blockPosition(), bottom, tunnels).stream().map(p -> p.subtract(cart.get()).toShortString()).toList() + ", next work " + work.size() + ":");
@@ -182,18 +191,19 @@ public final class Miner {
     private static final java.util.Map<net.minecraft.core.BlockPos, Shaft> SHAFTS = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
-     * Whether a path for this villager may not step into (x, y, z): it lies down the open shaft of a mine that isn't its
-     * own (a miner's cart) and that it isn't already down, where it couldn't climb out.
+     * Whether a path for this villager (or wandering trader) may not step into (x, y, z): it lies down the open shaft of a
+     * mine that isn't its own (a miner's cart) and that it isn't already down, where it couldn't climb out.
      */
-    public static boolean shaftClosedTo(net.minecraft.world.entity.npc.villager.Villager villager, int x, int y, int z) {
+    public static boolean shaftClosedTo(net.minecraft.world.entity.Mob mob, int x, int y, int z) {
         if (SHAFTS.isEmpty()) return false;
-        net.minecraft.world.level.Level level = villager.level();
+        net.minecraft.world.level.Level level = mob.level();
         long column = net.minecraft.core.BlockPos.asLong(x, 0, z);
         for (var entry : SHAFTS.entrySet()) {
             Shaft shaft = entry.getValue();
             if (y > shaft.top() || shaft.dimension() != level.dimension() || !shaft.columns().contains(column)) continue;
-            if (shaft.holds(villager.blockPosition())) continue;
-            if (villager.getVillagerData().profession().is(PROFESSION) && villager.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE)
+            if (shaft.holds(mob.blockPosition())) continue;
+            if (mob instanceof net.minecraft.world.entity.npc.villager.Villager villager && villager.getVillagerData().profession().is(PROFESSION)
+                    && villager.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE)
                     .filter(site -> site.dimension() == level.dimension() && site.pos().equals(entry.getKey())).isPresent()) continue;
             return true;
         }

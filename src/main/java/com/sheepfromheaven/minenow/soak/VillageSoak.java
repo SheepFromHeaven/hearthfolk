@@ -69,6 +69,8 @@ public final class VillageSoak {
     private static final int G = 12;
     /** Layers of ground, reaching below the structure: an expert miner digs 24 layers down, so the ore runs out no sooner. */
     private static final int DEPTH = 40;
+    /** The ground reaches this far past the structure, so the tunnels of the mines at the edge (up to a master's 24) stay in rock instead of opening onto the air outside. */
+    private static final int MARGIN = 24;
     private static final int CELL_W = 14;
     private static final int CELL_D = 16;
     private static final TagKey<Item> EXPORTS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("minenow", "exports"));
@@ -272,8 +274,8 @@ public final class VillageSoak {
 
     private static void buildGround(GameTestHelper helper) {
         java.util.Random random = new java.util.Random(7);
-        for (int x = 1; x < SIZE - 1; x++) {
-            for (int z = 1; z < SIZE - 1; z++) {
+        for (int x = 1 - MARGIN; x < SIZE - 1 + MARGIN; x++) {
+            for (int z = 1 - MARGIN; z < SIZE - 1 + MARGIN; z++) {
                 for (int y = G - DEPTH + 1; y <= G; y++) {
                     helper.setBlock(x, y, z, y <= G - 2 ? ore(random) : Blocks.STONE);
                 }
@@ -583,7 +585,10 @@ public final class VillageSoak {
         for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, helper.getBounds().inflate(8))) {
             loose.merge(item.getItem().getItem().toString(), item.getItem().getCount(), Integer::sum);
         }
-        text.append("== loose items in the world: ").append(loose).append('\n');        text.append("== the visiting player bought: ").append(playerBought).append('\n');
+        text.append("== loose items in the world: ").append(loose).append('\n');
+        for (var trader : level.getEntitiesOfClass(net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader.class, helper.getBounds().inflate(128))) {
+            text.append("== wandering trader ").append(trader.getName().getString()).append(" at ").append(helper.relativePos(trader.blockPosition()).toShortString()).append('\n');
+        }        text.append("== the visiting player bought: ").append(playerBought).append('\n');
         for (int i = 0; i < ROSTER.length; i++) {
             if (ROSTER[i] != Role.MINER) continue;
             int ox = 1 + (i % 5) * CELL_W;

@@ -149,10 +149,19 @@ public final class Unloading {
      * theft bookkeeping around it.
      */
     /**
-     * Takes supplies of its trade back out of the chest, up to what it keeps on it: they come in lots bigger than that
+     * Takes a tool of its trade back out of the chest when it has none on it, and supplies of its trade up to what it
+     * keeps on it: they come in lots bigger than that
      * (sticks 32 to an emerald, the miner keeps 16), the rest is unloaded, and its work only uses what it carries.
      */
     private static void restock(Villager villager, Container chest) {
+        if (!Tools.has(villager)) {
+            for (int i = 0; i < chest.getContainerSize(); i++) {
+                if (!isTool(villager, chest.getItem(i))) continue;
+                ItemStack rest = villager.getInventory().addItem(chest.removeItem(i, 1));
+                if (!rest.isEmpty()) chest.setItem(i, rest);
+                break;
+            }
+        }
         TradeTable.forVillager(villager).ifPresent(table -> {
             for (TradeTable.Supply supply : table.suppliesUpTo(villager.getVillagerData().level())) {
                 int want = supply.max() - villager.getInventory().countItem(supply.item());

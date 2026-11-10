@@ -50,14 +50,12 @@ public class RoadNavigation extends GroundPathNavigation {
         @Override
         public int getNeighbors(Node[] neighbors, Node pos) {
             int count = super.getNeighbors(neighbors, pos);
-            if (this.mob instanceof net.minecraft.world.entity.npc.villager.Villager villager) {
-                int kept = 0;
-                for (int i = 0; i < count; i++) {
-                    Node node = neighbors[i];
-                    if (!com.sheepfromheaven.minenow.miner.Miner.shaftClosedTo(villager, node.x, node.y, node.z)) neighbors[kept++] = node;
-                }
-                count = kept;
+            int kept = 0;
+            for (int i = 0; i < count; i++) {
+                Node node = neighbors[i];
+                if (!com.sheepfromheaven.minenow.miner.Miner.shaftClosedTo(this.mob, node.x, node.y, node.z)) neighbors[kept++] = node;
             }
+            count = kept;
             for (int i = 0; i < count; i++) {
                 Node node = neighbors[i];
                 if (node.costMalus >= 0.0F) {

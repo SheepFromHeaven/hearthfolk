@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.villager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -100,7 +101,33 @@ public final class Economy {
 
     /** Into its inventory, then the chest the item belongs in (food and emeralds home, trade goods the workshop), then any. */
     public static void give(ServerLevel level, Villager villager, ItemStack stack) {
+        if (Unloading.isTool(villager, stack) && !Tools.has(villager) && !Unloading.hasEmptySlot(villager)) makeRoom(level, villager);
         ItemStack rest = villager.getInventory().addItem(stack);
+        putInChests(level, villager, rest);
+    }
+
+    /** Moves one stack (not a tool) from its pockets into its chests, so the tool of its trade it gets is carried, not stored where its work never looks. */
+    private static void makeRoom(ServerLevel level, Villager villager) {
+        SimpleContainer inventory = villager.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.isEmpty() || Unloading.isTool(villager, stack)) continue;
+            inventory.setItem(i, ItemStack.EMPTY);
+            ItemStack rest = stack;
+            for (BlockPos pos : Workshop.allChests(level, villager)) {
+                if (rest.isEmpty()) break;
+                Container chest = HomeStorage.chestContainer(level, pos);
+                if (chest == null) continue;
+                StorageTheft.check(level, villager, pos);
+                rest = HopperBlockEntity.addItem(null, chest, rest, null);
+                StorageTheft.recordContents(level, pos);
+            }
+            if (rest.isEmpty()) return;
+            inventory.setItem(i, rest);
+        }
+    }
+
+    private static void putInChests(ServerLevel level, Villager villager, ItemStack rest) {
         List<BlockPos> chests = new java.util.ArrayList<>(Workshop.allChests(level, villager));
         boolean personal = Workshop.personal(rest);
         chests.sort(java.util.Comparator.comparing(pos -> Workshop.isWorkshopChest(level, villager, pos) == personal));

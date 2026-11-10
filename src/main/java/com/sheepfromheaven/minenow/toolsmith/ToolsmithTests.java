@@ -8,6 +8,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -118,6 +119,22 @@ public final class ToolsmithTests {
         helper.succeedWhen(() -> helper.assertTrue(miner.getInventory().countItem(Items.STONE_PICKAXE) == 1,
                 "A miner without a pickaxe should buy one the toolsmith crafts from cobblestone and sticks, has "
                         + miner.getInventory().countItem(Items.STONE_PICKAXE) + " and " + miner.getInventory().countItem(Items.EMERALD) + " emeralds"));
+    }
+
+    public static void aMinerWithFullPocketsKeepsTheNewPickaxeOnIt(GameTestHelper helper) {
+        Villager toolsmith = spawnToolsmith(helper);
+        toolsmith.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        BlockPos cart = new BlockPos(19, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        helper.setBlock(new BlockPos(16, 1, 6), Blocks.CHEST);
+        GameTestHelpers.giveHome(helper, miner, new BlockPos(16, 1, 8));
+        miner.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        for (Item item : new Item[] {Items.DIRT, Items.SAND, Items.GRAVEL, Items.ANDESITE, Items.DIORITE, Items.GRANITE, Items.TUFF}) miner.getInventory().addItem(new ItemStack(item, 64));
+
+        helper.succeedWhen(() -> helper.assertTrue(miner.getInventory().countItem(Items.STONE_PICKAXE) == 1,
+                "A miner with full pockets and no pickaxe on it makes room for the one it buys, or it would sit in its chest and the miner wouldn't dig; has "
+                        + miner.getInventory().getItems().stream().filter(stack -> !stack.isEmpty()).toList()));
     }
 
     public static void toolsmithBuysWhatAWoodenPickaxeDug(GameTestHelper helper) {

@@ -170,20 +170,22 @@ final class Quarry {
     /**
      * The next work, top-down: the highest shaft layer with something the pickaxe can dig, or, once a platform is open,
      * its tunnels (each tunnel line up to the first block that can't be dug). Nothing once the mine is done. Cells
-     * {@code skip} turns down (work it found it can't reach) are passed over, so the work after them comes next.
+     * {@code skip} turns down (work it found it can't reach) are passed over, so the work after them comes next. A
+     * block in the ladder's column its pickaxe can't harvest is broken without its drops when {@code breakThrough} allows it.
      */
-    List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength, int deepestPlatform, java.util.function.Predicate<BlockPos> skip) {
+    List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength, int deepestPlatform, java.util.function.Predicate<BlockPos> skip,
+                             java.util.function.Predicate<BlockState> breakThrough) {
         for (int y = top; y >= Math.max(Math.max(bottom, deepestPlatform), level.getMinY() + 1); y--) {
             List<BlockPos> layer = new ArrayList<>();
             for (BlockPos column : outline) {
                 BlockPos pos = column.atY(y);
-                if (layout.digs(pos) && !skip.test(pos) && diggable(level, pos, pickaxe, isLadder(pos))) layer.add(pos);
+                if (layout.digs(pos) && !skip.test(pos) && diggable(level, pos, pickaxe, isLadder(pos) && breakThrough.test(level.getBlockState(pos)))) layer.add(pos);
             }
             if (!layout.isPlatform(y)) {
                 if (layout.isPlatform(y + 1) && y - 1 >= Math.max(bottom, level.getMinY() + 1)) {
                     for (BlockPos column : outline) {
                         BlockPos below = column.atY(y - 1);
-                        if (layout.digs(below) && !skip.test(below) && diggable(level, below, pickaxe, isLadder(below))) layer.add(below);
+                        if (layout.digs(below) && !skip.test(below) && diggable(level, below, pickaxe, isLadder(below) && breakThrough.test(level.getBlockState(below)))) layer.add(below);
                     }
                 }
                 if (!layer.isEmpty()) return layer;
@@ -394,8 +396,8 @@ final class Quarry {
     }
 
     /**
-     * Whether the miner digs this block. One its pickaxe can't harvest stays, unless it's in the ladder's column
-     * ({@code anyTool}): then it breaks it like a player with the wrong pickaxe, slowly and for nothing, or its mine would end there.
+     * Whether the miner digs this block. One its pickaxe can't harvest stays, unless {@code anyTool} (in the ladder's
+     * column, with no pickaxe for it to be had): then it breaks it like a player with the wrong pickaxe, slowly and for nothing, or its mine would end there.
      */
     static boolean diggable(ServerLevel level, BlockPos pos, ItemStack pickaxe, boolean anyTool) {
         BlockState state = level.getBlockState(pos);

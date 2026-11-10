@@ -203,6 +203,30 @@ public final class MinerTests {
         });
     }
 
+    public static void aMinerThatCanAffordTheRightPickaxeDoesNotWasteTheOre(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        quarry(helper);
+        Quarry quarry = Quarry.around(helper.getLevel(), helper.absolutePos(FURNACE));
+        BlockPos ore = quarry.ladder(helper.getLevel(), helper.absolutePos(FURNACE)).orElseThrow().at(helper.absolutePos(new BlockPos(0, 3, 0)).getY());
+        helper.getLevel().setBlockAndUpdate(ore, Blocks.IRON_ORE.defaultBlockState());
+        BlockPos table = new BlockPos(12, 4, 16);
+        helper.setBlock(table, Blocks.SMITHING_TABLE);
+        Villager toolsmith = GameTestHelpers.spawnEmployed(helper, table.east(), table, net.minecraft.world.entity.npc.villager.VillagerProfession.TOOLSMITH,
+                net.minecraft.world.entity.ai.village.poi.PoiTypes.TOOLSMITH);
+
+        helper.assertTrue(nextWork(helper, miner, quarry).contains(ore), "With no better pickaxe to be had, it breaks through the ore in its ladder's way");
+        toolsmith.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        helper.assertTrue(!nextWork(helper, miner, quarry).contains(ore), "With a stone pickaxe for sale and the money for it, it leaves the ore for the pickaxe that mines it");
+        helper.succeed();
+    }
+
+    private static List<BlockPos> nextWork(GameTestHelper helper, Villager miner, Quarry quarry) {
+        return quarry.nextWork(helper.getLevel(), quarry.top() - 8, miner.getInventory().getItem(com.sheepfromheaven.minenow.villager.Tools.slot(miner)), 8, Integer.MIN_VALUE,
+                pos -> false, Miner.breaksThrough(helper.getLevel(), miner));
+    }
+
     public static void minerWithoutLaddersDoesNotDigItselfIn(GameTestHelper helper) {
         Villager miner = spawnMiner(helper);
         miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
@@ -347,6 +371,25 @@ public final class MinerTests {
             walker.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET,
                     new net.minecraft.world.entity.ai.memory.WalkTarget(bottom, 0.5F, 0));
             helper.assertTrue(walker.getY() >= surface, "A villager never walks into a mine it can't climb out of, at " + helper.relativePos(walker.blockPosition()).toShortString());
+        });
+
+        helper.runAfterDelay(300, helper::succeed);
+    }
+
+    public static void aTravellingMerchantDoesNotWalkIntoAMine(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader trader = helper.spawn(EntityTypes.WANDERING_TRADER, new BlockPos(13, 4, 12));
+        BlockPos bottom = helper.absolutePos(new BlockPos(8, 1, 12));
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+        helper.onEachTick(() -> {
+            if (helper.getTick() % 20 == 5) trader.getNavigation().moveTo(bottom.getX() + 0.5, bottom.getY(), bottom.getZ() + 0.5, 0.6);
+            helper.assertTrue(trader.getY() >= surface, "A wandering trader never walks into a mine it couldn't get out of, at " + helper.relativePos(trader.blockPosition()).toShortString());
         });
 
         helper.runAfterDelay(300, helper::succeed);
@@ -837,7 +880,7 @@ public final class MinerTests {
     public static void aTunnelStopsShortOfTheNextMine(GameTestHelper helper) {
         Quarry mine = twoMinesSideBySide(helper, false);
 
-        List<BlockPos> work = mine.nextWork(helper.getLevel(), mine.top() - 16, new ItemStack(Items.IRON_PICKAXE), 24, Integer.MIN_VALUE, pos -> false);
+        List<BlockPos> work = mine.nextWork(helper.getLevel(), mine.top() - 16, new ItemStack(Items.IRON_PICKAXE), 24, Integer.MIN_VALUE, pos -> false, state -> true);
         helper.assertTrue(!work.isEmpty(), "The first mine has tunnel work");
         helper.assertTrue(work.stream().allMatch(pos -> helper.relativePos(pos).getX() <= 13),
                 "Its tunnel stops before the wall of the mine next door, but reaches " + work.stream().mapToInt(pos -> helper.relativePos(pos).getX()).max().orElse(0));

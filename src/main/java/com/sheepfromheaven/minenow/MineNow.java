@@ -214,6 +214,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "toolsmith_charges_for_materials_and_labor", ToolsmithTests::toolsmithChargesForMaterialsAndLabor);
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
             test(helper, TestGroup.TOOLSMITH, "miner_without_a_pickaxe_buys_one_from_the_toolsmith", ToolsmithTests::minerWithoutAPickaxeBuysOneFromTheToolsmith);
+            test(helper, TestGroup.TOOLSMITH, "a_miner_with_full_pockets_keeps_the_new_pickaxe_on_it", ToolsmithTests::aMinerWithFullPocketsKeepsTheNewPickaxeOnIt);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_buys_what_a_wooden_pickaxe_dug", ToolsmithTests::toolsmithBuysWhatAWoodenPickaxeDug);
             test(helper, TestGroup.FLETCHER, "a_miner_with_sticks_in_its_chest_buys_no_more", com.sheepfromheaven.minenow.fletcher.FletcherTests::aMinerWithSticksInItsChestBuysNoMore);
             test(helper, TestGroup.FLETCHER, "a_miner_takes_its_sticks_back_out_of_its_chest_when_unloading", com.sheepfromheaven.minenow.fletcher.FletcherTests::aMinerTakesItsSticksBackOutOfItsChestWhenUnloading);
@@ -247,7 +248,9 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_digs_its_quarry_layer_by_layer", MinerTests::minerDigsItsQuarryLayerByLayer);
             test(helper, TestGroup.MINER, "an_open_pit_without_a_rim_is_no_quarry", MinerTests::anOpenPitWithoutARimIsNoQuarry);
             test(helper, TestGroup.MINER, "a_rim_with_a_gap_is_no_quarry", MinerTests::aRimWithAGapIsNoQuarry);
+            test(helper, TestGroup.MINER, "a_travelling_merchant_does_not_walk_into_a_mine", MinerTests::aTravellingMerchantDoesNotWalkIntoAMine);
             test(helper, TestGroup.MINER, "a_miner_does_not_walk_into_another_miners_mine", MinerTests::aMinerDoesNotWalkIntoAnotherMinersMine);
+            test(helper, TestGroup.MINER, "a_miner_that_can_afford_the_right_pickaxe_does_not_waste_the_ore", MinerTests::aMinerThatCanAffordTheRightPickaxeDoesNotWasteTheOre);
             test(helper, TestGroup.MINER, "miner_breaks_through_ore_in_its_ladder_column", MinerTests::minerBreaksThroughOreInItsLadderColumn);
             test(helper, TestGroup.MINER, "a_tunnel_it_cannot_reach_does_not_stop_the_others", MinerTests::aTunnelItCannotReachDoesNotStopTheOthers);
             test(helper, TestGroup.MINER, "a_tunnel_stops_short_of_the_next_mine", MinerTests::aTunnelStopsShortOfTheNextMine);

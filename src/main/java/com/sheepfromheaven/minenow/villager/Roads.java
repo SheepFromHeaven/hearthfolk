@@ -90,13 +90,16 @@ public final class Roads {
         }
     }
 
+    /** Villagers, and wandering traders so they keep out of mine shafts too (a travelling merchant stuck down one keeps any other from coming). */
     public static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel level) || !(event.getEntity() instanceof Villager villager)) return;
-        if (villager.getNavigation() instanceof RoadNavigation) return;
-        RoadNavigation navigation = new RoadNavigation(villager, level);
-        navigation.setCanOpenDoors(true);
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        if (!(event.getEntity() instanceof Villager) && !(event.getEntity() instanceof net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader)) return;
+        net.minecraft.world.entity.Mob mob = (net.minecraft.world.entity.Mob) event.getEntity();
+        if (mob.getNavigation() instanceof RoadNavigation) return;
+        RoadNavigation navigation = new RoadNavigation(mob, level);
+        navigation.setCanOpenDoors(mob instanceof Villager);
         navigation.setCanFloat(true);
         navigation.setRequiredPathLength(48.0F);
-        villager.navigation = navigation;
+        mob.navigation = navigation;
     }
 }

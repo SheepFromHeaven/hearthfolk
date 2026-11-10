@@ -142,7 +142,7 @@ public class DigQuarry extends Behavior<Villager> {
             return;
         }
         ItemStack pickaxe = pickaxe(body);
-        if (pickaxe.isEmpty() || !Quarry.diggable(level, target, pickaxe, ladder != null && target.equals(ladder.at(target.getY())))) {
+        if (pickaxe.isEmpty() || !Quarry.diggable(level, target, pickaxe, ladder != null && target.equals(ladder.at(target.getY())) && Miner.breaksThrough(level, body).test(level.getBlockState(target)))) {
             advance(level, body, timestamp);
             return;
         }
@@ -264,7 +264,7 @@ public class DigQuarry extends Behavior<Villager> {
         int deepestPlatform = MineLayout.deepestPlatform(quarry.top(), level.getBestNeighborSignal(furnace.get()));
         Map<Integer, Set<BlockPos>> floods = new HashMap<>();
         for (int attempt = 0; attempt < WORK_ATTEMPTS; attempt++) {
-            List<BlockPos> work = quarry.nextWork(level, bottom, pickaxe, tunnels, deepestPlatform, unreachable::containsKey);
+            List<BlockPos> work = quarry.nextWork(level, bottom, pickaxe, tunnels, deepestPlatform, unreachable::containsKey, Miner.breaksThrough(level, body));
             if (work.isEmpty()) return false;
             Optional<BlockPos> column = work.stream().filter(pos -> pos.equals(ladder.at(pos.getY()))).max(Comparator.comparingInt(BlockPos::getY));
             if (column.isPresent() && !carriesLadder(body)) return false;

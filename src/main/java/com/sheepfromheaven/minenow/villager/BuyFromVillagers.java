@@ -249,6 +249,23 @@ public class BuyFromVillagers extends Behavior<Villager> {
         return FurnaceTending.isFuel(new ItemStack(supply.item())) && Economy.items(level, buyer).stream().noneMatch(item -> FurnaceTending.isFuel(new ItemStack(item)));
     }
 
+    /** Whether a villager nearby has a tool of its trade that {@code fits} in stock, unlocked at its level, that it could pay for above its reserve or on credit. */
+    public static boolean couldBuyTool(ServerLevel level, Villager buyer, java.util.function.Predicate<ItemStack> fits) {
+        Optional<TradeTable> table = TradeTable.forVillager(buyer);
+        if (table.isEmpty()) return false;
+        int budget = Economy.spendable(level, buyer) + Math.max(0, CREDIT_LIMIT - debt(buyer));
+        int buyerLevel = buyer.getVillagerData().level();
+        return sellers(level, buyer).stream().anyMatch(seller -> TradeTable.forVillager(seller).stream()
+                .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
+                        .filter(craft -> {
+                            ItemStack tool = new ItemStack(craft.item());
+                            int rank = table.get().toolRank(craft.item());
+                            return table.get().isToolItem(tool) && (rank < 0 || table.get().tools().get(rank).level() <= buyerLevel) && fits.test(tool)
+                                    && sellerTable.craftPrice(craft).emeralds() <= budget && Economy.count(level, seller, craft.item()) > 0;
+                        }))
+                .findAny().isPresent());
+    }
+
     public static int debt(Villager villager) {
         return villager.getData(ModVillagers.DEBTS).values().stream().mapToInt(Integer::intValue).sum();
     }
