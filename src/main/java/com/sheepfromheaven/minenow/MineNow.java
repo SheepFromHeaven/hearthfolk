@@ -185,6 +185,9 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_culls_the_herd_down_to_six", ButcherTests::butcherCullsTheHerdDownToSix);
             test(helper, TestGroup.BUTCHER, "butchers_and_shepherds_open_fence_gates_but_not_others", ButcherTests::butchersAndShepherdsOpenFenceGatesButNotOthers);
             test(helper, TestGroup.BUTCHER, "butcher_breeds_a_small_herd", ButcherTests::butcherBreedsASmallHerd);
+            test(helper, TestGroup.BUTCHER, "butcher_buys_wheat_seeds_from_the_farmer_for_its_chickens", ButcherTests::butcherBuysWheatSeedsFromTheFarmerForItsChickens);
+            test(helper, TestGroup.BUTCHER, "butcher_turns_leather_into_string", ButcherTests::butcherTurnsLeatherIntoString);
+            test(helper, TestGroup.LEATHERWORKER, "a_leatherworker_buys_the_fishermans_leather", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aLeatherworkerBuysTheFishermansLeather);
             test(helper, TestGroup.BUTCHER, "butcher_leaves_sheep_and_named_animals_alone", ButcherTests::butcherLeavesSheepAndNamedAnimalsAlone);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
             test(helper, TestGroup.BUTCHER, "a_butcher_out_of_fuel_spends_its_tool_money_on_coal", ButcherTests::aButcherOutOfFuelSpendsItsToolMoneyOnCoal);

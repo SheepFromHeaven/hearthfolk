@@ -276,6 +276,28 @@ public final class ButcherTests {
         return count;
     }
 
+    public static void butcherBuysWheatSeedsFromTheFarmerForItsChickens(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+        BlockPos composter = new BlockPos(18, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 60));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.WHEAT_SEEDS) > 0,
+                "A farmer's spare seeds are the butcher's chicken feed, so it buys them; has " + count(butcher, Items.WHEAT_SEEDS)));
+    }
+
+    public static void butcherTurnsLeatherIntoString(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.LEATHER, 3));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.STRING) >= 8,
+                "At its smoker the butcher cuts leather into string, 8 from each; has " + count(butcher, Items.STRING) + " string, " + count(butcher, Items.LEATHER) + " leather"));
+    }
+
     static Villager spawnButcher(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

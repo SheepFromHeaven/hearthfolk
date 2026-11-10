@@ -26,11 +26,11 @@ class ButcherHerdTest {
     }
 
     @Test
-    void keepsAPairOfYoungComingSoThereIsAlwaysSurplusToCull() {
+    void breedsAsLongAsThereIsABreedingPair() {
         assertTrue(ButcherHerd.wantsOffspring(2, 0));
         assertTrue(ButcherHerd.wantsOffspring(6, 0));
-        assertTrue(ButcherHerd.wantsOffspring(5, 1));
-        assertFalse(ButcherHerd.wantsOffspring(4, 2));
+        assertTrue(ButcherHerd.wantsOffspring(4, 2));
+        assertTrue(ButcherHerd.wantsOffspring(2, 10));
         assertFalse(ButcherHerd.wantsOffspring(1, 0));
     }
 }

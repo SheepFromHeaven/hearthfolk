@@ -58,6 +58,11 @@
       "item": "minecraft:beetroot",
       "level": 1,
       "price": 0.0667
+    },
+    {
+      "item": "minecraft:wheat_seeds",
+      "level": 1,
+      "price": 0.0125
     }
   ],
   "supplies": [

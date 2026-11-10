@@ -33,6 +33,11 @@
       "item": "minecraft:bone",
       "level": 1,
       "price": 0.03
+    },
+    {
+      "item": "minecraft:leather",
+      "level": 1,
+      "price": 0.1667
     }
   ],
   "default_produce": {
