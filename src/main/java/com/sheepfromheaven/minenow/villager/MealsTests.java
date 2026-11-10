@@ -159,6 +159,20 @@ public final class MealsTests {
                 "A villager that has only bread buys some meat for its next meal, has " + villager.getInventory().countItem(Items.EMERALD) + " emeralds"));
     }
 
+    public static void aFarmerWithFoodToSpareFeedsAHungryNeighbourWithNoMoney(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        for (int i = 0; i < 3; i++) farmer.getInventory().addItem(new ItemStack(Items.CARROT, 64));
+        Villager hungry = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        Meals.makeHungry(hungry);
+
+        helper.succeedWhen(() -> helper.assertTrue(!Meals.isHungry(hungry),
+                "A farmer with more carrots than it could sell gives a hungry neighbour with no money a meal"));
+    }
+
     private static Villager villagerNextToAFarmerWithPotatoes(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

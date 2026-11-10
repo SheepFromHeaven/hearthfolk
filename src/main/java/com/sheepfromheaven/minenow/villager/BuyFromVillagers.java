@@ -39,13 +39,18 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** {@code budget}: the emeralds the buyer may spend on it (food may use its food money, supplies only what's above its reserve). */
     /** {@code wear}: gear it puts on (see {@link Gear}) rather than goods it keeps. */
     /** {@code credit}: one lot it takes now and pays for later (see {@link #CREDIT_LIMIT}). */
-    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit) {
+    /** {@code gift}: a meal it is given, {@code room} items of it, by a neighbour with far more than it could sell. */
+    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit, boolean gift) {
         Deal(Villager seller, Item item, Price price, int room, int budget) {
-            this(seller, item, price, room, budget, false, false);
+            this(seller, item, price, room, budget, false, false, false);
         }
 
         Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear) {
-            this(seller, item, price, room, budget, wear, false);
+            this(seller, item, price, room, budget, wear, false, false);
+        }
+
+        Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit) {
+            this(seller, item, price, room, budget, wear, credit, false);
         }
     }
 
@@ -68,7 +73,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (level.getGameTime() < nextStartAllowed || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
         nextStartAllowed = level.getGameTime() + RETRY_DELAY;
         repayDebts(level, buyer);
-        deal = findDeal(level, buyer).or(() -> creditDeal(level, buyer)).orElse(null);
+        deal = findDeal(level, buyer).or(() -> creditDeal(level, buyer)).or(() -> mealGift(level, buyer)).orElse(null);
         return deal != null;
     }
 
@@ -109,6 +114,13 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private static void trade(ServerLevel level, Villager buyer, Deal deal) {
         Villager seller = deal.seller();
+        if (deal.gift()) {
+            if (Exports.bulk(level, seller, deal.item()) < deal.room()) return;
+            Economy.give(level, buyer, new ItemStack(deal.item(), Economy.take(level, seller, deal.item(), deal.room())));
+            buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(seller, true));
+            seller.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+            return;
+        }
         Price price = deal.price();
         int lots = deal.credit() ? (sellable(level, seller, deal.item()) >= price.count() ? 1 : 0)
                 : Math.min(Math.min(deal.budget(), Economy.emeralds(level, buyer)) / price.emeralds(),
@@ -196,6 +208,21 @@ public class BuyFromVillagers extends Behavior<Villager> {
             if (entry.getValue() > pay) left.put(entry.getKey(), entry.getValue() - pay);
         }
         buyer.setData(ModVillagers.DEBTS, java.util.Map.copyOf(left));
+    }
+
+    /**
+     * A hungry villager with no meal and no money is given one by a neighbour holding far more of some food than it
+     * could ever sell (more than a stack beyond what it keeps), the way vanilla villagers share food, but only with
+     * those who can't pay, so goods otherwise still move by trade.
+     */
+    private static Optional<Deal> mealGift(ServerLevel level, Villager buyer) {
+        if (!Meals.isHungry(buyer) || Meals.hasAMeal(level, buyer)) return Optional.empty();
+        return sellers(level, buyer).stream()
+                .flatMap(seller -> Economy.items(level, seller).stream()
+                        .filter(item -> Meals.isMeal(new ItemStack(item)) && Meals.nutrition(item) > 0)
+                        .map(item -> new Deal(seller, item, new Price(1, 1), (Meals.MEAL_NUTRITION + Meals.nutrition(item) - 1) / Meals.nutrition(item), 0, false, false, true))
+                        .filter(gift -> Exports.bulk(level, seller, gift.item()) >= gift.room()))
+                .findFirst();
     }
 
     /** A tool or one lot of a supply of its trade, on credit, when it can't pay for them and still owes little enough. */

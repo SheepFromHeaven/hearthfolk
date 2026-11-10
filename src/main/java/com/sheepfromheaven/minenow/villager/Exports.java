@@ -57,7 +57,7 @@ import java.util.UUID;
 public final class Exports {
     static final TagKey<Item> GOODS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "exports"));
     static final int MIN_SURPLUS = 8;
-    static final int BULK_KEEP = 64;
+    static final int BULK_KEEP = 32;
     static final double MAX_CHANCE = 0.5;
     private static final double FULL_CHANCE_AT = 128.0;
     private static final int TRADER_BUDGET = 32;
@@ -128,7 +128,7 @@ public final class Exports {
 
     /**
      * Everyday goods beyond what the village can use (a miner's cobblestone, a fisherman's catch): what it holds of
-     * something it sells beyond what it keeps and a stack to sell at home. The merchant takes only that, so it can't
+     * something it sells beyond what it keeps and half a stack to sell at home. The merchant takes only that, so it can't
      * empty the village of anything.
      */
     static int bulk(ServerLevel level, Villager villager, Item item) {

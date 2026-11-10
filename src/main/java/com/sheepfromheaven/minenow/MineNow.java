@@ -201,6 +201,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "wealthy_villager_buys_food_to_start_a_family", MealsTests::wealthyVillagerBuysFoodToStartAFamily);
             test(helper, TestGroup.VILLAGER_TRADING, "wealthy_villager_with_food_at_home_buys_no_more", MealsTests::wealthyVillagerWithFoodAtHomeBuysNoMore);
             test(helper, TestGroup.VILLAGER_TRADING, "a_hungry_villager_buys_the_most_filling_food_for_its_money", MealsTests::aHungryVillagerBuysTheMostFillingFoodForItsMoney);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_farmer_with_food_to_spare_feeds_a_hungry_neighbour_with_no_money", MealsTests::aFarmerWithFoodToSpareFeedsAHungryNeighbourWithNoMoney);
             test(helper, TestGroup.VILLAGERS, "a_villager_alternates_bread_and_meat", MealsTests::aVillagerAlternatesBreadAndMeat);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_with_only_bread_buys_some_meat_for_a_change", MealsTests::aVillagerWithOnlyBreadBuysSomeMeatForAChange);
             test(helper, TestGroup.VILLAGER_TRADING, "poor_villager_keeps_its_emeralds", MealsTests::poorVillagerKeepsItsEmeralds);

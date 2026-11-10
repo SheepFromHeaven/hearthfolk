@@ -44,7 +44,7 @@ public final class ExportTests {
         helper.succeedWhen(() -> {
             int cobble = miner.getInventory().countItem(Items.COBBLESTONE);
             helper.assertTrue(cobble < 192, "The merchant buys the miner's surplus cobblestone, it still has " + cobble);
-            helper.assertTrue(cobble >= 64, "...but never what it keeps or a stack to sell at home, it has " + cobble);
+            helper.assertTrue(cobble >= Exports.BULK_KEEP, "...but never what it keeps or what it sells at home, it has " + cobble);
             helper.assertTrue(miner.getInventory().countItem(Items.EMERALD) * 64 <= 192 - cobble, "...at half its price (32 for an emerald), paid "
                     + miner.getInventory().countItem(Items.EMERALD) + " for " + (192 - cobble));
         });
