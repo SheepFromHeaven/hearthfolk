@@ -189,6 +189,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
             test(helper, TestGroup.VILLAGER_TRADING, "travelling_merchants_can_be_switched_off", com.sheepfromheaven.minenow.villager.ExportTests::travellingMerchantsCanBeSwitchedOff);
             test(helper, TestGroup.VILLAGER_TRADING, "a_wandering_trader_buys_a_villages_surplus_goods", com.sheepfromheaven.minenow.villager.ExportTests::aWanderingTraderBuysAVillagesSurplusGoods);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_travelling_merchant_buys_bulk_surplus_at_half_price", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantBuysBulkSurplusAtHalfPrice);
             test(helper, TestGroup.VILLAGER_TRADING, "surplus_goods_draw_a_wandering_trader_to_the_village", com.sheepfromheaven.minenow.villager.ExportTests::surplusGoodsDrawAWanderingTraderToTheVillage);
             test(helper, TestGroup.VILLAGER_TRADING, "a_travelling_merchant_looks_and_trades_unlike_a_wandering_trader", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantLooksAndTradesUnlikeAWanderingTrader);
             test(helper, TestGroup.VILLAGER_TRADING, "a_plain_wandering_trader_does_not_buy_exports", com.sheepfromheaven.minenow.villager.ExportTests::aPlainWanderingTraderDoesNotBuyExports);
