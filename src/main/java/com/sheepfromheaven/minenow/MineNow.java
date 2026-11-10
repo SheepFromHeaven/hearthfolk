@@ -132,6 +132,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_outside_work_hours_shows_no_cue", IdleCueTests::aVillagerOutsideWorkHoursShowsNoCue);
             test(helper, TestGroup.FARMER, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
             test(helper, TestGroup.FARMER, "farmer_does_not_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotCompostSeedsAtTheComposter);
+            test(helper, TestGroup.FARMER, "a_farmer_harvests_its_field_before_it_bakes", FarmerTests::aFarmerHarvestsItsFieldBeforeItBakes);
             test(helper, TestGroup.FARMER, "farmer_bakes_bread_from_its_wheat", FarmerTests::farmerBakesBreadFromItsWheat);
             test(helper, TestGroup.FARMER, "a_hungry_villager_buys_the_farmers_bread", FarmerTests::aHungryVillagerBuysTheFarmersBread);
             test(helper, TestGroup.FARMER, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);

@@ -50,6 +50,7 @@ public class CraftAtWorkstation extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading() || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (body.getBrain().getRunningBehaviors().stream().anyMatch(behavior -> behavior instanceof FieldWork)) return false;
         nextStartAllowed = level.getGameTime() + IDLE_RESCAN_DELAY;
         Optional<BlockPos> station = workstation(level, body);
         if (station.isEmpty() || station.get().distToCenterSqr(body.position()) > NEAR * NEAR || Math.abs(station.get().getY() - body.getY()) > 3) return false;

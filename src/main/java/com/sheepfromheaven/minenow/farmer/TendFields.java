@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class TendFields extends Behavior<Villager> {
+public class TendFields extends Behavior<Villager> implements com.sheepfromheaven.minenow.villager.FieldWork {
     private static final float SPEED = 0.5F;
     private static final int GIVE_UP_AFTER_TICKS = 200;
     private static final int STUCK_COOLDOWN = 100;

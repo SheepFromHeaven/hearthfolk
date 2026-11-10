@@ -44,7 +44,7 @@ import java.util.Optional;
  * until it has one ({@link Forester#REPLANT}). It gathers the saplings, apples and sticks lying in its grove ({@link Forester#GATHERS}). When its goods pile up it carries them to its home chest. Lives in CORE
  * after MoveToTargetSink, like TendFields.
  */
-public class FellTrees extends Behavior<Villager> {
+public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven.minenow.villager.FieldWork {
     private static final float SPEED = 0.5F;
     private static final double REACH = 3.0;
     private static final int SWING_EVERY = 5;

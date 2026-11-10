@@ -330,6 +330,24 @@ public final class FarmerTests {
         helper.succeed();
     }
 
+    public static void aFarmerHarvestsItsFieldBeforeItBakes(GameTestHelper helper) {
+        setUpFarm(helper, true);
+        Villager farmer = spawnFarmer(helper);
+        boolean[] bakedEarly = {false};
+        helper.onEachTick(() -> {
+            boolean[] ripe = {false};
+            forEachFieldCrop(helper, (pos, state) -> ripe[0] |= ((CropBlock) state.getBlock()).isMaxAge(state));
+            if (ripe[0] && farmer.getBrain().getRunningBehaviors().stream().anyMatch(b -> b instanceof com.sheepfromheaven.minenow.villager.CraftAtWorkstation)) bakedEarly[0] = true;
+        });
+
+        helper.succeedWhen(() -> {
+            boolean[] ripe = {false};
+            forEachFieldCrop(helper, (pos, state) -> ripe[0] |= ((CropBlock) state.getBlock()).isMaxAge(state));
+            helper.assertFalse(ripe[0], "The farmer harvests its field");
+            helper.assertFalse(bakedEarly[0], "...and only bakes once there's nothing ripe left, or baking keeps calling it off the field");
+        });
+    }
+
     public static void farmerBakesBreadFromItsWheat(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
