@@ -38,6 +38,28 @@ public final class VillagerTradingTests {
         });
     }
 
+    public static void golemsmithBuysPumpkinsFromTheFarmer(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos workshop = new BlockPos(4, 1, 12);
+        helper.setBlock(workshop, com.sheepfromheaven.minenow.golemsmith.Golemsmith.WORKSHOP.get());
+        Villager smith = GameTestHelpers.spawnEmployed(helper, workshop.east(2), workshop,
+                com.sheepfromheaven.minenow.golemsmith.Golemsmith.PROFESSION, com.sheepfromheaven.minenow.golemsmith.Golemsmith.POI);
+        smith.setVillagerData(smith.getVillagerData().withLevel(3));
+        smith.getInventory().addItem(new ItemStack(Items.SHEARS));
+        smith.getInventory().addItem(new ItemStack(Items.EMERALD, 4));
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(3));
+        farmer.getInventory().addItem(new ItemStack(Items.PUMPKIN, 8));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(count(smith, Items.PUMPKIN) >= 1, "The golemsmith buys pumpkins from the farmer, has " + count(smith, Items.PUMPKIN));
+            helper.assertTrue(count(farmer, Items.EMERALD) >= 1, "The farmer gets paid, has " + count(farmer, Items.EMERALD));
+        });
+    }
+
     public static void aVillagerKeepsItsReserveWhenBuyingFromVillagers(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

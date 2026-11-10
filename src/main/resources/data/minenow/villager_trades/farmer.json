@@ -58,6 +58,16 @@
       "item": "minecraft:beetroot",
       "level": 1,
       "price": 0.0667
+    },
+    {
+      "item": "minecraft:pumpkin",
+      "level": 3,
+      "price": 0.25
+    },
+    {
+      "item": "minecraft:melon_slice",
+      "level": 4,
+      "price": 0.05
     }
   ],
   "supplies": [
@@ -66,6 +76,18 @@
       "price": 0.125,
       "max": 32,
       "level": 1
+    },
+    {
+      "item": "minecraft:pumpkin_seeds",
+      "price": 0.25,
+      "max": 4,
+      "level": 3
+    },
+    {
+      "item": "minecraft:melon_seeds",
+      "price": 0.25,
+      "max": 4,
+      "level": 4
     }
   ],
   "crafts": [

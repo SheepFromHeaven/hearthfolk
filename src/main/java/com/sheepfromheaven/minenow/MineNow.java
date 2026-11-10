@@ -110,6 +110,14 @@ public final class MineNow {
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             helper.register(com.sheepfromheaven.minenow.soak.VillageSoak.ID, com.sheepfromheaven.minenow.soak.VillageSoak::run);
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
+            test(helper, TestGroup.FARMER, "a_journeyman_farmer_harvests_a_pumpkin_grown_beside_its_stem", FarmerTests::aJourneymanFarmerHarvestsAPumpkinGrownBesideItsStem);
+            test(helper, TestGroup.FARMER, "a_novice_farmer_leaves_pumpkins_alone", FarmerTests::aNoviceFarmerLeavesPumpkinsAlone);
+            test(helper, TestGroup.FARMER, "a_pumpkin_without_a_stem_is_never_taken", FarmerTests::aPumpkinWithoutAStemIsNeverTaken);
+            test(helper, TestGroup.FARMER, "melons_wait_for_an_expert_farmer", FarmerTests::melonsWaitForAnExpertFarmer);
+            test(helper, TestGroup.FARMER, "an_expert_farmer_harvests_melons", FarmerTests::anExpertFarmerHarvestsMelons);
+            test(helper, TestGroup.FARMER, "a_farmer_never_fills_the_last_free_cell_beside_a_stem_with_crops", FarmerTests::aFarmerNeverFillsTheLastFreeCellBesideAStemWithCrops);
+            test(helper, TestGroup.FARMER, "a_novice_farmer_does_not_plant_pumpkin_seeds", FarmerTests::aNoviceFarmerDoesNotPlantPumpkinSeeds);
+            test(helper, TestGroup.FARMER, "stems_and_fruit_are_recognized", FarmerTests::stemsAndFruitAreRecognized);
             test(helper, TestGroup.FARMER, "farmer_gains_experience_from_harvesting", FarmerTests::farmerGainsExperienceFromHarvesting);
             test(helper, TestGroup.FARMER, "farmer_keeps_tending_after_brain_is_rebuilt", FarmerTests::farmerKeepsTendingAfterBrainIsRebuilt);
             test(helper, TestGroup.FARMER, "farmer_deposits_harvest_in_its_workshop_chest", FarmerTests::farmerDepositsHarvestInItsWorkshopChest);
@@ -121,6 +129,8 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "crops_and_seeds_are_recognized_beyond_vanilla_wheat", FarmerTests::cropsAndSeedsAreRecognizedBeyondVanillaWheat);
             test(helper, TestGroup.FARMER, "farmer_harvests_by_right_click_when_a_mod_provides_it", FarmerTests::farmerHarvestsByRightClickWhenAModProvidesIt);
             test(helper, TestGroup.TRADING, "crops_without_a_price_sell_at_the_default_rate", FarmerTradeTests::cropsWithoutAPriceSellAtTheDefaultRate);
+            test(helper, TestGroup.TRADING, "a_farmer_sells_pumpkins_from_journeyman_and_melon_slices_from_expert", FarmerTradeTests::aFarmerSellsPumpkinsFromJourneymanAndMelonSlicesFromExpert);
+            test(helper, TestGroup.TRADING, "a_farmer_buys_stem_seeds_from_the_player_when_it_grows_them", FarmerTradeTests::aFarmerBuysStemSeedsFromThePlayerWhenItGrowsThem);
             test(helper, TestGroup.FARMER, "farmer_retills_farmland_that_was_trampled", FarmerTests::farmerRetillsFarmlandThatWasTrampled);
             test(helper, TestGroup.FARMER, "farmer_with_a_full_inventory_still_harvests", FarmerTests::farmerWithAFullInventoryStillHarvests);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_is_diagnosed", IdleCueTests::aWorkerWithoutItsToolIsDiagnosed);
@@ -196,6 +206,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "a_commission_survives_a_restart", com.sheepfromheaven.minenow.villager.CommissionTests::aCommissionSurvivesARestart);
             test(helper, TestGroup.VILLAGER_TRADING, "a_buyer_gets_its_money_back_when_the_order_never_comes", com.sheepfromheaven.minenow.villager.CommissionTests::aBuyerGetsItsMoneyBackWhenTheOrderNeverComes);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
+            test(helper, TestGroup.VILLAGER_TRADING, "golemsmith_buys_pumpkins_from_the_farmer", VillagerTradingTests::golemsmithBuysPumpkinsFromTheFarmer);
             test(helper, TestGroup.VILLAGER_TRADING, "a_seller_out_of_reach_does_not_cost_the_buyer_its_job", com.sheepfromheaven.minenow.villager.VillagerTradingTests::aSellerOutOfReachDoesNotCostTheBuyerItsJob);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
             test(helper, TestGroup.VILLAGER_TRADING, "travelling_merchants_can_be_switched_off", com.sheepfromheaven.minenow.villager.ExportTests::travellingMerchantsCanBeSwitchedOff);
