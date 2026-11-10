@@ -90,8 +90,19 @@ public final class Miner {
     }
 
     /** Down in a mine, where buyers can't follow without falling in. */
+    /** Whether the miner's pickaxe can't harvest something in the mine it digs, so a better one would pay for itself. */
+    public static boolean pickaxeHoldsItBack(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager miner) {
+        int slot = com.sheepfromheaven.minenow.villager.Tools.slot(miner);
+        if (slot < 0) return false;
+        return LadderClimb.ownCart(level, miner).filter(cart -> level.getBlockState(cart).is(FURNACE_CART.get()))
+                .map(cart -> Quarry.around(level, cart).holdsBack(level, cart.getY() - MinerSkill.depth(miner.getVillagerData().level()), miner.getInventory().getItem(slot)))
+                .orElse(false);
+    }
+
+    /** Down a mine: a miner in its own (checked once a second), or anyone in a worked shaft. Cheap, since buyers ask it of every seller. */
     public static boolean isDownAMine(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager villager) {
-        return LadderClimb.inQuarry(level, villager);
+        return UNDERGROUND.containsKey(villager.getUUID())
+                || SHAFTS.values().stream().anyMatch(shaft -> shaft.dimension() == level.dimension() && shaft.holds(villager.blockPosition()));
     }
 
     /** Where a miner's ladder is and what its column holds, for the soak trace. */
@@ -100,12 +111,33 @@ public final class Miner {
             Quarry quarry = Quarry.around(level, site.pos());
             return quarry.ladder(level, site.pos()).map(ladder -> {
                 StringBuilder column = new StringBuilder("ladder " + ladder.top().toShortString() + " facing " + ladder.facing() + ":");
-                for (int y = ladder.top().getY() + 1; y >= ladder.top().getY() - 4; y--) {
+                for (int y = ladder.top().getY() + 1; y >= ladder.top().getY() - 26; y--) {
                     column.append(' ').append(y).append('=').append(level.getBlockState(ladder.top().atY(y)).getBlock().getDescriptionId().replace("block.minecraft.", ""));
                 }
                 return column.toString();
             }).orElse("no ladder");
         }).orElse("no job site");
+    }
+
+    /** What the miner's next work is and whether it can stand to do it, for the soak report. */
+    public static String describeWork(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager miner) {
+        java.util.Optional<net.minecraft.core.BlockPos> cart = LadderClimb.ownCart(level, miner);
+        int slot = com.sheepfromheaven.minenow.villager.Tools.slot(miner);
+        if (cart.isEmpty() || slot < 0) return "no cart or pickaxe";
+        Quarry quarry = Quarry.around(level, cart.get());
+        int bottom = cart.get().getY() - MinerSkill.depth(miner.getVillagerData().level());
+        int tunnels = MinerSkill.tunnelLength(miner.getVillagerData().level());
+        java.util.List<net.minecraft.core.BlockPos> work = quarry.nextWork(level, bottom, miner.getInventory().getItem(slot), tunnels,
+                MineLayout.deepestPlatform(quarry.top(), level.getBestNeighborSignal(cart.get())), pos -> false);
+        java.util.Map<Integer, java.util.Set<net.minecraft.core.BlockPos>> floods = new java.util.HashMap<>();
+        StringBuilder text = new StringBuilder(describeLadder(level, miner) + "; missing ladder " + quarry.missingLadder(level).map(p -> p.subtract(cart.get()).toShortString()).orElse("-")
+                + ", at " + miner.blockPosition().subtract(cart.get()).toShortString() + ", seal spots " + quarry.sealSpots(level, miner.blockPosition(), bottom, tunnels).stream().map(p -> p.subtract(cart.get()).toShortString()).toList() + ", next work " + work.size() + ":");
+        for (net.minecraft.core.BlockPos pos : work.stream().limit(6).toList()) {
+            net.minecraft.core.BlockPos stand = DigQuarry.standFor(level, quarry, pos, floods);
+            text.append(' ').append(pos.subtract(cart.get()).toShortString()).append('=').append(level.getBlockState(pos).getBlock().getDescriptionId().replace("block.minecraft.", ""))
+                    .append(stand == null ? " (no stand)" : " (stand " + stand.subtract(cart.get()).toShortString() + ")");
+        }
+        return text.toString();
     }
 
     public static java.util.Optional<net.minecraft.core.BlockPos> ladderTop(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager miner) {
@@ -140,17 +172,30 @@ public final class Miner {
         }
     }
 
-    private record Shaft(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension, java.util.Set<Long> columns, int top) {}
+    private record Shaft(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension, java.util.Set<Long> columns, int top) {
+        boolean holds(net.minecraft.core.BlockPos pos) {
+            return pos.getY() <= top && columns.contains(net.minecraft.core.BlockPos.asLong(pos.getX(), 0, pos.getZ()));
+        }
+    }
 
     /** The open shafts of the mines miners are working, by cart, so pathfinding can keep everyone else out of them. */
     private static final java.util.Map<net.minecraft.core.BlockPos, Shaft> SHAFTS = new java.util.concurrent.ConcurrentHashMap<>();
 
-    /** Down in the open shaft of a mine (below its rim), where a villager that isn't a miner can't climb out. */
-    public static boolean inShaft(net.minecraft.world.level.Level level, int x, int y, int z) {
+    /**
+     * Whether a path for this villager may not step into (x, y, z): it lies down the open shaft of a mine that isn't its
+     * own (a miner's cart) and that it isn't already down, where it couldn't climb out.
+     */
+    public static boolean shaftClosedTo(net.minecraft.world.entity.npc.villager.Villager villager, int x, int y, int z) {
         if (SHAFTS.isEmpty()) return false;
+        net.minecraft.world.level.Level level = villager.level();
         long column = net.minecraft.core.BlockPos.asLong(x, 0, z);
-        for (Shaft shaft : SHAFTS.values()) {
-            if (y <= shaft.top() && shaft.dimension() == level.dimension() && shaft.columns().contains(column)) return true;
+        for (var entry : SHAFTS.entrySet()) {
+            Shaft shaft = entry.getValue();
+            if (y > shaft.top() || shaft.dimension() != level.dimension() || !shaft.columns().contains(column)) continue;
+            if (shaft.holds(villager.blockPosition())) continue;
+            if (villager.getVillagerData().profession().is(PROFESSION) && villager.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE)
+                    .filter(site -> site.dimension() == level.dimension() && site.pos().equals(entry.getKey())).isPresent()) continue;
+            return true;
         }
         return false;
     }
@@ -158,7 +203,7 @@ public final class Miner {
     /** A villager down an open shaft fell because our climbing let it, not by carelessness, so the fall doesn't hurt it. */
     public static void onLivingFall(net.neoforged.neoforge.event.entity.living.LivingFallEvent event) {
         if (event.getEntity() instanceof net.minecraft.world.entity.npc.villager.Villager villager
-                && inShaft(villager.level(), villager.getBlockX(), villager.getBlockY(), villager.getBlockZ())) {
+                && SHAFTS.values().stream().anyMatch(shaft -> shaft.dimension() == villager.level().dimension() && shaft.holds(villager.blockPosition()))) {
             event.setDamageMultiplier(0.0F);
         }
     }

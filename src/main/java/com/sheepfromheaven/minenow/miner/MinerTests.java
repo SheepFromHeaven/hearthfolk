@@ -188,6 +188,21 @@ public final class MinerTests {
         });
     }
 
+    public static void minerBreaksThroughOreInItsLadderColumn(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 16));
+        quarry(helper);
+        BlockPos ore = new BlockPos(7, 2, 11);
+        helper.setBlock(ore, Blocks.IRON_ORE);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(solidCells(helper, 1) == 0, "Ore its pickaxe can't harvest in the ladder's way doesn't stop the miner going down, "
+                    + solidCells(helper, 1) + " solid left in the lower layer, ladders " + ladderCells(helper) + ", at " + helper.getBlockState(ore).getBlock());
+            helper.assertTrue(count(miner, Items.RAW_IRON) == 0, "It breaks the ore like a player with the wrong pickaxe would, getting nothing from it");
+        });
+    }
+
     public static void minerWithoutLaddersDoesNotDigItselfIn(GameTestHelper helper) {
         Villager miner = spawnMiner(helper);
         miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
@@ -332,6 +347,28 @@ public final class MinerTests {
             walker.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET,
                     new net.minecraft.world.entity.ai.memory.WalkTarget(bottom, 0.5F, 0));
             helper.assertTrue(walker.getY() >= surface, "A villager never walks into a mine it can't climb out of, at " + helper.relativePos(walker.blockPosition()).toShortString());
+        });
+
+        helper.runAfterDelay(300, helper::succeed);
+    }
+
+    public static void aMinerDoesNotWalkIntoAnotherMinersMine(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        BlockPos otherCart = new BlockPos(18, 4, 18);
+        helper.setBlock(otherCart, Miner.FURNACE_CART.get());
+        Villager walker = GameTestHelpers.spawnEmployed(helper, new BlockPos(13, 4, 12), otherCart, Miner.PROFESSION, Miner.POI);
+        BlockPos bottom = helper.absolutePos(new BlockPos(8, 1, 12));
+        int surface = helper.absolutePos(new BlockPos(0, 4, 0)).getY();
+        helper.onEachTick(() -> {
+            walker.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET,
+                    new net.minecraft.world.entity.ai.memory.WalkTarget(bottom, 0.5F, 0));
+            helper.assertTrue(walker.getY() >= surface, "A miner keeps out of another miner's mine, at " + helper.relativePos(walker.blockPosition()).toShortString());
         });
 
         helper.runAfterDelay(300, helper::succeed);
@@ -763,7 +800,92 @@ public final class MinerTests {
     }
 
     /** A 3x3 quarry rimmed with cobblestone in the ground, the furnace minecart standing on the rim, two layers above a barrier floor. */
-    static void quarry(GameTestHelper helper) {
+    public static void aTunnelItCannotReachDoesNotStopTheOthers(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        miner.setVillagerData(miner.getVillagerData().withLevel(5));
+        miner.getInventory().addItem(new ItemStack(Items.NETHERITE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 32));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 32));
+        for (int x = 0; x <= 23; x++) {
+            for (int z = 0; z <= 23; z++) {
+                for (int y = -6; y <= 0; y++) helper.setBlock(x, y, z, Blocks.STONE);
+            }
+        }
+        for (int x = 7; x <= 13; x++) {
+            for (int z = 9; z <= 15; z++) {
+                for (int y = -1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        rim(helper, 7, 13, 9, 15);
+        for (int y = -1; y <= 1; y++) {
+            for (int across = -1; across <= 1; across++) {
+                helper.setBlock(21, y, 12 + across, Blocks.BARRIER);
+                helper.setBlock(3, y, 12 + across, Blocks.BARRIER);
+                helper.setBlock(10 + across, y, 5, Blocks.BARRIER);
+                helper.setBlock(10 + across, y, 19, Blocks.BARRIER);
+                for (int x = 14; x <= 16; x++) helper.setBlock(x, y, 12 + across, Blocks.AIR);
+            }
+        }
+        for (int x = 14; x <= 16; x++) {
+            for (int across = -1; across <= 1; across++) helper.setBlock(x, -2, 12 + across, Blocks.IRON_BARS);
+        }
+
+        helper.succeedWhen(() -> helper.assertTrue(openCells(helper, 4, 6, 11, 13, -1, 1) == 27,
+                "With the east tunnel's far end out of reach past a gap it can't stand on, it digs the west tunnel anyway, " + openCells(helper, 4, 6, 11, 13, -1, 1) + " of 27"));
+    }
+
+    public static void aTunnelStopsShortOfTheNextMine(GameTestHelper helper) {
+        Quarry mine = twoMinesSideBySide(helper, false);
+
+        List<BlockPos> work = mine.nextWork(helper.getLevel(), mine.top() - 16, new ItemStack(Items.IRON_PICKAXE), 24, Integer.MIN_VALUE, pos -> false);
+        helper.assertTrue(!work.isEmpty(), "The first mine has tunnel work");
+        helper.assertTrue(work.stream().allMatch(pos -> helper.relativePos(pos).getX() <= 13),
+                "Its tunnel stops before the wall of the mine next door, but reaches " + work.stream().mapToInt(pos -> helper.relativePos(pos).getX()).max().orElse(0));
+        helper.succeed();
+    }
+
+    public static void aMinerNeverWallsOffTheMineNextDoor(GameTestHelper helper) {
+        Quarry mine = twoMinesSideBySide(helper, true);
+
+        List<BlockPos> seals = mine.sealSpots(helper.getLevel(), helper.absolutePos(new BlockPos(13, 0, 11)), mine.top() - 16, 24);
+        helper.assertTrue(seals.stream().map(helper::relativePos).noneMatch(pos -> pos.getX() >= 15 && pos.getX() <= 19 && pos.getZ() >= 9 && pos.getZ() <= 13),
+                "Where its tunnel broke into the next mine, the miner doesn't seal that mine's shaft, but would at " + seals.stream().map(helper::relativePos).map(BlockPos::toShortString).toList());
+        helper.succeed();
+    }
+
+    /** A mine (rim x 3..7, z 9..13) dug down to its first platform, and another mine east of it (x 15..19), right in the way of its east tunnel. */
+    private static Quarry twoMinesSideBySide(GameTestHelper helper, boolean tunnelThrough) {
+        GameTestHelpers.fence(helper);
+        for (int x = 1; x <= 22; x++) {
+            for (int z = 1; z <= 22; z++) {
+                for (int y = -6; y <= 3; y++) helper.setBlock(x, y, z, Blocks.STONE);
+            }
+        }
+        rim(helper, 3, 7, 9, 13);
+        rim(helper, 15, 19, 9, 13);
+        helper.setBlock(2, 4, 11, Miner.FURNACE_CART.get());
+        helper.setBlock(20, 4, 11, Miner.FURNACE_CART.get());
+        for (int x = 3; x <= 7; x++) {
+            for (int z = 9; z <= 13; z++) {
+                for (int y = -2; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        if (tunnelThrough) {
+            for (int x = 15; x <= 19; x++) {
+                for (int z = 9; z <= 13; z++) {
+                    for (int y = -1; y <= 3; y++) helper.setBlock(x, y, z, Blocks.AIR);
+                }
+            }
+            for (int x = 8; x <= 14; x++) {
+                for (int z = 10; z <= 12; z++) {
+                    for (int y = -1; y <= 1; y++) helper.setBlock(x, y, z, Blocks.AIR);
+                }
+            }
+        }
+        return Quarry.around(helper.getLevel(), helper.absolutePos(new BlockPos(2, 4, 11)));
+    }
+
+    public static void quarry(GameTestHelper helper) {
         for (int x = 7; x <= 9; x++) {
             for (int z = 11; z <= 13; z++) helper.setBlock(x, 0, z, Blocks.BARRIER);
         }
@@ -820,7 +942,7 @@ public final class MinerTests {
         return miner.getInventory().getItems().stream().filter(stack -> stack.is(net.minecraft.tags.ItemTags.PICKAXES)).findFirst().orElse(ItemStack.EMPTY);
     }
 
-    static Villager spawnMiner(GameTestHelper helper) {
+    public static Villager spawnMiner(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         for (int x = 1; x <= 22; x++) {

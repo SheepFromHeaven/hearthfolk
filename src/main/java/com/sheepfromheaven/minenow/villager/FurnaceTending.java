@@ -98,6 +98,14 @@ public final class FurnaceTending {
         return wood;
     }
 
+    /** Whether some furnace, smoker or blast furnace cooks it. */
+    static boolean cookable(ServerLevel level, ItemStack stack) {
+        SingleRecipeInput input = new SingleRecipeInput(stack);
+        return level.recipeAccess().getRecipeFor(RecipeType.SMELTING, input, level).isPresent()
+                || level.recipeAccess().getRecipeFor(RecipeType.SMOKING, input, level).isPresent()
+                || level.recipeAccess().getRecipeFor(RecipeType.BLASTING, input, level).isPresent();
+    }
+
     private static boolean lit(ServerLevel level, BlockPos pos) {
         var state = level.getBlockState(pos);
         return state.hasProperty(AbstractFurnaceBlock.LIT) && state.getValue(AbstractFurnaceBlock.LIT);

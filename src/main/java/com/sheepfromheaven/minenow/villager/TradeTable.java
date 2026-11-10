@@ -132,6 +132,14 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         return toolTag.map(stack::is).orElse(false) || isTool(stack.getItem());
     }
 
+    /** How good a tool of this trade is: its place in {@code tools}, which runs from the worst to the best; -1 if it isn't listed (a modded tool in the tag). */
+    public int toolRank(Item item) {
+        for (int i = 0; i < tools.size(); i++) {
+            if (tools.get(i).item() == item) return i;
+        }
+        return -1;
+    }
+
     public boolean isTool(Item item) {
         return tools.stream().anyMatch(tool -> tool.item() == item);
     }

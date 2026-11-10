@@ -53,7 +53,8 @@ import java.util.HashSet;
 
 /**
  * A long-run economy check: twenty villagers with a workshop, bed and chest each, left alone for many in-game days
- * with the server sprinting. Once a day it logs emeralds, food and goods per profession to {@code days.csv}; at the
+ * with the server sprinting, plus four spare beds with chests and a free smithing table and fletching table, so wealth
+ * can turn into children who grow up and take a job. Once a day it logs emeralds, food and goods per profession to {@code days.csv}; at the
  * end it lists every villager's pockets and chests in {@code final.txt}. It only observes: it never fails on balance.
  * Lives in its own namespace ({@code minenowsoak}) so the normal gametest run skips it; start it with
  * {@code ./gradlew runVillageSoak [-PsoakDays=50]}.
@@ -66,6 +67,8 @@ public final class VillageSoak {
     private static final int SIZE = 72;
     /** Top block of the stone slab the village stands on; the miners dig down through it. */
     private static final int G = 12;
+    /** Layers of ground, reaching below the structure: an expert miner digs 24 layers down, so the ore runs out no sooner. */
+    private static final int DEPTH = 40;
     private static final int CELL_W = 14;
     private static final int CELL_D = 16;
     private static final TagKey<Item> EXPORTS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("minenow", "exports"));
@@ -141,6 +144,13 @@ public final class VillageSoak {
             int oz = 1 + (i / 5) * CELL_D;
             residents.add(new Resident(role, n, settle(helper, role, ox, oz, starterTools)));
         }
+        int strip = 1 + (ROSTER.length / 5) * CELL_D;
+        for (int x : new int[] {6, 20, 34, 48}) {
+            GameTestHelpers.placeBed(helper, new BlockPos(x, G + 1, strip + 1));
+            helper.setBlock(new BlockPos(x + 2, G + 1, strip + 1), Blocks.CHEST);
+        }
+        helper.setBlock(new BlockPos(27, G + 1, strip + 4), Blocks.SMITHING_TABLE);
+        helper.setBlock(new BlockPos(41, G + 1, strip + 4), Blocks.FLETCHING_TABLE);
 
         net.minecraft.server.level.ServerPlayer player = null;
         if (!"false".equals(System.getProperty("minenow.soak.player", "true"))) {
@@ -264,7 +274,7 @@ public final class VillageSoak {
         java.util.Random random = new java.util.Random(7);
         for (int x = 1; x < SIZE - 1; x++) {
             for (int z = 1; z < SIZE - 1; z++) {
-                for (int y = 1; y <= G; y++) {
+                for (int y = G - DEPTH + 1; y <= G; y++) {
                     helper.setBlock(x, y, z, y <= G - 2 ? ore(random) : Blocks.STONE);
                 }
             }
@@ -348,6 +358,7 @@ public final class VillageSoak {
                     }
                 }
             }
+            case SMELTER -> set(helper, ox, oz, 3, 1, 8, Blocks.FURNACE);
             default -> {}
         }
         if (role == Role.FORESTER) {
@@ -383,10 +394,12 @@ public final class VillageSoak {
     /** A small oak on dirt: four logs and a crown of natural leaves. */
     private static void tree(GameTestHelper helper, int ox, int oz, int x, int z) {
         set(helper, ox, oz, x, 0, z, Blocks.DIRT);
-        for (int y = 1; y <= 4; y++) set(helper, ox, oz, x, y, z, Blocks.OAK_LOG);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int y = 3; y <= 5; y++) {
+        for (int y = 1; y <= 5; y++) set(helper, ox, oz, x, y, z, Blocks.OAK_LOG);
+        for (int y = 3; y <= 6; y++) {
+            int radius = y <= 4 ? 2 : 1;
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (Math.abs(dx) == radius && Math.abs(dz) == radius && (y == 6 || (x + z + y) % 2 == 0)) continue;
                     BlockPos pos = at(ox, oz, x + dx, y, z + dz);
                     if (helper.getBlockState(pos).isAir()) {
                         helper.setBlock(pos, Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.DISTANCE, 1));
@@ -551,6 +564,7 @@ public final class VillageSoak {
             text.append("  activity: ").append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
                     .append(", running: ").append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()).append('\n');
             text.append("  pockets: ").append(list(v.getInventory())).append(", owes: ").append(v.getData(ModVillagers.DEBTS).values()).append('\n');
+            if (resident.role() == Role.MINER) text.append("  work: ").append(Miner.describeWork(level, v)).append('\n');
             for (BlockPos chest : Storage.chests(level, v)) {
                 Container container = HomeStorage.chestContainer(level, chest);
                 text.append("  chest ").append(helper.relativePos(chest).toShortString()).append(": ")
@@ -574,15 +588,15 @@ public final class VillageSoak {
             if (ROSTER[i] != Role.MINER) continue;
             int ox = 1 + (i % 5) * CELL_W;
             int oz = 1 + (i / 5) * CELL_D;
-            text.append("== mine of the miner in cell ").append(ox).append(',').append(oz).append(" (x across ").append(ox + 3).append("..").append(ox + 13)
-                    .append(", z down ").append(oz + 2).append("..").append(oz + 12).append("; #=solid H=ladder .=air ~=fluid)\n");
-            for (int y = G; y >= G - 7; y--) {
+            text.append("== mine of the miner in cell ").append(ox).append(',').append(oz).append(" (x across ").append(ox - 7).append("..").append(Math.min(SIZE - 2, ox + 23))
+                    .append(", z down ").append(oz - 8).append("..").append(oz + 22).append("; #=stone c=cobblestone o=other solid H=ladder .=air ~=fluid)\n");
+            for (int y = G; y >= G - 26; y--) {
                 text.append("  y ").append(y).append('\n');
-                for (int z = oz + 2; z <= oz + 12; z++) {
+                for (int z = oz - 8; z <= oz + 22; z++) {
                     text.append("    ");
-                    for (int x = ox + 3; x <= ox + 13; x++) {
+                    for (int x = ox - 7; x <= Math.min(SIZE - 2, ox + 23); x++) {
                         BlockState state = helper.getBlockState(new BlockPos(x, y, z));
-                        text.append(state.is(Blocks.LADDER) ? 'H' : !state.getFluidState().isEmpty() ? '~' : state.isAir() ? '.' : state.getBlock() instanceof net.minecraft.world.level.block.TorchBlock || state.getBlock() instanceof net.minecraft.world.level.block.WallTorchBlock ? 't' : '#');
+                        text.append(state.is(Blocks.LADDER) ? 'H' : !state.getFluidState().isEmpty() ? '~' : state.isAir() ? '.' : state.getBlock() instanceof net.minecraft.world.level.block.TorchBlock || state.getBlock() instanceof net.minecraft.world.level.block.WallTorchBlock ? 't' : state.is(Blocks.COBBLESTONE) ? 'c' : state.is(Blocks.STONE) ? '#' : 'o');
                     }
                     text.append('\n');
                 }

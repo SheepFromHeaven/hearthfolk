@@ -80,6 +80,7 @@ public final class SmelterTests {
     public static void smelterBuysRawIronFromTheMiner(GameTestHelper helper) {
         Villager smelter = spawnSmelter(helper);
         smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        smelter.getInventory().addItem(new ItemStack(Items.COAL, 4));
         BlockPos cart = new BlockPos(18, 1, 12);
         helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
         Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
@@ -92,6 +93,21 @@ public final class SmelterTests {
                     "The smelter buys the miner's raw iron, has " + smelter.getInventory().countItem(Items.RAW_IRON) + " raw, " + smelter.getInventory().countItem(Items.IRON_INGOT) + " ingots");
             helper.assertTrue(miner.getInventory().countItem(Items.IRON_INGOT) == 0, "The miner no longer smelts its ore itself");
         });
+    }
+
+    public static void aBrokeSmelterGetsTheMinersCoalOnCreditAfterWork(GameTestHelper helper) {
+        Villager smelter = spawnSmelter(helper);
+        helper.setTime(GameTestHelpers.LATE_AFTERNOON);
+        smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
+        BlockPos cart = new BlockPos(18, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        helper.runAfterDelay(200, () -> miner.getInventory().addItem(new ItemStack(Items.COAL, 40)));
+
+        helper.succeedWhen(() -> helper.assertTrue(smelter.getInventory().countItem(Items.COAL) > 0,
+                "A miner is down its mine all working day, so a broke smelter takes its coal on credit after work, has "
+                        + smelter.getInventory().countItem(Items.COAL) + ", activity " + smelter.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-")));
     }
 
     public static void aBrokeSmelterGetsOreOnCreditAndPaysItBack(GameTestHelper helper) {
@@ -120,6 +136,7 @@ public final class SmelterTests {
     public static void aSmelterBuysOreFromAMinerWithLessThanAFullLot(GameTestHelper helper) {
         Villager smelter = spawnSmelter(helper);
         smelter.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        smelter.getInventory().addItem(new ItemStack(Items.COAL, 4));
         BlockPos cart = new BlockPos(18, 1, 12);
         helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
         Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);

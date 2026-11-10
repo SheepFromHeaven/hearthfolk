@@ -183,6 +183,8 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_breeds_a_small_herd", ButcherTests::butcherBreedsASmallHerd);
             test(helper, TestGroup.BUTCHER, "butcher_leaves_sheep_and_named_animals_alone", ButcherTests::butcherLeavesSheepAndNamedAnimalsAlone);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
+            test(helper, TestGroup.BUTCHER, "a_butcher_out_of_fuel_spends_its_tool_money_on_coal", ButcherTests::aButcherOutOfFuelSpendsItsToolMoneyOnCoal);
+            test(helper, TestGroup.BUTCHER, "a_butcher_without_fuel_buys_no_fish_it_cannot_smoke", ButcherTests::aButcherWithoutFuelBuysNoFishItCannotSmoke);
             test(helper, TestGroup.BUTCHER, "butcher_buys_the_fishermans_catch_and_smokes_it", com.sheepfromheaven.minenow.butcher.ButcherTests::butcherBuysTheFishermansCatchAndSmokesIt);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_with_logs_when_it_has_no_coal", com.sheepfromheaven.minenow.butcher.ButcherTests::butcherSmokesWithLogsWhenItHasNoCoal);
             test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
@@ -213,7 +215,14 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "farmer_without_a_hoe_buys_one_from_the_toolsmith", ToolsmithTests::farmerWithoutAHoeBuysOneFromTheToolsmith);
             test(helper, TestGroup.TOOLSMITH, "miner_without_a_pickaxe_buys_one_from_the_toolsmith", ToolsmithTests::minerWithoutAPickaxeBuysOneFromTheToolsmith);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_buys_what_a_wooden_pickaxe_dug", ToolsmithTests::toolsmithBuysWhatAWoodenPickaxeDug);
-            test(helper, TestGroup.TOOLSMITH, "miner_buys_a_wooden_pickaxe_the_toolsmith_made_from_planks", ToolsmithTests::minerBuysAWoodenPickaxeTheToolsmithMadeFromPlanks);
+            test(helper, TestGroup.FLETCHER, "a_miner_with_sticks_in_its_chest_buys_no_more", com.sheepfromheaven.minenow.fletcher.FletcherTests::aMinerWithSticksInItsChestBuysNoMore);
+            test(helper, TestGroup.FLETCHER, "a_miner_takes_its_sticks_back_out_of_its_chest_when_unloading", com.sheepfromheaven.minenow.fletcher.FletcherTests::aMinerTakesItsSticksBackOutOfItsChestWhenUnloading);
+            test(helper, TestGroup.FLETCHER, "a_miner_out_of_sticks_buys_a_lot", com.sheepfromheaven.minenow.fletcher.FletcherTests::aMinerOutOfSticksBuysALot);
+            test(helper, TestGroup.FLETCHER, "miner_buys_a_wooden_pickaxe_the_fletcher_made_from_planks", com.sheepfromheaven.minenow.fletcher.FletcherTests::minerBuysAWoodenPickaxeTheFletcherMadeFromPlanks);
+            test(helper, TestGroup.TOOLSMITH, "a_farmer_with_money_to_spare_trades_up_its_hoe", ToolsmithTests::aFarmerWithMoneyToSpareTradesUpItsHoe);
+            test(helper, TestGroup.TOOLSMITH, "a_farmer_without_money_to_spare_keeps_its_wooden_hoe", ToolsmithTests::aFarmerWithoutMoneyToSpareKeepsItsWoodenHoe);
+            test(helper, TestGroup.TOOLSMITH, "a_broke_miner_takes_a_stone_pickaxe_on_credit_for_ore_its_wooden_one_cant_dig", ToolsmithTests::aBrokeMinerTakesAStonePickaxeOnCreditForOreItsWoodenOneCantDig);
+            test(helper, TestGroup.TOOLSMITH, "a_broke_miner_keeps_its_wooden_pickaxe_when_it_digs_everything", ToolsmithTests::aBrokeMinerKeepsItsWoodenPickaxeWhenItDigsEverything);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
             test(helper, TestGroup.FORESTER, "the_toolsmith_buys_the_sticks_the_forester_gathers", com.sheepfromheaven.minenow.forester.ForesterTests::theToolsmithBuysTheSticksTheForesterGathers);
@@ -238,6 +247,11 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_digs_its_quarry_layer_by_layer", MinerTests::minerDigsItsQuarryLayerByLayer);
             test(helper, TestGroup.MINER, "an_open_pit_without_a_rim_is_no_quarry", MinerTests::anOpenPitWithoutARimIsNoQuarry);
             test(helper, TestGroup.MINER, "a_rim_with_a_gap_is_no_quarry", MinerTests::aRimWithAGapIsNoQuarry);
+            test(helper, TestGroup.MINER, "a_miner_does_not_walk_into_another_miners_mine", MinerTests::aMinerDoesNotWalkIntoAnotherMinersMine);
+            test(helper, TestGroup.MINER, "miner_breaks_through_ore_in_its_ladder_column", MinerTests::minerBreaksThroughOreInItsLadderColumn);
+            test(helper, TestGroup.MINER, "a_tunnel_it_cannot_reach_does_not_stop_the_others", MinerTests::aTunnelItCannotReachDoesNotStopTheOthers);
+            test(helper, TestGroup.MINER, "a_tunnel_stops_short_of_the_next_mine", MinerTests::aTunnelStopsShortOfTheNextMine);
+            test(helper, TestGroup.MINER, "a_miner_never_walls_off_the_mine_next_door", MinerTests::aMinerNeverWallsOffTheMineNextDoor);
             test(helper, TestGroup.MINER, "miner_leaves_ore_its_pickaxe_cannot_harvest", MinerTests::minerLeavesOreItsPickaxeCannotHarvest);
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);
@@ -334,6 +348,7 @@ public final class MineNow {
             test(helper, TestGroup.SMELTER, "smelter_smelts_raw_ore_in_its_blast_furnace", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterSmeltsRawOreInItsBlastFurnace);
             test(helper, TestGroup.SMELTER, "smelter_burns_logs_into_charcoal_in_a_furnace_beside_it", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBurnsLogsIntoCharcoalInAFurnaceBesideIt);
             test(helper, TestGroup.SMELTER, "smelter_uses_more_furnaces_at_higher_levels", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterUsesMoreFurnacesAtHigherLevels);
+            test(helper, TestGroup.SMELTER, "a_broke_smelter_gets_the_miners_coal_on_credit_after_work", com.sheepfromheaven.minenow.smelter.SmelterTests::aBrokeSmelterGetsTheMinersCoalOnCreditAfterWork);
             test(helper, TestGroup.SMELTER, "smelter_buys_raw_iron_from_the_miner", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBuysRawIronFromTheMiner);
             test(helper, TestGroup.VILLAGER_TRADING, "a_broke_smelter_gets_ore_on_credit_and_pays_it_back", com.sheepfromheaven.minenow.smelter.SmelterTests::aBrokeSmelterGetsOreOnCreditAndPaysItBack);
             test(helper, TestGroup.VILLAGER_TRADING, "a_smelter_buys_ore_from_a_miner_with_less_than_a_full_lot", com.sheepfromheaven.minenow.smelter.SmelterTests::aSmelterBuysOreFromAMinerWithLessThanAFullLot);

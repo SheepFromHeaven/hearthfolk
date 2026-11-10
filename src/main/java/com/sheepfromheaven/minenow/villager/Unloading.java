@@ -148,6 +148,28 @@ public final class Unloading {
      * chest, food and emeralds at home, either where it has no chest of the other kind or no room there), settling
      * theft bookkeeping around it.
      */
+    /**
+     * Takes supplies of its trade back out of the chest, up to what it keeps on it: they come in lots bigger than that
+     * (sticks 32 to an emerald, the miner keeps 16), the rest is unloaded, and its work only uses what it carries.
+     */
+    private static void restock(Villager villager, Container chest) {
+        TradeTable.forVillager(villager).ifPresent(table -> {
+            for (TradeTable.Supply supply : table.suppliesUpTo(villager.getVillagerData().level())) {
+                int want = supply.max() - villager.getInventory().countItem(supply.item());
+                for (int i = 0; i < chest.getContainerSize() && want > 0; i++) {
+                    if (!chest.getItem(i).is(supply.item())) continue;
+                    ItemStack taken = chest.removeItem(i, want);
+                    want -= taken.getCount();
+                    ItemStack rest = villager.getInventory().addItem(taken);
+                    if (!rest.isEmpty()) {
+                        HopperBlockEntity.addItem(null, chest, rest, null);
+                        return;
+                    }
+                }
+            }
+        });
+    }
+
     public static void deposit(ServerLevel level, Villager villager, BlockPos pos) {
         Container chest = HomeStorage.chestContainer(level, pos);
         if (chest == null) return;
@@ -171,6 +193,7 @@ public final class Unloading {
             stack.setCount(keep + rest.getCount());
             if (stack.isEmpty()) inventory.setItem(i, ItemStack.EMPTY);
         }
+        restock(villager, chest);
         StorageTheft.recordContents(level, pos);
         level.playSound(null, pos, SoundEvents.CHEST_CLOSE, SoundSource.BLOCKS, 0.5F, 1.0F);
         if (depositableCount(villager) > 0 && unloadTarget(level, villager).filter(next -> !next.equals(pos)).isPresent()) UNLOADING.put(villager, level.getGameTime());

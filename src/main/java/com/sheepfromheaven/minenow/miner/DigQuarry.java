@@ -52,6 +52,8 @@ public class DigQuarry extends Behavior<Villager> {
     private static final int SWING_EVERY = 5;
     private static final int GIVE_UP_AFTER_TICKS = 300;
     private static final int UNREACHABLE_COOLDOWN = 600;
+    /** Work it can find no spot to stand for is set aside and the next work tried, a few times per look (a tunnel past a gap, say). */
+    private static final int WORK_ATTEMPTS = 4;
     private static final int IDLE_RESCAN_DELAY = 100;
     private static final int LIT = 8;
     private static final int TORCH_RECHECK = 40;
@@ -140,7 +142,7 @@ public class DigQuarry extends Behavior<Villager> {
             return;
         }
         ItemStack pickaxe = pickaxe(body);
-        if (pickaxe.isEmpty() || !Quarry.diggable(level, target, pickaxe)) {
+        if (pickaxe.isEmpty() || !Quarry.diggable(level, target, pickaxe, ladder != null && target.equals(ladder.at(target.getY())))) {
             advance(level, body, timestamp);
             return;
         }
@@ -175,7 +177,7 @@ public class DigQuarry extends Behavior<Villager> {
         level.destroyBlockProgress(body.getId(), target, Math.min(9, progress * 10 / ticks));
         if (++progress < ticks) return;
 
-        List<ItemStack> drops = Block.getDrops(state, level, target, null, body, pickaxe);
+        List<ItemStack> drops = !state.requiresCorrectToolForDrops() || pickaxe.isCorrectToolForDrops(state) ? Block.getDrops(state, level, target, null, body, pickaxe) : List.of();
         int extra = state.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "ores")))
                 ? MinerSkill.extraOre(body.getVillagerData().level()) : 0;
         level.destroyBlockProgress(body.getId(), target, -1);
@@ -260,27 +262,33 @@ public class DigQuarry extends Behavior<Villager> {
             }
         }
         int deepestPlatform = MineLayout.deepestPlatform(quarry.top(), level.getBestNeighborSignal(furnace.get()));
-        List<BlockPos> work = quarry.nextWork(level, bottom, pickaxe, tunnels, deepestPlatform);
-        if (work.isEmpty()) return false;
-        Optional<BlockPos> column = work.stream().filter(pos -> pos.equals(ladder.at(pos.getY()))).max(Comparator.comparingInt(BlockPos::getY));
-        if (column.isPresent() && !carriesLadder(body)) return false;
         Map<Integer, Set<BlockPos>> floods = new HashMap<>();
-        List<BlockPos> candidates = column.isPresent() ? List.of(column.get()) : work.stream().filter(pos -> !unreachable.containsKey(pos)).toList();
-        target = null;
-        stand = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (BlockPos candidate : candidates) {
-            BlockPos spot = standFor(level, quarry, candidate, floods);
-            if (spot == null) continue;
-            double distance = spot.distToCenterSqr(body.position());
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                target = candidate;
-                stand = spot;
+        for (int attempt = 0; attempt < WORK_ATTEMPTS; attempt++) {
+            List<BlockPos> work = quarry.nextWork(level, bottom, pickaxe, tunnels, deepestPlatform, unreachable::containsKey);
+            if (work.isEmpty()) return false;
+            Optional<BlockPos> column = work.stream().filter(pos -> pos.equals(ladder.at(pos.getY()))).max(Comparator.comparingInt(BlockPos::getY));
+            if (column.isPresent() && !carriesLadder(body)) return false;
+            List<BlockPos> candidates = column.isPresent() ? List.of(column.get()) : work;
+            target = null;
+            stand = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (BlockPos candidate : candidates) {
+                BlockPos spot = standFor(level, quarry, candidate, floods);
+                if (spot == null) continue;
+                double distance = spot.distToCenterSqr(body.position());
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    target = candidate;
+                    stand = spot;
+                }
             }
+            if (target != null) {
+                inShaft = quarry.isShaft(target);
+                return true;
+            }
+            for (BlockPos candidate : candidates) unreachable.put(candidate, now + UNREACHABLE_COOLDOWN);
         }
-        inShaft = target != null && quarry.isShaft(target);
-        return target != null;
+        return false;
     }
 
     /**
@@ -315,7 +323,7 @@ public class DigQuarry extends Behavior<Villager> {
      * ({@link Quarry#reachable}) in the cell's own layer, the two below or the one above, the nearest first (the layer
      * order breaks ties: sideways, upwards, downwards). Null when nothing it can reach is close enough yet.
      */
-    private static @Nullable BlockPos standFor(ServerLevel level, Quarry quarry, BlockPos cell, Map<Integer, Set<BlockPos>> floods) {
+    static @Nullable BlockPos standFor(ServerLevel level, Quarry quarry, BlockPos cell, Map<Integer, Set<BlockPos>> floods) {
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         int[] levels = {cell.getY(), cell.getY() - 1, cell.getY() - 2, cell.getY() + 1};
