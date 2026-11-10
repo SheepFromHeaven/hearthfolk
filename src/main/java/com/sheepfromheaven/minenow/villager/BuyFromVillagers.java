@@ -5,17 +5,20 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SwingAnimation;
+import net.minecraft.world.item.trading.MerchantOffer;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
@@ -70,7 +73,11 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private enum Errand { ORDER, COLLECT, REFUND }
 
+    /** Buys lots of {@code offer} (the merchant's own, so its stock goes down) up to {@code room} items for at most {@code budget} emeralds. */
+    private record MerchantDeal(WanderingTrader merchant, Item item, MerchantOffer offer, int room, int budget) {}
+
     private @Nullable Deal deal;
+    private @Nullable MerchantDeal merchantDeal;
     private @Nullable Visit visit;
     private long giveUpAt;
     private long nextStartAllowed;
@@ -84,14 +91,16 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (level.getGameTime() < nextStartAllowed || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
         nextStartAllowed = level.getGameTime() + RETRY_DELAY;
         repayDebts(level, buyer);
+        merchantDeal = null;
         visit = commissionErrand(level, buyer).orElse(null);
         deal = visit != null ? null : findDeal(level, buyer).or(() -> creditDeal(level, buyer)).or(() -> mealGift(level, buyer)).orElse(null);
-        if (visit == null && deal == null) visit = newCommission(level, buyer).orElse(null);
-        return deal != null || visit != null;
+        if (visit == null && deal == null) merchantDeal = merchantDeal(level, buyer).orElse(null);
+        if (visit == null && deal == null && merchantDeal == null) visit = newCommission(level, buyer).orElse(null);
+        return deal != null || visit != null || merchantDeal != null;
     }
 
-    private Villager partner() {
-        return deal != null ? deal.seller() : visit.maker();
+    private Entity partner() {
+        return deal != null ? deal.seller() : visit != null ? visit.maker() : merchantDeal.merchant();
     }
 
     @Override
@@ -103,16 +112,18 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager buyer, long timestamp) {
-        return (deal != null || visit != null) && partner().isAlive() && !buyer.isTrading() && timestamp < giveUpAt;
+        return (deal != null || visit != null || merchantDeal != null) && partner().isAlive() && !buyer.isTrading() && timestamp < giveUpAt;
     }
 
     @Override
     protected void tick(ServerLevel level, Villager buyer, long timestamp) {
         if (buyer.distanceTo(partner()) <= REACH && buyer.hasLineOfSight(partner())) {
             if (deal != null) trade(level, buyer, deal);
+            else if (merchantDeal != null) tradeWithMerchant(level, buyer, merchantDeal);
             else run(level, buyer, visit);
             deal = null;
             visit = null;
+            merchantDeal = null;
             nextStartAllowed = timestamp;
             return;
         }
@@ -129,6 +140,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     protected void stop(ServerLevel level, Villager buyer, long timestamp) {
         deal = null;
         visit = null;
+        merchantDeal = null;
         buyer.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         buyer.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
     }
@@ -170,6 +182,46 @@ public class BuyFromVillagers extends Behavior<Villager> {
         buyer.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         seller.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         level.playSound(null, seller.blockPosition(), SoundEvents.VILLAGER_TRADE, SoundSource.NEUTRAL, 1.0F, seller.getVoicePitch());
+    }
+
+    /**
+     * A supply of its trade that no villager sells, from a travelling merchant ({@link Exports}) within {@link #SEARCH_RANGE},
+     * at the merchant's own price and out of what's left of its stock, paid for out of what's above its reserve (a supply
+     * of fuel it has none of may use everything above its food money). The merchant has no village: any villager near it may buy.
+     */
+    private static Optional<MerchantDeal> merchantDeal(ServerLevel level, Villager buyer) {
+        Optional<TradeTable> table = TradeTable.forVillager(buyer);
+        if (table.isEmpty() || !shopsForWork(buyer)) return Optional.empty();
+        java.util.List<WanderingTrader> merchants = Exports.merchantsNear(level, buyer, SEARCH_RANGE);
+        if (merchants.isEmpty()) return Optional.empty();
+        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+            int held = Economy.count(level, buyer, supply.item());
+            if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
+            int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
+            for (WanderingTrader merchant : merchants) {
+                Optional<MerchantOffer> offer = Exports.wareFor(merchant, supply.item());
+                if (offer.isPresent() && offer.get().getCostA().getCount() <= budget && supply.max() - held > 0) {
+                    return Optional.of(new MerchantDeal(merchant, supply.item(), offer.get(), supply.max() - held, budget));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static void tradeWithMerchant(ServerLevel level, Villager buyer, MerchantDeal deal) {
+        MerchantOffer offer = deal.offer();
+        int emeralds = offer.getCostA().getCount();
+        int each = offer.getResult().getCount();
+        int lots = Math.min(Math.min(deal.budget(), Economy.emeralds(level, buyer)) / emeralds,
+                Math.min(Math.max(1, deal.room() / each), offer.getMaxUses() - offer.getUses()));
+        if (lots <= 0 || offer.isOutOfStock()) return;
+        Economy.take(level, buyer, Items.EMERALD, lots * emeralds);
+        Economy.give(level, buyer, new ItemStack(deal.item(), lots * each));
+        for (int i = 0; i < lots; i++) offer.increaseUses();
+        buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(deal.merchant(), true));
+        buyer.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        deal.merchant().swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        level.playSound(null, deal.merchant().blockPosition(), SoundEvents.VILLAGER_TRADE, SoundSource.NEUTRAL, 1.0F, deal.merchant().getVoicePitch());
     }
 
     private static Optional<Deal> findDeal(ServerLevel level, Villager buyer) {

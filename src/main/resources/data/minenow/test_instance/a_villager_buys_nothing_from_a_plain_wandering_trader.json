@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:merchant_4",
+  "function": "minenow:a_villager_buys_nothing_from_a_plain_wandering_trader",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

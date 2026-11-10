@@ -58,6 +58,69 @@ public final class VillagerTradingTests {
         });
     }
 
+    private static final BlockPos TABLE = new BlockPos(11, 1, 12);
+
+    private static Villager spawnToolsmith(GameTestHelper helper, int emeralds) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(TABLE, Blocks.SMITHING_TABLE);
+        Villager smith = GameTestHelpers.spawnEmployed(helper, TABLE.west(), TABLE, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
+        smith.getInventory().addItem(new ItemStack(Items.EMERALD, emeralds));
+        return smith;
+    }
+
+    private static net.minecraft.world.item.trading.MerchantOffer offerOf(net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader merchant, Item item) {
+        return merchant.getOffers().stream().filter(offer -> offer.getResult().is(item)).findFirst().orElseThrow();
+    }
+
+    public static void aVillagerBuysItsSupplyFromATravellingMerchant(GameTestHelper helper) {
+        Villager smith = spawnToolsmith(helper, 20);
+        var merchant = Exports.sendTrader(helper.getLevel(), smith);
+        helper.assertTrue(merchant != null, "A travelling merchant comes");
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(count(smith, Items.STRING) >= 8, "The toolsmith buys the string it needs from the merchant, has " + count(smith, Items.STRING));
+            helper.assertTrue(count(smith, Items.STRING) <= 16, "...up to its max, has " + count(smith, Items.STRING));
+            helper.assertTrue(count(smith, Items.EMERALD) == 20 - count(smith, Items.STRING) / 8, "...at the merchant's price, 8 for an emerald, has " + count(smith, Items.EMERALD) + " emeralds");
+            helper.assertTrue(offerOf(merchant, Items.STRING).getUses() == count(smith, Items.STRING) / 8, "...and the merchant's stock goes down with it");
+        });
+    }
+
+    public static void aVillagerNeverBuysFromAMerchantBelowItsReserve(GameTestHelper helper) {
+        Villager smith = spawnToolsmith(helper, 0);
+        smith.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
+        Exports.sendTrader(helper.getLevel(), smith);
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(count(smith, Items.STRING) == 0, "Its food money is not for string, has " + count(smith, Items.STRING));
+            helper.succeed();
+        });
+    }
+
+    public static void aVillagerBuysNothingFromAMerchantOutOfStock(GameTestHelper helper) {
+        Villager smith = spawnToolsmith(helper, 20);
+        var merchant = Exports.sendTrader(helper.getLevel(), smith);
+        var string = offerOf(merchant, Items.STRING);
+        while (!string.isOutOfStock()) string.increaseUses();
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(count(smith, Items.STRING) == 0, "A merchant with no string left sells none, it bought " + count(smith, Items.STRING));
+            helper.succeed();
+        });
+    }
+
+    public static void aVillagerBuysNothingFromAPlainWanderingTrader(GameTestHelper helper) {
+        Villager smith = spawnToolsmith(helper, 20);
+        var trader = helper.spawn(net.minecraft.world.entity.EntityTypes.WANDERING_TRADER, new BlockPos(8, 1, 12));
+        trader.getOffers().clear();
+        trader.getOffers().add(new net.minecraft.world.item.trading.MerchantOffer(new net.minecraft.world.item.trading.ItemCost(Items.EMERALD, 1), new ItemStack(Items.STRING, 8), 8, 1, 0.05F));
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(count(smith, Items.STRING) == 0, "Only the travelling merchant's wares are for villagers, it bought " + count(smith, Items.STRING));
+            helper.succeed();
+        });
+    }
+
     private static int count(Villager villager, Item item) {
         return villager.getInventory().countItem(item);
     }

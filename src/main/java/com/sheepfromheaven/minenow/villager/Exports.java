@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -98,6 +99,20 @@ public final class Exports {
 
     static boolean isMerchant(WanderingTrader trader) {
         return trader.getData(ModVillagers.TRAVELLING_MERCHANT);
+    }
+
+    /** The travelling merchants within {@code range} of the villager that are free to trade, nearest first. */
+    static java.util.List<WanderingTrader> merchantsNear(ServerLevel level, Villager villager, int range) {
+        return level.getEntitiesOfClass(WanderingTrader.class, villager.getBoundingBox().inflate(range),
+                        trader -> trader.isAlive() && isMerchant(trader) && !trader.isTrading())
+                .stream().sorted(Comparator.comparingDouble(villager::distanceToSqr)).toList();
+    }
+
+    /** What the merchant still has of {@code item} to sell for emeralds, as the offer a player would use. */
+    static Optional<MerchantOffer> wareFor(WanderingTrader merchant, Item item) {
+        return merchant.getOffers().stream()
+                .filter(offer -> offer.getResult().is(item) && offer.getCostA().is(Items.EMERALD) && offer.getCostB().isEmpty() && !offer.isOutOfStock())
+                .findFirst();
     }
 
     /** How likely a check (once a minute) brings an extra trader, for goods worth {@code surplus} emeralds. */
