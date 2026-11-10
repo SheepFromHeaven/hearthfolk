@@ -59,6 +59,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onGrowFeature);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.golemsmith.Golemsmith::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.golemsmith.Golemsmith::onBreak);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.golemsmith.Golemsmith::onFinalizeSpawn);
@@ -232,6 +233,7 @@ public final class MineNow {
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
             test(helper, TestGroup.FORESTER, "nobody_pays_a_forester_for_planks_it_has_nothing_to_make_from", com.sheepfromheaven.minenow.forester.ForesterTests::nobodyPaysAForesterForPlanksItHasNothingToMakeFrom);
             test(helper, TestGroup.FORESTER, "the_toolsmith_buys_the_sticks_the_forester_gathers", com.sheepfromheaven.minenow.forester.ForesterTests::theToolsmithBuysTheSticksTheForesterGathers);
+            test(helper, TestGroup.FORESTER, "a_sapling_does_not_grow_into_a_villager_standing_in_it", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingDoesNotGrowIntoAVillagerStandingInIt);
             test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);
             test(helper, TestGroup.FORESTER, "a_nursery_without_its_log_is_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aNurseryWithoutItsLogIsAPlainPottedSapling);
             test(helper, TestGroup.FORESTER, "breaking_a_nursery_gives_back_the_pot_and_the_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::breakingANurseryGivesBackThePotAndTheSapling);

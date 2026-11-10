@@ -89,6 +89,19 @@ public final class Forester {
     }
 
     /** A sapling potted into a flower pot standing on a log makes a nursery instead of vanilla's potted sapling. */
+    /**
+     * A sapling doesn't grow while a creature other than a player stands where the trunk and branches would go: vanilla
+     * grows a tree through whoever is there, and a villager standing on the forester's replanted saplings (a crowd at a
+     * bell nearby) suffocated in its trunk. It grows on a later random tick; players are left out so bone meal still
+     * works from beside the sapling.
+     */
+    public static void onGrowFeature(net.neoforged.neoforge.event.level.BlockGrowFeatureEvent event) {
+        if (!(event.getLevel() instanceof net.minecraft.world.level.Level level)) return;
+        BlockPos pos = event.getPos();
+        net.minecraft.world.phys.AABB trunk = new net.minecraft.world.phys.AABB(pos.getX() - 2, pos.getY(), pos.getZ() - 2, pos.getX() + 3, pos.getY() + 12, pos.getZ() + 3);
+        if (!level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, trunk, entity -> entity.isAlive() && !(entity instanceof net.minecraft.world.entity.player.Player)).isEmpty()) event.setCanceled(true);
+    }
+
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
