@@ -68,6 +68,16 @@
       "item": "minecraft:rabbit_foot",
       "level": 2,
       "price": 0.5
+    },
+    {
+      "item": "minecraft:cooked_cod",
+      "level": 1,
+      "price": 0.15
+    },
+    {
+      "item": "minecraft:cooked_salmon",
+      "level": 1,
+      "price": 0.2
     }
   ],
   "supplies": [
@@ -81,6 +91,60 @@
       "item": "minecraft:charcoal",
       "price": 0.0667,
       "max": 32,
+      "level": 1
+    },
+    {
+      "item": "minecraft:oak_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:spruce_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:birch_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:jungle_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:acacia_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:dark_oak_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:cherry_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:pale_oak_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:mangrove_log",
+      "price": 0.0625,
+      "max": 16,
       "level": 1
     },
     {
@@ -100,12 +164,28 @@
       "price": 0.0625,
       "max": 32,
       "level": 1
+    },
+    {
+      "item": "minecraft:cod",
+      "price": 0.0833,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:salmon",
+      "price": 0.125,
+      "max": 16,
+      "level": 1
     }
   ],
   "keeps": [
     {
       "items": "#c:foods/raw_meat",
       "max": 64
+    },
+    {
+      "items": "#c:foods/raw_fish",
+      "max": 32
     }
   ],
   "default_produce": {

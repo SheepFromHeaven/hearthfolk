@@ -268,6 +268,34 @@ public final class ForesterTests {
         return logs;
     }
 
+    public static void theToolsmithBuysTheSticksTheForesterGathers(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STICK, 40));
+        BlockPos table = new BlockPos(18, 1, 12);
+        helper.setBlock(table, Blocks.SMITHING_TABLE);
+        Villager toolsmith = GameTestHelpers.spawnEmployed(helper, table.west(), table, net.minecraft.world.entity.npc.villager.VillagerProfession.TOOLSMITH,
+                net.minecraft.world.entity.ai.village.poi.PoiTypes.TOOLSMITH);
+        toolsmith.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+
+        helper.succeedWhen(() -> helper.assertTrue(toolsmith.getInventory().countItem(Items.STICK) > 0,
+                "The forester sells the sticks it gathers in its grove, so tools don't wait on the fletcher; toolsmith has " + toolsmith.getInventory().countItem(Items.STICK)));
+    }
+
+    public static void nobodyPaysAForesterForPlanksItHasNothingToMakeFrom(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        BlockPos table = new BlockPos(18, 1, 12);
+        helper.setBlock(table, Blocks.FLETCHING_TABLE);
+        Villager fletcher = GameTestHelpers.spawnEmployed(helper, table.west(), table, net.minecraft.world.entity.npc.villager.VillagerProfession.FLETCHER,
+                net.minecraft.world.entity.ai.village.poi.PoiTypes.FLETCHER);
+        fletcher.getInventory().addItem(new ItemStack(Items.EMERALD, 8));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(forester.getData(com.sheepfromheaven.minenow.villager.ModVillagers.COMMISSIONS).isEmpty() && fletcher.getInventory().countItem(Items.EMERALD) == 8,
+                    "A forester with no logs could never make planks, so the fletcher doesn't pay it for any; orders " + forester.getData(com.sheepfromheaven.minenow.villager.ModVillagers.COMMISSIONS));
+            helper.succeed();
+        });
+    }
+
     private static Villager spawnForester(GameTestHelper helper) {
         return spawnForester(helper, NurseryTree.OAK);
     }

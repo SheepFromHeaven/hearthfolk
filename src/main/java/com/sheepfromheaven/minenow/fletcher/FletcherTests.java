@@ -78,6 +78,71 @@ public final class FletcherTests {
         });
     }
 
+    public static void minerBuysAWoodenPickaxeTheFletcherMadeFromPlanks(GameTestHelper helper) {
+        Villager fletcher = spawnFletcher(helper);
+        fletcher.getInventory().addItem(new ItemStack(Items.OAK_PLANKS, 24));
+        BlockPos cart = new BlockPos(19, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+
+        helper.succeedWhen(() -> helper.assertTrue(miner.getInventory().countItem(Items.WOODEN_PICKAXE) == 1,
+                "The fletcher makes wooden tools from planks and its own sticks, so a miner gets a pickaxe without cobblestone; has "
+                        + miner.getInventory().countItem(Items.WOODEN_PICKAXE) + ", fletcher holds " + fletcher.getInventory().getItems().stream().filter(st -> !st.isEmpty()).toList()));
+    }
+
+    public static void aMinerWithSticksInItsChestBuysNoMore(GameTestHelper helper) {
+        Villager fletcher = spawnFletcher(helper);
+        Villager miner = minerWithAChestOfSticks(helper);
+        helper.runAfterDelay(200, () -> fletcher.getInventory().addItem(new ItemStack(Items.STICK, 64)));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(miner.getInventory().countItem(Items.EMERALD) == 9 && miner.getInventory().countItem(Items.STICK) == 0,
+                    "A miner with a lot of sticks in its chest buys no more, has " + miner.getInventory().getItems().stream().filter(st -> !st.isEmpty()).toList());
+            helper.succeed();
+        });
+    }
+
+    public static void aMinerTakesItsSticksBackOutOfItsChestWhenUnloading(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        Villager miner = minerWithAChestOfSticks(helper);
+        miner.getInventory().addItem(new ItemStack(Items.DIRT, 64));
+        miner.getInventory().addItem(new ItemStack(Items.DIRT, 64));
+
+        helper.succeedWhen(() -> helper.assertTrue(miner.getInventory().countItem(Items.STICK) == 16,
+                "Unloading at its chest it takes back the sticks it keeps (16) for its torches, has " + miner.getInventory().countItem(Items.STICK)));
+    }
+
+    private static Villager minerWithAChestOfSticks(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        BlockPos cart = new BlockPos(19, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        BlockPos chest = new BlockPos(16, 1, 6);
+        helper.setBlock(chest, Blocks.CHEST);
+        helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class).setItem(0, new ItemStack(Items.STICK, 40));
+        GameTestHelpers.giveHome(helper, miner, new BlockPos(16, 1, 8));
+        miner.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 32));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 32));
+        helper.runAfterDelay(200, () -> miner.getInventory().addItem(new ItemStack(Items.EMERALD, 9)));
+        return miner;
+    }
+
+    public static void aMinerOutOfSticksBuysALot(GameTestHelper helper) {
+        Villager fletcher = spawnFletcher(helper);
+        fletcher.getInventory().addItem(new ItemStack(Items.STICK, 64));
+        BlockPos cart = new BlockPos(19, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.LADDER, 32));
+        miner.getInventory().addItem(new ItemStack(Items.TORCH, 32));
+        miner.getInventory().addItem(new ItemStack(Items.EMERALD, 10));
+
+        helper.succeedWhen(() -> helper.assertTrue(miner.getInventory().countItem(Items.STICK) > 0, "A miner out of sticks buys a lot from the fletcher"));
+    }
+
     static Villager spawnFletcher(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

@@ -20,21 +20,48 @@ final class LadderClimb {
     private static final double CENTERED = 0.45;
     private static final double CLIMB_SPEED = 0.2;
     private static final double STEP_SPEED = 0.15;
+    /** A quarry's cells lie within {@link Quarry#RANGE} of its cart, its tunnels further out. */
+    private static final int CART_SEARCH = 32;
 
     private LadderClimb() {}
 
-    /** Whether the villager is down in its mine, deeper than it could step up out of. */
+    /** Whether the villager is down in a mine (a miner: its own), deeper than it could step up out of. */
     static boolean inQuarry(ServerLevel level, Villager body) {
         return furnace(level, body).map(furnace -> Quarry.around(level, furnace).contains(body.blockPosition())).orElse(false);
     }
 
-    /** One tick of climbing out; true once the villager stands on the surface beside the ladder. */
-    static boolean climbOut(ServerLevel level, Villager body) {
-        Optional<BlockPos> furnace = furnace(level, body);
-        if (furnace.isEmpty()) return true;
-        Quarry quarry = Quarry.around(level, furnace.get());
-        if (!quarry.contains(body.blockPosition())) return true;
-        return quarry.ladder(level, furnace.get()).map(ladder -> climbTo(body, quarry, ladder, quarry.top() + 1, exit(ladder))).orElse(true);
+    static Optional<BlockPos> ownCart(ServerLevel level, Villager body) {
+        if (!body.getVillagerData().profession().is(Miner.PROFESSION)) return Optional.empty();
+        return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
+                .filter(site -> site.dimension() == level.dimension())
+                .map(GlobalPos::pos);
+    }
+
+    /** Puts the villager on the surface beside the top of the mine's ladder (or on its cart), for when climbing has failed. */
+    static void helpOut(ServerLevel level, Villager body, BlockPos cart) {
+        BlockPos spot = Quarry.around(level, cart).ladder(level, cart).map(LadderClimb::exit).orElse(cart.above());
+        forgetRoute(body);
+        body.teleportTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
+        body.resetFallDistance();
+    }
+
+    static boolean climbedOut(ServerLevel level, Villager body, BlockPos cart) {
+        return !Quarry.around(level, cart).contains(body.blockPosition()) && body.onGround();
+    }
+
+    /** The cart of the mine the villager stands in, if any. */
+    static Optional<BlockPos> mineOf(ServerLevel level, Villager body) {
+        return furnace(level, body).filter(cart -> Quarry.around(level, cart).contains(body.blockPosition()));
+    }
+
+    /**
+     * One tick of climbing out of the mine at {@code cart}; true once the villager stands on solid ground outside it. Its
+     * feet clear the mine while it is still over the ladder column, with nothing under it, so it isn't out until it's on the ground.
+     */
+    static boolean climbOut(ServerLevel level, Villager body, BlockPos cart) {
+        Quarry quarry = Quarry.around(level, cart);
+        if (!quarry.contains(body.blockPosition()) && body.onGround()) return true;
+        return quarry.ladder(level, cart).map(ladder -> climbTo(body, quarry, ladder, quarry.top() + 1, exit(ladder))).orElse(true);
     }
 
     /**
@@ -49,13 +76,16 @@ final class LadderClimb {
         if (!onColumn) {
             if (body.getBlockY() == standY && body.onGround()) return true;
             boolean onSurface = !quarry.contains(body.blockPosition());
-            BlockPos approach = onSurface ? exit(ladder) : column.atY(body.getBlockY());
-            boolean besideColumn = !onSurface && Math.abs(body.getX() - x) <= 1.6 && Math.abs(body.getZ() - z) <= 1.6;
+            BlockPos approach = onSurface ? exit(ladder) : besideLadder(body, column);
+            double dx = Math.abs(body.getX() - x);
+            double dz = Math.abs(body.getZ() - z);
+            // Only straight beside it: pushed diagonally at the column, a villager wedges into the corner of undug rock.
+            boolean besideColumn = !onSurface && ((dx <= 1.6 && dz <= CENTERED) || (dz <= 1.6 && dx <= CENTERED));
             if (besideColumn || (onSurface && Math.abs(body.getX() - (approach.getX() + 0.5)) <= 0.6 && Math.abs(body.getZ() - (approach.getZ() + 0.5)) <= 0.6)) {
                 body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                 body.getNavigation().stop();
                 body.getMoveControl().setWantedPosition(x, body.getY(), z, 0.5);
-            } else if (!body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+            } else if (!body.getBrain().getMemory(MemoryModuleType.WALK_TARGET).map(walk -> walk.getTarget().currentBlockPosition().equals(approach)).orElse(false)) {
                 body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(approach, 0.5F, 0));
             }
             return false;
@@ -77,6 +107,33 @@ final class LadderClimb {
             body.resetFallDistance();
         }
         return false;
+    }
+
+    /**
+     * Where to step onto the ladder from inside the mine: the nearest floored, two-high cell straight beside the column,
+     * at the villager's level or one up, since a path to the ladder cell itself can end diagonally against undug rock.
+     */
+    private static BlockPos besideLadder(Villager body, BlockPos column) {
+        BlockPos best = column.atY(body.getBlockY());
+        double bestDistance = Double.MAX_VALUE;
+        for (int dy = 0; dy <= 1; dy++) {
+            for (net.minecraft.core.Direction side : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                BlockPos cell = column.atY(body.getBlockY() + dy).relative(side);
+                if (!standable(body.level(), cell)) continue;
+                double distance = cell.distToCenterSqr(body.position());
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = cell;
+                }
+            }
+        }
+        return best;
+    }
+
+    private static boolean standable(net.minecraft.world.level.Level level, BlockPos cell) {
+        return level.getBlockState(cell).getCollisionShape(level, cell).isEmpty()
+                && level.getBlockState(cell.above()).getCollisionShape(level, cell.above()).isEmpty()
+                && level.getBlockState(cell.below()).isFaceSturdy(level, cell.below(), net.minecraft.core.Direction.UP);
     }
 
     /** The floored, two-high cell beside the ladder at this level that is closest to where the villager is headed; it walks on from there. */
@@ -118,9 +175,13 @@ final class LadderClimb {
         body.getNavigation().stop();
     }
 
+    /** A miner's own cart while it is in its own mine; otherwise the cart of the mine it stands in, since a buyer, a stroller or another miner can end up down someone's mine. */
     private static Optional<BlockPos> furnace(ServerLevel level, Villager body) {
-        return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
-                .filter(site -> site.dimension() == level.dimension())
-                .map(GlobalPos::pos);
+        Optional<BlockPos> own = ownCart(level, body);
+        if (own.isPresent() && Quarry.around(level, own.get()).contains(body.blockPosition())) return own;
+        return level.getPoiManager().findAll(poi -> poi.is(Miner.POI), pos -> pos.getY() > body.getBlockY(), body.blockPosition(), CART_SEARCH,
+                        net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY)
+                .filter(cart -> Quarry.around(level, cart).contains(body.blockPosition()))
+                .findFirst();
     }
 }

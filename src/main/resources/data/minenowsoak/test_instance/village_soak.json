@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenowsoak:village_soak",
+  "structure": "minenowsoak:village",
+  "max_ticks": 2000000
+}

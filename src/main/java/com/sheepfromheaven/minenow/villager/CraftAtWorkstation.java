@@ -50,6 +50,7 @@ public class CraftAtWorkstation extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading() || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (body.getBrain().getRunningBehaviors().stream().anyMatch(behavior -> behavior instanceof FieldWork)) return false;
         nextStartAllowed = level.getGameTime() + IDLE_RESCAN_DELAY;
         Optional<BlockPos> station = workstation(level, body);
         if (station.isEmpty() || station.get().distToCenterSqr(body.position()) > NEAR * NEAR || Math.abs(station.get().getY() - body.getY()) > 3) return false;
@@ -107,7 +108,7 @@ public class CraftAtWorkstation extends Behavior<Villager> {
     private static Optional<TradeTable.Craft> nextCraft(ServerLevel level, Villager body) {
         return TradeTable.forVillager(body).stream()
                 .flatMap(table -> table.craftsUpTo(body.getVillagerData().level()).stream())
-                .filter(craft -> Economy.count(level, body, craft.item()) < table(body).map(t -> t.stockTarget(craft)).orElse(craft.stock())
+                .filter(craft -> Economy.count(level, body, craft.item()) < table(body).map(t -> t.stockTarget(craft)).orElse(craft.stock()) + Commissions.reserved(body, craft.item())
                         && hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body)))
                 .findFirst();
     }

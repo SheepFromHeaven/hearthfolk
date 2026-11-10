@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_villager_falling_into_a_mine_is_not_hurt",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

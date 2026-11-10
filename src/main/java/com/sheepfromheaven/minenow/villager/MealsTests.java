@@ -87,6 +87,92 @@ public final class MealsTests {
         });
     }
 
+    public static void wealthyVillagerWithFoodAtHomeBuysNoMore(GameTestHelper helper) {
+        Villager villager = villagerNextToAFarmerWithPotatoes(helper);
+        BlockPos chest = new BlockPos(4, 1, 6);
+        helper.setBlock(chest, Blocks.CHEST);
+        helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class).setItem(0, new ItemStack(Items.POTATO, 20));
+        GameTestHelpers.giveHome(helper, villager, new BlockPos(4, 1, 8));
+        helper.runAfterDelay(60, () -> villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.WEALTHY)));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(Economy.emeralds(helper.getLevel(), villager) == Wealth.WEALTHY,
+                    "A villager whose home chest already holds food for a family buys no more, has " + Economy.emeralds(helper.getLevel(), villager) + " emeralds and "
+                            + Economy.count(helper.getLevel(), villager, Items.POTATO) + " potatoes");
+            helper.succeed();
+        });
+    }
+
+    public static void aHungryVillagerBuysTheMostFillingFoodForItsMoney(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.BREAD, 40));
+        farmer.getInventory().addItem(new ItemStack(Items.CARROT, 64));
+        Villager hungry = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        hungry.getInventory().addItem(new ItemStack(Items.EMERALD, 1));
+        Meals.makeHungry(hungry);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(hungry.getInventory().countItem(Items.EMERALD) == 0, "It spends its emerald on food");
+            helper.assertTrue(Economy.count(helper.getLevel(), hungry, Items.CARROT) > 0 && hungry.getInventory().countItem(Items.BREAD) == 0,
+                    "An emerald buys more meals of carrots than of bread, so it buys carrots; has " + hungry.getInventory().countItem(Items.CARROT) + " carrots, "
+                            + hungry.getInventory().countItem(Items.BREAD) + " bread");
+        });
+    }
+
+    public static void aVillagerAlternatesBreadAndMeat(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        villager.getInventory().addItem(new ItemStack(Items.BREAD, 10));
+        villager.getInventory().addItem(new ItemStack(Items.COOKED_BEEF, 10));
+        Meals.eat(helper.getLevel(), villager);
+        int beefAfterFirst = villager.getInventory().countItem(Items.COOKED_BEEF);
+        int breadAfterFirst = villager.getInventory().countItem(Items.BREAD);
+        Meals.eat(helper.getLevel(), villager);
+
+        helper.assertTrue(beefAfterFirst == 10 - 1 || breadAfterFirst < 10, "It eats one kind of food at a meal");
+        helper.assertTrue(villager.getInventory().countItem(Items.COOKED_BEEF) < 10 && villager.getInventory().countItem(Items.BREAD) < 10,
+                "A villager with both eats bread at one meal and meat at the next, has " + villager.getInventory().countItem(Items.BREAD) + " bread, "
+                        + villager.getInventory().countItem(Items.COOKED_BEEF) + " beef");
+        helper.succeed();
+    }
+
+    public static void aVillagerWithOnlyBreadBuysSomeMeatForAChange(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos smoker = new BlockPos(19, 1, 12);
+        helper.setBlock(smoker, Blocks.SMOKER);
+        Villager butcher = GameTestHelpers.spawnEmployed(helper, smoker.west(), smoker, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.COOKED_PORKCHOP, 40));
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        villager.getInventory().addItem(new ItemStack(Items.BREAD, 20));
+        villager.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        Meals.eat(helper.getLevel(), villager);
+        Meals.makeHungry(villager);
+
+        helper.succeedWhen(() -> helper.assertTrue(villager.getInventory().countItem(Items.COOKED_PORKCHOP) > 0 || villager.getInventory().countItem(Items.EMERALD) < 6,
+                "A villager that has only bread buys some meat for its next meal, has " + villager.getInventory().countItem(Items.EMERALD) + " emeralds"));
+    }
+
+    public static void aFarmerWithFoodToSpareFeedsAHungryNeighbourWithNoMoney(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        for (int i = 0; i < 3; i++) farmer.getInventory().addItem(new ItemStack(Items.CARROT, 64));
+        Villager hungry = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        Meals.makeHungry(hungry);
+
+        helper.succeedWhen(() -> helper.assertTrue(!Meals.isHungry(hungry),
+                "A farmer with more carrots than it could sell gives a hungry neighbour with no money a meal"));
+    }
+
     private static Villager villagerNextToAFarmerWithPotatoes(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

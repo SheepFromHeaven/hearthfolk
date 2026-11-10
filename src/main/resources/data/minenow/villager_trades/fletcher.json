@@ -80,6 +80,411 @@
   ],
   "crafts": [
     {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:oak_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:spruce_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:birch_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:jungle_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:acacia_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:dark_oak_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:cherry_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:pale_oak_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_hoe",
+      "materials": [
+        {
+          "item": "minecraft:mangrove_planks",
+          "count": 2
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:oak_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:spruce_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:birch_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:jungle_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:acacia_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:dark_oak_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:cherry_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:pale_oak_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_axe",
+      "materials": [
+        {
+          "item": "minecraft:mangrove_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:oak_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:spruce_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:birch_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:jungle_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:acacia_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:dark_oak_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:cherry_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:pale_oak_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wooden_pickaxe",
+      "materials": [
+        {
+          "item": "minecraft:mangrove_planks",
+          "count": 3
+        },
+        {
+          "item": "minecraft:stick",
+          "count": 2
+        }
+      ],
+      "labor": 0.25,
+      "level": 1
+    },
+    {
       "item": "minecraft:arrow",
       "materials": [
         {

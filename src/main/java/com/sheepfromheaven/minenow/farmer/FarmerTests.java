@@ -52,7 +52,9 @@ public final class FarmerTests {
         helper.succeedWhen(() -> {
             int crops = (FIELD_MAX - FIELD_MIN + 1) * (FIELD_MAX - FIELD_MIN + 1) - 1;
             int atWorkshop = countWheat(helper, CHEST_NEAR_COMPOSTER);
-            helper.assertTrue(atWorkshop >= crops - 8, "Expected about " + crops + " wheat in the chest by the composter, its workshop chest, found " + atWorkshop);
+            int baked = 3 * (farmer.getInventory().countItem(Items.BREAD) + countItem(helper, HOME_CHEST, Items.BREAD));
+            helper.assertTrue(atWorkshop + baked >= crops - 8, "Expected about " + crops + " wheat in the chest by the composter, its workshop chest, or baked, found "
+                    + atWorkshop + " and " + baked + " baked");
             helper.assertTrue(countWheat(helper, HOME_CHEST) == 0, "The harvest is trade goods, so none of it goes home");
             helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) > 0, "Farmer should keep seeds for replanting");
             helper.assertTrue(Hoes.has(farmer), "Farmer should keep its hoe when depositing");
@@ -67,6 +69,13 @@ public final class FarmerTests {
             if (stack.is(Items.WHEAT)) wheat += stack.getCount();
         }
         return wheat;
+    }
+
+    private static int countItem(GameTestHelper helper, BlockPos chest, net.minecraft.world.item.Item item) {
+        var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
+        int count = 0;
+        for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(item)) count += container.getItem(i).getCount();
+        return count;
     }
 
     private static Villager spawnFarmer(GameTestHelper helper) {
@@ -321,7 +330,55 @@ public final class FarmerTests {
         helper.succeed();
     }
 
-    public static void farmerDoesNotBakeBreadOrCompostSeedsAtTheComposter(GameTestHelper helper) {
+    public static void aFarmerHarvestsItsFieldBeforeItBakes(GameTestHelper helper) {
+        setUpFarm(helper, true);
+        Villager farmer = spawnFarmer(helper);
+        boolean[] bakedEarly = {false};
+        helper.onEachTick(() -> {
+            boolean[] ripe = {false};
+            forEachFieldCrop(helper, (pos, state) -> ripe[0] |= ((CropBlock) state.getBlock()).isMaxAge(state));
+            if (ripe[0] && farmer.getBrain().getRunningBehaviors().stream().anyMatch(b -> b instanceof com.sheepfromheaven.minenow.villager.CraftAtWorkstation)) bakedEarly[0] = true;
+        });
+
+        helper.succeedWhen(() -> {
+            boolean[] ripe = {false};
+            forEachFieldCrop(helper, (pos, state) -> ripe[0] |= ((CropBlock) state.getBlock()).isMaxAge(state));
+            helper.assertFalse(ripe[0], "The farmer harvests its field");
+            helper.assertFalse(bakedEarly[0], "...and only bakes once there's nothing ripe left, or baking keeps calling it off the field");
+        });
+    }
+
+    public static void farmerBakesBreadFromItsWheat(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 30));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(farmer.getInventory().countItem(Items.BREAD) >= 2, "The farmer bakes bread for the village to eat, has " + farmer.getInventory().countItem(Items.BREAD));
+            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT) == 30 - 3 * farmer.getInventory().countItem(Items.BREAD),
+                    "...three wheat a loaf, has " + farmer.getInventory().countItem(Items.WHEAT) + " wheat");
+        });
+    }
+
+    public static void aHungryVillagerBuysTheFarmersBread(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 64));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 32));
+        Villager hungry = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(4, 1, 4));
+        hungry.getInventory().addItem(new ItemStack(Items.EMERALD, 3));
+        com.sheepfromheaven.minenow.villager.Meals.makeHungry(hungry);
+
+        helper.succeedWhen(() -> helper.assertTrue(hungry.getInventory().countItem(Items.EMERALD) < 3,
+                "The farmer bakes more bread than it keeps for itself, so a hungry villager can buy some; farmer has "
+                        + farmer.getInventory().countItem(Items.BREAD) + " bread"));
+    }
+
+    public static void farmerDoesNotCompostSeedsAtTheComposter(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
@@ -334,8 +391,6 @@ public final class FarmerTests {
         });
 
         helper.runAfterDelay(2300, () -> {
-            helper.assertTrue(farmer.getInventory().countItem(Items.BREAD) == 0, "The farmer should not bake its wheat into bread");
-            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT) == 30, "Wheat should stay sellable, has " + farmer.getInventory().countItem(Items.WHEAT));
             helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) == 64, "Seeds should not be composted, has " + farmer.getInventory().countItem(Items.WHEAT_SEEDS));
             helper.assertTrue(helper.getBlockState(COMPOSTER).getValue(net.minecraft.world.level.block.ComposterBlock.LEVEL) == 0, "The composter should stay empty");
             helper.succeed();

@@ -98,23 +98,61 @@ public final class MasonTests {
         });
     }
 
-    public static void aMasonPavesItsRoadsAndScatteredPathsAlike(GameTestHelper helper) {
+    public static void inItsFreeTimeAMasonPavesOnlyAroundItsWorkshop(GameTestHelper helper) {
         Villager mason = spawnMason(helper, 2);
         mason.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
         mason.getInventory().addItem(new ItemStack(Items.GRAVEL, 32));
-        for (int x = 6; x <= 20; x++) helper.setBlock(new BlockPos(x, 0, 14), Blocks.DIRT_PATH);
-        for (int z = 15; z <= 21; z++) helper.setBlock(new BlockPos(20, 0, z), Blocks.DIRT_PATH);
-        BlockPos stray = new BlockPos(14, 0, 20);
+        for (int x = 6; x <= 21; x++) helper.setBlock(new BlockPos(x, 0, 14), Blocks.DIRT_PATH);
+        BlockPos stray = new BlockPos(12, 0, 20);
         helper.setBlock(stray, Blocks.DIRT_PATH);
         helper.setBlock(STONECUTTER.north(), Blocks.REDSTONE_BLOCK);
 
         helper.succeedWhen(() -> {
-            for (int z = 15; z <= 21; z++) {
-                var state = helper.getBlockState(new BlockPos(20, 0, z));
-                helper.assertTrue(state.is(TIER_2), "It follows the road around the corner to its far end, at z " + z + " it's " + state.getBlock().getName().getString());
+            for (int x = 6; x <= 17; x++) {
+                var state = helper.getBlockState(new BlockPos(x, 0, 14));
+                helper.assertTrue(state.is(TIER_2), "It paves the road within 12 of its stonecutter, at x " + x + " it's " + state.getBlock().getName().getString());
             }
-            helper.assertTrue(helper.getBlockState(stray).is(TIER_2), "...and a path on its own, not joined to any road, too, it's " + helper.getBlockState(stray).getBlock().getName().getString());
-            helper.assertTrue(helper.getBlockState(stray.east()).is(Blocks.STONE), "...but nothing beside it");
+            helper.assertTrue(helper.getBlockState(stray).is(TIER_2), "...and a path on its own there too");
+        });
+        helper.runAfterDelay(1200, () -> {
+            for (int x = 19; x <= 21; x++) helper.assertTrue(helper.getBlockState(new BlockPos(x, 0, 14)).is(Blocks.DIRT_PATH), "Further out it paves nothing nobody paid for, at x " + x);
+        });
+    }
+
+    public static void aVillagerPaysTheMasonToPaveTheWholePathToItsHome(GameTestHelper helper) {
+        Villager mason = spawnMason(helper, 2);
+        mason.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
+        mason.getInventory().addItem(new ItemStack(Items.GRAVEL, 32));
+        for (int x = 6; x <= 21; x++) helper.setBlock(new BlockPos(x, 0, 14), Blocks.DIRT_PATH);
+        for (int z = 15; z <= 20; z++) helper.setBlock(new BlockPos(21, 0, z), Blocks.DIRT_PATH);
+        helper.setBlock(STONECUTTER.north(), Blocks.REDSTONE_BLOCK);
+        Villager neighbour = GameTestHelpers.spawnWithHome(helper, new BlockPos(19, 1, 20), new BlockPos(19, 1, 21));
+        neighbour.getInventory().addItem(new ItemStack(Items.EMERALD, 20));
+        neighbour.getInventory().addItem(new ItemStack(Items.BREAD, 12));
+
+        helper.succeedWhen(() -> {
+            for (int x = 6; x <= 21; x++) {
+                var state = helper.getBlockState(new BlockPos(x, 0, 14));
+                helper.assertTrue(state.is(TIER_2), "Paid, it paves the whole path to the villager's home, however far from its workshop; at x " + x + " it's "
+                        + state.getBlock().getName().getString() + ", the villager has " + com.sheepfromheaven.minenow.villager.Economy.emeralds(helper.getLevel(), neighbour) + " emeralds");
+            }
+            for (int z = 15; z <= 20; z++) helper.assertTrue(helper.getBlockState(new BlockPos(21, 0, z)).is(TIER_2), "...round the corner to its door, at z " + z);
+            helper.assertTrue(mason.getInventory().countItem(Items.EMERALD) >= 1 && com.sheepfromheaven.minenow.villager.Economy.emeralds(helper.getLevel(), neighbour) < 20,
+                    "The villager paid the mason for the stretch beyond its own (an emerald for ten blocks), mason has " + mason.getInventory().countItem(Items.EMERALD));
+        });
+    }
+
+    public static void anUnpoweredMasonTakesNoPavingJobs(GameTestHelper helper) {
+        Villager mason = spawnMason(helper, 2);
+        mason.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
+        for (int x = 6; x <= 21; x++) helper.setBlock(new BlockPos(x, 0, 14), Blocks.DIRT_PATH);
+        Villager neighbour = GameTestHelpers.spawnWithHome(helper, new BlockPos(19, 1, 17), new BlockPos(19, 1, 16));
+        neighbour.getInventory().addItem(new ItemStack(Items.EMERALD, 20));
+        neighbour.getInventory().addItem(new ItemStack(Items.BREAD, 12));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(mason.getInventory().countItem(Items.EMERALD) == 0, "Without a redstone signal into its stonecutter it takes no money for paving");
+            helper.succeed();
         });
     }
 

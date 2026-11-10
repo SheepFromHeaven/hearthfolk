@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_villager_pays_the_mason_to_pave_the_whole_path_to_its_home",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 3600
+}

@@ -1,7 +1,7 @@
 {
   "type": "minecraft:function",
   "environment": "minecraft:default",
-  "function": "minenow:farmer_does_not_bake_bread_or_compost_seeds_at_the_composter",
+  "function": "minenow:a_tunnel_stops_short_of_the_next_mine",
   "structure": "minenow:field_24x6x24",
-  "max_ticks": 4800
+  "max_ticks": 100
 }

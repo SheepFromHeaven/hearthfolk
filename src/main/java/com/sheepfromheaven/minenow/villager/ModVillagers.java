@@ -37,6 +37,12 @@ public final class ModVillagers {
                     .serialize(UUIDUtil.CODEC.fieldOf("player"))
                     .build());
 
+    /** What a villager owes other villagers, in emeralds by creditor, for goods it got on credit (see {@link BuyFromVillagers}). */
+    public static final Supplier<AttachmentType<java.util.Map<UUID, Integer>>> DEBTS = ATTACHMENT_TYPES.register("debts",
+            () -> AttachmentType.<java.util.Map<UUID, Integer>>builder(() -> java.util.Map.of())
+                    .serialize(Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.INT).fieldOf("debts"))
+                    .build());
+
     public static final Supplier<AttachmentType<Boolean>> PURSE_GRANTED = ATTACHMENT_TYPES.register("purse_granted",
             () -> AttachmentType.builder(() -> false)
                     .serialize(Codec.BOOL.fieldOf("granted"))
@@ -107,6 +113,21 @@ public final class ModVillagers {
     public static final Supplier<AttachmentType<Long>> LAST_MEAL = ATTACHMENT_TYPES.register("last_meal",
             () -> AttachmentType.builder(() -> 0L)
                     .serialize(Codec.LONG.fieldOf("time"))
+                    .build());
+    /** Whether the last meal was meat or fish, so the next one is bread or vegetables if it has some (see {@link Meals}). */
+    public static final Supplier<AttachmentType<java.util.List<Commissions.Order>>> COMMISSIONS = ATTACHMENT_TYPES.register("commissions",
+            () -> AttachmentType.<java.util.List<Commissions.Order>>builder(() -> java.util.List.of())
+                    .serialize(Commissions.Order.CODEC.listOf().fieldOf("orders"))
+                    .build());
+
+    public static final Supplier<AttachmentType<java.util.List<Commissions.Placed>>> COMMISSIONED = ATTACHMENT_TYPES.register("commissioned",
+            () -> AttachmentType.<java.util.List<Commissions.Placed>>builder(() -> java.util.List.of())
+                    .serialize(Commissions.Placed.CODEC.listOf().fieldOf("placed"))
+                    .build());
+
+    public static final Supplier<AttachmentType<Boolean>> LAST_MEAL_MEAT = ATTACHMENT_TYPES.register("last_meal_meat",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL.fieldOf("meat"))
                     .build());
 
     public static final TagKey<Item> NO_KEY = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "villager_storage_key"));

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:late_afternoon",
+  "function": "minenow:a_broke_smelter_gets_the_miners_coal_on_credit_after_work",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1800
+}

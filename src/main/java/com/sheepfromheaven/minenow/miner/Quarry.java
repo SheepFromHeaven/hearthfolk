@@ -17,8 +17,10 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -37,20 +39,42 @@ final class Quarry {
     static final TagKey<Block> RIM = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minenow", "mine_rim"));
     private static final int LONGEST_TUNNEL = 24;
     private static final int SEAL_RANGE = 8;
+    /** Carts this close may have tunnels reaching this mine: two tunnels of the longest kind plus two shafts. */
+    private static final int NEIGHBOUR_SEARCH = 2 * LONGEST_TUNNEL + 2 * RANGE;
 
     private final Set<BlockPos> outline;
     private final int top;
     private final @Nullable Ladder ladder;
     private final MineLayout layout;
+    private final BlockPos cart;
 
-    private Quarry(Set<BlockPos> outline, int top, @Nullable Ladder ladder, MineLayout layout) {
+    private Quarry(BlockPos cart, Set<BlockPos> outline, int top, @Nullable Ladder ladder, MineLayout layout) {
+        this.cart = cart;
         this.outline = outline;
         this.top = top;
         this.ladder = ladder;
         this.layout = layout;
     }
 
+    /** Every villager asks for the quarries near it every tick (am I down a mine?), so each is worked out once a tick. */
+    private static final Map<BlockPos, Quarry> THIS_TICK = new HashMap<>();
+    private static int cachedLevel;
+    private static long cachedTick = Long.MIN_VALUE;
+
     static Quarry around(ServerLevel level, BlockPos furnace) {
+        if (System.identityHashCode(level) != cachedLevel || level.getGameTime() != cachedTick) {
+            THIS_TICK.clear();
+            cachedLevel = System.identityHashCode(level);
+            cachedTick = level.getGameTime();
+        }
+        Quarry cached = THIS_TICK.get(furnace);
+        if (cached != null) return cached;
+        Quarry quarry = build(level, furnace.immutable());
+        THIS_TICK.put(furnace.immutable(), quarry);
+        return quarry;
+    }
+
+    private static Quarry build(ServerLevel level, BlockPos furnace) {
         int top = furnace.getY() - 1;
         BlockPos under = furnace.below();
         Set<BlockPos> outline = Set.of();
@@ -62,7 +86,7 @@ final class Quarry {
         }
         MineLayout shape = new MineLayout(outline, top, under);
         Ladder ladder = pickLadder(level, furnace, outline, shape);
-        return new Quarry(outline, top, ladder, ladder == null ? shape : new MineLayout(outline, top, ladder.top()));
+        return new Quarry(furnace, outline, top, ladder, ladder == null ? shape : new MineLayout(outline, top, ladder.top()));
     }
 
     /** The cells connected to {@code start} inside the rim, or none if they reach past {@link #RANGE} (the rim isn't closed). */
@@ -116,6 +140,10 @@ final class Quarry {
         return top;
     }
 
+    Set<BlockPos> outline() {
+        return outline;
+    }
+
     boolean isEmpty() {
         return outline.isEmpty();
     }
@@ -141,20 +169,23 @@ final class Quarry {
 
     /**
      * The next work, top-down: the highest shaft layer with something the pickaxe can dig, or, once a platform is open,
-     * its tunnels (each tunnel line up to the first block that can't be dug). Nothing once the mine is done.
+     * its tunnels (each tunnel line up to the first block that can't be dug). Nothing once the mine is done. Cells
+     * {@code skip} turns down (work it found it can't reach) are passed over, so the work after them comes next. A
+     * block in the ladder's column its pickaxe can't harvest is broken without its drops when {@code breakThrough} allows it.
      */
-    List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength, int deepestPlatform) {
+    List<BlockPos> nextWork(ServerLevel level, int bottom, ItemStack pickaxe, int tunnelLength, int deepestPlatform, java.util.function.Predicate<BlockPos> skip,
+                             java.util.function.Predicate<BlockState> breakThrough) {
         for (int y = top; y >= Math.max(Math.max(bottom, deepestPlatform), level.getMinY() + 1); y--) {
             List<BlockPos> layer = new ArrayList<>();
             for (BlockPos column : outline) {
                 BlockPos pos = column.atY(y);
-                if (layout.digs(pos) && diggable(level, pos, pickaxe)) layer.add(pos);
+                if (layout.digs(pos) && !skip.test(pos) && diggable(level, pos, pickaxe, isLadder(pos) && breakThrough.test(level.getBlockState(pos)))) layer.add(pos);
             }
             if (!layout.isPlatform(y)) {
                 if (layout.isPlatform(y + 1) && y - 1 >= Math.max(bottom, level.getMinY() + 1)) {
                     for (BlockPos column : outline) {
                         BlockPos below = column.atY(y - 1);
-                        if (layout.digs(below) && diggable(level, below, pickaxe)) layer.add(below);
+                        if (layout.digs(below) && !skip.test(below) && diggable(level, below, pickaxe, isLadder(below) && breakThrough.test(level.getBlockState(below)))) layer.add(below);
                     }
                 }
                 if (!layer.isEmpty()) return layer;
@@ -162,11 +193,13 @@ final class Quarry {
             }
             boolean lastPlatform = y == deepestPlatform;
             if (!lastPlatform && ladder != null && layer.contains(ladder.at(y))) return List.of(ladder.at(y));
+            List<Quarry> others = neighbours(level);
             for (List<List<BlockPos>> direction : layout.tunnelsByDirection(y, tunnelLength)) {
                 List<BlockPos> tunnel = new ArrayList<>();
                 for (List<BlockPos> line : direction) {
                     for (BlockPos pos : line) {
-                        if (open(level, pos)) continue;
+                        if (besideAShaft(pos, others)) break;
+                        if (open(level, pos) || skip.test(pos)) continue;
                         if (!diggable(level, pos, pickaxe)) break;
                         tunnel.add(pos);
                     }
@@ -245,6 +278,7 @@ final class Quarry {
      */
     List<BlockPos> sealSpots(ServerLevel level, BlockPos around, int bottom, int tunnelLength) {
         List<BlockPos> spots = new ArrayList<>();
+        List<Quarry> others = neighbours(level);
         int low = Math.max(Math.max(bottom, level.getMinY() + 1), around.getY() - SEAL_RANGE);
         int high = Math.min(top, around.getY() + SEAL_RANGE);
         for (BlockPos cell : BlockPos.betweenClosed(around.offset(-SEAL_RANGE, 0, -SEAL_RANGE).atY(low), around.offset(SEAL_RANGE, 0, SEAL_RANGE).atY(high))) {
@@ -257,7 +291,7 @@ final class Quarry {
             }
             for (Direction side : Direction.values()) {
                 BlockPos next = pos.relative(side);
-                if (next.getY() > top || spots.contains(next)) continue;
+                if (next.getY() > top || spots.contains(next) || others.stream().anyMatch(other -> other.contains(next))) continue;
                 boolean fluid = !level.getFluidState(next).isEmpty();
                 boolean caveOpening = cellOpen && !contains(next) && !fluid && level.getBlockState(next).canBeReplaced() && !level.getBlockState(next).is(BlockTags.CLIMBABLE);
                 if (fluid || caveOpening) spots.add(next);
@@ -317,11 +351,59 @@ final class Quarry {
         return state.isAir() || state.is(BlockTags.CLIMBABLE) || (state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty());
     }
 
+    /** Whether the shaft down to {@code bottom} holds a block this pickaxe can't harvest, such as ore that needs a better one. */
+    boolean holdsBack(ServerLevel level, int bottom, ItemStack pickaxe) {
+        for (BlockPos column : outline) {
+            for (int y = top; y >= Math.max(bottom, level.getMinY() + 1); y--) {
+                BlockPos pos = column.atY(y);
+                if (!layout.digs(pos)) continue;
+                BlockState state = level.getBlockState(pos);
+                if (state.requiresCorrectToolForDrops() && !pickaxe.isCorrectToolForDrops(state) && state.getDestroySpeed(level, pos) >= 0.0F) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The other mines near this one. Its tunnels stop short of their shafts, keeping their walls, and it never seals
+     * their shafts or tunnels: each miner took the other's mine for a cave and walled it off, cutting the other off from its work.
+     */
+    private List<Quarry> neighbours(ServerLevel level) {
+        return level.getPoiManager().findAll(poi -> poi.is(Miner.POI), pos -> !pos.equals(cart), cart, NEIGHBOUR_SEARCH,
+                        net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY)
+                .map(pos -> around(level, pos))
+                .filter(other -> !other.isEmpty())
+                .toList();
+    }
+
+    private static boolean besideAShaft(BlockPos pos, List<Quarry> others) {
+        for (Quarry other : others) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (other.isShaft(pos.offset(dx, 0, dz))) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isLadder(BlockPos pos) {
+        return ladder != null && pos.equals(ladder.at(pos.getY()));
+    }
+
     static boolean diggable(ServerLevel level, BlockPos pos, ItemStack pickaxe) {
+        return diggable(level, pos, pickaxe, false);
+    }
+
+    /**
+     * Whether the miner digs this block. One its pickaxe can't harvest stays, unless {@code anyTool} (in the ladder's
+     * column, with no pickaxe for it to be had): then it breaks it like a player with the wrong pickaxe, slowly and for nothing, or its mine would end there.
+     */
+    static boolean diggable(ServerLevel level, BlockPos pos, ItemStack pickaxe, boolean anyTool) {
         BlockState state = level.getBlockState(pos);
         if (open(level, pos) || !state.getFluidState().isEmpty() || level.getBlockEntity(pos) != null) return false;
         if (state.getDestroySpeed(level, pos) < 0.0F) return false;
-        if (state.requiresCorrectToolForDrops() && !pickaxe.isCorrectToolForDrops(state)) return false;
+        if (!anyTool && state.requiresCorrectToolForDrops() && !pickaxe.isCorrectToolForDrops(state)) return false;
         for (Direction side : Direction.values()) {
             if (!level.getFluidState(pos.relative(side)).isEmpty()) return false;
         }

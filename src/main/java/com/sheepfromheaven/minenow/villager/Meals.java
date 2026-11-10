@@ -24,6 +24,8 @@ import java.util.List;
  */
 public final class Meals {
     public static final TagKey<Item> MEALS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "villager_meals"));
+    private static final TagKey<Item> COOKED_MEAT = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "foods/cooked_meat"));
+    private static final TagKey<Item> COOKED_FISH = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "foods/cooked_fish"));
     static final int MEAL_NUTRITION = 6;
     static final long MEAL_INTERVAL = 12000L;
 
@@ -49,20 +51,46 @@ public final class Meals {
     }
 
     static boolean hasAMeal(ServerLevel level, Villager villager) {
-        int total = 0;
-        for (Item item : Economy.items(level, villager)) {
-            if (!isMeal(new ItemStack(item))) continue;
-            total += Economy.count(level, villager, item) * nutrition(item);
-            if (total >= MEAL_NUTRITION) return true;
-        }
-        return false;
+        return mealNutrition(level, villager, item -> true) >= MEAL_NUTRITION;
     }
 
-    /** Eats a meal from its goods, the most filling food first. Does nothing unless the goods add up to a whole meal. */
+    private static int mealNutrition(ServerLevel level, Villager villager, java.util.function.Predicate<Item> kind) {
+        int total = 0;
+        for (Item item : Economy.items(level, villager)) {
+            if (!isMeal(new ItemStack(item)) || !kind.test(item)) continue;
+            total += Economy.count(level, villager, item) * nutrition(item);
+        }
+        return total;
+    }
+
+    /** Cooked meat or fish, as opposed to bread, vegetables and the like. */
+    static boolean isMeat(Item item) {
+        ItemStack stack = new ItemStack(item);
+        return stack.is(COOKED_MEAT) || stack.is(COOKED_FISH);
+    }
+
+    /** The kind of food its next meal should be: meat or fish after bread and vegetables, and the other way round. */
+    static boolean wantsMeat(Villager villager) {
+        return !villager.getExistingData(ModVillagers.LAST_MEAL_MEAT).orElse(false);
+    }
+
+    /** It has a meal, but not of the kind it would like next, so it might buy some for a change. */
+    static boolean wantsAChange(ServerLevel level, Villager villager) {
+        boolean meat = wantsMeat(villager);
+        return mealNutrition(level, villager, item -> isMeat(item) == meat) < MEAL_NUTRITION;
+    }
+
+    /**
+     * Eats a meal from its goods: the other kind than last time (bread or vegetables, meat or fish) when it has a meal's
+     * worth of it, the most filling food first. Does nothing unless the goods add up to a whole meal.
+     */
     static boolean eat(ServerLevel level, Villager villager) {
         if (!hasAMeal(level, villager)) return false;
+        boolean meat = wantsMeat(villager);
+        boolean varied = mealNutrition(level, villager, item -> isMeat(item) == meat) >= MEAL_NUTRITION;
         List<Item> foods = new ArrayList<>(Economy.items(level, villager).stream().filter(item -> isMeal(new ItemStack(item))).toList());
-        foods.sort((a, b) -> Integer.compare(nutrition(b), nutrition(a)));
+        foods.sort(java.util.Comparator.comparing((Item item) -> varied && isMeat(item) != meat).thenComparing(Meals::nutrition, java.util.Comparator.reverseOrder()));
+        villager.setData(ModVillagers.LAST_MEAL_MEAT, !foods.isEmpty() && isMeat(foods.getFirst()));
         int eaten = 0;
         for (Item item : foods) {
             while (eaten < MEAL_NUTRITION && Economy.take(level, villager, item, 1) == 1) {

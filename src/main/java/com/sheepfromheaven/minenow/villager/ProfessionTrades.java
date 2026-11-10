@@ -92,6 +92,12 @@ public final class ProfessionTrades {
         return new ItemStack(offer.getCostA().getItem());
     }
 
+    /** The offers a player would see on opening this villager's trades, rebuilt from its trade file and goods. */
+    public static java.util.List<MerchantOffer> currentOffers(ServerLevel level, Villager villager) {
+        rebuildOffers(level, villager);
+        return villager.getOffers();
+    }
+
     static void rebuildOffers(ServerLevel level, Villager villager) {
         MerchantOffers offers = villager.getOffers();
         offers.clear();

@@ -30,6 +30,26 @@ public final class ExportTests {
         });
     }
 
+    public static void aTravellingMerchantBuysBulkSurplusAtHalfPrice(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos cart = new BlockPos(11, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        for (int i = 0; i < 3; i++) miner.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
+        helper.assertTrue(Exports.surplus(helper.getLevel(), miner) > 0, "A pile of cobblestone nobody in the village needs is worth a visit, surplus " + Exports.surplus(helper.getLevel(), miner));
+        helper.assertTrue(Exports.sendTrader(helper.getLevel(), miner) != null, "A travelling merchant comes");
+
+        helper.succeedWhen(() -> {
+            int cobble = miner.getInventory().countItem(Items.COBBLESTONE);
+            helper.assertTrue(cobble < 192, "The merchant buys the miner's surplus cobblestone, it still has " + cobble);
+            helper.assertTrue(cobble >= Exports.BULK_KEEP, "...but never what it keeps or what it sells at home, it has " + cobble);
+            helper.assertTrue(miner.getInventory().countItem(Items.EMERALD) * 64 <= 192 - cobble, "...at half its price (32 for an emerald), paid "
+                    + miner.getInventory().countItem(Items.EMERALD) + " for " + (192 - cobble));
+        });
+    }
+
     public static void surplusGoodsDrawAWanderingTraderToTheVillage(GameTestHelper helper) {
         Villager armorer = spawnArmorer(helper);
         for (int i = 0; i < 4; i++) armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));

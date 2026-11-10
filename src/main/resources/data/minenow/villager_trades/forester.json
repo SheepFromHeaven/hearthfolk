@@ -33,6 +33,11 @@
       "item": "minecraft:apple",
       "level": 1,
       "price": 0.25
+    },
+    {
+      "item": "minecraft:stick",
+      "level": 1,
+      "price": 0.03
     }
   ],
   "default_produce": {

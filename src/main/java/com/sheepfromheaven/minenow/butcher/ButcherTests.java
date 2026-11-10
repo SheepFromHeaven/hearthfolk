@@ -179,6 +179,61 @@ public final class ButcherTests {
         });
     }
 
+    public static void aButcherOutOfFuelSpendsItsToolMoneyOnCoal(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, com.sheepfromheaven.minenow.villager.Economy.reserve(butcher)));
+        BlockPos cart = new BlockPos(18, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 40));
+        butcher.setData(com.sheepfromheaven.minenow.villager.ModVillagers.DEBTS, java.util.Map.of(miner.getUUID(), 3));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.COAL) > 0,
+                "A butcher with only its reserve, no fuel and no credit left buys coal with the part kept for a tool, since without fuel it can't work; has " + count(butcher, Items.EMERALD) + " emeralds"));
+    }
+
+    public static void aButcherWithoutFuelBuysNoFishItCannotSmoke(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+        BlockPos barrel = new BlockPos(18, 1, 12);
+        helper.setBlock(barrel, Blocks.BARREL);
+        Villager fisherman = GameTestHelpers.spawnEmployed(helper, barrel.west(), barrel, VillagerProfession.FISHERMAN, PoiTypes.FISHERMAN);
+        fisherman.getInventory().addItem(new ItemStack(Items.COD, 40));
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(count(butcher, Items.COD) == 0 && count(butcher, Items.EMERALD) == 5,
+                    "A butcher with no fuel keeps its money for fuel rather than buying fish it can't smoke; has " + count(butcher, Items.COD) + " cod, " + count(butcher, Items.EMERALD) + " emeralds");
+            helper.succeed();
+        });
+    }
+
+    public static void butcherBuysTheFishermansCatchAndSmokesIt(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.COAL, 4));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+        BlockPos barrel = new BlockPos(18, 1, 12);
+        helper.setBlock(barrel, Blocks.BARREL);
+        Villager fisherman = GameTestHelpers.spawnEmployed(helper, barrel.west(), barrel, VillagerProfession.FISHERMAN, PoiTypes.FISHERMAN);
+        fisherman.getInventory().addItem(new ItemStack(Items.COD, 40));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.COOKED_COD) > 0,
+                "Raw fish is nobody's meal, so the butcher buys the fisherman's catch and smokes it; has " + count(butcher, Items.COD) + " raw, " + count(butcher, Items.COOKED_COD) + " cooked"));
+    }
+
+    public static void butcherSmokesWithLogsWhenItHasNoCoal(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.BEEF, 3));
+        butcher.getInventory().addItem(new ItemStack(Items.OAK_LOG, 4));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.COOKED_BEEF) >= 3,
+                "Without coal the butcher burns logs in its smoker, has " + count(butcher, Items.COOKED_BEEF) + " cooked, " + count(butcher, Items.OAK_LOG) + " logs"));
+    }
+
     public static void butcherSmokesMeatInItsSmoker(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));

@@ -51,11 +51,13 @@ import java.util.UUID;
  * ({@link #visitChance}): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
  * the village can't make ({@code data/<namespace>/travelling_merchant/*.json}, all files merged) instead of vanilla's random trades. It walks to the villagers holding export
  * goods and buys them at their price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn
- * without a player. Vanilla's own wandering trader stays vanilla.
+ * without a player; with what's left it buys the village's bulk surplus at half price ({@link #bulk}), so a miner
+ * buried in cobblestone or a fisherman in fish still earns. Vanilla's own wandering trader stays vanilla.
  */
 public final class Exports {
     static final TagKey<Item> GOODS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "exports"));
     static final int MIN_SURPLUS = 8;
+    static final int BULK_KEEP = 32;
     static final double MAX_CHANCE = 0.5;
     private static final double FULL_CHANCE_AT = 128.0;
     private static final int TRADER_BUDGET = 32;
@@ -104,16 +106,38 @@ public final class Exports {
         return Math.min(MAX_CHANCE, surplus / FULL_CHANCE_AT);
     }
 
-    /** What its export goods would fetch, in whole emeralds at its own prices, sold in whole batches. */
+    /**
+     * What it would sell the merchant, in whole emeralds: its export goods at its own prices, and its bulk surplus (what
+     * it sells beyond {@link #BULK_KEEP} and beyond what it keeps) at half price, sold in whole batches.
+     */
     static int surplus(ServerLevel level, Villager villager) {
         int worth = 0;
         for (Item item : Economy.items(level, villager)) {
-            if (!new ItemStack(item).is(GOODS)) continue;
             Price price = price(villager, item);
             if (price == null) continue;
-            worth += sellable(level, villager, item) / price.count() * price.emeralds();
+            if (new ItemStack(item).is(GOODS)) {
+                worth += sellable(level, villager, item) / price.count() * price.emeralds();
+            } else {
+                int bulk = bulk(level, villager, item);
+                Price half = BuyFromVillagers.lotFor(halfPrice(price), bulk);
+                worth += bulk / half.count() * half.emeralds();
+            }
         }
         return worth;
+    }
+
+    /**
+     * Everyday goods beyond what the village can use (a miner's cobblestone, a fisherman's catch): what it holds of
+     * something it sells beyond what it keeps and half a stack to sell at home. The merchant takes only that, so it can't
+     * empty the village of anything.
+     */
+    static int bulk(ServerLevel level, Villager villager, Item item) {
+        if (new ItemStack(item).is(GOODS)) return 0;
+        return Math.max(0, Economy.count(level, villager, item) - Commissions.reserved(villager, item) - Math.max(BULK_KEEP, Unloading.keepLimit(villager, new ItemStack(item))));
+    }
+
+    private static Price halfPrice(Price price) {
+        return new Price(price.count() * 2, price.emeralds());
     }
 
     /** Sends a travelling merchant to the village, onto open ground within 8 blocks of this villager and 3 of its height; null if there's no room. */
@@ -231,6 +255,17 @@ public final class Exports {
             Economy.give(level, seller, new ItemStack(Items.EMERALD, lots * price.emeralds()));
             spent += lots * price.emeralds();
         }
+        for (Item item : Economy.items(level, seller)) {
+            Price full = price(seller, item);
+            int bulk = bulk(level, seller, item);
+            if (full == null || bulk <= 0) continue;
+            Price price = BuyFromVillagers.lotFor(halfPrice(full), bulk);
+            int lots = Math.min((budget - spent) / price.emeralds(), bulk / price.count());
+            if (lots <= 0) continue;
+            Economy.take(level, seller, item, lots * price.count());
+            Economy.give(level, seller, new ItemStack(Items.EMERALD, lots * price.emeralds()));
+            spent += lots * price.emeralds();
+        }
         return spent;
     }
 
@@ -239,6 +274,6 @@ public final class Exports {
     }
 
     private static int sellable(ServerLevel level, Villager villager, Item item) {
-        return Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item));
+        return Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item)) - Commissions.reserved(villager, item);
     }
 }

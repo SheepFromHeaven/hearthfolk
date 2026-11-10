@@ -66,7 +66,9 @@ public final class WorkshopTests {
         helper.succeedWhen(() -> {
             var workshop = helper.getBlockEntity(NEAR_CHEST, ChestBlockEntity.class);
             var home = helper.getBlockEntity(HOME_CHEST, ChestBlockEntity.class);
-            helper.assertTrue(workshop.countItem(Items.WOOL.white()) == 64, "Its wool goes into the chest by its loom, has " + workshop.countItem(Items.WOOL.white()));
+            int spun = (workshop.countItem(Items.STRING) + shepherd.getInventory().countItem(Items.STRING)) / 2;
+            helper.assertTrue(workshop.countItem(Items.WOOL.white()) + spun == 64, "Its wool (or the string it spun from it) goes into the chest by its loom, has "
+                    + workshop.countItem(Items.WOOL.white()) + " and " + spun + " spun");
             helper.assertTrue(home.countItem(Items.EMERALD) == 5, "...its emeralds into the chest by its bed, has " + home.countItem(Items.EMERALD)
                     + "; carries " + shepherd.getInventory().countItem(Items.EMERALD) + ", home " + HomeStorage.storageOf(shepherd) + ", workshop " + Workshop.chestsOf(helper.getLevel(), shepherd)
                     + ", at " + helper.relativePos(shepherd.blockPosition()).toShortString() + ", running " + shepherd.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList());
