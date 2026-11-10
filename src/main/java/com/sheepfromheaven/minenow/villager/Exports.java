@@ -72,10 +72,21 @@ public final class Exports {
     private static final int MULES = 2;
     private static final int STAY = 24000;
 
+    private static final int MARKET_TICKS = 2400;
+    private static final int BELL_PATIENCE = 1200;
+    private static final double BELL_REACH = 3.0;
+
     private static final Map<UUID, Integer> SPENT = new HashMap<>();
+    private static final Map<UUID, Long> HEADING = new HashMap<>();
+    private static final Map<UUID, Market> MARKETS = new HashMap<>();
+    /** When a merchant last announced its market, so villagers that polled before it look again at once. */
+    static long lastAnnounced = Long.MIN_VALUE;
     private static long lastVisit = Long.MIN_VALUE;
 
     private Exports() {}
+
+    /** A merchant's market: the bell it announced it at and when it closes. */
+    private record Market(BlockPos bell, long until) {}
 
     private record Ware(Identifier item, double price) {
         static final Codec<Ware> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -106,6 +117,58 @@ public final class Exports {
         return level.getEntitiesOfClass(WanderingTrader.class, villager.getBoundingBox().inflate(range),
                         trader -> trader.isAlive() && isMerchant(trader) && !trader.isTrading())
                 .stream().sorted(Comparator.comparingDouble(villager::distanceToSqr)).toList();
+    }
+
+    /** The bell of the village this merchant announced its market at, while it is open. */
+    static Optional<BlockPos> openMarket(WanderingTrader merchant, long now) {
+        return Optional.ofNullable(MARKETS.get(merchant.getUUID())).filter(market -> now < market.until()).map(Market::bell);
+    }
+
+    /** The merchants whose market is open at a bell of the villager's village, however far they stand. */
+    static java.util.List<WanderingTrader> marketsOf(ServerLevel level, Villager villager) {
+        Optional<Villages.Village> village = Villages.of(level, villager);
+        if (village.isEmpty()) return java.util.List.of();
+        long now = level.getGameTime();
+        return MARKETS.entrySet().stream()
+                .filter(entry -> now < entry.getValue().until() && village.get().bells().contains(entry.getValue().bell()))
+                .map(entry -> level.getEntity(entry.getKey()))
+                .filter(entity -> entity instanceof WanderingTrader trader && trader.isAlive() && !trader.isTrading())
+                .map(entity -> (WanderingTrader) entity)
+                .sorted(Comparator.comparingDouble(villager::distanceToSqr)).toList();
+    }
+
+    /**
+     * A merchant in a village walks to the nearest bell and announces its market there with the bell's sound, not a real
+     * ring: that would send every villager into hiding or to its post. It then waits at the bell for {@link #MARKET_TICKS}
+     * so the village comes to it. Gives up on a bell it hasn't reached in {@link #BELL_PATIENCE}; true while it is busy with the market.
+     */
+    private static boolean holdsMarket(ServerLevel level, WanderingTrader trader) {
+        long now = level.getGameTime();
+        Market market = MARKETS.get(trader.getUUID());
+        if (market == null) {
+            Long since = HEADING.putIfAbsent(trader.getUUID(), now);
+            if (since != null && now - since >= BELL_PATIENCE) return false;
+            BlockPos bell = Villages.at(level, trader.blockPosition()).flatMap(village -> village.bells().stream()
+                    .min(Comparator.comparingDouble(pos -> pos.distSqr(trader.blockPosition())))).orElse(null);
+            if (bell == null) {
+                HEADING.remove(trader.getUUID());
+                return false;
+            }
+            if (trader.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(bell)) > BELL_REACH) {
+                trader.getNavigation().moveTo(bell.getX() + 0.5, bell.getY(), bell.getZ() + 0.5, 0.5);
+                return true;
+            }
+            MARKETS.put(trader.getUUID(), new Market(bell, now + MARKET_TICKS));
+            lastAnnounced = now;
+            level.playSound(null, bell, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 2.0F, 1.0F);
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.NOTE, bell.getX() + 0.5, bell.getY() + 1.5, bell.getZ() + 0.5, 6, 0.4, 0.3, 0.4, 1.0);
+            return true;
+        }
+        if (now >= market.until()) return false;
+        if (trader.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(market.bell())) > BELL_REACH + 2) {
+            trader.getNavigation().moveTo(market.bell().getX() + 0.5, market.bell().getY(), market.bell().getZ() + 0.5, 0.5);
+        }
+        return true;
     }
 
     /** What a travelling merchant sells {@code item} for (the data file's price), or null if he doesn't carry it. */
@@ -235,6 +298,8 @@ public final class Exports {
     /** A travelling merchant's mules leave with it, rather than stay behind as free mules. */
     public static void onEntityLeave(EntityLeaveLevelEvent event) {
         if (!(event.getEntity() instanceof WanderingTrader trader) || !(event.getLevel() instanceof ServerLevel level) || !isMerchant(trader)) return;
+        HEADING.remove(trader.getUUID());
+        MARKETS.remove(trader.getUUID());
         Entity.RemovalReason reason = trader.getRemovalReason();
         if (reason == null || !reason.shouldDestroy()) return;
         level.getEntitiesOfClass(Mule.class, trader.getBoundingBox().inflate(16), mule -> mule.getData(ModVillagers.PACK_MULE) && mule.getLeashHolder() == trader)
@@ -249,7 +314,7 @@ public final class Exports {
         }
         if (!(event.getEntity() instanceof WanderingTrader trader) || !(trader.level() instanceof ServerLevel level) || trader.tickCount % 20 != 0 || !isMerchant(trader)) return;
         int budget = TRADER_BUDGET - SPENT.getOrDefault(trader.getUUID(), 0);
-        if (budget <= 0 || trader.isTrading()) return;
+        if (trader.isTrading() || holdsMarket(level, trader) || budget <= 0) return;
         Villager seller = level.getEntitiesOfClass(Villager.class, new AABB(trader.blockPosition()).inflate(SHOP_RANGE), villager -> villager.isAlive() && !villager.isSleeping() && surplus(level, villager) > 0)
                 .stream().min(Comparator.comparingDouble(trader::distanceToSqr)).orElse(null);
         if (seller == null) return;

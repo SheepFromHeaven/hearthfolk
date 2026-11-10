@@ -157,6 +157,42 @@ public final class VillagerTradingTests {
         helper.succeed();
     }
 
+    public static void aTravellingMerchantWalksToTheBellAndOpensTheMarket(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos bell = new BlockPos(4, 1, 12);
+        BlockPos table = new BlockPos(20, 1, 12);
+        helper.setBlock(table, Blocks.SMITHING_TABLE);
+        Villager smith = GameTestHelpers.spawnEmployed(helper, table.south(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
+        VillageTests.claimBell(helper, smith, bell);
+        var merchant = Exports.sendTrader(helper.getLevel(), smith);
+        helper.assertTrue(merchant != null, "A travelling merchant comes");
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(merchant.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(bell))) <= 16, "The merchant walks to the village's bell, is at " + helper.relativePos(merchant.blockPosition()).toShortString());
+            helper.assertTrue(Exports.openMarket(merchant, helper.getLevel().getGameTime()).filter(helper.absolutePos(bell)::equals).isPresent(), "...and opens the market there");
+            helper.assertTrue(!smith.getBrain().hasMemoryValue(net.minecraft.world.entity.ai.memory.MemoryModuleType.HEARD_BELL_TIME),
+                    "...without ringing the bell for real, which would send the villagers into hiding");
+        });
+    }
+
+    public static void villagersBeyondTheMerchantsReachComeWhenItOpensTheMarket(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos bell = new BlockPos(4, 1, 12);
+        Villager neighbour = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        VillageTests.claimBell(helper, neighbour, bell);
+        BlockPos table = new BlockPos(66, 1, 12);
+        helper.setBlock(table, Blocks.SMITHING_TABLE);
+        Villager smith = GameTestHelpers.spawnEmployed(helper, table.south(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
+        smith.getInventory().addItem(new ItemStack(Items.EMERALD, 20));
+        VillageTests.claimBell(helper, smith, bell);
+        helper.assertTrue(Exports.sendTrader(helper.getLevel(), neighbour) != null, "A travelling merchant comes");
+
+        helper.succeedWhen(() -> helper.assertTrue(count(smith, Items.STRING) >= 8,
+                "A toolsmith 60 blocks from the merchant hears the market open and walks over to buy string, has " + count(smith, Items.STRING)));
+    }
+
     private static int merchants(GameTestHelper helper) {
         return helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader.class, helper.getBounds().inflate(16)).size();
     }

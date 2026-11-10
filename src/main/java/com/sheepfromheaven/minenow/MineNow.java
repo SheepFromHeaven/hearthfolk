@@ -202,6 +202,8 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_buys_nothing_from_a_plain_wandering_trader", VillagerTradingTests::aVillagerBuysNothingFromAPlainWanderingTrader);
             test(helper, TestGroup.VILLAGER_TRADING, "demand_is_what_a_villager_could_buy_from_the_merchant", VillagerTradingTests::demandIsWhatAVillagerCouldBuyFromTheMerchant);
             test(helper, TestGroup.VILLAGER_TRADING, "unmet_needs_draw_a_travelling_merchant", VillagerTradingTests::unmetNeedsDrawATravellingMerchant);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_travelling_merchant_walks_to_the_bell_and_opens_the_market", VillagerTradingTests::aTravellingMerchantWalksToTheBellAndOpensTheMarket);
+            test(helper, TestGroup.VILLAGER_TRADING, "villagers_beyond_the_merchants_reach_come_when_it_opens_the_market", VillagerTradingTests::villagersBeyondTheMerchantsReachComeWhenItOpensTheMarket);
             test(helper, TestGroup.VILLAGER_TRADING, "a_seller_out_of_reach_does_not_cost_the_buyer_its_job", com.sheepfromheaven.minenow.villager.VillagerTradingTests::aSellerOutOfReachDoesNotCostTheBuyerItsJob);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
             test(helper, TestGroup.VILLAGER_TRADING, "travelling_merchants_can_be_switched_off", com.sheepfromheaven.minenow.villager.ExportTests::travellingMerchantsCanBeSwitchedOff);

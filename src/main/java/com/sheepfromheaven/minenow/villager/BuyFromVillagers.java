@@ -81,6 +81,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private @Nullable Visit visit;
     private long giveUpAt;
     private long nextStartAllowed;
+    private long lastChecked = Long.MIN_VALUE;
 
     public BuyFromVillagers() {
         super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT), LONGEST_TRIP);
@@ -88,7 +89,9 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager buyer) {
-        if (level.getGameTime() < nextStartAllowed || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
+        boolean announced = Exports.lastAnnounced > lastChecked;
+        if ((level.getGameTime() < nextStartAllowed && !announced) || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
+        lastChecked = level.getGameTime();
         nextStartAllowed = level.getGameTime() + RETRY_DELAY;
         repayDebts(level, buyer);
         merchantDeal = null;
@@ -192,7 +195,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static Optional<MerchantDeal> merchantDeal(ServerLevel level, Villager buyer) {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty() || !shopsForWork(buyer)) return Optional.empty();
-        java.util.List<WanderingTrader> merchants = Exports.merchantsNear(level, buyer, SEARCH_RANGE);
+        java.util.List<WanderingTrader> merchants = java.util.stream.Stream.concat(Exports.marketsOf(level, buyer).stream(), Exports.merchantsNear(level, buyer, SEARCH_RANGE).stream())
+                .distinct().toList();
         if (merchants.isEmpty()) return Optional.empty();
         for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
             int held = Economy.count(level, buyer, supply.item());
