@@ -1,6 +1,6 @@
 {
   "type": "minecraft:function",
-  "environment": "minenow:bell",
+  "environment": "minenow:village_5",
   "function": "minenow:an_archer_prefers_a_marked_post_to_higher_ground",
   "structure": "minenow:field_24x6x24",
   "max_ticks": 600

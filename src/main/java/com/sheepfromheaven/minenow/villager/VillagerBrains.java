@@ -20,7 +20,6 @@ import net.minecraft.world.entity.ai.behavior.JumpOnBed;
 import net.minecraft.world.entity.ai.behavior.RunOne;
 import net.minecraft.world.entity.ai.behavior.SetEntityLookTarget;
 import net.minecraft.world.entity.ai.behavior.SetLookAndInteract;
-import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromBlockMemory;
 import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromLookTarget;
 import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
 import net.minecraft.world.entity.ai.behavior.SocializeAtBell;
@@ -43,9 +42,10 @@ import java.util.Set;
 
 /**
  * Brains can't drop a single behaviour, so every adult villager's brain is rebuilt from vanilla's own packages (as
- * listed in Villager.BRAIN_PROVIDER), changed in three places: MEET and IDLE leave out TradeWithVillager (villagers
- * handing each other food and goods, which would bypass trading), farmers get {@link FarmerWork}'s WORK package, and
- * CORE has {@link PanicOrFight} instead of the panic trigger (with a FIGHT activity for it).
+ * listed in Villager.BRAIN_PROVIDER), changed in four places: MEET and IDLE leave out TradeWithVillager (villagers
+ * handing each other food and goods, which would bypass trading), farmers get {@link FarmerWork}'s WORK package,
+ * CORE has {@link PanicOrFight} instead of the panic trigger (with a FIGHT activity for it), and the walks back to the
+ * job site, bed and meeting point are {@link WalkToPoi}, so a walk across the village doesn't cost the villager them.
  * Only safe on a brain that hasn't ticked yet, since running behaviours would never be stopped.
  */
 public final class VillagerBrains {
@@ -55,18 +55,34 @@ public final class VillagerBrains {
 
     public static void rebuild(Brain<Villager> brain, Villager villager) {
         Holder<VillagerProfession> profession = villager.getVillagerData().profession();
-        var work = FarmerRules.isFarmer(villager) ? FarmerWork.workPackage() : VillagerGoalPackages.getWorkPackage(profession, SPEED);
+        var work = FarmerRules.isFarmer(villager) ? FarmerWork.workPackage()
+                : withWalkToPoi(VillagerGoalPackages.getWorkPackage(profession, SPEED), jobSiteWalk());
         brain.removeAllBehaviors();
         brain.addActivity(Activity.CORE, corePackage(profession), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.FIGHT, ImmutableList.of(Pair.of(99, new DoNothing(20, 40))), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.WORK, work, ImmutableSet.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)), Set.of());
         brain.addActivity(Activity.MEET, meetPackage(), ImmutableSet.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)), Set.of());
-        brain.addActivity(Activity.REST, VillagerGoalPackages.getRestPackage(SPEED), ImmutableSet.of(), Set.of());
+        brain.addActivity(Activity.REST, withWalkToPoi(VillagerGoalPackages.getRestPackage(SPEED), new WalkToPoi(MemoryModuleType.HOME, SPEED, 1, 1200)), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.IDLE, idlePackage(), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.PANIC, VillagerGoalPackages.getPanicPackage(SPEED), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.PRE_RAID, VillagerGoalPackages.getPreRaidPackage(SPEED), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.RAID, VillagerGoalPackages.getRaidPackage(SPEED), ImmutableSet.of(), Set.of());
         brain.addActivity(Activity.HIDE, VillagerGoalPackages.getHidePackage(SPEED), ImmutableSet.of(), Set.of());
+    }
+
+    public static WalkToPoi jobSiteWalk() {
+        return WalkToPoi.keeping(MemoryModuleType.JOB_SITE, SPEED, 9);
+    }
+
+    /** The package with {@link WalkToPoi} in place of vanilla's walk back to the place, its only behaviour at priority 2. */
+    private static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> withWalkToPoi(
+            ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> pack, WalkToPoi walk) {
+        if (pack.stream().filter(pair -> pair.getFirst() == 2).count() != 1) throw new IllegalStateException("Vanilla's package changed: expected one walk at priority 2");
+        return pack.stream()
+                .map(pair -> pair.getFirst() == 2
+                        ? Pair.<Integer, BehaviorControl<? super Villager>>of(2, walk)
+                        : Pair.<Integer, BehaviorControl<? super Villager>>of(pair.getFirst(), pair.getSecond()))
+                .collect(ImmutableList.toImmutableList());
     }
 
     /** Vanilla's, with {@link PanicOrFight} in place of its panic trigger. */
@@ -87,7 +103,7 @@ public final class VillagerBrains {
                         Pair.of(SocializeAtBell.create(), 2)))),
                 Pair.of(10, new ShowTradesToPlayer(400, 1600)),
                 Pair.of(10, SetLookAndInteract.create(EntityTypes.PLAYER, 4)),
-                Pair.of(2, SetWalkTargetFromBlockMemory.create(MemoryModuleType.MEETING_POINT, SPEED, 6, 100, 200)),
+                Pair.of(2, new WalkToPoi(MemoryModuleType.MEETING_POINT, SPEED, 6, 200)),
                 Pair.of(3, new GiveGiftToHero(100)),
                 Pair.of(3, ValidateNearbyPoi.create(type -> type.is(PoiTypes.MEETING), MemoryModuleType.MEETING_POINT)),
                 fullLook(),

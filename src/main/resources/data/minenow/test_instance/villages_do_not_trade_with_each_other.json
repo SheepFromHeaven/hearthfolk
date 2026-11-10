@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_16",
+  "function": "minenow:villages_do_not_trade_with_each_other",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

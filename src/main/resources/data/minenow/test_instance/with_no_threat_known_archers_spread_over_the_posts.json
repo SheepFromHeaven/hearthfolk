@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_9",
+  "function": "minenow:with_no_threat_known_archers_spread_over_the_posts",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 2400
+}

@@ -21,6 +21,30 @@ public final class ForesterTests {
 
     private ForesterTests() {}
 
+    public static void aSaplingDoesNotGrowIntoAVillagerStandingInIt(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        BlockPos crowded = new BlockPos(10, 1, 12);
+        BlockPos free = new BlockPos(40, 1, 12);
+        net.minecraft.world.level.block.state.BlockState sapling = Blocks.OAK_SAPLING.defaultBlockState().setValue(net.minecraft.world.level.block.SaplingBlock.STAGE, 1);
+        for (BlockPos pos : List.of(crowded, free)) {
+            helper.setBlock(pos.below(), Blocks.DIRT);
+            helper.setBlock(pos, sapling);
+        }
+        Villager villager = helper.spawnWithNoFreeWill(EntityTypes.VILLAGER, crowded);
+
+        helper.runAfterDelay(5, () -> {
+            for (BlockPos pos : List.of(crowded, free)) {
+                for (int i = 0; i < 20 && helper.getBlockState(pos).is(Blocks.OAK_SAPLING); i++) {
+                    ((net.minecraft.world.level.block.SaplingBlock) Blocks.OAK_SAPLING).advanceTree(helper.getLevel(), helper.absolutePos(pos), sapling, helper.getLevel().getRandom());
+                }
+            }
+            helper.assertTrue(helper.getBlockState(free).is(Blocks.OAK_LOG), "A sapling with nobody near grows into a tree");
+            helper.assertTrue(helper.getBlockState(crowded).is(Blocks.OAK_SAPLING), "One a villager stands in waits, or the trunk would suffocate it");
+            helper.assertTrue(villager.isAlive() && !villager.isInWall(), "...and the villager is unharmed");
+            helper.succeed();
+        });
+    }
+
     public static void pottingASaplingOnALogMakesANursery(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(LOG, Blocks.SPRUCE_LOG);

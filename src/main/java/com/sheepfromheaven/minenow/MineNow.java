@@ -59,6 +59,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onGrowFeature);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.golemsmith.Golemsmith::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.golemsmith.Golemsmith::onBreak);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.golemsmith.Golemsmith::onFinalizeSpawn);
@@ -88,6 +89,8 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(VillagerNames::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Gear::onDamage);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Alarms::onDamage);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Alarms::onLevelTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Gear::onDrops);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Gear::onConversion);
         NeoForge.EVENT_BUS.addListener(VillagerNames::onEntityJoin);
@@ -230,6 +233,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "a_broke_miner_keeps_its_wooden_pickaxe_when_it_digs_everything", ToolsmithTests::aBrokeMinerKeepsItsWoodenPickaxeWhenItDigsEverything);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
+            test(helper, TestGroup.FORESTER, "a_sapling_does_not_grow_into_a_villager_standing_in_it", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingDoesNotGrowIntoAVillagerStandingInIt);
             test(helper, TestGroup.FORESTER, "nobody_pays_a_forester_for_planks_it_has_nothing_to_make_from", com.sheepfromheaven.minenow.forester.ForesterTests::nobodyPaysAForesterForPlanksItHasNothingToMakeFrom);
             test(helper, TestGroup.FORESTER, "the_toolsmith_buys_the_sticks_the_forester_gathers", com.sheepfromheaven.minenow.forester.ForesterTests::theToolsmithBuysTheSticksTheForesterGathers);
             test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);
@@ -312,6 +316,11 @@ public final class MineNow {
             test(helper, TestGroup.DEFENCE, "an_archer_prefers_a_marked_post_to_higher_ground", com.sheepfromheaven.minenow.villager.GearTests::anArcherPrefersAMarkedPostToHigherGround);
             test(helper, TestGroup.DEFENCE, "a_villager_on_high_ground_notices_a_hostile_further_off_than_one_on_the_ground", com.sheepfromheaven.minenow.villager.GearTests::aVillagerOnHighGroundNoticesAHostileFurtherOffThanOneOnTheGround);
             test(helper, TestGroup.DEFENCE, "a_fallen_villagers_gear_drops", com.sheepfromheaven.minenow.villager.GearTests::aFallenVillagersGearDrops);
+            test(helper, TestGroup.DEFENCE, "a_bell_alerts_the_whole_village", com.sheepfromheaven.minenow.villager.AlarmTests::aBellAlertsTheWholeVillage);
+            test(helper, TestGroup.DEFENCE, "an_archer_takes_the_free_post_nearest_the_threat", com.sheepfromheaven.minenow.villager.AlarmTests::anArcherTakesTheFreePostNearestTheThreat);
+            test(helper, TestGroup.DEFENCE, "with_no_threat_known_archers_spread_over_the_posts", com.sheepfromheaven.minenow.villager.AlarmTests::withNoThreatKnownArchersSpreadOverThePosts);
+            test(helper, TestGroup.DEFENCE, "swordsmen_gather_on_the_threatened_side", com.sheepfromheaven.minenow.villager.AlarmTests::swordsmenGatherOnTheThreatenedSide);
+            test(helper, TestGroup.DEFENCE, "an_archer_climbs_high_ground_on_the_side_facing_the_threat", com.sheepfromheaven.minenow.villager.AlarmTests::anArcherClimbsHighGroundOnTheSideFacingTheThreat);
             test(helper, TestGroup.WEAPONSMITH, "a_novice_weaponsmith_makes_stone_swords", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aNoviceWeaponsmithMakesStoneSwords);
             test(helper, TestGroup.WEAPONSMITH, "a_weaponsmith_grinds_two_worn_swords_into_one", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aWeaponsmithGrindsTwoWornSwordsIntoOne);
             test(helper, TestGroup.WEAPONSMITH, "a_weaponsmith_hangs_its_best_swords_on_the_wall", com.sheepfromheaven.minenow.weaponsmith.WeaponsmithTests::aWeaponsmithHangsItsBestSwordsOnTheWall);
@@ -381,6 +390,15 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "following_far_from_home_abandons_the_old_bed", FollowTests::followingFarFromHomeAbandonsTheOldBed);
             test(helper, TestGroup.VILLAGERS, "villager_picks_the_nearest_bell_when_the_afternoon_starts", MeetingTests::villagerPicksTheNearestBellWhenTheAfternoonStarts);
             test(helper, TestGroup.VILLAGERS, "villagers_do_not_hand_items_to_each_other", MeetingTests::villagersDoNotHandItemsToEachOther);
+            test(helper, TestGroup.VILLAGE, "villagers_that_claimed_a_bell_are_one_village", com.sheepfromheaven.minenow.villager.VillageTests::villagersThatClaimedABellAreOneVillage);
+            test(helper, TestGroup.VILLAGE, "bells_whose_areas_touch_are_one_village", com.sheepfromheaven.minenow.villager.VillageTests::bellsWhoseAreasTouchAreOneVillage);
+            test(helper, TestGroup.VILLAGE, "bells_far_apart_are_two_villages", com.sheepfromheaven.minenow.villager.VillageTests::bellsFarApartAreTwoVillages);
+            test(helper, TestGroup.VILLAGE, "beds_between_two_bells_join_them_into_one_village", com.sheepfromheaven.minenow.villager.VillageTests::bedsBetweenTwoBellsJoinThemIntoOneVillage);
+            test(helper, TestGroup.VILLAGE, "villagers_buy_from_anyone_in_their_village_however_far", com.sheepfromheaven.minenow.villager.VillageTests::villagersBuyFromAnyoneInTheirVillageHoweverFar);
+            test(helper, TestGroup.VILLAGE, "villages_do_not_trade_with_each_other", com.sheepfromheaven.minenow.villager.VillageTests::villagesDoNotTradeWithEachOther);
+            test(helper, TestGroup.VILLAGERS, "a_villager_keeps_its_job_site_after_a_walk_it_could_not_finish", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerKeepsItsJobSiteAfterAWalkItCouldNotFinish);
+            test(helper, TestGroup.VILLAGERS, "a_villager_keeps_a_job_site_it_cannot_reach", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerKeepsAJobSiteItCannotReach);
+            test(helper, TestGroup.VILLAGERS, "a_villager_loses_a_job_site_that_was_broken", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerLosesAJobSiteThatWasBroken);
             test(helper, TestGroup.VILLAGERS, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, TestGroup.STORAGE, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
             test(helper, TestGroup.STORAGE, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);

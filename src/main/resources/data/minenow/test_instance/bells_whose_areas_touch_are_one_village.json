@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_13",
+  "function": "minenow:bells_whose_areas_touch_are_one_village",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 300
+}

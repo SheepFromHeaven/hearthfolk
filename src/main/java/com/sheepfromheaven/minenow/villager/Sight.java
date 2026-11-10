@@ -48,6 +48,11 @@ final class Sight {
         return BOW_RANGE + Math.clamp(body.getY() - enemy.getY(), 0.0, MAX_HEIGHT);
     }
 
+    /** A mob villagers fear (see {@link #base}). */
+    static boolean feared(LivingEntity enemy) {
+        return base(enemy).isPresent();
+    }
+
     /** Vanilla's list of what a villager fears and how far its sensor sees each, or none for a mob it ignores. */
     private static OptionalDouble base(LivingEntity enemy) {
         var distance = enemy.getData(NeoForgeDataMaps.ACCEPTABLE_VILLAGER_DISTANCES);

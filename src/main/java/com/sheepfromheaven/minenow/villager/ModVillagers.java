@@ -27,6 +27,10 @@ public final class ModVillagers {
     public static final DeferredHolder<PoiType, PoiType> HOME_STORAGE = POI_TYPES.register("home_storage",
             () -> new PoiType(ImmutableSet.copyOf(Blocks.CHEST.getStateDefinition().getPossibleStates()), 1, 1));
 
+    /** The archer posts the player marks ({@link HighGround#POSTS}, hay bales), so an alarm finds them anywhere in the village. */
+    public static final DeferredHolder<PoiType, PoiType> ARCHER_POST = POI_TYPES.register("archer_post",
+            () -> new PoiType(ImmutableSet.copyOf(Blocks.HAY_BLOCK.getStateDefinition().getPossibleStates()), 0, 1));
+
     public static final Supplier<AttachmentType<GlobalPos>> STORAGE = ATTACHMENT_TYPES.register("storage",
             () -> AttachmentType.builder(() -> GlobalPos.of(net.minecraft.world.level.Level.OVERWORLD, net.minecraft.core.BlockPos.ZERO))
                     .serialize(GlobalPos.MAP_CODEC)
