@@ -122,6 +122,60 @@
       "price": 0.125,
       "max": 16,
       "level": 1
+    },
+    {
+      "item": "minecraft:oak_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:spruce_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:birch_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:jungle_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:acacia_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:dark_oak_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:cherry_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:pale_oak_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:mangrove_log",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
     }
   ],
   "keeps": [

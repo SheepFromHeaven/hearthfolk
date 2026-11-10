@@ -183,6 +183,7 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_leaves_sheep_and_named_animals_alone", ButcherTests::butcherLeavesSheepAndNamedAnimalsAlone);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_meat_in_its_smoker", ButcherTests::butcherSmokesMeatInItsSmoker);
             test(helper, TestGroup.BUTCHER, "butcher_buys_the_fishermans_catch_and_smokes_it", com.sheepfromheaven.minenow.butcher.ButcherTests::butcherBuysTheFishermansCatchAndSmokesIt);
+            test(helper, TestGroup.BUTCHER, "butcher_smokes_with_logs_when_it_has_no_coal", com.sheepfromheaven.minenow.butcher.ButcherTests::butcherSmokesWithLogsWhenItHasNoCoal);
             test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
             test(helper, TestGroup.VILLAGER_TRADING, "a_seller_out_of_reach_does_not_cost_the_buyer_its_job", com.sheepfromheaven.minenow.villager.VillagerTradingTests::aSellerOutOfReachDoesNotCostTheBuyerItsJob);

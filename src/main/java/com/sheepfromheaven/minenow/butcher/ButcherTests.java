@@ -193,6 +193,16 @@ public final class ButcherTests {
                 "Raw fish is nobody's meal, so the butcher buys the fisherman's catch and smokes it; has " + count(butcher, Items.COD) + " raw, " + count(butcher, Items.COOKED_COD) + " cooked"));
     }
 
+    public static void butcherSmokesWithLogsWhenItHasNoCoal(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.BEEF, 3));
+        butcher.getInventory().addItem(new ItemStack(Items.OAK_LOG, 4));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.COOKED_BEEF) >= 3,
+                "Without coal the butcher burns logs in its smoker, has " + count(butcher, Items.COOKED_BEEF) + " cooked, " + count(butcher, Items.OAK_LOG) + " logs"));
+    }
+
     public static void butcherSmokesMeatInItsSmoker(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));

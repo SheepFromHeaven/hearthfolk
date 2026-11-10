@@ -15,13 +15,12 @@ import java.util.function.Predicate;
 
 /**
  * A villager working its furnace-like workstation: it takes out what's done, puts in what it carries that the furnace
- * can cook (and that {@code cooks} accepts), and adds just the coal that load needs, so the rest can fuel other furnaces.
+ * can cook (and that {@code cooks} accepts), and adds just the fuel that load needs (coal or charcoal, else logs), so the rest can fuel other furnaces.
  */
 public final class FurnaceTending {
     private static final int INPUT = 0;
     private static final int FUEL = 1;
     private static final int RESULT = 2;
-    private static final int ITEMS_PER_COAL = 8;
 
     private FurnaceTending() {}
 
@@ -33,7 +32,7 @@ public final class FurnaceTending {
     public static boolean needsTending(ServerLevel level, Villager body, BlockPos pos, RecipeType<? extends AbstractCookingRecipe> type, Predicate<ItemStack> cooks, int share) {
         if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace)) return false;
         if (!furnace.getItem(RESULT).isEmpty()) return true;
-        boolean carriesFuel = body.getInventory().hasAnyMatching(stack -> stack.is(ItemTags.COALS));
+        boolean carriesFuel = body.getInventory().hasAnyMatching(FurnaceTending::isFuel);
         ItemStack input = furnace.getItem(INPUT);
         if (!input.isEmpty() && furnace.getItem(FUEL).isEmpty() && !lit(level, pos) && carriesFuel) return true;
         boolean fuelled = !furnace.getItem(FUEL).isEmpty() || carriesFuel;
@@ -65,18 +64,37 @@ public final class FurnaceTending {
                 stack.shrink(moved);
             }
         }
-        int needed = (furnace.getItem(INPUT).getCount() + ITEMS_PER_COAL - 1) / ITEMS_PER_COAL - furnace.getItem(FUEL).getCount();
         boolean burningOn = furnace.getItem(FUEL).isEmpty() && lit(level, pos);
-        if (needed > 0 && !burningOn && (furnace.getItem(FUEL).isEmpty() || furnace.getItem(FUEL).is(ItemTags.COALS))) {
-            for (ItemStack stack : body.getInventory().getItems()) {
-                if (!stack.is(ItemTags.COALS) || (!furnace.getItem(FUEL).isEmpty() && !ItemStack.isSameItemSameComponents(stack, furnace.getItem(FUEL)))) continue;
-                ItemStack fuel = stack.split(Math.min(needed, stack.getCount()));
-                if (furnace.getItem(FUEL).isEmpty()) furnace.setItem(FUEL, fuel);
-                else furnace.getItem(FUEL).grow(fuel.getCount());
-                break;
+        if (!burningOn && (furnace.getItem(FUEL).isEmpty() || isFuel(furnace.getItem(FUEL)))) {
+            ItemStack fuel = furnace.getItem(FUEL).isEmpty() ? bestFuel(body) : furnace.getItem(FUEL);
+            if (!fuel.isEmpty()) {
+                double itemsPerFuel = fuel.is(ItemTags.COALS) ? 8.0 : 1.5;
+                int needed = (int) Math.ceil(furnace.getItem(INPUT).getCount() / itemsPerFuel) - furnace.getItem(FUEL).getCount();
+                for (ItemStack stack : body.getInventory().getItems()) {
+                    if (needed <= 0) break;
+                    if (!ItemStack.isSameItemSameComponents(stack, fuel)) continue;
+                    ItemStack added = stack.split(Math.min(needed, stack.getCount()));
+                    if (furnace.getItem(FUEL).isEmpty()) furnace.setItem(FUEL, added);
+                    else furnace.getItem(FUEL).grow(added.getCount());
+                    needed -= added.getCount();
+                }
             }
         }
         furnace.setChanged();
+    }
+
+    /** Coal or charcoal, or failing that logs, which burn like a player's furnace burns them: a smoker needs no coal mine. */
+    static boolean isFuel(ItemStack stack) {
+        return stack.is(ItemTags.COALS) || stack.is(ItemTags.LOGS_THAT_BURN);
+    }
+
+    private static ItemStack bestFuel(Villager body) {
+        ItemStack logs = ItemStack.EMPTY;
+        for (ItemStack stack : body.getInventory().getItems()) {
+            if (stack.is(ItemTags.COALS)) return stack;
+            if (logs.isEmpty() && stack.is(ItemTags.LOGS_THAT_BURN)) logs = stack;
+        }
+        return logs;
     }
 
     private static boolean lit(ServerLevel level, BlockPos pos) {
