@@ -390,6 +390,15 @@ public final class MineNow {
             test(helper, TestGroup.STORAGE, "a_workshop_claims_as_many_chests_as_its_level_allows", com.sheepfromheaven.minenow.villager.WorkshopTests::aWorkshopClaimsAsManyChestsAsItsLevelAllows);
             test(helper, TestGroup.STORAGE, "trapped_chests_are_never_claimed", com.sheepfromheaven.minenow.villager.WorkshopTests::trappedChestsAreNeverClaimed);
             test(helper, TestGroup.STORAGE, "trade_goods_go_to_the_workshop_and_emeralds_go_home", com.sheepfromheaven.minenow.villager.WorkshopTests::tradeGoodsGoToTheWorkshopAndEmeraldsGoHome);
+            test(helper, TestGroup.VILLAGE, "villagers_that_claimed_a_bell_are_one_village", com.sheepfromheaven.minenow.villager.VillageTests::villagersThatClaimedABellAreOneVillage);
+            test(helper, TestGroup.VILLAGE, "bells_whose_areas_touch_are_one_village", com.sheepfromheaven.minenow.villager.VillageTests::bellsWhoseAreasTouchAreOneVillage);
+            test(helper, TestGroup.VILLAGE, "bells_far_apart_are_two_villages", com.sheepfromheaven.minenow.villager.VillageTests::bellsFarApartAreTwoVillages);
+            test(helper, TestGroup.VILLAGE, "beds_between_two_bells_join_them_into_one_village", com.sheepfromheaven.minenow.villager.VillageTests::bedsBetweenTwoBellsJoinThemIntoOneVillage);
+            test(helper, TestGroup.VILLAGE, "villagers_buy_from_anyone_in_their_village_however_far", com.sheepfromheaven.minenow.villager.VillageTests::villagersBuyFromAnyoneInTheirVillageHoweverFar);
+            test(helper, TestGroup.VILLAGE, "villages_do_not_trade_with_each_other", com.sheepfromheaven.minenow.villager.VillageTests::villagesDoNotTradeWithEachOther);
+            test(helper, TestGroup.VILLAGERS, "a_villager_keeps_its_job_site_after_a_walk_it_could_not_finish", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerKeepsItsJobSiteAfterAWalkItCouldNotFinish);
+            test(helper, TestGroup.VILLAGERS, "a_villager_keeps_a_job_site_it_cannot_reach", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerKeepsAJobSiteItCannotReach);
+            test(helper, TestGroup.VILLAGERS, "a_villager_loses_a_job_site_that_was_broken", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerLosesAJobSiteThatWasBroken);
             test(helper, TestGroup.STORAGE, "goods_in_a_workshop_chest_are_for_sale", com.sheepfromheaven.minenow.villager.WorkshopTests::goodsInAWorkshopChestAreForSale);
             test(helper, TestGroup.STORAGE, "a_hopper_swallowing_a_villagers_dropped_goods_is_theft_by_its_placer", HomeStorageTests::aHopperSwallowingAVillagersDroppedGoodsIsTheftByItsPlacer);
             test(helper, TestGroup.STORAGE, "owner_dying_releases_and_unlocks_its_chest", HomeStorageTests::ownerDyingReleasesAndUnlocksItsChest);

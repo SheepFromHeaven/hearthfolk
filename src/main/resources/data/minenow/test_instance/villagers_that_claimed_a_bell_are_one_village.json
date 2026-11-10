@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_12",
+  "function": "minenow:villagers_that_claimed_a_bell_are_one_village",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 300
+}

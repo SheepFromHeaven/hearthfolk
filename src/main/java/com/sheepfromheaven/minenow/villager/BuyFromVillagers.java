@@ -24,8 +24,8 @@ import java.util.Optional;
 /**
  * A hungry villager without a meal ({@link Meals}), a wealthy one without food to breed ({@link Wealth}), or a working
  * one that has no tool of its trade (the best one a crafting villager has in stock that it can afford) or runs low on a
- * supply of its trade (fewer than one batch in its inventory), walks to the nearest villager that sells what it needs
- * and buys it at that villager's price, the same price a player pays. Supplies come in as many emeralds' worth as it
+ * supply of its trade (fewer than one batch in its inventory), walks to the nearest villager of its village that sells
+ * what it needs, however far, and buys it at that villager's price, the same price a player pays. Supplies come in as many emeralds' worth as it
  * can afford, the seller can spare and still fit under the supply's {@code max}.
  */
 public class BuyFromVillagers extends Behavior<Villager> {
@@ -33,6 +33,10 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static final float SPEED = 0.5F;
     private static final double REACH = 2.5;
     private static final int GIVE_UP_AFTER_TICKS = 600;
+    /** A seller across the village takes longer to reach: this many ticks more per block beyond {@link #NEARBY}, up to {@link #LONGEST_TRIP}. */
+    private static final int TICKS_PER_BLOCK = 20;
+    private static final int NEARBY = 24;
+    private static final int LONGEST_TRIP = 4800;
     private static final int RETRY_DELAY = 400;
 
     /** Buys lots of the seller's {@code price} (so many items for so many emeralds), up to {@code room} items. */
@@ -68,11 +72,11 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private @Nullable Deal deal;
     private @Nullable Visit visit;
-    private long startedAt;
+    private long giveUpAt;
     private long nextStartAllowed;
 
     public BuyFromVillagers() {
-        super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT), GIVE_UP_AFTER_TICKS);
+        super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT), LONGEST_TRIP);
     }
 
     @Override
@@ -92,13 +96,14 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     @Override
     protected void start(ServerLevel level, Villager buyer, long timestamp) {
-        startedAt = timestamp;
+        double distance = buyer.distanceTo(partner());
+        giveUpAt = timestamp + Math.min(LONGEST_TRIP, GIVE_UP_AFTER_TICKS + (int) Math.max(0, distance - NEARBY) * TICKS_PER_BLOCK);
         walk(buyer);
     }
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager buyer, long timestamp) {
-        return (deal != null || visit != null) && partner().isAlive() && !buyer.isTrading() && timestamp - startedAt < GIVE_UP_AFTER_TICKS;
+        return (deal != null || visit != null) && partner().isAlive() && !buyer.isTrading() && timestamp < giveUpAt;
     }
 
     @Override
@@ -382,11 +387,17 @@ public class BuyFromVillagers extends Behavior<Villager> {
                 .findFirst();
     }
 
+    /**
+     * The villagers of its own village ({@link Villages}), however far; a villager of no village trades with those
+     * within {@link #SEARCH_RANGE} that belong to none either, so two villages never trade.
+     */
     private static java.util.List<Villager> sellers(ServerLevel level, Villager buyer) {
-        return level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(SEARCH_RANGE),
-                        seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading() && !seller.isSleeping()
-                                && !com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, seller))
-                .stream()
+        Optional<Villages.Village> village = Villages.of(level, buyer);
+        java.util.List<Villager> candidates = village.isPresent() ? village.get().villagers(level)
+                : level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(SEARCH_RANGE), seller -> Villages.of(level, seller).isEmpty());
+        return candidates.stream()
+                .filter(seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading() && !seller.isSleeping()
+                        && !com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, seller))
                 .sorted(Comparator.comparingDouble(buyer::distanceToSqr))
                 .toList();
     }

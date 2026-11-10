@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_15",
+  "function": "minenow:villagers_buy_from_anyone_in_their_village_however_far",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 2400
+}

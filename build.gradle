@@ -41,6 +41,8 @@ neoForge {
                 '--report',
                 layout.projectDirectory.file('build/test-report.xml').asFile.absolutePath
             ])
+            if (providers.gradleProperty('tests').isPresent())
+                programArguments.addAll(['--tests', providers.gradleProperty('tests').get()])
         }
 
         villageSoak {
@@ -50,6 +52,7 @@ neoForge {
             systemProperty 'minenow.soak.trace', providers.gradleProperty('soakTrace').orElse('').get()
             systemProperty 'minenow.soak.traceMines', providers.gradleProperty('soakTraceMines').orElse('false').get()
             systemProperty 'minenow.soak.player', providers.gradleProperty('soakPlayer').orElse('true').get()
+            systemProperty 'minenow.soak.bell', providers.gradleProperty('soakBell').orElse('true').get()
             systemProperty 'minenow.soak.playerBudget', providers.gradleProperty('soakPlayerBudget').orElse('0').get()
             systemProperty 'minenow.soak.traceFrom', providers.gradleProperty('soakTraceFrom').orElse('-1').get()
             systemProperty 'minenow.soak.out', layout.projectDirectory.dir('soak-report').asFile.absolutePath

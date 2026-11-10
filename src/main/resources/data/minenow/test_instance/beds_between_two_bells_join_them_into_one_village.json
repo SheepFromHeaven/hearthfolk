@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_17",
+  "function": "minenow:beds_between_two_bells_join_them_into_one_village",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 300
+}

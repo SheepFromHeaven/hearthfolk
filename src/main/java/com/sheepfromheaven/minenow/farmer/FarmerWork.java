@@ -9,7 +9,6 @@ import net.minecraft.world.entity.ai.behavior.GiveGiftToHero;
 import net.minecraft.world.entity.ai.behavior.RunOne;
 import net.minecraft.world.entity.ai.behavior.SetEntityLookTarget;
 import net.minecraft.world.entity.ai.behavior.SetLookAndInteract;
-import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromBlockMemory;
 import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
 import net.minecraft.world.entity.ai.behavior.StrollAroundPoi;
 import net.minecraft.world.entity.ai.behavior.StrollToPoi;
@@ -40,7 +39,7 @@ public final class FarmerWork {
                         Pair.of(StrollToPoiList.create(MemoryModuleType.SECONDARY_JOB_SITE, SPEED, 1, 6, MemoryModuleType.JOB_SITE), 5)))),
                 Pair.of(10, new ShowTradesToPlayer(400, 1600)),
                 Pair.of(10, SetLookAndInteract.create(EntityTypes.PLAYER, 4)),
-                Pair.of(2, SetWalkTargetFromBlockMemory.create(MemoryModuleType.JOB_SITE, SPEED, 9, 100, 1200)),
+                Pair.of(2, com.sheepfromheaven.minenow.villager.VillagerBrains.jobSiteWalk()),
                 Pair.of(3, new GiveGiftToHero(100)),
                 Pair.of(99, UpdateActivityFromSchedule.create()));
     }

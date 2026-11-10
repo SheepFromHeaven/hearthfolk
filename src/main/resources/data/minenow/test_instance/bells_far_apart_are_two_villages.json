@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_14",
+  "function": "minenow:bells_far_apart_are_two_villages",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 300
+}

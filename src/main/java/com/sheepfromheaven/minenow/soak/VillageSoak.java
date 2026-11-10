@@ -57,7 +57,8 @@ import java.util.HashSet;
  * A long-run economy check: twenty villagers with a workshop, bed and chest each, left alone for many in-game days
  * with the server sprinting, plus four spare beds with chests and a free smithing table and fletching table, so wealth
  * can turn into children who grow up and take a job, a dirt-path street past the beds of each row and a powered
- * stonecutter, so the mason paves around its workshop and villagers can pay it to pave the street to their homes. Once a day it logs emeralds, food and goods per profession to {@code days.csv}; at the
+ * stonecutter, so the mason paves around its workshop and villagers can pay it to pave the street to their homes, and a
+ * bell in the middle, so they make one village and trade across it. Once a day it logs emeralds, food and goods per profession to {@code days.csv}; at the
  * end it lists every villager's pockets and chests in {@code final.txt}. It only observes: it never fails on balance.
  * Lives in its own namespace ({@code minenowsoak}) so the normal gametest run skips it; start it with
  * {@code ./gradlew runVillageSoak [-PsoakDays=50]}.
@@ -76,6 +77,8 @@ public final class VillageSoak {
     private static final int MARGIN = 24;
     private static final int CELL_W = 14;
     private static final int CELL_D = 16;
+    /** The village's meeting point, in the smelter's cell near the middle, so the villagers make one village. */
+    private static final BlockPos BELL = new BlockPos(38, G + 1, 37);
     private static final TagKey<Item> EXPORTS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("minenow", "exports"));
 
     private enum Role {
@@ -108,10 +111,7 @@ public final class VillageSoak {
         }
     }
 
-    /**
-     * Row by row. Villagers only buy from sellers within 48 blocks and the corners are further apart than that, so the
-     * toolsmith and smelter, whom nearly everyone buys from, take the middle cells.
-     */
+    /** Row by row; the toolsmith and smelter, whom nearly everyone buys from, take the middle cells. */
     private static final Role[] ROSTER = {
             Role.FARMER, Role.FARMER, Role.SHEPHERD, Role.SHEPHERD, Role.BUTCHER,
             Role.FISHERMAN, Role.FISHERMAN, Role.TOOLSMITH, Role.FARMER, Role.MINER,
@@ -159,6 +159,9 @@ public final class VillageSoak {
         }
         helper.setBlock(new BlockPos(27, G + 1, strip + 4), Blocks.SMITHING_TABLE);
         helper.setBlock(new BlockPos(41, G + 1, strip + 4), Blocks.FLETCHING_TABLE);
+        if (!"false".equals(System.getProperty("minenow.soak.bell", "true"))) {
+            helper.setBlock(BELL, Blocks.BELL.defaultBlockState().setValue(net.minecraft.world.level.block.BellBlock.ATTACHMENT, net.minecraft.world.level.block.state.properties.BellAttachType.FLOOR));
+        }
 
         net.minecraft.server.level.ServerPlayer player = null;
         if (!"false".equals(System.getProperty("minenow.soak.player", "true"))) {
@@ -548,7 +551,9 @@ public final class VillageSoak {
             String kind = v.isBaby() ? "baby" : v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?");
             newcomers.merge(kind, 1, Integer::sum);
         }
-        csv.append(day).append(",population,").append(everyone.size()).append(",0,0,0,0,0,0,\"born here: ").append(newcomers).append("\"\n");
+        long inVillage = everyone.stream().filter(v -> com.sheepfromheaven.minenow.villager.Villages.of(level, v).isPresent()).count();
+        csv.append(day).append(",population,").append(everyone.size()).append(",0,0,0,0,0,0,\"born here: ").append(newcomers)
+                .append(", villages: ").append(com.sheepfromheaven.minenow.villager.Villages.all(level).size()).append(", in a village: ").append(inVillage).append("\"\n");
         csv.append(day).append(",ALL");
         for (int i = 0; i < 7; i++) csv.append(',').append(all[i]);
         csv.append(",\"merchants seen so far: ").append(merchants).append(", every emerald in the village: ").append(everyEmerald(level, helper, residents)).append("\"\n");
