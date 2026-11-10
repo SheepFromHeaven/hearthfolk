@@ -35,8 +35,10 @@ final class HighGround {
     static final int RANGE = 12;
     static final int MIN_RISE = 3;
     static final int MAX_RISE = 12;
-    private static final int TRIES = 16;
-    private static final double SPACING = 2.5;
+    static final int TRIES = 16;
+    static final double SPACING = 2.5;
+    /** Paths are planned no further than a villager's 16-block follow range, so a spot further off is checked once it's this close. */
+    static final double CHECK_PATH_WITHIN = 14.0;
     private static final double MARKED_BONUS = 100.0;
 
     private HighGround() {}
@@ -69,7 +71,7 @@ final class HighGround {
         return candidates.stream()
                 .sorted(Comparator.comparingDouble((BlockPos spot) -> -(score(spot, center, body) + (marked.contains(spot) ? MARKED_BONUS : 0))))
                 .limit(TRIES)
-                .filter(spot -> reachable(body, spot))
+                .filter(spot -> !body.position().closerThan(net.minecraft.world.phys.Vec3.atBottomCenterOf(spot), CHECK_PATH_WITHIN) || reachable(body, spot))
                 .findFirst();
     }
 
@@ -79,15 +81,48 @@ final class HighGround {
         return 2 * rise - 0.3 * Math.sqrt(spot.distSqr(center)) - 0.15 * Math.sqrt(spot.distSqr(body.blockPosition()));
     }
 
-    private static boolean standable(ServerLevel level, BlockPos feet) {
+    /** The standing cells on the posts marked anywhere in the village, from the {@link ModVillagers#ARCHER_POST} index. */
+    static List<BlockPos> markedPosts(ServerLevel level, Villages.Village village) {
+        List<BlockPos> anchors = village.anchors();
+        if (anchors.isEmpty()) return List.of();
+        int x = (int) anchors.stream().mapToInt(BlockPos::getX).average().orElse(0);
+        int y = (int) anchors.stream().mapToInt(BlockPos::getY).average().orElse(0);
+        int z = (int) anchors.stream().mapToInt(BlockPos::getZ).average().orElse(0);
+        BlockPos centre = new BlockPos(x, y, z);
+        int radius = (int) Math.ceil(anchors.stream().mapToDouble(anchor -> Math.sqrt(anchor.distSqr(centre))).max().orElse(0)) + Villages.REACH + 1;
+        return level.getPoiManager().getInRange(type -> type.is(ModVillagers.ARCHER_POST.getKey()), centre, radius, net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY)
+                .map(record -> record.getPos())
+                .filter(post -> village.contains(post) && level.getBlockState(post).is(POSTS))
+                .map(BlockPos::above)
+                .filter(feet -> standable(level, feet))
+                .toList();
+    }
+
+    /** A cell to stand in at this column, within 3 blocks up or down of {@code y}. */
+    static Optional<BlockPos> ground(ServerLevel level, int x, int z, int y) {
+        for (int dy = 3; dy >= -3; dy--) {
+            BlockPos feet = new BlockPos(x, y + dy, z);
+            if (standable(level, feet)) return Optional.of(feet);
+        }
+        return Optional.empty();
+    }
+
+    static boolean standable(ServerLevel level, BlockPos feet) {
         BlockPos floor = feet.below();
         BlockState ground = level.getBlockState(floor);
         return level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir()
                 && ground.isFaceSturdy(level, floor, Direction.UP) && !ground.is(BlockTags.LEAVES) && !ground.is(Blocks.BARRIER) && !ground.is(Blocks.MAGMA_BLOCK) && !ground.is(Blocks.CACTUS);
     }
 
-    private static boolean reachable(Villager body, BlockPos spot) {
+    /**
+     * A path there, or to beside it at most a block lower: the pathfinder often stops beside a lone block such as a
+     * hay bale post rather than plan the hop up, which the villager makes on arrival.
+     */
+    static boolean reachable(Villager body, BlockPos spot) {
         Path path = body.getNavigation().createPath(spot, 0);
-        return path != null && path.canReach();
+        if (path == null) return false;
+        if (path.canReach()) return true;
+        var end = path.getEndNode();
+        return end != null && end.y >= spot.getY() - 1 && end.y <= spot.getY() && Math.abs(end.x - spot.getX()) <= 1 && Math.abs(end.z - spot.getZ()) <= 1;
     }
 }

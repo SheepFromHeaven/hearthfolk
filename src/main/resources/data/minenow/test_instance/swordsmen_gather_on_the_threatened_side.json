@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_10",
+  "function": "minenow:swordsmen_gather_on_the_threatened_side",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 2400
+}

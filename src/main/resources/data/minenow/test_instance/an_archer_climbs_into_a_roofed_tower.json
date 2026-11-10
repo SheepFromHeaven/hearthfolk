@@ -1,6 +1,6 @@
 {
   "type": "minecraft:function",
-  "environment": "minenow:bell",
+  "environment": "minenow:village_4",
   "function": "minenow:an_archer_climbs_into_a_roofed_tower",
   "structure": "minenow:field_24x6x24",
   "max_ticks": 600

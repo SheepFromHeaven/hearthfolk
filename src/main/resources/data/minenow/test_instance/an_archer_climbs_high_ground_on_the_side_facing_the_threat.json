@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_11",
+  "function": "minenow:an_archer_climbs_high_ground_on_the_side_facing_the_threat",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 3000
+}
