@@ -50,7 +50,8 @@ public final class ProfessionTrades {
                     .forEach(MerchantOffer::setToOutOfStock);
             resendOffers(event, villager);
         } else {
-            Economy.take(level, villager, result.getItem(), result.getCount());
+            if (result.getComponentsPatch().isEmpty()) Economy.take(level, villager, result.getItem(), result.getCount());
+            else Economy.takeExact(level, villager, result);
             Economy.give(level, villager, new ItemStack(Items.EMERALD, offer.getCostA().getCount()));
         }
     }
@@ -137,6 +138,7 @@ public final class ProfessionTrades {
                 }
             }
         });
+        if (villager.getVillagerData().profession().is(net.minecraft.world.entity.npc.villager.VillagerProfession.CLERIC)) com.sheepfromheaven.minenow.cleric.ClericOffers.add(level, villager, offers);
         for (TradeTable.Produce crop : table.produceUpTo(villagerLevel)) {
             int sellable = Economy.count(level, villager, crop.item()) - Unloading.keepLimit(villager, new ItemStack(crop.item()));
             int trades = sellable / crop.price().count();

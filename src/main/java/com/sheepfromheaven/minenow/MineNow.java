@@ -88,6 +88,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(TradeTable::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(VillagerNames::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onAddReloadListeners);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.cleric.Brews::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Gear::onDamage);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Alarms::onDamage);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Alarms::onLevelTick);
@@ -109,6 +110,17 @@ public final class MineNow {
 
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             helper.register(com.sheepfromheaven.minenow.soak.VillageSoak.ID, com.sheepfromheaven.minenow.soak.VillageSoak::run);
+            test(helper, TestGroup.CLERIC, "every_brew_is_a_vanilla_brewing_recipe", com.sheepfromheaven.minenow.cleric.ClericTests::everyBrewIsAVanillaBrewingRecipe);
+            test(helper, TestGroup.CLERIC, "a_cleric_fills_bottles_at_water_and_brews_awkward_potions", com.sheepfromheaven.minenow.cleric.ClericTests::aClericFillsBottlesAtWaterAndBrewsAwkwardPotions);
+            test(helper, TestGroup.CLERIC, "a_cleric_without_water_brews_nothing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithoutWaterBrewsNothing);
+            test(helper, TestGroup.CLERIC, "a_cleric_brews_swiftness_from_awkward_potions_and_sugar", com.sheepfromheaven.minenow.cleric.ClericTests::aClericBrewsSwiftnessFromAwkwardPotionsAndSugar);
+            test(helper, TestGroup.CLERIC, "a_cleric_does_not_brew_what_its_level_does_not_unlock", com.sheepfromheaven.minenow.cleric.ClericTests::aClericDoesNotBrewWhatItsLevelDoesNotUnlock);
+            test(helper, TestGroup.CLERIC, "a_cleric_brews_more_bottles_at_once_as_it_levels_up", com.sheepfromheaven.minenow.cleric.ClericTests::aClericBrewsMoreBottlesAtOnceAsItLevelsUp);
+            test(helper, TestGroup.CLERIC, "brewing_spends_blaze_powder_as_fuel", com.sheepfromheaven.minenow.cleric.ClericTests::brewingSpendsBlazePowderAsFuel);
+            test(helper, TestGroup.CLERIC, "a_cleric_without_fuel_brews_nothing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithoutFuelBrewsNothing);
+            test(helper, TestGroup.CLERIC, "a_cleric_gains_experience_from_brewing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericGainsExperienceFromBrewing);
+            test(helper, TestGroup.CLERIC, "a_cleric_sells_its_potions_as_exact_stacks", com.sheepfromheaven.minenow.cleric.ClericTests::aClericSellsItsPotionsAsExactStacks);
+            test(helper, TestGroup.CLERIC, "a_novices_trades_leave_out_potions_it_does_not_brew_yet", com.sheepfromheaven.minenow.cleric.ClericTests::aNovicesTradesLeaveOutPotionsItDoesNotBrewYet);
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
             test(helper, TestGroup.FARMER, "a_journeyman_farmer_harvests_a_pumpkin_grown_beside_its_stem", FarmerTests::aJourneymanFarmerHarvestsAPumpkinGrownBesideItsStem);
             test(helper, TestGroup.FARMER, "a_novice_farmer_leaves_pumpkins_alone", FarmerTests::aNoviceFarmerLeavesPumpkinsAlone);

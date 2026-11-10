@@ -1,0 +1,20 @@
+{
+  "profession": "minecraft:cleric",
+  "supplies": [
+    { "item": "minecraft:nether_wart", "price": 0.25, "max": 16, "level": 1 },
+    { "item": "minecraft:glass_bottle", "price": 0.25, "max": 12, "level": 1 },
+    { "item": "minecraft:blaze_powder", "price": 1, "max": 4, "level": 1 },
+    { "item": "minecraft:sugar_cane", "price": 0.125, "max": 8, "level": 1 },
+    { "item": "minecraft:rabbit_foot", "price": 1, "max": 4, "level": 2 },
+    { "item": "minecraft:pufferfish", "price": 0.5, "max": 4, "level": 3 }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:sugar",
+      "materials": [ { "item": "minecraft:sugar_cane", "count": 1 } ],
+      "labor": 0.02,
+      "stock": 4,
+      "level": 1
+    }
+  ]
+}
