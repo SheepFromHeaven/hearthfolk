@@ -74,6 +74,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(GametestPlayground::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(BrainHook::onEntityTick);
         NeoForge.EVENT_BUS.addListener(Miner::onEntityTick);
+        NeoForge.EVENT_BUS.addListener(Miner::onLivingFall);
         NeoForge.EVENT_BUS.addListener(Roads::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(Roads::onAddReloadListeners);
         FarmerReport.register();
@@ -214,6 +215,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "miner_buys_a_wooden_pickaxe_the_toolsmith_made_from_planks", ToolsmithTests::minerBuysAWoodenPickaxeTheToolsmithMadeFromPlanks);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
+            test(helper, TestGroup.FORESTER, "the_toolsmith_buys_the_sticks_the_forester_gathers", com.sheepfromheaven.minenow.forester.ForesterTests::theToolsmithBuysTheSticksTheForesterGathers);
             test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);
             test(helper, TestGroup.FORESTER, "a_nursery_without_its_log_is_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aNurseryWithoutItsLogIsAPlainPottedSapling);
             test(helper, TestGroup.FORESTER, "breaking_a_nursery_gives_back_the_pot_and_the_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::breakingANurseryGivesBackThePotAndTheSapling);
@@ -239,6 +241,7 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_without_ladders_does_not_dig_itself_in", MinerTests::minerWithoutLaddersDoesNotDigItselfIn);
             test(helper, TestGroup.MINER, "miner_climbs_out_of_its_quarry_to_unload", MinerTests::minerClimbsOutOfItsQuarryToUnload);
             test(helper, TestGroup.MINER, "a_villager_that_falls_into_a_mine_climbs_out_by_the_ladder", MinerTests::aVillagerThatFallsIntoAMineClimbsOutByTheLadder);
+            test(helper, TestGroup.MINER, "a_villager_falling_into_a_mine_is_not_hurt", MinerTests::aVillagerFallingIntoAMineIsNotHurt);
             test(helper, TestGroup.MINER, "a_villager_sealed_off_from_the_ladder_still_gets_out", MinerTests::aVillagerSealedOffFromTheLadderStillGetsOut);
             test(helper, TestGroup.MINER, "villagers_do_not_walk_into_a_mine", MinerTests::villagersDoNotWalkIntoAMine);
             test(helper, TestGroup.MINER, "a_miner_in_another_miners_mine_climbs_out", MinerTests::aMinerInAnotherMinersMineClimbsOut);

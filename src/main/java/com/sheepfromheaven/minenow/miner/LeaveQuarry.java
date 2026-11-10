@@ -42,9 +42,14 @@ public class LeaveQuarry extends Behavior<Villager> {
                 || !body.getBrain().isActive(Activity.WORK) || !com.sheepfromheaven.minenow.villager.Tools.has(body);
     }
 
+    /** When each villager first started trying to climb out, kept across restarts so the help-out timer can't be reset forever. */
+    private static final java.util.Map<java.util.UUID, Long> TRYING_SINCE = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Override
     protected void start(ServerLevel level, Villager body, long timestamp) {
-        startedAt = timestamp;
+        startedAt = TRYING_SINCE.computeIfAbsent(body.getUUID(), id -> timestamp);
+        if (timestamp - startedAt > 2 * HELP_OUT_AFTER) startedAt = timestamp;
+        TRYING_SINCE.put(body.getUUID(), startedAt);
     }
 
     @Override
@@ -59,6 +64,7 @@ public class LeaveQuarry extends Behavior<Villager> {
     @Override
     protected void stop(ServerLevel level, Villager body, long timestamp) {
         LadderClimb.forgetRoute(body);
+        if (cart != null && LadderClimb.climbedOut(level, body, cart)) TRYING_SINCE.remove(body.getUUID());
         cart = null;
     }
 }

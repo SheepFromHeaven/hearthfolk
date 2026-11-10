@@ -154,4 +154,12 @@ public final class Miner {
         }
         return false;
     }
+
+    /** A villager down an open shaft fell because our climbing let it, not by carelessness, so the fall doesn't hurt it. */
+    public static void onLivingFall(net.neoforged.neoforge.event.entity.living.LivingFallEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.npc.villager.Villager villager
+                && inShaft(villager.level(), villager.getBlockX(), villager.getBlockY(), villager.getBlockZ())) {
+            event.setDamageMultiplier(0.0F);
+        }
+    }
 }

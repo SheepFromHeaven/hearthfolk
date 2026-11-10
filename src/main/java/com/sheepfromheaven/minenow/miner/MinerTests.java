@@ -353,6 +353,24 @@ public final class MinerTests {
         });
     }
 
+    public static void aVillagerFallingIntoAMineIsNotHurt(GameTestHelper helper) {
+        spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
+        Villager faller = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(8, 1, 12));
+        float health = faller.getHealth();
+
+        helper.runAfterDelay(5, () -> {
+            faller.causeFallDamage(10.0, 1.0F, helper.getLevel().damageSources().fall());
+            helper.assertTrue(faller.getHealth() >= health, "A villager that falls down an open mine isn't hurt (its climbing is our doing), health " + faller.getHealth() + " of " + health);
+            helper.succeed();
+        });
+    }
+
     public static void aVillagerThatFallsIntoAMineClimbsOutByTheLadder(GameTestHelper helper) {
         spawnMiner(helper);
         quarry(helper);

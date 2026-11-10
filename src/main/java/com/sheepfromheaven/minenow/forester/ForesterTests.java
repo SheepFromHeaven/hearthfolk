@@ -268,6 +268,19 @@ public final class ForesterTests {
         return logs;
     }
 
+    public static void theToolsmithBuysTheSticksTheForesterGathers(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STICK, 40));
+        BlockPos table = new BlockPos(18, 1, 12);
+        helper.setBlock(table, Blocks.SMITHING_TABLE);
+        Villager toolsmith = GameTestHelpers.spawnEmployed(helper, table.west(), table, net.minecraft.world.entity.npc.villager.VillagerProfession.TOOLSMITH,
+                net.minecraft.world.entity.ai.village.poi.PoiTypes.TOOLSMITH);
+        toolsmith.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+
+        helper.succeedWhen(() -> helper.assertTrue(toolsmith.getInventory().countItem(Items.STICK) > 0,
+                "The forester sells the sticks it gathers in its grove, so tools don't wait on the fletcher; toolsmith has " + toolsmith.getInventory().countItem(Items.STICK)));
+    }
+
     private static Villager spawnForester(GameTestHelper helper) {
         return spawnForester(helper, NurseryTree.OAK);
     }
