@@ -188,6 +188,9 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_buys_the_fishermans_catch_and_smokes_it", com.sheepfromheaven.minenow.butcher.ButcherTests::butcherBuysTheFishermansCatchAndSmokesIt);
             test(helper, TestGroup.BUTCHER, "butcher_smokes_with_logs_when_it_has_no_coal", com.sheepfromheaven.minenow.butcher.ButcherTests::butcherSmokesWithLogsWhenItHasNoCoal);
             test(helper, TestGroup.BUTCHER, "butcher_unloads_its_meat_at_home", ButcherTests::butcherUnloadsItsMeatAtHome);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_wealthy_villager_commissions_armor_nobody_has_in_stock", com.sheepfromheaven.minenow.villager.CommissionTests::aWealthyVillagerCommissionsArmorNobodyHasInStock);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_commission_survives_a_restart", com.sheepfromheaven.minenow.villager.CommissionTests::aCommissionSurvivesARestart);
+            test(helper, TestGroup.VILLAGER_TRADING, "a_buyer_gets_its_money_back_when_the_order_never_comes", com.sheepfromheaven.minenow.villager.CommissionTests::aBuyerGetsItsMoneyBackWhenTheOrderNeverComes);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
             test(helper, TestGroup.VILLAGER_TRADING, "a_seller_out_of_reach_does_not_cost_the_buyer_its_job", com.sheepfromheaven.minenow.villager.VillagerTradingTests::aSellerOutOfReachDoesNotCostTheBuyerItsJob);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
@@ -226,6 +229,7 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "a_broke_miner_keeps_its_wooden_pickaxe_when_it_digs_everything", ToolsmithTests::aBrokeMinerKeepsItsWoodenPickaxeWhenItDigsEverything);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
+            test(helper, TestGroup.FORESTER, "nobody_pays_a_forester_for_planks_it_has_nothing_to_make_from", com.sheepfromheaven.minenow.forester.ForesterTests::nobodyPaysAForesterForPlanksItHasNothingToMakeFrom);
             test(helper, TestGroup.FORESTER, "the_toolsmith_buys_the_sticks_the_forester_gathers", com.sheepfromheaven.minenow.forester.ForesterTests::theToolsmithBuysTheSticksTheForesterGathers);
             test(helper, TestGroup.FORESTER, "a_sapling_potted_off_a_log_stays_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingPottedOffALogStaysAPlainPottedSapling);
             test(helper, TestGroup.FORESTER, "a_nursery_without_its_log_is_a_plain_potted_sapling", com.sheepfromheaven.minenow.forester.ForesterTests::aNurseryWithoutItsLogIsAPlainPottedSapling);
@@ -346,7 +350,9 @@ public final class MineNow {
             test(helper, TestGroup.MASON, "a_mason_paves_dirt_paths_while_its_stonecutter_is_powered", com.sheepfromheaven.minenow.mason.MasonTests::aMasonPavesDirtPathsWhileItsStonecutterIsPowered);
             test(helper, TestGroup.MASON, "a_mason_leaves_paths_alone_without_a_signal", com.sheepfromheaven.minenow.mason.MasonTests::aMasonLeavesPathsAloneWithoutASignal);
             test(helper, TestGroup.MASON, "a_journeyman_paves_a_natural_stone_road", com.sheepfromheaven.minenow.mason.MasonTests::aJourneymanPavesANaturalStoneRoad);
-            test(helper, TestGroup.MASON, "a_mason_paves_its_roads_and_scattered_paths_alike", com.sheepfromheaven.minenow.mason.MasonTests::aMasonPavesItsRoadsAndScatteredPathsAlike);
+            test(helper, TestGroup.MASON, "in_its_free_time_a_mason_paves_only_around_its_workshop", com.sheepfromheaven.minenow.mason.MasonTests::inItsFreeTimeAMasonPavesOnlyAroundItsWorkshop);
+            test(helper, TestGroup.MASON, "a_villager_pays_the_mason_to_pave_the_whole_path_to_its_home", com.sheepfromheaven.minenow.mason.MasonTests::aVillagerPaysTheMasonToPaveTheWholePathToItsHome);
+            test(helper, TestGroup.MASON, "an_unpowered_mason_takes_no_paving_jobs", com.sheepfromheaven.minenow.mason.MasonTests::anUnpoweredMasonTakesNoPavingJobs);
             test(helper, TestGroup.SMELTER, "an_anvil_makes_an_armorer", com.sheepfromheaven.minenow.smelter.SmelterTests::anAnvilMakesAnArmorer);
             test(helper, TestGroup.SMELTER, "smelter_smelts_raw_ore_in_its_blast_furnace", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterSmeltsRawOreInItsBlastFurnace);
             test(helper, TestGroup.SMELTER, "smelter_burns_logs_into_charcoal_in_a_furnace_beside_it", com.sheepfromheaven.minenow.smelter.SmelterTests::smelterBurnsLogsIntoCharcoalInAFurnaceBesideIt);

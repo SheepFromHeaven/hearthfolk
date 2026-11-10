@@ -61,7 +61,13 @@ public class BuyFromVillagers extends Behavior<Villager> {
      */
     static final int CREDIT_LIMIT = 3;
 
+    /** A commission errand to {@code maker}: placing {@code order} (paying for it), collecting it, or asking for the money back. */
+    private record Visit(Villager maker, Errand errand, Commissions.Order order) {}
+
+    private enum Errand { ORDER, COLLECT, REFUND }
+
     private @Nullable Deal deal;
+    private @Nullable Visit visit;
     private long startedAt;
     private long nextStartAllowed;
 
@@ -74,8 +80,14 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (level.getGameTime() < nextStartAllowed || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
         nextStartAllowed = level.getGameTime() + RETRY_DELAY;
         repayDebts(level, buyer);
-        deal = findDeal(level, buyer).or(() -> creditDeal(level, buyer)).or(() -> mealGift(level, buyer)).orElse(null);
-        return deal != null;
+        visit = commissionErrand(level, buyer).orElse(null);
+        deal = visit != null ? null : findDeal(level, buyer).or(() -> creditDeal(level, buyer)).or(() -> mealGift(level, buyer)).orElse(null);
+        if (visit == null && deal == null) visit = newCommission(level, buyer).orElse(null);
+        return deal != null || visit != null;
+    }
+
+    private Villager partner() {
+        return deal != null ? deal.seller() : visit.maker();
     }
 
     @Override
@@ -86,14 +98,16 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager buyer, long timestamp) {
-        return deal != null && deal.seller().isAlive() && !buyer.isTrading() && timestamp - startedAt < GIVE_UP_AFTER_TICKS;
+        return (deal != null || visit != null) && partner().isAlive() && !buyer.isTrading() && timestamp - startedAt < GIVE_UP_AFTER_TICKS;
     }
 
     @Override
     protected void tick(ServerLevel level, Villager buyer, long timestamp) {
-        if (buyer.distanceTo(deal.seller()) <= REACH && buyer.hasLineOfSight(deal.seller())) {
-            trade(level, buyer, deal);
+        if (buyer.distanceTo(partner()) <= REACH && buyer.hasLineOfSight(partner())) {
+            if (deal != null) trade(level, buyer, deal);
+            else run(level, buyer, visit);
             deal = null;
+            visit = null;
             nextStartAllowed = timestamp;
             return;
         }
@@ -102,13 +116,14 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private boolean walkingToSeller(Villager buyer) {
         return buyer.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
-                .filter(walk -> walk.getTarget() instanceof EntityTracker tracker && tracker.getEntity() == deal.seller())
+                .filter(walk -> walk.getTarget() instanceof EntityTracker tracker && tracker.getEntity() == partner())
                 .isPresent();
     }
 
     @Override
     protected void stop(ServerLevel level, Villager buyer, long timestamp) {
         deal = null;
+        visit = null;
         buyer.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         buyer.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
     }
@@ -393,11 +408,123 @@ public class BuyFromVillagers extends Behavior<Villager> {
     }
 
     private static int sellable(ServerLevel level, Villager seller, Item item) {
-        return Economy.count(level, seller, item) - Unloading.keepLimit(seller, new ItemStack(item));
+        return Economy.count(level, seller, item) - Unloading.keepLimit(seller, new ItemStack(item)) - Commissions.reserved(seller, item);
+    }
+
+    /** Its open commission, if there's something to do about it: collect what's made, or ask for its money back once it's waited too long. */
+    private static Optional<Visit> commissionErrand(ServerLevel level, Villager buyer) {
+        Optional<Commissions.Placed> placed = Commissions.placed(buyer);
+        if (placed.isEmpty()) return Optional.empty();
+        long now = level.getGameTime();
+        if (!(level.getEntity(placed.get().maker()) instanceof Villager maker) || !maker.isAlive()) {
+            if (now - placed.get().placed() > 2 * Commissions.EXPIRES) Commissions.forget(buyer);
+            return Optional.empty();
+        }
+        Optional<Commissions.Order> order = Commissions.orderFor(maker, buyer);
+        if (order.isEmpty()) {
+            Commissions.forget(buyer);
+            return Optional.empty();
+        }
+        if (maker.isSleeping() || com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, maker)) return Optional.empty();
+        if (order.get().item().filter(item -> Economy.count(level, maker, item) >= order.get().count()).isPresent()) {
+            return Optional.of(new Visit(maker, Errand.COLLECT, order.get()));
+        }
+        boolean stillPaving = order.get().paving() && com.sheepfromheaven.minenow.mason.PaveRoads.takesWork(level, maker);
+        if (now - order.get().placed() > Commissions.EXPIRES && !stillPaving) return Optional.of(new Visit(maker, Errand.REFUND, order.get()));
+        return Optional.empty();
+    }
+
+    /**
+     * Something it wants that nobody has, paid for up front so its maker can buy what it takes: a piece of gear, a lot
+     * of a supply of its trade, or (from a mason) the path to its home paved. One open commission at a time.
+     */
+    private static Optional<Visit> newCommission(ServerLevel level, Villager buyer) {
+        if (Commissions.placed(buyer).isPresent()) return Optional.empty();
+        long now = level.getGameTime();
+        int gearBudget = Gear.budget(level, buyer);
+        java.util.List<Villager> makers = sellers(level, buyer).stream().filter(Commissions::takesOrders).toList();
+        if (gearBudget > 0) {
+            Optional<Visit> gear = makers.stream()
+                    .flatMap(maker -> TradeTable.forVillager(maker).stream()
+                            .flatMap(table -> table.craftsUpTo(maker.getVillagerData().level()).stream()
+                                    .filter(craft -> new ItemStack(craft.item()).getMaxStackSize() == 1 && Gear.wants(buyer, new ItemStack(craft.item()))
+                                            && table.craftPrice(craft).emeralds() <= gearBudget && sellable(level, maker, craft.item()) < 1)
+                                    .max(Comparator.comparingDouble(craft -> Gear.worth(new ItemStack(craft.item()))))
+                                    .map(craft -> new Visit(maker, Errand.ORDER, new Commissions.Order(buyer.getUUID(), Optional.of(craft.item()), 1, Optional.empty(),
+                                            table.craftPrice(craft).emeralds(), now)))
+                                    .stream()))
+                    .findFirst();
+            if (gear.isPresent()) return gear;
+        }
+        Optional<TradeTable> table = TradeTable.forVillager(buyer);
+        if (table.isPresent() && shopsForWork(buyer)) {
+            int budget = Economy.spendable(level, buyer);
+            for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+                if (Economy.count(level, buyer, supply.item()) >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
+                Optional<Visit> order = makers.stream()
+                        .flatMap(maker -> TradeTable.forVillager(maker).flatMap(makerTable -> makerTable.sellPrice(supply.item(), maker.getVillagerData().level()))
+                                .filter(price -> price.emeralds() <= budget && sellable(level, maker, supply.item()) < price.count() && makes(level, maker, supply.item()))
+                                .map(price -> new Visit(maker, Errand.ORDER, new Commissions.Order(buyer.getUUID(), Optional.of(supply.item()), price.count(), Optional.empty(), price.emeralds(), now)))
+                                .stream())
+                        .findFirst();
+                if (order.isPresent()) return order;
+            }
+        }
+        if (gearBudget > 0) {
+            for (Villager maker : makers) {
+                Optional<Commissions.Order> paving = com.sheepfromheaven.minenow.mason.PaveRoads.quote(level, buyer, maker, gearBudget);
+                if (paving.isPresent()) return Optional.of(new Visit(maker, Errand.ORDER, paving.get()));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Whether the maker has some of the item or what its trade makes it from, so an order to it will come: a forester
+     * among oaks sells spruce planks too, but would never have any.
+     */
+    private static boolean makes(ServerLevel level, Villager maker, Item item) {
+        if (Economy.count(level, maker, item) > 0) return true;
+        return TradeTable.forVillager(maker).flatMap(table -> table.craft(item, maker.getVillagerData().level()))
+                .filter(craft -> craft.materials().stream().allMatch(material -> Economy.count(level, maker, material.item()) >= material.count())).isPresent();
+    }
+
+    private static void run(ServerLevel level, Villager buyer, Visit visit) {
+        Villager maker = visit.maker();
+        Commissions.Order order = visit.order();
+        switch (visit.errand()) {
+            case ORDER -> {
+                if (Commissions.placed(buyer).isPresent() || !Commissions.takesOrders(maker) || Economy.emeralds(level, buyer) < order.paid()) return;
+                int paid = Economy.take(level, buyer, Items.EMERALD, order.paid());
+                Economy.give(level, maker, new ItemStack(Items.EMERALD, paid));
+                Commissions.place(buyer, maker, new Commissions.Order(order.buyer(), order.item(), order.count(), order.path(), paid, level.getGameTime()));
+            }
+            case COLLECT -> {
+                Item item = order.item().orElseThrow();
+                if (Economy.count(level, maker, item) < order.count()) return;
+                if (order.count() == 1 && Gear.wants(buyer, new ItemStack(item))) Gear.wear(buyer, Economy.takeOne(level, maker, item));
+                else Economy.give(level, buyer, new ItemStack(item, Economy.take(level, maker, item, order.count())));
+                Commissions.finish(maker, buyer.getUUID());
+                Commissions.forget(buyer);
+                Commissions.DELIVERED.incrementAndGet();
+            }
+            case REFUND -> {
+                int back = Economy.take(level, maker, Items.EMERALD, Math.min(order.paid(), Economy.emeralds(level, maker)));
+                Economy.give(level, buyer, new ItemStack(Items.EMERALD, back));
+                Commissions.finish(maker, buyer.getUUID());
+                Commissions.forget(buyer);
+                Commissions.REFUNDED.incrementAndGet();
+            }
+        }
+        buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(maker, true));
+        maker.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(buyer, true));
+        buyer.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        maker.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        level.playSound(null, maker.blockPosition(), SoundEvents.VILLAGER_TRADE, SoundSource.NEUTRAL, 1.0F, maker.getVoicePitch());
     }
 
     private void walk(Villager buyer) {
-        buyer.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(new EntityTracker(deal.seller(), false), SPEED, 1));
-        buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(deal.seller(), true));
+        buyer.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(new EntityTracker(partner(), false), SPEED, 1));
+        buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(partner(), true));
     }
 }

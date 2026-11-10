@@ -1,5 +1,7 @@
 package com.sheepfromheaven.minenow.soak;
 
+import com.sheepfromheaven.minenow.villager.Commissions;
+
 import com.mojang.logging.LogUtils;
 import com.sheepfromheaven.minenow.forester.Forester;
 import com.sheepfromheaven.minenow.forester.NurseryTree;
@@ -54,7 +56,8 @@ import java.util.HashSet;
 /**
  * A long-run economy check: twenty villagers with a workshop, bed and chest each, left alone for many in-game days
  * with the server sprinting, plus four spare beds with chests and a free smithing table and fletching table, so wealth
- * can turn into children who grow up and take a job. Once a day it logs emeralds, food and goods per profession to {@code days.csv}; at the
+ * can turn into children who grow up and take a job, a dirt-path street past the beds of each row and a powered
+ * stonecutter, so the mason paves around its workshop and villagers can pay it to pave the street to their homes. Once a day it logs emeralds, food and goods per profession to {@code days.csv}; at the
  * end it lists every villager's pockets and chests in {@code final.txt}. It only observes: it never fails on balance.
  * Lives in its own namespace ({@code minenowsoak}) so the normal gametest run skips it; start it with
  * {@code ./gradlew runVillageSoak [-PsoakDays=50]}.
@@ -145,6 +148,9 @@ public final class VillageSoak {
             int ox = 1 + (i % 5) * CELL_W;
             int oz = 1 + (i / 5) * CELL_D;
             residents.add(new Resident(role, n, settle(helper, role, ox, oz, starterTools)));
+        }
+        for (int row = 0; row < ROSTER.length / 5; row++) {
+            for (int x = 1; x < SIZE - 1; x++) helper.setBlock(new BlockPos(x, G, 1 + row * CELL_D + 15), Blocks.DIRT_PATH);
         }
         int strip = 1 + (ROSTER.length / 5) * CELL_D;
         for (int x : new int[] {6, 20, 34, 48}) {
@@ -361,6 +367,7 @@ public final class VillageSoak {
                 }
             }
             case SMELTER -> set(helper, ox, oz, 3, 1, 8, Blocks.FURNACE);
+            case MASON -> set(helper, ox, oz, 3, 0, 6, Blocks.REDSTONE_BLOCK);
             default -> {}
         }
         if (role == Role.FORESTER) {
@@ -565,7 +572,9 @@ public final class VillageSoak {
             text.append("  idle: ").append(IdleReason.of(level, v)).append(", starving: ").append(starving(v)).append('\n');
             text.append("  activity: ").append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
                     .append(", running: ").append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()).append('\n');
-            text.append("  pockets: ").append(list(v.getInventory())).append(", owes: ").append(v.getData(ModVillagers.DEBTS).values()).append('\n');
+            text.append("  pockets: ").append(list(v.getInventory())).append(", owes: ").append(v.getData(ModVillagers.DEBTS).values())
+                    .append(", orders: ").append(v.getData(ModVillagers.COMMISSIONS).stream().map(o -> o.item().map(item -> o.count() + " " + item).orElse("paving " + o.count()) + " for " + o.paid()).toList())
+                    .append(", paid for one: ").append(!v.getData(ModVillagers.COMMISSIONED).isEmpty()).append('\n');
             if (resident.role() == Role.MINER) text.append("  work: ").append(Miner.describeWork(level, v)).append('\n');
             for (BlockPos chest : Storage.chests(level, v)) {
                 Container container = HomeStorage.chestContainer(level, chest);
@@ -586,6 +595,17 @@ public final class VillageSoak {
             loose.merge(item.getItem().getItem().toString(), item.getItem().getCount(), Integer::sum);
         }
         text.append("== loose items in the world: ").append(loose).append('\n');
+        int dirt = 0;
+        int paved = 0;
+        for (int row = 0; row < ROSTER.length / 5; row++) {
+            for (int x = 1; x < SIZE - 1; x++) {
+                var state = helper.getBlockState(new BlockPos(x, G, 1 + row * CELL_D + 15));
+                if (state.is(Blocks.DIRT_PATH)) dirt++;
+                else paved++;
+            }
+        }
+        text.append("== streets: ").append(paved).append(" blocks paved, ").append(dirt).append(" still dirt path; commissions delivered ")
+                .append(Commissions.DELIVERED.get()).append(", paid back ").append(Commissions.REFUNDED.get()).append('\n');
         for (var trader : level.getEntitiesOfClass(net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader.class, helper.getBounds().inflate(128))) {
             text.append("== wandering trader ").append(trader.getName().getString()).append(" at ").append(helper.relativePos(trader.blockPosition()).toShortString()).append('\n');
         }        text.append("== the visiting player bought: ").append(playerBought).append('\n');

@@ -107,7 +107,7 @@ public class CraftAtWorkstation extends Behavior<Villager> {
     private static Optional<TradeTable.Craft> nextCraft(ServerLevel level, Villager body) {
         return TradeTable.forVillager(body).stream()
                 .flatMap(table -> table.craftsUpTo(body.getVillagerData().level()).stream())
-                .filter(craft -> Economy.count(level, body, craft.item()) < table(body).map(t -> t.stockTarget(craft)).orElse(craft.stock())
+                .filter(craft -> Economy.count(level, body, craft.item()) < table(body).map(t -> t.stockTarget(craft)).orElse(craft.stock()) + Commissions.reserved(body, craft.item())
                         && hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body)))
                 .findFirst();
     }

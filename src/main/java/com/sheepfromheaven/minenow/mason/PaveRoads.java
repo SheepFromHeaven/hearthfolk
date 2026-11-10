@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.mason;
 
 import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
+import com.sheepfromheaven.minenow.villager.Commissions;
 import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.Walking;
 import net.minecraft.core.BlockPos;
@@ -46,15 +47,21 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * While a redstone signal reaches its stonecutter, a mason from apprentice on paves the paths the player shovelled
- * within {@link MasonSkill#roadRange} of it, scattered ones under open sky ({@link #surfacePaths}) as well as those
- * joined to the road network around its workshop, roofed or not ({@link #roads}): each dirt path becomes cobblestone or gravel, or from journeyman stone
- * bricks or slabs, as {@link RoadPattern} has it for that spot, and a journeyman lays stone on the cobblestone and gravel
- * it paved before ({@link Mason#PAVED}). It only ever replaces dirt paths and its own paving, with blocks from its goods.
+ * While a redstone signal reaches its stonecutter, a mason from apprentice on paves the paths the player shovelled: in
+ * its free time those within {@link MasonSkill#workshopRange} of it, scattered ones under open sky ({@link #surfacePaths})
+ * and the roads there ({@link #roads}); and, paid first, the whole path a villager commissioned it to pave to its home
+ * ({@link #quote}, a {@link Commissions} order), however far it runs. Each dirt path becomes cobblestone or gravel, or
+ * from journeyman stone bricks or slabs, as {@link RoadPattern} has it for that spot, and a journeyman lays stone on the
+ * cobblestone and gravel it paved before ({@link Mason#PAVED}). It only ever replaces dirt paths and its own paving, with
+ * blocks from its goods.
  */
 public class PaveRoads extends Behavior<Villager> {
     private static final int HEIGHT = 4;
     private static final int START = 8;
+    /** A dirt path this close to a villager's bed is the path to its home. */
+    private static final int HOME_PATH = 4;
+    /** What paving costs a villager: one emerald for ten blocks of path. */
+    static final double PER_BLOCK = 0.1;
     private static final int MAX_NETWORK = 8192;
     private static final int SURFACE_RESCAN = 600;
     private static final int LOOK_DOWN = 16;
@@ -155,18 +162,32 @@ public class PaveRoads extends Behavior<Villager> {
     private boolean pickTarget(ServerLevel level, Villager body) {
         target = null;
         material = null;
-        Optional<BlockPos> site = body.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
-        int range = MasonSkill.roadRange(body.getVillagerData().level());
-        if (site.isEmpty() || range == 0 || !level.hasNeighborSignal(site.get())) return false;
+        if (!takesWork(level, body)) return false;
+        BlockPos site = body.getBrain().getMemory(MemoryModuleType.JOB_SITE).orElseThrow().pos();
+        int range = MasonSkill.workshopRange(body.getVillagerData().level());
         long now = level.getGameTime();
         unreachable.values().removeIf(until -> until < now);
-        Set<BlockPos> paths = new HashSet<>(surfacePaths(level, site.get(), range, now));
-        paths.addAll(roads(level, site.get(), range));
+        for (Commissions.Order order : Commissions.open(body, now)) {
+            if (order.path().isEmpty()) continue;
+            List<BlockPos> left = roads(level, order.path().get(), Integer.MAX_VALUE).stream().filter(pos -> level.getBlockState(pos).is(Blocks.DIRT_PATH)).toList();
+            if (left.isEmpty()) {
+                Commissions.finish(body, order.buyer());
+                Commissions.DELIVERED.incrementAndGet();
+                continue;
+            }
+            if (choose(level, body, left)) return true;
+        }
+        Set<BlockPos> paths = new HashSet<>(surfacePaths(level, site, range, now));
+        paths.addAll(roads(level, site, range));
         List<BlockPos> candidates = new ArrayList<>();
         for (BlockPos pos : paths) {
             if (level.getBlockState(pos).is(Blocks.DIRT_PATH)) candidates.add(pos);
         }
         if (MasonSkill.laysStone(body.getVillagerData().level())) candidates.addAll(body.getData(Mason.PAVED));
+        return choose(level, body, candidates);
+    }
+
+    private boolean choose(ServerLevel level, Villager body, List<BlockPos> candidates) {
         for (BlockPos pos : candidates.stream().sorted(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position()))).toList()) {
             if (unreachable.containsKey(pos) || !wanted(level, body, pos)) continue;
             RoadPattern.Material what = materialFor(level, body, pos);
@@ -217,7 +238,8 @@ public class PaveRoads extends Behavior<Villager> {
     private static Set<BlockPos> roads(ServerLevel level, BlockPos site, int range) {
         Set<BlockPos> found = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        for (BlockPos pos : BlockPos.betweenClosed(site.offset(-START, -HEIGHT, -START), site.offset(START, HEIGHT, START))) {
+        int start = Math.min(START, range);
+        for (BlockPos pos : BlockPos.betweenClosed(site.offset(-start, -HEIGHT, -start), site.offset(start, HEIGHT, start))) {
             if (isRoad(level, pos) && found.add(pos.immutable())) queue.add(pos.immutable());
         }
         while (!queue.isEmpty() && found.size() < MAX_NETWORK) {
@@ -225,7 +247,7 @@ public class PaveRoads extends Behavior<Villager> {
             for (Direction side : Direction.Plane.HORIZONTAL) {
                 for (int dy = -1; dy <= 1; dy++) {
                     BlockPos next = pos.relative(side).above(dy);
-                    if (Math.abs(next.getX() - site.getX()) > range || Math.abs(next.getZ() - site.getZ()) > range || Math.abs(next.getY() - site.getY()) > range) continue;
+                    if (range != Integer.MAX_VALUE && (Math.abs(next.getX() - site.getX()) > range || Math.abs(next.getZ() - site.getZ()) > range || Math.abs(next.getY() - site.getY()) > range)) continue;
                     if (found.contains(next) || !level.isLoaded(next) || !isRoad(level, next)) continue;
                     found.add(next);
                     queue.add(next);
@@ -233,6 +255,37 @@ public class PaveRoads extends Behavior<Villager> {
             }
         }
         return found;
+    }
+
+    /** Whether this mason paves at all just now: from apprentice on, at its stonecutter, while a redstone signal reaches it. */
+    public static boolean takesWork(ServerLevel level, Villager mason) {
+        if (!mason.getVillagerData().profession().is(VillagerProfession.MASON) || MasonSkill.workshopRange(mason.getVillagerData().level()) == 0) return false;
+        return mason.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(site -> site.dimension() == level.dimension())
+                .filter(site -> level.getBlockState(site.pos()).is(Blocks.STONECUTTER) && level.hasNeighborSignal(site.pos())).isPresent();
+    }
+
+    /**
+     * What it costs {@code buyer} to have this mason pave the dirt path to its home (a path within {@link #HOME_PATH} of
+     * its bed and everything joined to it), as an order, if the mason paves just now, the path isn't already paid for and
+     * {@code budget} covers it.
+     */
+    public static Optional<Commissions.Order> quote(ServerLevel level, Villager buyer, Villager mason, int budget) {
+        if (!takesWork(level, mason)) return Optional.empty();
+        Optional<BlockPos> bed = buyer.getBrain().getMemory(MemoryModuleType.HOME).filter(home -> home.dimension() == level.dimension()).map(GlobalPos::pos);
+        if (bed.isEmpty()) return Optional.empty();
+        Optional<BlockPos> start = BlockPos.betweenClosedStream(bed.get().offset(-HOME_PATH, -3, -HOME_PATH), bed.get().offset(HOME_PATH, 1, HOME_PATH))
+                .filter(pos -> level.getBlockState(pos).is(Blocks.DIRT_PATH)).map(BlockPos::immutable)
+                .min(Comparator.comparingDouble(pos -> pos.distSqr(bed.get())));
+        if (start.isEmpty()) return Optional.empty();
+        Set<BlockPos> network = roads(level, start.get(), Integer.MAX_VALUE);
+        int blocks = (int) network.stream().filter(pos -> level.getBlockState(pos).is(Blocks.DIRT_PATH)).count();
+        if (blocks == 0) return Optional.empty();
+        boolean paidFor = level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(96)).stream()
+                .flatMap(other -> other.getData(com.sheepfromheaven.minenow.villager.ModVillagers.COMMISSIONS).stream())
+                .anyMatch(order -> order.path().filter(network::contains).isPresent());
+        int price = (int) Math.ceil(blocks * PER_BLOCK);
+        if (paidFor || price > budget) return Optional.empty();
+        return Optional.of(new Commissions.Order(buyer.getUUID(), Optional.empty(), blocks, start, price, level.getGameTime()));
     }
 
     private static boolean isRoad(ServerLevel level, BlockPos pos) {

@@ -133,7 +133,7 @@ public final class Exports {
      */
     static int bulk(ServerLevel level, Villager villager, Item item) {
         if (new ItemStack(item).is(GOODS)) return 0;
-        return Math.max(0, Economy.count(level, villager, item) - Math.max(BULK_KEEP, Unloading.keepLimit(villager, new ItemStack(item))));
+        return Math.max(0, Economy.count(level, villager, item) - Commissions.reserved(villager, item) - Math.max(BULK_KEEP, Unloading.keepLimit(villager, new ItemStack(item))));
     }
 
     private static Price halfPrice(Price price) {
@@ -274,6 +274,6 @@ public final class Exports {
     }
 
     private static int sellable(ServerLevel level, Villager villager, Item item) {
-        return Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item));
+        return Economy.count(level, villager, item) - Unloading.keepLimit(villager, new ItemStack(item)) - Commissions.reserved(villager, item);
     }
 }

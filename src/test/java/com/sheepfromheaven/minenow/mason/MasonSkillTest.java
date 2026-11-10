@@ -8,10 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MasonSkillTest {
     @Test
-    void aNovicePavesNothingAndTheRangeGrows() {
-        assertEquals(0, MasonSkill.roadRange(1));
-        assertEquals(32, MasonSkill.roadRange(2));
-        assertEquals(96, MasonSkill.roadRange(5));
+    void aNovicePavesNothingAndItsOwnStretchGrows() {
+        assertEquals(0, MasonSkill.workshopRange(1));
+        assertEquals(12, MasonSkill.workshopRange(2));
+        assertEquals(20, MasonSkill.workshopRange(5));
     }
 
     @Test

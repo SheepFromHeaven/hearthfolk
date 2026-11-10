@@ -115,6 +115,16 @@ public final class ModVillagers {
                     .serialize(Codec.LONG.fieldOf("time"))
                     .build());
     /** Whether the last meal was meat or fish, so the next one is bread or vegetables if it has some (see {@link Meals}). */
+    public static final Supplier<AttachmentType<java.util.List<Commissions.Order>>> COMMISSIONS = ATTACHMENT_TYPES.register("commissions",
+            () -> AttachmentType.<java.util.List<Commissions.Order>>builder(() -> java.util.List.of())
+                    .serialize(Commissions.Order.CODEC.listOf().fieldOf("orders"))
+                    .build());
+
+    public static final Supplier<AttachmentType<java.util.List<Commissions.Placed>>> COMMISSIONED = ATTACHMENT_TYPES.register("commissioned",
+            () -> AttachmentType.<java.util.List<Commissions.Placed>>builder(() -> java.util.List.of())
+                    .serialize(Commissions.Placed.CODEC.listOf().fieldOf("placed"))
+                    .build());
+
     public static final Supplier<AttachmentType<Boolean>> LAST_MEAL_MEAT = ATTACHMENT_TYPES.register("last_meal_meat",
             () -> AttachmentType.builder(() -> false)
                     .serialize(Codec.BOOL.fieldOf("meat"))
