@@ -337,7 +337,7 @@ public final class VillageSoak {
                 station = at(ox, oz, 3, 2, 6);
                 spawn = at(ox, oz, 5, 1, 6);
                 set(helper, ox, oz, 3, 1, 6, Blocks.OAK_LOG);
-                for (int[] base : new int[][] {{8, 3}, {9, 9}, {11, 6}}) tree(helper, ox, oz, base[0], base[1]);
+                for (int[] base : new int[][] {{7, 2}, {10, 4}, {9, 8}, {6, 10}, {0, 10}, {0, 2}}) tree(helper, ox, oz, base[0], base[1]);
             }
             case MINER -> {
                 station = at(ox, oz, 4, 1, 7);
@@ -550,7 +550,7 @@ public final class VillageSoak {
             text.append("  idle: ").append(IdleReason.of(level, v)).append(", starving: ").append(starving(v)).append('\n');
             text.append("  activity: ").append(v.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"))
                     .append(", running: ").append(v.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()).append('\n');
-            text.append("  pockets: ").append(list(v.getInventory())).append('\n');
+            text.append("  pockets: ").append(list(v.getInventory())).append(", owes: ").append(v.getData(ModVillagers.DEBTS).values()).append('\n');
             for (BlockPos chest : Storage.chests(level, v)) {
                 Container container = HomeStorage.chestContainer(level, chest);
                 text.append("  chest ").append(helper.relativePos(chest).toShortString()).append(": ")
