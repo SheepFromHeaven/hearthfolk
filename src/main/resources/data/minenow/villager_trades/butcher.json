@@ -94,36 +94,6 @@
       "level": 1
     },
     {
-      "item": "minecraft:wheat",
-      "price": 0.0625,
-      "max": 32,
-      "level": 1
-    },
-    {
-      "item": "minecraft:carrot",
-      "price": 0.0625,
-      "max": 32,
-      "level": 1
-    },
-    {
-      "item": "minecraft:wheat_seeds",
-      "price": 0.0625,
-      "max": 32,
-      "level": 1
-    },
-    {
-      "item": "minecraft:cod",
-      "price": 0.0833,
-      "max": 16,
-      "level": 1
-    },
-    {
-      "item": "minecraft:salmon",
-      "price": 0.125,
-      "max": 16,
-      "level": 1
-    },
-    {
       "item": "minecraft:oak_log",
       "price": 0.0625,
       "max": 16,
@@ -174,6 +144,90 @@
     {
       "item": "minecraft:mangrove_log",
       "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:oak_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:spruce_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:birch_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:jungle_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:acacia_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:dark_oak_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:cherry_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:pale_oak_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:mangrove_planks",
+      "price": 0.03,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wheat",
+      "price": 0.0625,
+      "max": 32,
+      "level": 1
+    },
+    {
+      "item": "minecraft:carrot",
+      "price": 0.0625,
+      "max": 32,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wheat_seeds",
+      "price": 0.0625,
+      "max": 32,
+      "level": 1
+    },
+    {
+      "item": "minecraft:cod",
+      "price": 0.0833,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:salmon",
+      "price": 0.125,
       "max": 16,
       "level": 1
     }

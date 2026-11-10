@@ -106,7 +106,7 @@
   "keeps": [
     {
       "items": "#minecraft:coals",
-      "max": 16
+      "max": 8
     },
     {
       "items": "#c:cobblestones",

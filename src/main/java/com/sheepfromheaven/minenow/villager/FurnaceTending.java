@@ -15,7 +15,7 @@ import java.util.function.Predicate;
 
 /**
  * A villager working its furnace-like workstation: it takes out what's done, puts in what it carries that the furnace
- * can cook (and that {@code cooks} accepts), and adds just the fuel that load needs (coal or charcoal, else logs), so the rest can fuel other furnaces.
+ * can cook (and that {@code cooks} accepts), and adds just the fuel that load needs (coal or charcoal, else logs or planks), so the rest can fuel other furnaces.
  */
 public final class FurnaceTending {
     private static final int INPUT = 0;
@@ -83,18 +83,19 @@ public final class FurnaceTending {
         furnace.setChanged();
     }
 
-    /** Coal or charcoal, or failing that logs, which burn like a player's furnace burns them: a smoker needs no coal mine. */
+    /** Coal or charcoal, or failing that logs or planks, which burn like a player's furnace burns them: a smoker needs no coal mine. */
     static boolean isFuel(ItemStack stack) {
-        return stack.is(ItemTags.COALS) || stack.is(ItemTags.LOGS_THAT_BURN);
+        return stack.is(ItemTags.COALS) || stack.is(ItemTags.LOGS_THAT_BURN) || stack.is(ItemTags.PLANKS);
     }
 
     private static ItemStack bestFuel(Villager body) {
-        ItemStack logs = ItemStack.EMPTY;
+        ItemStack wood = ItemStack.EMPTY;
         for (ItemStack stack : body.getInventory().getItems()) {
             if (stack.is(ItemTags.COALS)) return stack;
-            if (logs.isEmpty() && stack.is(ItemTags.LOGS_THAT_BURN)) logs = stack;
+            if (stack.is(ItemTags.LOGS_THAT_BURN) && (wood.isEmpty() || wood.is(ItemTags.PLANKS))) wood = stack;
+            else if (wood.isEmpty() && stack.is(ItemTags.PLANKS)) wood = stack;
         }
-        return logs;
+        return wood;
     }
 
     private static boolean lit(ServerLevel level, BlockPos pos) {

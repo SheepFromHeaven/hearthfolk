@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_smelter_burns_planks_when_there_is_no_coal",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

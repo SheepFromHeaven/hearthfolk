@@ -130,6 +130,15 @@ public final class SmelterTests {
                 "Raw iron sells 20 for 3 emeralds; a miner with only 12 still sells an emerald's worth, has " + miner.getInventory().countItem(Items.RAW_IRON)));
     }
 
+    public static void aSmelterBurnsPlanksWhenThereIsNoCoal(GameTestHelper helper) {
+        Villager smelter = spawnSmelter(helper);
+        smelter.getInventory().addItem(new ItemStack(Items.RAW_IRON, 3));
+        smelter.getInventory().addItem(new ItemStack(Items.OAK_PLANKS, 4));
+
+        helper.succeedWhen(() -> helper.assertTrue(smelter.getInventory().countItem(Items.IRON_INGOT) >= 3,
+                "Coal is scarce and the forester makes its logs into planks, so the smelter burns planks, has " + smelter.getInventory().countItem(Items.IRON_INGOT) + " ingots"));
+    }
+
     static Villager spawnSmelter(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
