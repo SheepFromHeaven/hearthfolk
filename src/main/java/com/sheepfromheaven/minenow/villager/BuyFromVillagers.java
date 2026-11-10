@@ -120,11 +120,13 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static Optional<Deal> findDeal(ServerLevel level, Villager buyer) {
         if (Economy.emeralds(level, buyer) <= 0) return Optional.empty();
         if (Meals.isHungry(buyer) && !Meals.hasAMeal(level, buyer)) {
+            // The most meals for its money: an emerald buys far more carrots than bread. Sellers come nearest first, so a tie goes to the nearer one.
             Optional<Deal> meal = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Meals.isMeal(new ItemStack(item)))
                             .flatMap(item -> offer(level, seller, item, 0, Economy.emeralds(level, buyer)).stream()))
-                    .findFirst();
+                    .max(Comparator.comparingDouble((Deal deal) -> (double) deal.price().count() * Meals.nutrition(deal.item()) / deal.price().emeralds())
+                            .thenComparing(Comparator.comparingDouble((Deal deal) -> buyer.distanceToSqr(deal.seller())).reversed()));
             if (meal.isPresent()) return meal;
         }
         if (Wealth.wantsFoodForAFamily(level, buyer)) {

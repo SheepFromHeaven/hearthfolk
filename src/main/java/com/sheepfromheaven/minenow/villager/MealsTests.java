@@ -103,6 +103,26 @@ public final class MealsTests {
         });
     }
 
+    public static void aHungryVillagerBuysTheMostFillingFoodForItsMoney(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.BREAD, 40));
+        farmer.getInventory().addItem(new ItemStack(Items.CARROT, 64));
+        Villager hungry = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        hungry.getInventory().addItem(new ItemStack(Items.EMERALD, 1));
+        Meals.makeHungry(hungry);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(hungry.getInventory().countItem(Items.EMERALD) == 0, "It spends its emerald on food");
+            helper.assertTrue(Economy.count(helper.getLevel(), hungry, Items.CARROT) > 0 && hungry.getInventory().countItem(Items.BREAD) == 0,
+                    "An emerald buys more meals of carrots than of bread, so it buys carrots; has " + hungry.getInventory().countItem(Items.CARROT) + " carrots, "
+                            + hungry.getInventory().countItem(Items.BREAD) + " bread");
+        });
+    }
+
     private static Villager villagerNextToAFarmerWithPotatoes(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
