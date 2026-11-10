@@ -108,6 +108,11 @@ public final class ModVillagers {
             () -> AttachmentType.builder(() -> 0L)
                     .serialize(Codec.LONG.fieldOf("time"))
                     .build());
+    /** Whether the last meal was meat or fish, so the next one is bread or vegetables if it has some (see {@link Meals}). */
+    public static final Supplier<AttachmentType<Boolean>> LAST_MEAL_MEAT = ATTACHMENT_TYPES.register("last_meal_meat",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL.fieldOf("meat"))
+                    .build());
 
     public static final TagKey<Item> NO_KEY = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "villager_storage_key"));
 

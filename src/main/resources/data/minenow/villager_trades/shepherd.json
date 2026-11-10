@@ -11,5 +11,199 @@
   "default_produce": {
     "items": "#minecraft:wool",
     "price": 0.0556
-  }
+  },
+  "crafts": [
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:white_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:orange_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:magenta_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:light_blue_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:yellow_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:lime_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:pink_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:gray_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:light_gray_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:cyan_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:purple_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:blue_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:brown_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:green_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:red_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:black_wool",
+          "count": 8
+        }
+      ],
+      "count": 16,
+      "labor": 0.4,
+      "level": 1
+    }
+  ]
 }

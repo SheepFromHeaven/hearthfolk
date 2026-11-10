@@ -158,7 +158,8 @@ public final class ShepherdTests {
             var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
             int wool = 0;
             for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(Items.WOOL.white())) wool += container.getItem(i).getCount();
-            helper.assertTrue(wool >= 64, "The shepherd should carry its wool to its home chest, chest has " + wool);
+            int spun = (container.countItem(Items.STRING) + shepherd.getInventory().countItem(Items.STRING)) / 2;
+            helper.assertTrue(wool + spun >= 64, "The shepherd should carry its wool (or the string it spun) to its home chest, chest has " + wool + " and " + spun + " spun");
             helper.assertTrue(shears(shepherd).is(Items.SHEARS), "It keeps its shears");
         });
     }
@@ -181,6 +182,14 @@ public final class ShepherdTests {
 
     private static ItemStack shears(Villager shepherd) {
         return shepherd.getInventory().getItems().stream().filter(stack -> stack.is(Items.SHEARS)).findFirst().orElse(ItemStack.EMPTY);
+    }
+
+    public static void shepherdSpinsWoolIntoString(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.getInventory().addItem(new ItemStack(Items.WOOL.white(), 20));
+
+        helper.succeedWhen(() -> helper.assertTrue(shepherd.getInventory().countItem(Items.STRING) > 0,
+                "A shepherd spins its wool into string at the loom, for fishing rods and bows, has " + shepherd.getInventory().countItem(Items.STRING)));
     }
 
     static Villager spawnShepherd(GameTestHelper helper) {

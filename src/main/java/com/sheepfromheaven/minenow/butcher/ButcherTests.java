@@ -179,6 +179,20 @@ public final class ButcherTests {
         });
     }
 
+    public static void butcherBuysTheFishermansCatchAndSmokesIt(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.COAL, 4));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+        BlockPos barrel = new BlockPos(18, 1, 12);
+        helper.setBlock(barrel, Blocks.BARREL);
+        Villager fisherman = GameTestHelpers.spawnEmployed(helper, barrel.west(), barrel, VillagerProfession.FISHERMAN, PoiTypes.FISHERMAN);
+        fisherman.getInventory().addItem(new ItemStack(Items.COD, 40));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.COOKED_COD) > 0,
+                "Raw fish is nobody's meal, so the butcher buys the fisherman's catch and smokes it; has " + count(butcher, Items.COD) + " raw, " + count(butcher, Items.COOKED_COD) + " cooked"));
+    }
+
     public static void butcherSmokesMeatInItsSmoker(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
