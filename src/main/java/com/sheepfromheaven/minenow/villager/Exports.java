@@ -49,7 +49,7 @@ import java.util.UUID;
 /**
  * The village's exports: goods only players would otherwise buy ({@code #minenow:exports}: armor, swords, shields, bows,
  * saddles, bundles, ...). The more such goods a village holds near a player, the likelier a travelling merchant turns up
- * ({@link #visitChance}): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
+ * ({@link #visitChance}), as do the needs the merchant could meet ({@link BuyFromVillagers#demand}: supplies of their trade villagers are short of that he carries and nobody in the village sells): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
  * the village can't make ({@code data/<namespace>/travelling_merchant/*.json}, all files merged) instead of vanilla's random trades. It walks to the villagers holding export
  * goods and buys them at their price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn
  * without a player; with what's left it buys the village's bulk surplus at half price ({@link #bulk}), so a miner
@@ -106,6 +106,12 @@ public final class Exports {
         return level.getEntitiesOfClass(WanderingTrader.class, villager.getBoundingBox().inflate(range),
                         trader -> trader.isAlive() && isMerchant(trader) && !trader.isTrading())
                 .stream().sorted(Comparator.comparingDouble(villager::distanceToSqr)).toList();
+    }
+
+    /** What a travelling merchant sells {@code item} for (the data file's price), or null if he doesn't carry it. */
+    static @Nullable Price waresPrice(Item item) {
+        Double price = wares.get(BuiltInRegistries.ITEM.getKey(item));
+        return price == null ? null : Price.of(price);
     }
 
     /** What the merchant still has of {@code item} to sell for emeralds, as the offer a player would use. */
@@ -200,9 +206,11 @@ public final class Exports {
         if (!com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.get()) return;
         if (!level.getEntitiesOfClass(WanderingTrader.class, player.getBoundingBox().inflate(TRADER_RANGE)).isEmpty()) return;
         var villagers = level.getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(VILLAGE_RANGE), Villager::isAlive);
-        int total = villagers.stream().mapToInt(villager -> surplus(level, villager)).sum();
+        Map<Villager, Integer> trade = new HashMap<>();
+        villagers.forEach(villager -> trade.put(villager, surplus(level, villager) + BuyFromVillagers.demand(level, villager)));
+        int total = trade.values().stream().mapToInt(Integer::intValue).sum();
         if (roll.getAsDouble() >= visitChance(total)) return;
-        villagers.stream().max(Comparator.comparingInt(villager -> surplus(level, villager))).ifPresent(villager -> {
+        trade.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).ifPresent(villager -> {
             if (sendTrader(level, villager) != null) lastVisit = level.getGameTime();
         });
     }

@@ -121,6 +121,46 @@ public final class VillagerTradingTests {
         });
     }
 
+    public static void demandIsWhatAVillagerCouldBuyFromTheMerchant(GameTestHelper helper) {
+        Villager smith = spawnToolsmith(helper, 20);
+        var level = helper.getLevel();
+        helper.assertTrue(BuyFromVillagers.demand(level, smith) == 2, "A toolsmith with money and no string would spend 2 emeralds on 16 string, demand " + BuyFromVillagers.demand(level, smith));
+        smith.getInventory().addItem(new ItemStack(Items.STRING, 8));
+        helper.assertTrue(BuyFromVillagers.demand(level, smith) == 0, "With a batch of string it needs none, demand " + BuyFromVillagers.demand(level, smith));
+        smith.getInventory().clearContent();
+        smith.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
+        helper.assertTrue(BuyFromVillagers.demand(level, smith) == 0, "With only its food money it can't buy, demand " + BuyFromVillagers.demand(level, smith));
+        helper.succeed();
+    }
+
+    public static void unmetNeedsDrawATravellingMerchant(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        java.util.List<Villager> smiths = new java.util.ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            BlockPos table = new BlockPos(6 + 4 * i, 1, 12);
+            helper.setBlock(table, Blocks.SMITHING_TABLE);
+            Villager smith = GameTestHelpers.spawnEmployed(helper, table.south(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
+            smiths.add(smith);
+        }
+        @SuppressWarnings("removal")
+        net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setPos(smiths.get(0).position());
+        Exports.visitNear(helper.getLevel(), player, () -> 0.0);
+        helper.assertTrue(merchants(helper) == 0, "Villagers with nothing to spend draw no merchant, got " + merchants(helper));
+        smiths.get(0).getInventory().addItem(new ItemStack(Items.EMERALD, 20));
+        Exports.visitNear(helper.getLevel(), player, () -> 0.0);
+        helper.assertTrue(merchants(helper) == 0, "One toolsmith's 2 emeralds are not worth the trip, got " + merchants(helper));
+        smiths.forEach(smith -> smith.getInventory().addItem(new ItemStack(Items.EMERALD, 20)));
+        Exports.visitNear(helper.getLevel(), player, () -> 0.0);
+        helper.assertTrue(merchants(helper) == 1, "Four toolsmiths out of string and with money draw a merchant, got " + merchants(helper));
+        helper.succeed();
+    }
+
+    private static int merchants(GameTestHelper helper) {
+        return helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader.class, helper.getBounds().inflate(16)).size();
+    }
+
     private static int count(Villager villager, Item item) {
         return villager.getInventory().countItem(item);
     }

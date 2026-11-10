@@ -208,6 +208,32 @@ public class BuyFromVillagers extends Behavior<Villager> {
         return Optional.empty();
     }
 
+    /**
+     * What it would spend at a travelling merchant right now, in whole emeralds: for each supply of its trade it is short of
+     * that the merchant carries ({@link Exports#waresPrice}) and no villager in its village sells, as many lots as it can
+     * afford above its reserve and fit under the supply's {@code max}. Needs like this draw a merchant to the village, as export goods do ({@link Exports}).
+     */
+    static int demand(ServerLevel level, Villager buyer) {
+        Optional<TradeTable> table = TradeTable.forVillager(buyer);
+        if (table.isEmpty() || buyer.isBaby()) return 0;
+        java.util.List<Villager> sellers = null;
+        int worth = 0;
+        int spent = 0;
+        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+            int held = Economy.count(level, buyer, supply.item());
+            Price price = Exports.waresPrice(supply.item());
+            if (price == null || held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
+            int budget = (outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer)) - spent;
+            int lots = Math.min(budget / price.emeralds(), Math.max(1, (supply.max() - held) / price.count()));
+            if (lots <= 0) continue;
+            if (sellers == null) sellers = sellers(level, buyer);
+            if (sellers.stream().anyMatch(seller -> offer(level, seller, supply.item(), supply.max() - held, Economy.emeralds(level, buyer)).isPresent())) continue;
+            worth += lots * price.emeralds();
+            spent += lots * price.emeralds();
+        }
+        return worth;
+    }
+
     private static void tradeWithMerchant(ServerLevel level, Villager buyer, MerchantDeal deal) {
         MerchantOffer offer = deal.offer();
         int emeralds = offer.getCostA().getCount();
