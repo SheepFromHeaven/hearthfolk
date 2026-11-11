@@ -98,14 +98,14 @@ public final class Gear {
     /** A sword at its side, or a bow and arrows among its goods. */
     static boolean isArmed(Villager villager) {
         ItemStack sidearm = sidearm(villager);
-        if (sidearm.is(ItemTags.SWORDS)) return true;
+        if (sidearm.is(ItemTags.SWORDS) || com.sheepfromheaven.minenow.cleric.ClericFight.armed(villager)) return true;
         boolean bow = isBow(sidearm) || villager.getInventory().hasAnyMatching(Gear::isBow);
         return bow && (!quiver(villager).isEmpty() || villager.getInventory().hasAnyMatching(stack -> stack.is(Items.ARROW)));
     }
 
     /** Armed with a bow rather than a sword: what {@link PanicOrFight} shoots with. */
     static boolean shoots(Villager villager) {
-        return isArmed(villager) && !sidearm(villager).is(ItemTags.SWORDS);
+        return isArmed(villager) && !sidearm(villager).is(ItemTags.SWORDS) && !com.sheepfromheaven.minenow.cleric.ClericFight.armed(villager);
     }
 
     /** Armor wears down with the blows it takes, the way a player's does. */

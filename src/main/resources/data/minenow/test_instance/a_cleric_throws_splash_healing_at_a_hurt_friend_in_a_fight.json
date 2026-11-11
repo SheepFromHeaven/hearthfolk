@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:a_cleric_throws_splash_healing_at_a_hurt_friend_in_a_fight",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 900
+}

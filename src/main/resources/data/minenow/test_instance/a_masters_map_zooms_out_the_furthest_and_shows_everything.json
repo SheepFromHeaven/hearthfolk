@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_23",
+  "function": "minenow:a_masters_map_zooms_out_the_furthest_and_shows_everything",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

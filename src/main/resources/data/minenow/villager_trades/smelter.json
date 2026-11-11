@@ -95,5 +95,20 @@
       "item": "minecraft:stone",
       "price": 0.05
     }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:gold_nugget",
+      "count": 9,
+      "materials": [
+        {
+          "item": "minecraft:gold_ingot",
+          "count": 1
+        }
+      ],
+      "labor": 0.02,
+      "stock": 18,
+      "level": 2
+    }
   ]
 }

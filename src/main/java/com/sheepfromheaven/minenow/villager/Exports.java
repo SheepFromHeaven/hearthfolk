@@ -43,12 +43,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * The village's exports: goods only players would otherwise buy ({@code #minenow:exports}: armor, swords, shields, bows,
  * saddles, bundles, ...). The more such goods a village holds near a player, the likelier a travelling merchant turns up
- * ({@link #visitChance}): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
+ * ({@link #visitChance}), as do the needs the merchant could meet ({@link BuyFromVillagers#demand}: supplies of their trade villagers are short of that he carries and nobody in the village sells): a wandering trader by name and with two pack mules instead of llamas, selling goods from afar
  * the village can't make ({@code data/<namespace>/travelling_merchant/*.json}, all files merged) instead of vanilla's random trades. It walks to the villagers holding export
  * goods and buys them at their price with new emeralds, up to {@link #TRADER_BUDGET} per visit, so luxury crafters earn
  * without a player; with what's left it buys the village's bulk surplus at half price ({@link #bulk}), so a miner
@@ -71,10 +72,21 @@ public final class Exports {
     private static final int MULES = 2;
     private static final int STAY = 24000;
 
+    private static final int MARKET_TICKS = 2400;
+    private static final int BELL_PATIENCE = 1200;
+    private static final double BELL_REACH = 3.0;
+
     private static final Map<UUID, Integer> SPENT = new HashMap<>();
+    private static final Map<UUID, Long> HEADING = new HashMap<>();
+    private static final Map<UUID, Market> MARKETS = new HashMap<>();
+    /** When a merchant last announced its market, so villagers that polled before it look again at once. */
+    static long lastAnnounced = Long.MIN_VALUE;
     private static long lastVisit = Long.MIN_VALUE;
 
     private Exports() {}
+
+    /** A merchant's market: the bell it announced it at and when it closes. */
+    private record Market(BlockPos bell, long until) {}
 
     private record Ware(Identifier item, double price) {
         static final Codec<Ware> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -100,6 +112,78 @@ public final class Exports {
         return trader.getData(ModVillagers.TRAVELLING_MERCHANT);
     }
 
+    /** The travelling merchants within {@code range} of the villager that are free to trade, nearest first. */
+    static java.util.List<WanderingTrader> merchantsNear(ServerLevel level, Villager villager, int range) {
+        return level.getEntitiesOfClass(WanderingTrader.class, villager.getBoundingBox().inflate(range),
+                        trader -> trader.isAlive() && isMerchant(trader) && !trader.isTrading())
+                .stream().sorted(Comparator.comparingDouble(villager::distanceToSqr)).toList();
+    }
+
+    /** The bell of the village this merchant announced its market at, while it is open. */
+    static Optional<BlockPos> openMarket(WanderingTrader merchant, long now) {
+        return Optional.ofNullable(MARKETS.get(merchant.getUUID())).filter(market -> now < market.until()).map(Market::bell);
+    }
+
+    /** The merchants whose market is open at a bell of the villager's village, however far they stand. */
+    static java.util.List<WanderingTrader> marketsOf(ServerLevel level, Villager villager) {
+        Optional<Villages.Village> village = Villages.of(level, villager);
+        if (village.isEmpty()) return java.util.List.of();
+        long now = level.getGameTime();
+        return MARKETS.entrySet().stream()
+                .filter(entry -> now < entry.getValue().until() && village.get().bells().contains(entry.getValue().bell()))
+                .map(entry -> level.getEntity(entry.getKey()))
+                .filter(entity -> entity instanceof WanderingTrader trader && trader.isAlive() && !trader.isTrading())
+                .map(entity -> (WanderingTrader) entity)
+                .sorted(Comparator.comparingDouble(villager::distanceToSqr)).toList();
+    }
+
+    /**
+     * A merchant in a village walks to the nearest bell and announces its market there with the bell's sound, not a real
+     * ring: that would send every villager into hiding or to its post. It then waits at the bell for {@link #MARKET_TICKS}
+     * so the village comes to it. Gives up on a bell it hasn't reached in {@link #BELL_PATIENCE}; true while it is busy with the market.
+     */
+    private static boolean holdsMarket(ServerLevel level, WanderingTrader trader) {
+        long now = level.getGameTime();
+        Market market = MARKETS.get(trader.getUUID());
+        if (market == null) {
+            Long since = HEADING.putIfAbsent(trader.getUUID(), now);
+            if (since != null && now - since >= BELL_PATIENCE) return false;
+            BlockPos bell = Villages.at(level, trader.blockPosition()).flatMap(village -> village.bells().stream()
+                    .min(Comparator.comparingDouble(pos -> pos.distSqr(trader.blockPosition())))).orElse(null);
+            if (bell == null) {
+                HEADING.remove(trader.getUUID());
+                return false;
+            }
+            if (trader.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(bell)) > BELL_REACH) {
+                trader.getNavigation().moveTo(bell.getX() + 0.5, bell.getY(), bell.getZ() + 0.5, 0.5);
+                return true;
+            }
+            MARKETS.put(trader.getUUID(), new Market(bell, now + MARKET_TICKS));
+            lastAnnounced = now;
+            level.playSound(null, bell, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 2.0F, 1.0F);
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.NOTE, bell.getX() + 0.5, bell.getY() + 1.5, bell.getZ() + 0.5, 6, 0.4, 0.3, 0.4, 1.0);
+            return true;
+        }
+        if (now >= market.until()) return false;
+        if (trader.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(market.bell())) > BELL_REACH + 2) {
+            trader.getNavigation().moveTo(market.bell().getX() + 0.5, market.bell().getY(), market.bell().getZ() + 0.5, 0.5);
+        }
+        return true;
+    }
+
+    /** What a travelling merchant sells {@code item} for (the data file's price), or null if he doesn't carry it. */
+    static @Nullable Price waresPrice(Item item) {
+        Double price = wares.get(BuiltInRegistries.ITEM.getKey(item));
+        return price == null ? null : Price.of(price);
+    }
+
+    /** What the merchant still has of {@code item} to sell for emeralds, as the offer a player would use. */
+    static Optional<MerchantOffer> wareFor(WanderingTrader merchant, Item item) {
+        return merchant.getOffers().stream()
+                .filter(offer -> offer.getResult().is(item) && offer.getCostA().is(Items.EMERALD) && offer.getCostB().isEmpty() && !offer.isOutOfStock())
+                .findFirst();
+    }
+
     /** How likely a check (once a minute) brings an extra trader, for goods worth {@code surplus} emeralds. */
     static double visitChance(int surplus) {
         if (surplus < MIN_SURPLUS) return 0.0;
@@ -111,7 +195,7 @@ public final class Exports {
      * it sells beyond {@link #BULK_KEEP} and beyond what it keeps) at half price, sold in whole batches.
      */
     static int surplus(ServerLevel level, Villager villager) {
-        int worth = 0;
+        int worth = com.sheepfromheaven.minenow.cleric.ClericExports.surplus(level, villager);
         for (Item item : Economy.items(level, villager)) {
             Price price = price(villager, item);
             if (price == null) continue;
@@ -141,7 +225,7 @@ public final class Exports {
     }
 
     /** Sends a travelling merchant to the village, onto open ground within 8 blocks of this villager and 3 of its height; null if there's no room. */
-    static @Nullable WanderingTrader sendTrader(ServerLevel level, Villager villager) {
+    public static @Nullable WanderingTrader sendTrader(ServerLevel level, Villager villager) {
         for (int attempt = 0; attempt < 20; attempt++) {
             int x = villager.getBlockX() + level.getRandom().nextInt(17) - 8;
             int z = villager.getBlockZ() + level.getRandom().nextInt(17) - 8;
@@ -185,9 +269,11 @@ public final class Exports {
         if (!com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.get()) return;
         if (!level.getEntitiesOfClass(WanderingTrader.class, player.getBoundingBox().inflate(TRADER_RANGE)).isEmpty()) return;
         var villagers = level.getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(VILLAGE_RANGE), Villager::isAlive);
-        int total = villagers.stream().mapToInt(villager -> surplus(level, villager)).sum();
+        Map<Villager, Integer> trade = new HashMap<>();
+        villagers.forEach(villager -> trade.put(villager, surplus(level, villager) + BuyFromVillagers.demand(level, villager)));
+        int total = trade.values().stream().mapToInt(Integer::intValue).sum();
         if (roll.getAsDouble() >= visitChance(total)) return;
-        villagers.stream().max(Comparator.comparingInt(villager -> surplus(level, villager))).ifPresent(villager -> {
+        trade.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).ifPresent(villager -> {
             if (sendTrader(level, villager) != null) lastVisit = level.getGameTime();
         });
     }
@@ -212,6 +298,8 @@ public final class Exports {
     /** A travelling merchant's mules leave with it, rather than stay behind as free mules. */
     public static void onEntityLeave(EntityLeaveLevelEvent event) {
         if (!(event.getEntity() instanceof WanderingTrader trader) || !(event.getLevel() instanceof ServerLevel level) || !isMerchant(trader)) return;
+        HEADING.remove(trader.getUUID());
+        MARKETS.remove(trader.getUUID());
         Entity.RemovalReason reason = trader.getRemovalReason();
         if (reason == null || !reason.shouldDestroy()) return;
         level.getEntitiesOfClass(Mule.class, trader.getBoundingBox().inflate(16), mule -> mule.getData(ModVillagers.PACK_MULE) && mule.getLeashHolder() == trader)
@@ -226,7 +314,7 @@ public final class Exports {
         }
         if (!(event.getEntity() instanceof WanderingTrader trader) || !(trader.level() instanceof ServerLevel level) || trader.tickCount % 20 != 0 || !isMerchant(trader)) return;
         int budget = TRADER_BUDGET - SPENT.getOrDefault(trader.getUUID(), 0);
-        if (budget <= 0 || trader.isTrading()) return;
+        if (trader.isTrading() || holdsMarket(level, trader) || budget <= 0) return;
         Villager seller = level.getEntitiesOfClass(Villager.class, new AABB(trader.blockPosition()).inflate(SHOP_RANGE), villager -> villager.isAlive() && !villager.isSleeping() && surplus(level, villager) > 0)
                 .stream().min(Comparator.comparingDouble(trader::distanceToSqr)).orElse(null);
         if (seller == null) return;
@@ -244,7 +332,7 @@ public final class Exports {
     }
 
     private static int buy(ServerLevel level, Villager seller, int budget) {
-        int spent = 0;
+        int spent = com.sheepfromheaven.minenow.cleric.ClericExports.sell(level, seller, budget);
         for (Item item : Economy.items(level, seller)) {
             if (!new ItemStack(item).is(GOODS)) continue;
             Price price = price(seller, item);

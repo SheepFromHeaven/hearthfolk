@@ -1,0 +1,12 @@
+{
+  "type": "minenow:switched_shapeless",
+  "category": "misc",
+  "when_enabled": true,
+  "ingredients": [
+    "minecraft:book",
+    "minenow:ink_and_quill"
+  ],
+  "result": {
+    "id": "minecraft:writable_book"
+  }
+}

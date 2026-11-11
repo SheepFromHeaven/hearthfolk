@@ -14,7 +14,20 @@ public final class MineNowConfig {
             .comment("Whether a village's export goods draw travelling merchants that buy them for new emeralds.")
             .define("travellingMerchants", true);
 
+    public static final ModConfigSpec.BooleanValue INK_AND_QUILL_RECIPES = BUILDER
+            .comment("Whether players can craft the cartographer's ink and quill (feather, ink sac and glass bottle), and whether a book and quill takes it in place of an ink sac and a feather. Off by default: vanilla's book and quill recipe stays as it is.")
+            .define("inkAndQuillRecipes", false);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private MineNowConfig() {}
+
+    /** Safe before the world's config has loaded (recipes are shown to the client early): off then. */
+    public static boolean inkAndQuillRecipes() {
+        try {
+            return INK_AND_QUILL_RECIPES.get();
+        } catch (IllegalStateException notLoaded) {
+            return false;
+        }
+    }
 }

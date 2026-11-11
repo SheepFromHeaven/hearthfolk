@@ -1,0 +1,13 @@
+{
+  "type": "minenow:switched_shapeless",
+  "category": "equipment",
+  "when_enabled": true,
+  "ingredients": [
+    "minecraft:feather",
+    "minecraft:ink_sac",
+    "minecraft:glass_bottle"
+  ],
+  "result": {
+    "id": "minenow:ink_and_quill"
+  }
+}

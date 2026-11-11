@@ -106,11 +106,12 @@ public final class Unloading {
 
     public static int keepLimit(Villager villager, ItemStack stack) {
         if (isTool(villager, stack)) return 1;
+        if (stack.is(net.minecraft.world.item.Items.SPLASH_POTION) && com.sheepfromheaven.minenow.cleric.ClericFight.isCleric(villager)) return com.sheepfromheaven.minenow.cleric.ClericFight.CARRIED;
         int supplyMax = TradeTable.forVillager(villager).flatMap(table -> table.supply(stack.getItem())).map(TradeTable.Supply::max).orElse(0);
         if (supplyMax > 0) return supplyMax;
         int keepMax = TradeTable.forVillager(villager).map(table -> table.keepMax(stack)).orElse(0);
         if (keepMax > 0) return keepMax;
-        if (Crops.isSeed(stack) || stack.has(DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
+        if (Crops.isSeed(stack) || Crops.isStemSeed(stack) || stack.has(DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
         return 0;
     }
 

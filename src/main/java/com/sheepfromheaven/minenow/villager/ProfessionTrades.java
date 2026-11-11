@@ -50,7 +50,8 @@ public final class ProfessionTrades {
                     .forEach(MerchantOffer::setToOutOfStock);
             resendOffers(event, villager);
         } else {
-            Economy.take(level, villager, result.getItem(), result.getCount());
+            if (result.getComponentsPatch().isEmpty()) Economy.take(level, villager, result.getItem(), result.getCount());
+            else Economy.takeExact(level, villager, result);
             Economy.give(level, villager, new ItemStack(Items.EMERALD, offer.getCostA().getCount()));
         }
     }
@@ -115,9 +116,17 @@ public final class ProfessionTrades {
         for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
             if (table.hasProduceEntry(craft.item())) continue;
             Price price = table.craftPrice(craft);
-            int batches = Economy.count(level, villager, craft.item()) / price.count();
+            if (craft.enchants()) {
+                for (ItemStack book : Economy.stacks(level, villager, craft.item())) {
+                    offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), book, 1, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                }
+                continue;
+            }
+            int spare = Economy.count(level, villager, craft.item()) - (table.isToolItem(new ItemStack(craft.item())) ? 1 : 0);
+            int batches = spare / price.count();
             if (batches > 0) {
-                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), new ItemStack(craft.item(), price.count()), batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                ItemStack sold = craft.item() == Items.FILLED_MAP ? Economy.peekOne(level, villager, craft.item()) : new ItemStack(craft.item(), price.count());
+                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), sold, batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
         int purse = Economy.spendable(level, villager);
@@ -137,6 +146,7 @@ public final class ProfessionTrades {
                 }
             }
         });
+        if (villager.getVillagerData().profession().is(net.minecraft.world.entity.npc.villager.VillagerProfession.CLERIC)) com.sheepfromheaven.minenow.cleric.ClericOffers.add(level, villager, offers);
         for (TradeTable.Produce crop : table.produceUpTo(villagerLevel)) {
             int sellable = Economy.count(level, villager, crop.item()) - Unloading.keepLimit(villager, new ItemStack(crop.item()));
             int trades = sellable / crop.price().count();

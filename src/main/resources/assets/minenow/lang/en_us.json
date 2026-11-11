@@ -6,5 +6,7 @@
   "minenow.armor_stand.displayed_by": "This is %s's armor display",
   "entity.minenow.villager.smelter": "Smelter",
   "entity.minenow.villager.golemsmith": "Golemsmith",
-  "block.minenow.golem_workshop": "Golem Workshop"
+  "block.minenow.golem_workshop": "Golem Workshop",
+  "item.minenow.ink_and_quill": "Ink and Quill",
+  "item.minenow.village_map": "Village Map"
 }

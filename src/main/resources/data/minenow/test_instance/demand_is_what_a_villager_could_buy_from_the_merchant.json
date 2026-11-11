@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:merchant_5",
+  "function": "minenow:demand_is_what_a_villager_could_buy_from_the_merchant",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 200
+}

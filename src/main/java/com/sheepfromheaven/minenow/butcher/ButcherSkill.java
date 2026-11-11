@@ -5,7 +5,7 @@ package com.sheepfromheaven.minenow.butcher;
  * Looting). Better axes, which higher levels can buy, make the work itself quicker ({@link Butchering}).
  */
 final class ButcherSkill {
-    private static final int[] EXTRA_CUTS = {0, 0, 1, 1, 2};
+    private static final int[] EXTRA_CUTS = {0, 1, 2, 3, 4};
 
     private ButcherSkill() {}
 

@@ -1,7 +1,7 @@
 {
   "type": "minecraft:function",
   "environment": "minecraft:default",
-  "function": "minenow:farmer_bakes_bread_from_its_wheat",
+  "function": "minenow:a_travelling_merchant_buys_a_clerics_surplus_potions",
   "structure": "minenow:field_24x6x24",
-  "max_ticks": 4800
+  "max_ticks": 1800
 }

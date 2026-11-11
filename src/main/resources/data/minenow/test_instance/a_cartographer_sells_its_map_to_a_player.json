@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_25",
+  "function": "minenow:a_cartographer_sells_its_map_to_a_player",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

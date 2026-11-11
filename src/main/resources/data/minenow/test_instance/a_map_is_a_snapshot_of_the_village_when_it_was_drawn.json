@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_24",
+  "function": "minenow:a_map_is_a_snapshot_of_the_village_when_it_was_drawn",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

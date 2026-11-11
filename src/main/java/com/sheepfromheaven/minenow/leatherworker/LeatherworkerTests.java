@@ -146,6 +146,29 @@ public final class LeatherworkerTests {
         return helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.decoration.ItemFrame.class, helper.getBounds(), frame -> !frame.getItem().isEmpty());
     }
 
+    public static void aLeatherworkerBuysTheFishermansLeather(GameTestHelper helper) {
+        Villager leatherworker = spawnLeatherworker(helper, 1);
+        leatherworker.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        BlockPos barrel = new BlockPos(18, 1, 12);
+        helper.setBlock(barrel, Blocks.BARREL);
+        Villager fisherman = GameTestHelpers.spawnEmployed(helper, barrel.west(), barrel, VillagerProfession.FISHERMAN, PoiTypes.FISHERMAN);
+        fisherman.getInventory().addItem(new ItemStack(Items.LEATHER, 20));
+
+        helper.succeedWhen(() -> {
+            int leather = leatherworker.getInventory().countItem(Items.LEATHER) + leatherworker.getInventory().countItem(Items.LEATHER_HELMET)
+                    + leatherworker.getInventory().countItem(Items.LEATHER_CHESTPLATE);
+            helper.assertTrue(leather > 0, "The leather a fisherman fishes up is the leatherworker's to buy; has " + leather);
+        });
+    }
+
+    public static void aLeatherworkerCutsLeatherIntoString(GameTestHelper helper) {
+        Villager leatherworker = spawnLeatherworker(helper, 1);
+        leatherworker.getInventory().addItem(new ItemStack(Items.LEATHER, 3));
+
+        helper.succeedWhen(() -> helper.assertTrue(leatherworker.getInventory().countItem(Items.STRING) >= 8,
+                "At its cauldron the leatherworker cuts leather into string, 8 from each; has " + leatherworker.getInventory().countItem(Items.STRING) + " string"));
+    }
+
     static Villager spawnLeatherworker(GameTestHelper helper, int level) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:merchant_2",
+  "function": "minenow:a_villager_never_buys_from_a_merchant_below_its_reserve",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}
