@@ -84,7 +84,7 @@ final class Field {
 
     private static boolean isOpenAbove(ServerLevel level, BlockPos pos) {
         BlockState above = level.getBlockState(pos.above());
-        return isClearable(above) || Crops.isCrop(above);
+        return isClearable(above) || Crops.isCrop(above) || Crops.isStem(above) || Crops.isFruit(above);
     }
 
     private static boolean isWater(ServerLevel level, BlockPos pos) {
