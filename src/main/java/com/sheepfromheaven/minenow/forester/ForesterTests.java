@@ -158,6 +158,39 @@ public final class ForesterTests {
         });
     }
 
+    public static void foresterGivesUpOnWhatItCannotReachAtOnce(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        for (int x = 8; x <= 10; x++) {
+            for (int z = 13; z <= 15; z++) {
+                for (int y = 1; y <= 3; y++) helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+            }
+        }
+        helper.setBlock(new BlockPos(9, 1, 14), Blocks.AIR);
+        drop(helper, new BlockPos(9, 1, 14), new ItemStack(Items.OAK_SAPLING));
+        drop(helper, new BlockPos(13, 1, 10), new ItemStack(Items.APPLE));
+
+        helper.succeedWhen(() -> helper.assertTrue(forester.getInventory().countItem(Items.APPLE) == 1,
+                "A sapling sealed in stone is given up on once the forester stops getting closer, not after minutes of standing by it"));
+    }
+
+    public static void aForesterWalksToTheFootOfATreeWithoutSearchingEverywhere(GameTestHelper helper) {
+        Villager forester = spawnForester(helper);
+        forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        tree(helper, new BlockPos(14, 1, 12), Blocks.DIRT);
+        helper.runAfterDelay(5, () -> {
+            var level = helper.getLevel();
+            Grove.Tree tree = Grove.trees(level, helper.absolutePos(new BlockPos(5, 2, 12)), 12).getFirst();
+            BlockPos to = FellTrees.approach(level, forester, tree);
+            net.minecraft.world.level.pathfinder.Path path = forester.getNavigation().createPath(to, 0);
+            helper.assertTrue(path != null && path.canReach(), "The spot it walks to beside the trunk can be reached");
+            helper.assertTrue(Math.abs(to.getX() - tree.base().getX()) <= 1 && Math.abs(to.getZ() - tree.base().getZ()) <= 1 && to.getY() == tree.base().getY(), "...and is right beside the trunk, not above the crown: " + to);
+            int visited = ((com.sheepfromheaven.minenow.villager.RoadNavigation) forester.getNavigation()).lastSearchSize();
+            helper.assertTrue(visited < 150, "...so no search has to cover the whole neighbourhood, expanded " + visited);
+            helper.succeed();
+        });
+    }
+
     public static void foresterMakesPlanksAndStrippedLogs(GameTestHelper helper) {
         Villager forester = spawnForester(helper);
         forester.getInventory().addItem(new ItemStack(Items.STONE_AXE));
