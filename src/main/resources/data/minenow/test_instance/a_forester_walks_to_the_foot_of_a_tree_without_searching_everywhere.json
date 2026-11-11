@@ -1,7 +1,7 @@
 {
   "type": "minecraft:function",
   "environment": "minecraft:default",
-  "function": "minenow:butcher_culls_the_herd_down_to_six",
+  "function": "minenow:a_forester_walks_to_the_foot_of_a_tree_without_searching_everywhere",
   "structure": "minenow:field_24x6x24",
-  "max_ticks": 4800
+  "max_ticks": 40
 }

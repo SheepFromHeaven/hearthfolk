@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 import com.sheepfromheaven.minenow.forester.Forester;
 import com.sheepfromheaven.minenow.forester.NurseryTree;
 import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
+import com.sheepfromheaven.minenow.golemsmith.Golemsmith;
 import com.sheepfromheaven.minenow.miner.Miner;
 import com.sheepfromheaven.minenow.smelter.Smelter;
 import com.sheepfromheaven.minenow.villager.Economy;
@@ -94,7 +95,8 @@ public final class VillageSoak {
         MASON("mason", VillagerProfession.MASON, PoiTypes.MASON, Blocks.STONECUTTER, null),
         LEATHERWORKER("leatherworker", VillagerProfession.LEATHERWORKER, PoiTypes.LEATHERWORKER, Blocks.CAULDRON, null),
         WEAPONSMITH("weaponsmith", VillagerProfession.WEAPONSMITH, PoiTypes.WEAPONSMITH, Blocks.GRINDSTONE, null),
-        ARMORER("armorer", VillagerProfession.ARMORER, PoiTypes.ARMORER, Blocks.ANVIL, null);
+        ARMORER("armorer", VillagerProfession.ARMORER, PoiTypes.ARMORER, Blocks.ANVIL, null),
+        GOLEMSMITH("golemsmith", Golemsmith.PROFESSION, Golemsmith.POI, null, Items.SHEARS);
 
         final String label;
         final ResourceKey<VillagerProfession> profession;
@@ -114,7 +116,7 @@ public final class VillageSoak {
     /** Row by row; the toolsmith and smelter, whom nearly everyone buys from, take the middle cells. */
     private static final Role[] ROSTER = {
             Role.FARMER, Role.FARMER, Role.SHEPHERD, Role.SHEPHERD, Role.BUTCHER,
-            Role.FISHERMAN, Role.FISHERMAN, Role.TOOLSMITH, Role.FARMER, Role.MINER,
+            Role.FISHERMAN, Role.FISHERMAN, Role.TOOLSMITH, Role.GOLEMSMITH, Role.MINER,
             Role.FARMER, Role.FLETCHER, Role.SMELTER, Role.FORESTER, Role.MINER,
             Role.FORESTER, Role.MASON, Role.LEATHERWORKER, Role.WEAPONSMITH, Role.ARMORER,
     };
@@ -263,13 +265,17 @@ public final class VillageSoak {
                 double seconds = (System.nanoTime() - started) / 1e9;
                 LOGGER.info("[soak] tick {} ({} ticks/s, sprinting {})", tick[0], String.format("%.0f", tick[0] / Math.max(seconds, 0.001)),
                         level.getServer().tickRateManager().isSprinting());
+                Map<String, Integer> kinds = new TreeMap<>();
+                for (net.minecraft.world.entity.Entity e : level.getAllEntities()) kinds.merge(e.getType().toShortString(), 1, Integer::sum);
+                LOGGER.info("[soak] entities {}", kinds);
             }
             if (tick[0] % DAY == 0) {
                 int day = (int) (tick[0] / DAY);
                 dailyReport(level, helper, out, day, residents, merchantsSeen.size());
                 double seconds = (System.nanoTime() - started) / 1e9;
-                LOGGER.info("[soak] day {}/{} done after {}s ({} ticks/s)", day, days, String.format("%.0f", seconds),
-                        String.format("%.0f", tick[0] / Math.max(seconds, 0.001)));
+                double cpu = java.lang.management.ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime() / 1e9;
+                LOGGER.info("[soak] day {}/{} done after {}s ({} ticks/s), server thread cpu {}s ({} ticks per cpu second)", day, days, String.format("%.0f", seconds),
+                        String.format("%.0f", tick[0] / Math.max(seconds, 0.001)), String.format("%.0f", cpu), String.format("%.0f", tick[0] / Math.max(cpu, 0.001)));
             }
             if (tick[0] >= totalTicks) {
                 finalReport(level, helper, out, residents, playerBought);
@@ -375,6 +381,8 @@ public final class VillageSoak {
         }
         if (role == Role.FORESTER) {
             helper.setBlock(station, Forester.nursery(NurseryTree.OAK));
+        } else if (role == Role.GOLEMSMITH) {
+            helper.setBlock(station, Golemsmith.WORKSHOP.get());
         } else if (role == Role.MINER) {
             helper.setBlock(station, Miner.FURNACE_CART.get());
         } else {
