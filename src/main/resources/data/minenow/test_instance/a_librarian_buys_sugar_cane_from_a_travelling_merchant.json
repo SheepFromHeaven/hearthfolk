@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:merchant_9",
+  "function": "minenow:a_librarian_buys_sugar_cane_from_a_travelling_merchant",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

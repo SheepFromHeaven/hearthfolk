@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_librarian_makes_paper_from_sugar_cane",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

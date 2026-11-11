@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_novice_librarians_books_never_hold_treasure_enchantments",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

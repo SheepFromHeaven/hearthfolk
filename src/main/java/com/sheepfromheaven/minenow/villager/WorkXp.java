@@ -27,6 +27,7 @@ public final class WorkXp {
     public static final double SHEARED = 1;
     public static final double CULLED = 1;
     public static final double CRAFTED = 1;
+    public static final double ENCHANTED = 2;
     public static final double RESTORED = 1;
 
     private WorkXp() {}
