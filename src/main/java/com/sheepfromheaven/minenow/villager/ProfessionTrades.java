@@ -115,9 +115,11 @@ public final class ProfessionTrades {
         for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
             if (table.hasProduceEntry(craft.item())) continue;
             Price price = table.craftPrice(craft);
-            int batches = Economy.count(level, villager, craft.item()) / price.count();
+            int spare = Economy.count(level, villager, craft.item()) - (table.isToolItem(new ItemStack(craft.item())) ? 1 : 0);
+            int batches = spare / price.count();
             if (batches > 0) {
-                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), new ItemStack(craft.item(), price.count()), batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                ItemStack sold = craft.item() == Items.FILLED_MAP ? Economy.peekOne(level, villager, craft.item()) : new ItemStack(craft.item(), price.count());
+                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), sold, batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
         int purse = Economy.spendable(level, villager);

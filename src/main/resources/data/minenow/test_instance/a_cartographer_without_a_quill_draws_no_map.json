@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_18",
+  "function": "minenow:a_cartographer_without_a_quill_draws_no_map",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_21",
+  "function": "minenow:a_journeymans_map_shows_the_village_border",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

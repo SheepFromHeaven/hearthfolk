@@ -127,7 +127,7 @@ public final class VillageTests {
         return villager;
     }
 
-    static void claimBell(GameTestHelper helper, Villager villager, BlockPos bell) {
+    public static void claimBell(GameTestHelper helper, Villager villager, BlockPos bell) {
         if (!helper.getBlockState(bell).is(Blocks.BELL)) helper.setBlock(bell, Blocks.BELL);
         BlockPos abs = helper.absolutePos(bell);
         helper.getLevel().getPoiManager().take(type -> type.is(PoiTypes.MEETING), (type, pos) -> pos.equals(abs), abs, 1);

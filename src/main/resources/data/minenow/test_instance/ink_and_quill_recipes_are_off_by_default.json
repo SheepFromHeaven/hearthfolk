@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:config",
+  "function": "minenow:ink_and_quill_recipes_are_off_by_default",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

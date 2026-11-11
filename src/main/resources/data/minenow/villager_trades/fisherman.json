@@ -33,6 +33,11 @@
       "item": "minecraft:bone",
       "level": 1,
       "price": 0.03
+    },
+    {
+      "item": "minecraft:ink_sac",
+      "level": 1,
+      "price": 0.5
     }
   ],
   "default_produce": {

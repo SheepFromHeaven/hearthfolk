@@ -73,7 +73,7 @@ public final class ExportTests {
         helper.assertTrue(mules.size() == 2 && mules.stream().allMatch(net.minecraft.world.entity.animal.equine.AbstractChestedHorse::hasChest), "...with two pack mules on leads, has " + mules.size());
         helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.equine.TraderLlama.class, merchant.getBoundingBox().inflate(16)).isEmpty(), "...and no trader llamas");
         var sold = merchant.getOffers().stream().map(offer -> offer.getResult().getItem()).toList();
-        helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART).contains(item)),
+        helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART, Items.GLASS_BOTTLE).contains(item)),
                 "...selling goods from afar the village can't make, " + sold);
         var string = merchant.getOffers().stream().filter(offer -> offer.getResult().is(Items.STRING)).findFirst().orElseThrow();
         helper.assertTrue(string.getResult().getCount() == 8 && string.getCostA().getCount() == 1 && string.getCostA().is(Items.EMERALD),

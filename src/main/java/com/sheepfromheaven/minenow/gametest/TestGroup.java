@@ -28,7 +28,8 @@ public enum TestGroup {
     GOLEMSMITH("Golemsmith", Blocks.SMOOTH_STONE, Blocks.CARVED_PUMPKIN),
     WEAPONSMITH("Weaponsmith", Blocks.POLISHED_ANDESITE, Blocks.IRON_BLOCK),
     DEFENCE("Village defence", Blocks.CRACKED_STONE_BRICKS, Blocks.GOLD_BLOCK),
-    VILLAGE("Village", Blocks.MOSSY_COBBLESTONE, Blocks.EMERALD_BLOCK);
+    VILLAGE("Village", Blocks.MOSSY_COBBLESTONE, Blocks.EMERALD_BLOCK),
+    CARTOGRAPHER("Cartographer", Blocks.SANDSTONE, Blocks.CHISELED_SANDSTONE);
 
     private static final Map<String, TestGroup> BY_TEST = new ConcurrentHashMap<>();
 

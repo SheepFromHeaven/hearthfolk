@@ -141,7 +141,7 @@ public final class Exports {
     }
 
     /** Sends a travelling merchant to the village, onto open ground within 8 blocks of this villager and 3 of its height; null if there's no room. */
-    static @Nullable WanderingTrader sendTrader(ServerLevel level, Villager villager) {
+    public static @Nullable WanderingTrader sendTrader(ServerLevel level, Villager villager) {
         for (int attempt = 0; attempt < 20; attempt++) {
             int x = villager.getBlockX() + level.getRandom().nextInt(17) - 8;
             int z = villager.getBlockZ() + level.getRandom().nextInt(17) - 8;

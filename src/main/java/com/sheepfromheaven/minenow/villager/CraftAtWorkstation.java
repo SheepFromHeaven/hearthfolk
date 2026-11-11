@@ -87,9 +87,9 @@ public class CraftAtWorkstation extends Behavior<Villager> {
             level.playSound(null, station, sound != null ? sound : SoundEvents.SMITHING_TABLE_USE, SoundSource.BLOCKS, 0.4F, 0.9F + body.getRandom().nextFloat() * 0.2F);
         }
         if (++hammering < CraftSkill.ticks(body.getVillagerData().level())) return;
-        if (hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body))) {
+        if (hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body)) && CraftResults.canMake(level, body, craft.item())) {
             for (TradeTable.Material material : craft.materials()) Economy.take(level, body, material.item(), material.count());
-            Economy.give(level, body, new ItemStack(craft.item(), craft.count()));
+            Economy.give(level, body, CraftResults.make(level, body, craft.item(), craft.count()));
             for (int use = 0; use < craft.toolUses(); use++) Tools.wear(level, body);
             WorkXp.award(body, WorkXp.CRAFTED);
         }
@@ -109,7 +109,7 @@ public class CraftAtWorkstation extends Behavior<Villager> {
         return TradeTable.forVillager(body).stream()
                 .flatMap(table -> table.craftsUpTo(body.getVillagerData().level()).stream())
                 .filter(craft -> Economy.count(level, body, craft.item()) < table(body).map(t -> t.stockTarget(craft)).orElse(craft.stock()) + Commissions.reserved(body, craft.item())
-                        && hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body)))
+                        && hasMaterials(level, body, craft) && (craft.toolUses() == 0 || Tools.has(body)) && CraftResults.canMake(level, body, craft.item()))
                 .findFirst();
     }
 

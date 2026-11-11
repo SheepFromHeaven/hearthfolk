@@ -13,6 +13,7 @@
     "minecraft:bundle",
     "minecraft:iron_bars",
     "minecraft:bucket",
-    "minecraft:cauldron"
+    "minecraft:cauldron",
+    "minecraft:filled_map"
   ]
 }

@@ -56,6 +56,7 @@ public final class MineNow {
         com.sheepfromheaven.minenow.smelter.Smelter.register(modBus);
         com.sheepfromheaven.minenow.mason.Mason.register(modBus);
         com.sheepfromheaven.minenow.villager.WallDisplays.register(modBus);
+        com.sheepfromheaven.minenow.cartographer.Cartographer.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
@@ -416,6 +417,23 @@ public final class MineNow {
             test(helper, TestGroup.STORAGE, "hopper_draining_an_owned_chest_is_theft_by_its_placer", HomeStorageTests::hopperDrainingAnOwnedChestIsTheftByItsPlacer);
             test(helper, TestGroup.STORAGE, "hopper_minecart_draining_an_owned_chest_is_theft_by_its_placer", HomeStorageTests::hopperMinecartDrainingAnOwnedChestIsTheftByItsPlacer);
             test(helper, TestGroup.STORAGE, "villager_does_not_claim_a_chest_above_a_hopper", HomeStorageTests::villagerDoesNotClaimAChestAboveAHopper);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_rebuilds_its_quill_from_feather_ink_and_bottle", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerRebuildsItsQuillFromFeatherInkAndBottle);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_without_a_quill_draws_no_map", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerWithoutAQuillDrawsNoMap);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_without_a_village_draws_no_map", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerWithoutAVillageDrawsNoMap);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_draws_a_map_of_its_village_from_paper_and_ink", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerDrawsAMapOfItsVillageFromPaperAndInk);
+            test(helper, TestGroup.CARTOGRAPHER, "an_apprentices_map_shows_the_roads", com.sheepfromheaven.minenow.cartographer.CartographerTests::anApprenticesMapShowsTheRoads);
+            test(helper, TestGroup.CARTOGRAPHER, "a_journeymans_map_shows_the_village_border", com.sheepfromheaven.minenow.cartographer.CartographerTests::aJourneymansMapShowsTheVillageBorder);
+            test(helper, TestGroup.CARTOGRAPHER, "an_experts_map_shows_job_sites_and_homes", com.sheepfromheaven.minenow.cartographer.CartographerTests::anExpertsMapShowsJobSitesAndHomes);
+            test(helper, TestGroup.CARTOGRAPHER, "a_masters_map_zooms_out_the_furthest_and_shows_everything", com.sheepfromheaven.minenow.cartographer.CartographerTests::aMastersMapZoomsOutTheFurthestAndShowsEverything);
+            test(helper, TestGroup.CARTOGRAPHER, "a_map_is_a_snapshot_of_the_village_when_it_was_drawn", com.sheepfromheaven.minenow.cartographer.CartographerTests::aMapIsASnapshotOfTheVillageWhenItWasDrawn);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_sells_its_map_to_a_player", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerSellsItsMapToAPlayer);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_buys_ink_sacs_from_the_fisherman", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerBuysInkSacsFromTheFisherman);
+            test(helper, TestGroup.CARTOGRAPHER, "a_travelling_merchant_buys_the_cartographers_maps", com.sheepfromheaven.minenow.cartographer.CartographerTests::aTravellingMerchantBuysTheCartographersMaps);
+            test(helper, TestGroup.CARTOGRAPHER, "a_travelling_merchant_sells_glass_bottles", com.sheepfromheaven.minenow.cartographer.CartographerTests::aTravellingMerchantSellsGlassBottles);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_keeps_its_only_quill_out_of_its_offers", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerKeepsItsOnlyQuillOutOfItsOffers);
+            test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_without_a_quill_buys_one_from_a_player", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerWithoutAQuillBuysOneFromAPlayer);
+            test(helper, TestGroup.CARTOGRAPHER, "ink_and_quill_recipes_are_off_by_default", com.sheepfromheaven.minenow.cartographer.CartographerTests::inkAndQuillRecipesAreOffByDefault);
+            test(helper, TestGroup.CARTOGRAPHER, "ink_and_quill_recipes_can_be_switched_on", com.sheepfromheaven.minenow.cartographer.CartographerTests::inkAndQuillRecipesCanBeSwitchedOn);
         }));
     }
 
