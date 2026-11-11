@@ -105,6 +105,40 @@ public final class Economy {
         return taken;
     }
 
+    /** One item exactly like {@code template} (same components: this enchanted book, not any), from its inventory first, then its chests; empty if it has none. */
+    public static ItemStack takeExact(ServerLevel level, Villager villager, ItemStack template) {
+        ItemStack taken = takeExactFrom(villager.getInventory(), template);
+        for (BlockPos pos : Workshop.allChests(level, villager)) {
+            if (!taken.isEmpty()) break;
+            Container chest = HomeStorage.chestContainer(level, pos);
+            if (chest == null || chest.countItem(template.getItem()) == 0) continue;
+            StorageTheft.check(level, villager, pos);
+            taken = takeExactFrom(chest, template);
+            chest.setChanged();
+            StorageTheft.recordContents(level, pos);
+        }
+        return taken;
+    }
+
+    /** Every stack of {@code item} it holds, inventory then chests, each as a copy, so goods that differ (enchanted books) can be told apart. */
+    public static List<ItemStack> stacks(ServerLevel level, Villager villager, Item item) {
+        List<ItemStack> stacks = new java.util.ArrayList<>();
+        villager.getInventory().getItems().stream().filter(stack -> stack.is(item)).forEach(stack -> stacks.add(stack.copy()));
+        for (Container chest : chests(level, villager)) {
+            for (int i = 0; i < chest.getContainerSize(); i++) {
+                if (chest.getItem(i).is(item)) stacks.add(chest.getItem(i).copy());
+            }
+        }
+        return stacks;
+    }
+
+    private static ItemStack takeExactFrom(Container container, ItemStack template) {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            if (ItemStack.isSameItemSameComponents(container.getItem(i), template)) return container.removeItem(i, 1);
+        }
+        return ItemStack.EMPTY;
+    }
+
     private static ItemStack takeOneFrom(Container container, Item item) {
         for (int i = 0; i < container.getContainerSize(); i++) {
             if (container.getItem(i).is(item)) return container.removeItem(i, 1);

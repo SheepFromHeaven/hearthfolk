@@ -144,6 +144,16 @@ public class PanicOrFight extends VillagerPanicTrigger {
     private void fight(ServerLevel level, Villager body, LivingEntity enemy, long timestamp) {
         Brain<Villager> brain = body.getBrain();
         brain.setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(enemy, true));
+        if (com.sheepfromheaven.minenow.cleric.ClericFight.armed(body) && Gear.sidearm(body).isEmpty()) {
+            double reach = com.sheepfromheaven.minenow.cleric.ClericFight.THROW_RANGE;
+            if (body.distanceTo(enemy) > reach || !body.hasLineOfSight(enemy)) {
+                brain.setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(new EntityTracker(enemy, false), SPEED, 8));
+            } else {
+                brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+            }
+            if (timestamp >= nextSwing && com.sheepfromheaven.minenow.cleric.ClericFight.act(level, body, enemy)) nextSwing = timestamp + SHOT_EVERY;
+            return;
+        }
         ItemStack sidearm = Gear.sidearm(body);
         boolean shooting = !sidearm.is(net.minecraft.tags.ItemTags.SWORDS);
         ItemStack sword = sidearm;

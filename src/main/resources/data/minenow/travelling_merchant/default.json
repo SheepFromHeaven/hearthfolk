@@ -23,6 +23,22 @@
     {
       "item": "minecraft:nether_wart",
       "price": 0.25
+    },
+    {
+      "item": "minecraft:blaze_powder",
+      "price": 1
+    },
+    {
+      "item": "minecraft:gunpowder",
+      "price": 0.5
+    },
+    {
+      "item": "minecraft:spider_eye",
+      "price": 0.5
+    },
+    {
+      "item": "minecraft:brown_mushroom",
+      "price": 0.25
     }
   ]
 }

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_librarian_without_lapis_leaves_its_book_plain",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

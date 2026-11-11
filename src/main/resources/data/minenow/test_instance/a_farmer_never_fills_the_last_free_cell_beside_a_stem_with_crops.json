@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_farmer_never_fills_the_last_free_cell_beside_a_stem_with_crops",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

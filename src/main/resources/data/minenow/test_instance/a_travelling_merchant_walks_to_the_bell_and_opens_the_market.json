@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:merchant_7",
+  "function": "minenow:a_travelling_merchant_walks_to_the_bell_and_opens_the_market",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

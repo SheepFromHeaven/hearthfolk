@@ -330,52 +330,18 @@ public final class FarmerTests {
         helper.succeed();
     }
 
-    public static void aFarmerHarvestsItsFieldBeforeItBakes(GameTestHelper helper) {
-        setUpFarm(helper, true);
-        Villager farmer = spawnFarmer(helper);
-        boolean[] bakedEarly = {false};
-        helper.onEachTick(() -> {
-            boolean[] ripe = {false};
-            forEachFieldCrop(helper, (pos, state) -> ripe[0] |= ((CropBlock) state.getBlock()).isMaxAge(state));
-            if (ripe[0] && farmer.getBrain().getRunningBehaviors().stream().anyMatch(b -> b instanceof com.sheepfromheaven.minenow.villager.CraftAtWorkstation)) bakedEarly[0] = true;
-        });
-
-        helper.succeedWhen(() -> {
-            boolean[] ripe = {false};
-            forEachFieldCrop(helper, (pos, state) -> ripe[0] |= ((CropBlock) state.getBlock()).isMaxAge(state));
-            helper.assertFalse(ripe[0], "The farmer harvests its field");
-            helper.assertFalse(bakedEarly[0], "...and only bakes once there's nothing ripe left, or baking keeps calling it off the field");
-        });
-    }
-
-    public static void farmerBakesBreadFromItsWheat(GameTestHelper helper) {
+    public static void aFarmerDoesNotBakeBread(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
         Villager farmer = spawnFarmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 30));
 
-        helper.succeedWhen(() -> {
-            helper.assertTrue(farmer.getInventory().countItem(Items.BREAD) >= 2, "The farmer bakes bread for the village to eat, has " + farmer.getInventory().countItem(Items.BREAD));
-            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT) == 30 - 3 * farmer.getInventory().countItem(Items.BREAD),
-                    "...three wheat a loaf, has " + farmer.getInventory().countItem(Items.WHEAT) + " wheat");
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(farmer.getInventory().countItem(Items.BREAD) == 0 && farmer.getInventory().countItem(Items.WHEAT) == 30,
+                    "The wheat is for the butcher's cows, not for baking; has " + farmer.getInventory().countItem(Items.BREAD) + " bread, " + farmer.getInventory().countItem(Items.WHEAT) + " wheat");
+            helper.succeed();
         });
-    }
-
-    public static void aHungryVillagerBuysTheFarmersBread(GameTestHelper helper) {
-        helper.setTime(GameTestHelpers.WORK_HOURS);
-        GameTestHelpers.fence(helper);
-        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
-        Villager farmer = spawnFarmer(helper);
-        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 64));
-        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 32));
-        Villager hungry = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(4, 1, 4));
-        hungry.getInventory().addItem(new ItemStack(Items.EMERALD, 3));
-        com.sheepfromheaven.minenow.villager.Meals.makeHungry(hungry);
-
-        helper.succeedWhen(() -> helper.assertTrue(hungry.getInventory().countItem(Items.EMERALD) < 3,
-                "The farmer bakes more bread than it keeps for itself, so a hungry villager can buy some; farmer has "
-                        + farmer.getInventory().countItem(Items.BREAD) + " bread"));
     }
 
     public static void farmerDoesNotCompostSeedsAtTheComposter(GameTestHelper helper) {
@@ -566,6 +532,140 @@ public final class FarmerTests {
             }
         }
     }
+
+
+    private static final BlockPos STEM = new BlockPos(12, 1, 12);
+    private static final BlockPos FRUIT = new BlockPos(13, 1, 12);
+
+    /** A stem at {@link #STEM} with its fruit at {@link #FRUIT}, on dirt near water, the first cells of the farmer's field. */
+    private static void setUpFruit(GameTestHelper helper, net.minecraft.world.level.block.Block stem, net.minecraft.world.level.block.Block attached,
+                                   net.minecraft.world.level.block.Block fruit, boolean withStem) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        helper.setBlock(13, 0, 10, Blocks.WATER);
+        helper.setBlock(STEM.below(), Blocks.FARMLAND);
+        helper.setBlock(FRUIT.below(), Blocks.DIRT);
+        if (withStem) {
+            helper.setBlock(STEM, attached.defaultBlockState().setValue(net.minecraft.world.level.block.AttachedStemBlock.FACING, Direction.EAST));
+        }
+        helper.setBlock(FRUIT, fruit);
+    }
+
+    private static Villager spawnLeveledFarmer(GameTestHelper helper, int level) {
+        Villager farmer = spawnFarmer(helper);
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(level));
+        return farmer;
+    }
+
+    public static void aJourneymanFarmerHarvestsAPumpkinGrownBesideItsStem(GameTestHelper helper) {
+        setUpFruit(helper, Blocks.PUMPKIN_STEM, Blocks.ATTACHED_PUMPKIN_STEM, Blocks.PUMPKIN, true);
+        Villager farmer = spawnLeveledFarmer(helper, 3);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(helper.getBlockState(FRUIT).isAir(), "The pumpkin should be harvested");
+            helper.assertTrue(farmer.getInventory().countItem(Items.PUMPKIN) == 1, "The pumpkin should be in the farmer's inventory");
+            helper.assertTrue(helper.getBlockState(STEM).is(Blocks.PUMPKIN_STEM), "The stem stays to grow the next one, is " + helper.getBlockState(STEM));
+        });
+    }
+
+    public static void aNoviceFarmerLeavesPumpkinsAlone(GameTestHelper helper) {
+        setUpFruit(helper, Blocks.PUMPKIN_STEM, Blocks.ATTACHED_PUMPKIN_STEM, Blocks.PUMPKIN, true);
+        spawnLeveledFarmer(helper, 2);
+
+        helper.runAfterDelay(400, () -> {
+            helper.assertBlockPresent(Blocks.PUMPKIN, FRUIT);
+            helper.succeed();
+        });
+    }
+
+    public static void aPumpkinWithoutAStemIsNeverTaken(GameTestHelper helper) {
+        setUpFruit(helper, Blocks.PUMPKIN_STEM, Blocks.ATTACHED_PUMPKIN_STEM, Blocks.PUMPKIN, false);
+        spawnLeveledFarmer(helper, 5);
+
+        helper.runAfterDelay(400, () -> {
+            helper.assertBlockPresent(Blocks.PUMPKIN, FRUIT);
+            helper.succeed();
+        });
+    }
+
+    public static void melonsWaitForAnExpertFarmer(GameTestHelper helper) {
+        setUpFruit(helper, Blocks.MELON_STEM, Blocks.ATTACHED_MELON_STEM, Blocks.MELON, true);
+        spawnLeveledFarmer(helper, 3);
+
+        helper.runAfterDelay(400, () -> {
+            helper.assertBlockPresent(Blocks.MELON, FRUIT);
+            helper.succeed();
+        });
+    }
+
+    public static void anExpertFarmerHarvestsMelons(GameTestHelper helper) {
+        setUpFruit(helper, Blocks.MELON_STEM, Blocks.ATTACHED_MELON_STEM, Blocks.MELON, true);
+        Villager farmer = spawnLeveledFarmer(helper, 4);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(helper.getBlockState(FRUIT).isAir(), "The melon should be harvested");
+            helper.assertTrue(farmer.getInventory().countItem(Items.MELON_SLICE) >= 3, "The melon slices should be in the farmer's inventory");
+            helper.assertTrue(helper.getBlockState(STEM).is(Blocks.MELON_STEM), "The stem stays");
+        });
+    }
+
+    public static void aFarmerNeverFillsTheLastFreeCellBesideAStemWithCrops(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        helper.setBlock(13, 0, 10, Blocks.WATER);
+        for (int x = 12; x <= 14; x++) helper.setBlock(x, 0, 12, Blocks.FARMLAND);
+        Villager farmer = spawnLeveledFarmer(helper, 3);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 16));
+        farmer.getInventory().addItem(new ItemStack(Items.PUMPKIN_SEEDS, 1));
+
+        helper.runAfterDelay(500, () -> {
+            int stems = 0;
+            BlockPos stem = null;
+            for (int x = 12; x <= 14; x++) {
+                if (helper.getBlockState(new BlockPos(x, 1, 12)).is(Blocks.PUMPKIN_STEM)) {
+                    stems++;
+                    stem = new BlockPos(x, 1, 12);
+                }
+            }
+            helper.assertTrue(stems == 1, "The farmer plants its one pumpkin seed, found " + stems + " stems");
+            helper.assertTrue(farmer.getInventory().countItem(Items.PUMPKIN_SEEDS) == 0, "The seed is used up");
+            boolean free = false;
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                BlockPos beside = stem.relative(side);
+                if (helper.getBlockState(beside).isAir() && Field.isFarmland(helper.getBlockState(beside.below()))) free = true;
+            }
+            helper.assertTrue(free, "A stem must keep a free farmland cell beside it for its fruit");
+            helper.succeed();
+        });
+    }
+
+    public static void aNoviceFarmerDoesNotPlantPumpkinSeeds(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        helper.setBlock(13, 0, 10, Blocks.WATER);
+        for (int x = 12; x <= 14; x++) helper.setBlock(x, 0, 12, Blocks.FARMLAND);
+        Villager farmer = spawnLeveledFarmer(helper, 2);
+        farmer.getInventory().addItem(new ItemStack(Items.PUMPKIN_SEEDS, 1));
+
+        helper.runAfterDelay(400, () -> {
+            for (int x = 12; x <= 14; x++) helper.assertTrue(!helper.getBlockState(new BlockPos(x, 1, 12)).is(Blocks.PUMPKIN_STEM), "A novice plants no stems");
+            helper.assertTrue(farmer.getInventory().countItem(Items.PUMPKIN_SEEDS) == 1, "It keeps the seed");
+            helper.succeed();
+        });
+    }
+
+    public static void stemsAndFruitAreRecognized(GameTestHelper helper) {
+        helper.assertTrue(Crops.isStemSeed(new ItemStack(Items.PUMPKIN_SEEDS)) && Crops.isStemSeed(new ItemStack(Items.MELON_SEEDS)), "pumpkin and melon seeds plant stems");
+        helper.assertTrue(!Crops.isStemSeed(new ItemStack(Items.WHEAT_SEEDS)), "wheat seeds don't");
+        helper.assertTrue(Crops.isFruit(Blocks.PUMPKIN.defaultBlockState()) && Crops.isFruit(Blocks.MELON.defaultBlockState()), "pumpkins and melons are fruit");
+        helper.assertTrue(!Crops.isFruit(Blocks.CARVED_PUMPKIN.defaultBlockState()), "a carved pumpkin is the player's");
+        helper.assertTrue(Crops.fruitLevel(Blocks.PUMPKIN) == 3 && Crops.fruitLevel(Blocks.MELON) == 4, "pumpkins from journeyman, melons from expert");
+        helper.succeed();
+    }
+
 
     private interface CropCheck {
         void check(BlockPos pos, BlockState state);

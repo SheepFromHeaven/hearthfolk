@@ -61,6 +61,7 @@ public class TendHerd extends Behavior<Villager> {
     private enum Task { CULL, BREED, SMOKE, DEPOSIT }
 
     private final Map<UUID, Long> unreachable = new HashMap<>();
+    private final java.util.ArrayDeque<Long> kills = new java.util.ArrayDeque<>();
     private @Nullable Task task;
     private @Nullable Animal animal;
     private @Nullable BlockPos block;
@@ -158,6 +159,7 @@ public class TendHerd extends Behavior<Villager> {
         if (landed < Butchering.swings(animal.getHealth(), Butchering.attackDamage(axe))) return;
         swingsLanded.remove(animal.getUUID());
         animal.hurtServer(level, level.damageSources().mobAttack(body), Float.MAX_VALUE);
+        kills.addLast(level.getGameTime());
         WorkXp.award(body, WorkXp.CULLED);
         advance(level, body, timestamp);
     }
@@ -193,6 +195,11 @@ public class TendHerd extends Behavior<Villager> {
         }
     }
 
+    private int killsInTheLastDay(long now) {
+        while (!kills.isEmpty() && kills.peekFirst() <= now - 24000) kills.removeFirst();
+        return kills.size();
+    }
+
     private boolean pickTarget(ServerLevel level, Villager body) {
         task = null;
         animal = null;
@@ -217,7 +224,7 @@ public class TendHerd extends Behavior<Villager> {
         for (List<Animal> herd : herds.values()) {
             int adults = (int) herd.stream().filter(member -> !member.isBaby()).count();
             int young = herd.size() - adults;
-            if (Tools.has(body) && ButcherHerd.toCull(adults, young) > 0) {
+            if (Tools.has(body) && ButcherHerd.toCull(adults, young) > 0 && ButcherHerd.killsLeft(killsInTheLastDay(now)) > 0) {
                 Comparator<Animal> woundedFirst = Comparator.<Animal, Boolean>comparing(member -> !swingsLanded.containsKey(member.getUUID())).thenComparing(nearest);
                 Optional<Animal> victim = herd.stream().filter(member -> !member.isBaby() && !isPet(member) && reachable(member)).min(woundedFirst);
                 if (victim.isPresent()) return target(Task.CULL, victim.get(), null);

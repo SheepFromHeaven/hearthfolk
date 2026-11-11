@@ -81,7 +81,7 @@ public final class ButcherTests {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.WOODEN_AXE));
         GameTestHelpers.gatedPen(helper, 9);
-        List<Animal> cows = herd(helper, EntityTypes.COW, ButcherHerd.HERD_SIZE + 2);
+        List<Animal> cows = herd(helper, EntityTypes.COW, ButcherHerd.BREEDING_STOCK + 2);
         List<Long> killedAt = new ArrayList<>();
         List<Integer> wearAtKill = new ArrayList<>();
         int[] aliveBefore = {cows.size()};
@@ -106,16 +106,16 @@ public final class ButcherTests {
         });
     }
 
-    public static void butcherCullsTheHerdDownToSix(GameTestHelper helper) {
+    public static void butcherCullsDownToItsBreedingStock(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
         BlockPos gate = GameTestHelpers.gatedPen(helper, 9);
-        List<Animal> pigs = herd(helper, EntityTypes.PIG, 9);
+        List<Animal> pigs = herd(helper, EntityTypes.PIG, ButcherHerd.BREEDING_STOCK + 3);
         int[] fewest = {pigs.size()};
         helper.onEachTick(() -> fewest[0] = Math.min(fewest[0], alive(pigs)));
 
         helper.succeedWhen(() -> {
-            helper.assertTrue(alive(pigs) == ButcherHerd.HERD_SIZE, "The butcher should cull the herd down to " + ButcherHerd.HERD_SIZE + ", " + alive(pigs) + " alive at "
+            helper.assertTrue(alive(pigs) == ButcherHerd.BREEDING_STOCK, "The butcher should cull the herd down to its " + ButcherHerd.BREEDING_STOCK + " breeding adults" + ", " + alive(pigs) + " alive at "
                     + pigs.stream().filter(Animal::isAlive).map(pig -> helper.relativePos(pig.blockPosition()).toShortString() + (pig.isBaby() ? " baby" : "")).toList()
                     + "; butcher at " + helper.relativePos(butcher.blockPosition()).toShortString() + " holding " + butcher.getMainHandItem().getItem()
                     + ", inventory " + butcher.getInventory().getItems().stream().filter(stack -> !stack.isEmpty()).map(ItemStack::toString).toList()
@@ -124,7 +124,7 @@ public final class ButcherTests {
                     + ", can't reach since " + butcher.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE).orElse(-1L)
                     + ", reachable " + pigs.stream().filter(Animal::isAlive).map(pig -> { var path = butcher.getNavigation().createPath(pig, 1); return path != null && path.canReach(); }).toList()
                     + ", on ground " + butcher.onGround() + ", activity " + butcher.getBrain().getActiveNonCoreActivity().map(Object::toString).orElse("-"));
-            helper.assertTrue(fewest[0] == ButcherHerd.HERD_SIZE, "It never culls below the herd size, went down to " + fewest[0]);
+            helper.assertTrue(fewest[0] == ButcherHerd.BREEDING_STOCK, "It never culls below its breeding stock, went down to " + fewest[0]);
             helper.assertTrue(count(butcher, Items.PORKCHOP) >= 3, "The meat goes into its inventory, has " + count(butcher, Items.PORKCHOP));
             helper.assertFalse(helper.getBlockState(gate).getValue(FenceGateBlock.OPEN), "It closes the gate behind it");
         });
@@ -274,6 +274,34 @@ public final class ButcherTests {
         int count = 0;
         for (ItemStack stack : villager.getInventory().getItems()) if (stack.is(item)) count += stack.getCount();
         return count;
+    }
+
+    public static void butcherBuysWheatSeedsFromTheFarmerForItsChickens(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
+        BlockPos composter = new BlockPos(18, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 60));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.WHEAT_SEEDS) > 0,
+                "A farmer's spare seeds are the butcher's chicken feed, so it buys them; has " + count(butcher, Items.WHEAT_SEEDS)));
+    }
+
+    public static void butcherKillsNoMoreThanItsDailyLimit(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.IRON_AXE));
+        GameTestHelpers.gatedPen(helper, 9);
+        List<Animal> pigs = herd(helper, EntityTypes.PIG, ButcherHerd.BREEDING_STOCK + ButcherHerd.DAILY_KILLS + 3);
+        int[] fewest = {pigs.size()};
+        helper.onEachTick(() -> fewest[0] = Math.min(fewest[0], alive(pigs)));
+
+        helper.runAfterDelay(2800, () -> {
+            helper.assertTrue(fewest[0] == pigs.size() - ButcherHerd.DAILY_KILLS, "Surplus or not, a butcher kills " + ButcherHerd.DAILY_KILLS + " animals a day so the herd breeds faster than it is culled, "
+                    + "lowest herd " + fewest[0] + " of " + pigs.size());
+            helper.succeed();
+        });
     }
 
     static Villager spawnButcher(GameTestHelper helper) {

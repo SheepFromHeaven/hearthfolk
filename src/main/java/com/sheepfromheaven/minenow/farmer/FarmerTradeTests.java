@@ -172,6 +172,53 @@ public final class FarmerTradeTests {
         helper.succeed();
     }
 
+    public static void aFarmerSellsPumpkinsFromJourneymanAndMelonSlicesFromExpert(GameTestHelper helper) {
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        farmer.getInventory().addItem(new ItemStack(Items.PUMPKIN, 8));
+        farmer.getInventory().addItem(new ItemStack(Items.MELON_SLICE, 40));
+        ServerPlayer player = player(helper);
+
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(2));
+        openTrades(player, farmer);
+        helper.assertTrue(offerSelling(farmer, Items.PUMPKIN).isEmpty() && offerSelling(farmer, Items.MELON_SLICE).isEmpty(),
+                "An apprentice grows neither, so it sells neither: " + describe(farmer));
+        player.closeContainer();
+
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(3));
+        openTrades(player, farmer);
+        helper.assertTrue(offerSelling(farmer, Items.PUMPKIN).isPresent(), "A journeyman sells pumpkins: " + describe(farmer));
+        helper.assertTrue(offerSelling(farmer, Items.MELON_SLICE).isEmpty(), "...but no melons yet: " + describe(farmer));
+        player.closeContainer();
+
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(4));
+        openTrades(player, farmer);
+        helper.assertTrue(offerSelling(farmer, Items.MELON_SLICE).isPresent(), "An expert sells melon slices: " + describe(farmer));
+        helper.succeed();
+    }
+
+    public static void aFarmerBuysStemSeedsFromThePlayerWhenItGrowsThem(GameTestHelper helper) {
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        ServerPlayer player = player(helper);
+
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(2));
+        openTrades(player, farmer);
+        helper.assertTrue(offerFor(farmer, Items.PUMPKIN_SEEDS).isEmpty(), "An apprentice has no use for pumpkin seeds: " + describe(farmer));
+        player.closeContainer();
+
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(3));
+        openTrades(player, farmer);
+        helper.assertTrue(offerFor(farmer, Items.PUMPKIN_SEEDS).isPresent(), "A journeyman buys pumpkin seeds: " + describe(farmer));
+        helper.assertTrue(offerFor(farmer, Items.MELON_SEEDS).isEmpty(), "...but melon seeds only from expert: " + describe(farmer));
+        player.closeContainer();
+
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(4));
+        openTrades(player, farmer);
+        helper.assertTrue(offerFor(farmer, Items.MELON_SEEDS).isPresent(), "An expert buys melon seeds: " + describe(farmer));
+        helper.succeed();
+    }
+
     public static void farmerWithNothingToTradeShakesItsHead(GameTestHelper helper) {
         Villager farmer = spawnFarmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));

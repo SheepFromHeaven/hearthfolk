@@ -237,6 +237,18 @@
       "count": 1,
       "labor": 0.2,
       "level": 3
+    },
+    {
+      "item": "minecraft:string",
+      "materials": [
+        {
+          "item": "minecraft:leather",
+          "count": 1
+        }
+      ],
+      "count": 8,
+      "labor": 0.1,
+      "level": 1
     }
   ]
 }
