@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_novice_farmer_leaves_pumpkins_alone",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}
