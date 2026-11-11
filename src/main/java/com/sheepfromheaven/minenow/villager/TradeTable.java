@@ -87,9 +87,10 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
     /**
      * Made at the villager's workstation from {@code materials}, {@code count} at a time, wearing the tool of its trade
      * {@code tool_uses} times, kept {@code stock} (and at least one sale's batch) in its goods, sold at {@link #craftPrice},
-     * or at its {@code produce} price when it has one.
+     * or at its {@code produce} price when it has one. {@code enchants}: each one made is a book the librarian enchants
+     * at its level's power ({@code librarian/Librarian}), so no two are alike and it is sold by the book, never by item.
      */
-    public record Craft(Item item, List<Material> materials, double labor, int level, int stock, int count, int toolUses) {
+    public record Craft(Item item, List<Material> materials, double labor, int level, int stock, int count, int toolUses, boolean enchants) {
         static final Codec<Craft> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(Craft::item),
                 Material.CODEC.listOf().fieldOf("materials").forGetter(Craft::materials),
@@ -97,7 +98,8 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
                 Codec.intRange(1, 5).optionalFieldOf("level", 1).forGetter(Craft::level),
                 ExtraCodecs.POSITIVE_INT.optionalFieldOf("stock", 1).forGetter(Craft::stock),
                 ExtraCodecs.POSITIVE_INT.optionalFieldOf("count", 1).forGetter(Craft::count),
-                ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("tool_uses", 0).forGetter(Craft::toolUses)
+                ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("tool_uses", 0).forGetter(Craft::toolUses),
+                Codec.BOOL.optionalFieldOf("enchants", false).forGetter(Craft::enchants)
         ).apply(i, Craft::new));
     }
 

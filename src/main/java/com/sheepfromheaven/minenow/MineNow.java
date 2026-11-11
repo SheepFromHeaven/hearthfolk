@@ -343,6 +343,16 @@ public final class MineNow {
             test(helper, TestGroup.SMELTER, "a_blast_furnace_makes_a_smelter", com.sheepfromheaven.minenow.smelter.SmelterTests::aBlastFurnaceMakesASmelter);
             test(helper, TestGroup.MASON, "a_novice_mason_cuts_cobblestone", com.sheepfromheaven.minenow.mason.MasonTests::aNoviceMasonCutsCobblestone);
             test(helper, TestGroup.LEATHERWORKER, "a_novice_leatherworker_makes_leather_armor", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aNoviceLeatherworkerMakesLeatherArmor);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_makes_paper_from_sugar_cane", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianMakesPaperFromSugarCane);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_binds_books_from_paper_and_leather", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianBindsBooksFromPaperAndLeather);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_enchants_a_book_at_its_lectern", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianEnchantsABookAtItsLectern);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_without_lapis_leaves_its_book_plain", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianWithoutLapisLeavesItsBookPlain);
+            test(helper, TestGroup.LIBRARIAN, "a_novice_librarians_books_never_hold_treasure_enchantments", com.sheepfromheaven.minenow.librarian.LibrarianTests::aNoviceLibrariansBooksNeverHoldTreasureEnchantments);
+            test(helper, TestGroup.LIBRARIAN, "a_masters_books_can_hold_what_only_traders_sell", com.sheepfromheaven.minenow.librarian.LibrarianTests::aMastersBooksCanHoldWhatOnlyTradersSell);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_sells_its_enchanted_book_with_its_enchantments", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianSellsItsEnchantedBookWithItsEnchantments);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_buys_sugar_cane_and_leather_from_players", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianBuysSugarCaneAndLeatherFromPlayers);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_buys_sugar_cane_from_a_travelling_merchant", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianBuysSugarCaneFromATravellingMerchant);
+            test(helper, TestGroup.LIBRARIAN, "a_librarian_levels_up_through_its_work", com.sheepfromheaven.minenow.librarian.LibrarianTests::aLibrarianLevelsUpThroughItsWork);
             test(helper, TestGroup.DEFENCE, "a_wealthy_villager_buys_armor_and_wears_it", com.sheepfromheaven.minenow.villager.GearTests::aWealthyVillagerBuysArmorAndWearsIt);
             test(helper, TestGroup.DEFENCE, "a_villager_without_savings_buys_no_armor", com.sheepfromheaven.minenow.villager.GearTests::aVillagerWithoutSavingsBuysNoArmor);
             test(helper, TestGroup.DEFENCE, "armor_is_bought_before_a_sword", com.sheepfromheaven.minenow.villager.GearTests::armorIsBoughtBeforeASword);

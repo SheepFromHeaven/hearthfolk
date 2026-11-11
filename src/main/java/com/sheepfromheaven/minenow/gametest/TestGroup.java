@@ -26,6 +26,7 @@ public enum TestGroup {
     MASON("Mason", Blocks.WOOL.magenta(), Blocks.CONCRETE.magenta()),
     LEATHERWORKER("Leatherworker", Blocks.TERRACOTTA, Blocks.BRICKS),
     GOLEMSMITH("Golemsmith", Blocks.SMOOTH_STONE, Blocks.CARVED_PUMPKIN),
+    LIBRARIAN("Librarian", Blocks.BOOKSHELF, Blocks.LECTERN),
     WEAPONSMITH("Weaponsmith", Blocks.POLISHED_ANDESITE, Blocks.IRON_BLOCK),
     CLERIC("Cleric", Blocks.PURPUR_BLOCK, Blocks.AMETHYST_BLOCK),
     DEFENCE("Village defence", Blocks.CRACKED_STONE_BRICKS, Blocks.GOLD_BLOCK),

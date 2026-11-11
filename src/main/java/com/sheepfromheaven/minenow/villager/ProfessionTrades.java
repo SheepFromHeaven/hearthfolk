@@ -116,6 +116,12 @@ public final class ProfessionTrades {
         for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
             if (table.hasProduceEntry(craft.item())) continue;
             Price price = table.craftPrice(craft);
+            if (craft.enchants()) {
+                for (ItemStack book : Economy.stacks(level, villager, craft.item())) {
+                    offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), book, 1, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                }
+                continue;
+            }
             int batches = Economy.count(level, villager, craft.item()) / price.count();
             if (batches > 0) {
                 offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), new ItemStack(craft.item(), price.count()), batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));

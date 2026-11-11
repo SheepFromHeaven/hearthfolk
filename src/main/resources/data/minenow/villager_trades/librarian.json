@@ -1,0 +1,124 @@
+{
+  "profession": "minecraft:librarian",
+  "supplies": [
+    {
+      "item": "minecraft:sugar_cane",
+      "price": 0.125,
+      "max": 32
+    },
+    {
+      "item": "minecraft:leather",
+      "price": 0.1667,
+      "max": 8
+    },
+    {
+      "item": "minecraft:lapis_lazuli",
+      "price": 0.0833,
+      "max": 24
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:enchanted_book",
+      "materials": [
+        {
+          "item": "minecraft:book",
+          "count": 1
+        },
+        {
+          "item": "minecraft:lapis_lazuli",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "stock": 2,
+      "labor": 1.0,
+      "level": 1,
+      "enchants": true
+    },
+    {
+      "item": "minecraft:enchanted_book",
+      "materials": [
+        {
+          "item": "minecraft:book",
+          "count": 1
+        },
+        {
+          "item": "minecraft:lapis_lazuli",
+          "count": 2
+        }
+      ],
+      "count": 1,
+      "stock": 2,
+      "labor": 2.0,
+      "level": 3,
+      "enchants": true
+    },
+    {
+      "item": "minecraft:enchanted_book",
+      "materials": [
+        {
+          "item": "minecraft:book",
+          "count": 1
+        },
+        {
+          "item": "minecraft:lapis_lazuli",
+          "count": 2
+        }
+      ],
+      "count": 1,
+      "stock": 2,
+      "labor": 3.0,
+      "level": 4,
+      "enchants": true
+    },
+    {
+      "item": "minecraft:enchanted_book",
+      "materials": [
+        {
+          "item": "minecraft:book",
+          "count": 1
+        },
+        {
+          "item": "minecraft:lapis_lazuli",
+          "count": 3
+        }
+      ],
+      "count": 1,
+      "stock": 2,
+      "labor": 4.0,
+      "level": 5,
+      "enchants": true
+    },
+    {
+      "item": "minecraft:book",
+      "materials": [
+        {
+          "item": "minecraft:paper",
+          "count": 3
+        },
+        {
+          "item": "minecraft:leather",
+          "count": 1
+        }
+      ],
+      "count": 1,
+      "stock": 2,
+      "labor": 0.05,
+      "level": 1
+    },
+    {
+      "item": "minecraft:paper",
+      "materials": [
+        {
+          "item": "minecraft:sugar_cane",
+          "count": 3
+        }
+      ],
+      "count": 3,
+      "stock": 9,
+      "labor": 0.03,
+      "level": 1
+    }
+  ]
+}
