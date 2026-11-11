@@ -339,6 +339,7 @@ public final class MineNow {
             test(helper, TestGroup.FLETCHER, "a_journeyman_fletcher_makes_bows", com.sheepfromheaven.minenow.fletcher.FletcherTests::aJourneymanFletcherMakesBows);
             test(helper, TestGroup.FLETCHER, "fletcher_makes_sticks_from_any_planks", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherMakesSticksFromAnyPlanks);
             test(helper, TestGroup.ARMORER, "a_novice_armorer_makes_copper_armor", com.sheepfromheaven.minenow.armorer.ArmorerTests::aNoviceArmorerMakesCopperArmor);
+            test(helper, TestGroup.SMELTER, "an_apprentice_smelter_breaks_gold_ingots_into_nuggets", com.sheepfromheaven.minenow.smelter.SmelterTests::anApprenticeSmelterBreaksGoldIngotsIntoNuggets);
             test(helper, TestGroup.SMELTER, "a_blast_furnace_makes_a_smelter", com.sheepfromheaven.minenow.smelter.SmelterTests::aBlastFurnaceMakesASmelter);
             test(helper, TestGroup.MASON, "a_novice_mason_cuts_cobblestone", com.sheepfromheaven.minenow.mason.MasonTests::aNoviceMasonCutsCobblestone);
             test(helper, TestGroup.LEATHERWORKER, "a_novice_leatherworker_makes_leather_armor", com.sheepfromheaven.minenow.leatherworker.LeatherworkerTests::aNoviceLeatherworkerMakesLeatherArmor);
