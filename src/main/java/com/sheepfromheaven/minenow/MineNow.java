@@ -123,6 +123,15 @@ public final class MineNow {
             test(helper, TestGroup.CLERIC, "a_novices_trades_leave_out_potions_it_does_not_brew_yet", com.sheepfromheaven.minenow.cleric.ClericTests::aNovicesTradesLeaveOutPotionsItDoesNotBrewYet);
             test(helper, TestGroup.CLERIC, "a_travelling_merchant_buys_a_clerics_surplus_potions", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantBuysAClericsSurplusPotions);
             test(helper, TestGroup.CLERIC, "a_cleric_with_only_one_of_each_sells_the_merchant_nothing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithOnlyOneOfEachSellsTheMerchantNothing);
+            test(helper, TestGroup.CLERIC, "a_cleric_heals_a_hurt_villager_that_pays", com.sheepfromheaven.minenow.cleric.ClericTests::aClericHealsAHurtVillagerThatPays);
+            test(helper, TestGroup.CLERIC, "a_cleric_does_not_heal_a_villager_that_cannot_pay", com.sheepfromheaven.minenow.cleric.ClericTests::aClericDoesNotHealAVillagerThatCannotPay);
+            test(helper, TestGroup.CLERIC, "a_cleric_does_not_heal_golems", com.sheepfromheaven.minenow.cleric.ClericTests::aClericDoesNotHealGolems);
+            test(helper, TestGroup.CLERIC, "a_cleric_brews_splash_healing_from_healing_potions_and_gunpowder", com.sheepfromheaven.minenow.cleric.ClericTests::aClericBrewsSplashHealingFromHealingPotionsAndGunpowder);
+            test(helper, TestGroup.CLERIC, "a_cleric_with_splash_potions_counts_as_armed", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithSplashPotionsCountsAsArmed);
+            test(helper, TestGroup.CLERIC, "a_cleric_throws_splash_harming_at_a_hostile", com.sheepfromheaven.minenow.cleric.ClericTests::aClericThrowsSplashHarmingAtAHostile);
+            test(helper, TestGroup.CLERIC, "a_cleric_never_throws_harming_at_the_undead", com.sheepfromheaven.minenow.cleric.ClericTests::aClericNeverThrowsHarmingAtTheUndead);
+            test(helper, TestGroup.CLERIC, "a_cleric_does_not_throw_when_a_friend_stands_near_the_target", com.sheepfromheaven.minenow.cleric.ClericTests::aClericDoesNotThrowWhenAFriendStandsNearTheTarget);
+            test(helper, TestGroup.CLERIC, "a_cleric_throws_splash_healing_at_a_hurt_friend_in_a_fight", com.sheepfromheaven.minenow.cleric.ClericTests::aClericThrowsSplashHealingAtAHurtFriendInAFight);
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
             test(helper, TestGroup.FARMER, "a_journeyman_farmer_harvests_a_pumpkin_grown_beside_its_stem", FarmerTests::aJourneymanFarmerHarvestsAPumpkinGrownBesideItsStem);
             test(helper, TestGroup.FARMER, "a_novice_farmer_leaves_pumpkins_alone", FarmerTests::aNoviceFarmerLeavesPumpkinsAlone);

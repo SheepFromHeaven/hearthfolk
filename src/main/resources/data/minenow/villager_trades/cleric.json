@@ -1,20 +1,121 @@
 {
   "profession": "minecraft:cleric",
   "supplies": [
-    { "item": "minecraft:nether_wart", "price": 0.25, "max": 16, "level": 1 },
-    { "item": "minecraft:glass_bottle", "price": 0.25, "max": 12, "level": 1 },
-    { "item": "minecraft:blaze_powder", "price": 1, "max": 4, "level": 1 },
-    { "item": "minecraft:sugar_cane", "price": 0.125, "max": 8, "level": 1 },
-    { "item": "minecraft:rabbit_foot", "price": 1, "max": 4, "level": 2 },
-    { "item": "minecraft:pufferfish", "price": 0.5, "max": 4, "level": 3 }
+    {
+      "item": "minecraft:nether_wart",
+      "price": 0.25,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:glass_bottle",
+      "price": 0.25,
+      "max": 12,
+      "level": 1
+    },
+    {
+      "item": "minecraft:blaze_powder",
+      "price": 1,
+      "max": 4,
+      "level": 1
+    },
+    {
+      "item": "minecraft:sugar_cane",
+      "price": 0.125,
+      "max": 8,
+      "level": 1
+    },
+    {
+      "item": "minecraft:rabbit_foot",
+      "price": 1,
+      "max": 4,
+      "level": 2
+    },
+    {
+      "item": "minecraft:pufferfish",
+      "price": 0.5,
+      "max": 4,
+      "level": 3
+    },
+    {
+      "item": "minecraft:melon_slice",
+      "price": 0.05,
+      "max": 4,
+      "level": 3
+    },
+    {
+      "item": "minecraft:gold_nugget",
+      "price": 0.25,
+      "max": 16,
+      "level": 3
+    },
+    {
+      "item": "minecraft:gunpowder",
+      "price": 0.5,
+      "max": 8,
+      "level": 3
+    },
+    {
+      "item": "minecraft:spider_eye",
+      "price": 0.5,
+      "max": 4,
+      "level": 3
+    },
+    {
+      "item": "minecraft:brown_mushroom",
+      "price": 0.25,
+      "max": 4,
+      "level": 4
+    }
   ],
   "crafts": [
     {
       "item": "minecraft:sugar",
-      "materials": [ { "item": "minecraft:sugar_cane", "count": 1 } ],
+      "materials": [
+        {
+          "item": "minecraft:sugar_cane",
+          "count": 1
+        }
+      ],
       "labor": 0.02,
       "stock": 4,
       "level": 1
+    },
+    {
+      "item": "minecraft:glistering_melon_slice",
+      "materials": [
+        {
+          "item": "minecraft:melon_slice",
+          "count": 1
+        },
+        {
+          "item": "minecraft:gold_nugget",
+          "count": 8
+        }
+      ],
+      "labor": 0.05,
+      "stock": 1,
+      "level": 3
+    },
+    {
+      "item": "minecraft:fermented_spider_eye",
+      "materials": [
+        {
+          "item": "minecraft:spider_eye",
+          "count": 1
+        },
+        {
+          "item": "minecraft:brown_mushroom",
+          "count": 1
+        },
+        {
+          "item": "minecraft:sugar",
+          "count": 1
+        }
+      ],
+      "labor": 0.05,
+      "stock": 1,
+      "level": 4
     }
   ]
 }

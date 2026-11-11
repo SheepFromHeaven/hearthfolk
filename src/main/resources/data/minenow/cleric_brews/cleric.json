@@ -1,43 +1,152 @@
 {
   "brews": [
     {
-      "input": { "item": "minecraft:potion", "potion": "minecraft:water" },
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:water"
+      },
       "reagent": "minecraft:nether_wart",
-      "output": { "item": "minecraft:potion", "potion": "minecraft:awkward" },
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
       "level": 1,
       "stock": 3
     },
     {
-      "input": { "item": "minecraft:potion", "potion": "minecraft:awkward" },
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
       "reagent": "minecraft:sugar",
-      "output": { "item": "minecraft:potion", "potion": "minecraft:swiftness" },
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:swiftness"
+      },
       "level": 1,
       "stock": 3,
       "price": 2
     },
     {
-      "input": { "item": "minecraft:potion", "potion": "minecraft:awkward" },
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
       "reagent": "minecraft:rabbit_foot",
-      "output": { "item": "minecraft:potion", "potion": "minecraft:leaping" },
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:leaping"
+      },
       "level": 2,
       "stock": 3,
       "price": 2
     },
     {
-      "input": { "item": "minecraft:potion", "potion": "minecraft:awkward" },
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
       "reagent": "minecraft:pufferfish",
-      "output": { "item": "minecraft:potion", "potion": "minecraft:water_breathing" },
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:water_breathing"
+      },
       "level": 3,
       "stock": 3,
       "price": 2
     },
     {
-      "input": { "item": "minecraft:potion", "potion": "minecraft:awkward" },
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
       "reagent": "minecraft:blaze_powder",
-      "output": { "item": "minecraft:potion", "potion": "minecraft:strength" },
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:strength"
+      },
       "level": 4,
       "stock": 3,
       "price": 3
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
+      "reagent": "minecraft:glistering_melon_slice",
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:healing"
+      },
+      "level": 3,
+      "stock": 3,
+      "price": 3
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:healing"
+      },
+      "reagent": "minecraft:gunpowder",
+      "output": {
+        "item": "minecraft:splash_potion",
+        "potion": "minecraft:healing"
+      },
+      "level": 3,
+      "stock": 4
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
+      "reagent": "minecraft:spider_eye",
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:poison"
+      },
+      "level": 4,
+      "stock": 2
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:poison"
+      },
+      "reagent": "minecraft:gunpowder",
+      "output": {
+        "item": "minecraft:splash_potion",
+        "potion": "minecraft:poison"
+      },
+      "level": 4,
+      "stock": 2
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:poison"
+      },
+      "reagent": "minecraft:fermented_spider_eye",
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:harming"
+      },
+      "level": 4,
+      "stock": 2
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:harming"
+      },
+      "reagent": "minecraft:gunpowder",
+      "output": {
+        "item": "minecraft:splash_potion",
+        "potion": "minecraft:harming"
+      },
+      "level": 4,
+      "stock": 2
     }
   ]
 }

@@ -183,6 +183,123 @@ public final class ClericTests {
         helper.succeed();
     }
 
+    private static ItemStack splash(net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> potion) {
+        return PotionGoods.stack(Items.SPLASH_POTION, potion);
+    }
+
+    private static Villager patient(GameTestHelper helper, BlockPos pos, int emeralds, float health) {
+        Villager patient = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, pos);
+        if (emeralds > 0) patient.getInventory().addItem(new ItemStack(Items.EMERALD, emeralds));
+        patient.setHealth(health);
+        return patient;
+    }
+
+    public static void aClericHealsAHurtVillagerThatPays(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 3);
+        cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
+        Villager patient = patient(helper, new BlockPos(6, 1, 12), 5, 5.0F);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(patient.getHealth() > 5.0F, "The cleric heals the hurt villager, health " + patient.getHealth());
+            helper.assertTrue(patient.getInventory().countItem(Items.EMERALD) == 2, "...for three emeralds, it has " + patient.getInventory().countItem(Items.EMERALD));
+            helper.assertTrue(cleric.getInventory().countItem(Items.EMERALD) == 3, "...which the cleric keeps, it has " + cleric.getInventory().countItem(Items.EMERALD));
+            helper.assertTrue(count(helper, cleric, Potions.HEALING) == 0, "...with its healing potion");
+        });
+    }
+
+    public static void aClericDoesNotHealAVillagerThatCannotPay(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 3);
+        cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
+        Villager patient = patient(helper, new BlockPos(6, 1, 12), 0, 5.0F);
+
+        helper.runAfterDelay(400, () -> {
+            helper.assertTrue(patient.getHealth() <= 5.5F && count(helper, cleric, Potions.HEALING) == 1, "A villager with no emeralds isn't healed, health " + patient.getHealth());
+            helper.succeed();
+        });
+    }
+
+    public static void aClericDoesNotHealGolems(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 3);
+        cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
+        var golem = helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityTypes.IRON_GOLEM, new BlockPos(6, 1, 12));
+        golem.setHealth(20.0F);
+
+        helper.runAfterDelay(400, () -> {
+            helper.assertTrue(golem.getHealth() <= 20.5F && count(helper, cleric, Potions.HEALING) == 1, "The golemsmith mends golems, the cleric leaves them, health " + golem.getHealth());
+            helper.succeed();
+        });
+    }
+
+    public static void aClericBrewsSplashHealingFromHealingPotionsAndGunpowder(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 3);
+        for (int i = 0; i < 3; i++) cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
+        cleric.getInventory().addItem(new ItemStack(Items.GUNPOWDER, 3));
+        cleric.getInventory().addItem(new ItemStack(Items.BLAZE_POWDER, 2));
+
+        helper.succeedWhen(() -> helper.assertTrue(PotionGoods.count(helper.getLevel(), cleric, Items.SPLASH_POTION, Potions.HEALING) >= 1,
+                "Gunpowder turns its healing potions into splash potions"));
+    }
+
+    public static void aClericWithSplashPotionsCountsAsArmed(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 3);
+        helper.assertTrue(!ClericFight.armed(cleric), "A cleric without splash potions is unarmed");
+        cleric.getInventory().addItem(splash(Potions.HEALING));
+        helper.assertTrue(ClericFight.armed(cleric), "...with one it is armed");
+        helper.succeed();
+    }
+
+    public static void aClericThrowsSplashHarmingAtAHostile(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 4);
+        cleric.getInventory().addItem(splash(Potions.HARMING));
+        var pillager = helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityTypes.PILLAGER, new BlockPos(18, 1, 12));
+        float before = pillager.getHealth();
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(pillager.getHealth() < before, "The cleric throws harming at the pillager, health " + pillager.getHealth());
+            helper.assertTrue(!cleric.getInventory().hasAnyMatching(stack -> stack.is(Items.SPLASH_POTION)), "...using up the potion");
+        });
+    }
+
+    public static void aClericNeverThrowsHarmingAtTheUndead(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 4);
+        cleric.getInventory().addItem(splash(Potions.HARMING));
+        var husk = helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityTypes.HUSK, new BlockPos(18, 1, 12));
+
+        helper.runAfterDelay(300, () -> {
+            helper.assertTrue(cleric.getInventory().hasAnyMatching(stack -> stack.is(Items.SPLASH_POTION)) && husk.getHealth() == husk.getMaxHealth(),
+                    "Harming would heal a husk, the cleric keeps it, husk health " + husk.getHealth());
+            helper.succeed();
+        });
+    }
+
+    public static void aClericDoesNotThrowWhenAFriendStandsNearTheTarget(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 4);
+        cleric.getInventory().addItem(splash(Potions.HARMING));
+        var pillager = helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityTypes.PILLAGER, new BlockPos(18, 1, 12));
+        var bystander = helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(19, 1, 13));
+        bystander.setNoAi(true);
+        float before = pillager.getHealth();
+
+        helper.runAfterDelay(300, () -> {
+            helper.assertTrue(cleric.getInventory().hasAnyMatching(stack -> stack.is(Items.SPLASH_POTION)) && pillager.getHealth() == before,
+                    "The cleric holds its potion with a friend beside the pillager, pillager health " + pillager.getHealth());
+            helper.succeed();
+        });
+    }
+
+    public static void aClericThrowsSplashHealingAtAHurtFriendInAFight(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 4);
+        cleric.getInventory().addItem(splash(Potions.HEALING));
+        helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityTypes.PILLAGER, new BlockPos(18, 1, 12));
+        var friend = helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(8, 1, 13));
+        friend.setHealth(4.0F);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(friend.getHealth() > 4.5F, "The cleric heals its friend with a splash potion, health " + friend.getHealth());
+            helper.assertTrue(!cleric.getInventory().hasAnyMatching(stack -> stack.is(Items.SPLASH_POTION)), "...using up the potion");
+        });
+    }
+
     @SuppressWarnings("removal")
     private static ServerPlayer player(GameTestHelper helper) {
         return helper.makeMockServerPlayerInLevel();

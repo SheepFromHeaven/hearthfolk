@@ -23,6 +23,7 @@ public final class WorkXp {
     public static final double DISPLAYED = 1;
     public static final double ARCHERY_ROUND = 1;
     public static final double CAUGHT = 1;
+    public static final double HEALED = 1;
     public static final double SHEARED = 1;
     public static final double CULLED = 1;
     public static final double CRAFTED = 1;
