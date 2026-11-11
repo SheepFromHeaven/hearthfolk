@@ -261,6 +261,12 @@ public class TendHerd extends Behavior<Villager> {
         return jobSite(level, body).map(smoker -> pen(smoker).contains(animal.position())).orElse(false);
     }
 
+    /** No livestock within reach of its smoker. */
+    public static boolean hasNoHerd(ServerLevel level, Villager body) {
+        return jobSite(level, body).map(smoker -> level.getEntitiesOfClass(Animal.class, pen(smoker),
+                animal -> animal.isAlive() && animal.getType().builtInRegistryHolder().is(LIVESTOCK)).isEmpty()).orElse(false);
+    }
+
     private static AABB pen(BlockPos smoker) {
         return new AABB(smoker).inflate(RANGE, HEIGHT, RANGE);
     }

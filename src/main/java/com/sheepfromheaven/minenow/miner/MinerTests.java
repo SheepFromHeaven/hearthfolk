@@ -996,4 +996,32 @@ public final class MinerTests {
         helper.setBlock(FURNACE, Miner.FURNACE_CART.get());
         return GameTestHelpers.spawnEmployed(helper, FURNACE.west(), FURNACE, Miner.PROFESSION, Miner.POI);
     }
+
+    public static void aWorkerOutOfFuelDoesNotSeekAPlayerWhileTheSellerIsDownItsMine(GameTestHelper helper) {
+        Villager miner = spawnMiner(helper);
+        quarry(helper);
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 7; x <= 9; x++) {
+                for (int z = 11; z <= 13; z++) helper.setBlock(x, y, z, Blocks.AIR);
+            }
+            helper.setBlock(new BlockPos(7, y, 11), Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, net.minecraft.core.Direction.EAST));
+        }
+        miner.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 64));
+        miner.snapTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(9.5, 1, 13.5)));
+        miner.setNoAi(true);
+        BlockPos smoker = new BlockPos(16, 4, 12);
+        helper.setBlock(smoker, Blocks.SMOKER);
+        Villager butcher = GameTestHelpers.spawnEmployed(helper, smoker.east(), smoker, net.minecraft.world.entity.npc.villager.VillagerProfession.BUTCHER,
+                net.minecraft.world.entity.ai.village.poi.PoiTypes.BUTCHER);
+        butcher.getInventory().addItem(new ItemStack(Items.IRON_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 20));
+        helper.runAfterDelay(100, () -> {
+            helper.assertTrue(com.sheepfromheaven.minenow.villager.IdleReason.of(helper.getLevel(), butcher).isEmpty()
+                            || !com.sheepfromheaven.minenow.villager.IdleReason.of(helper.getLevel(), butcher).contains(com.sheepfromheaven.minenow.villager.IdleReason.NO_MATERIALS),
+                    "A miner with coal who is down its mine still sells it when it comes up, so the butcher doesn't ask a player: "
+                            + com.sheepfromheaven.minenow.villager.IdleReason.of(helper.getLevel(), butcher));
+            helper.succeed();
+        });
+    }
 }

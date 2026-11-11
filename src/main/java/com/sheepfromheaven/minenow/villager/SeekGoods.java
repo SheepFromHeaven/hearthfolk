@@ -26,9 +26,13 @@ import java.util.WeakHashMap;
 /**
  * A working villager without the tool of its trade asks for one: it holds up an emerald when it could pay a player for
  * one, and walks up to a player who comes near its workplace, cheering, since a player can sell or throw it one. A
- * villager nearby selling a tool it can afford comes first ({@link BuyFromVillagers} goes to buy it).
+ * villager nearby selling a tool it can afford comes first ({@link BuyFromVillagers} goes to buy it). Fuel it can't run
+ * without is the same once no villager sells it for {@link #PATIENCE} ticks and it can pay a player's price; a villager
+ * too broke for that shakes its head instead ({@link IdleCues}).
  */
-public class SeekTool extends Behavior<Villager> {
+public class SeekGoods extends Behavior<Villager> {
+    /** How long a worker out of fuel gives villagers to sell it some ({@link BuyFromVillagers}'s give-up window) before it asks a player. */
+    static final int PATIENCE = 600;
     private static final double PLAYER_RANGE = 16;
     private static final int WORKPLACE_RANGE = 24;
     private static final float SPEED = 0.5F;
@@ -41,8 +45,9 @@ public class SeekTool extends Behavior<Villager> {
     private @Nullable ServerPlayer player;
     private long nextCheck;
     private long nextCheer;
+    private long shortSince = -1;
 
-    public SeekTool() {
+    public SeekGoods() {
         super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.REGISTERED), Integer.MAX_VALUE);
     }
 
@@ -54,15 +59,17 @@ public class SeekTool extends Behavior<Villager> {
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextCheck) return false;
         nextCheck = level.getGameTime() + RECHECK_INTERVAL;
-        return wantsATool(level, body) && !BuyFromVillagers.canBuyToolFromAVillager(level, body);
+        if (wantsATool(level, body)) return !BuyFromVillagers.canBuyToolFromAVillager(level, body);
+        return wantsFuel(level, body, level.getGameTime());
     }
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        if (!wantsATool(level, body)) return false;
+        boolean tool = wantsATool(level, body);
+        if (!tool && !(working(body) && Shortage.fuel(level, body).isPresent())) return false;
         if (timestamp < nextCheck) return true;
         nextCheck = timestamp + RECHECK_INTERVAL;
-        return !BuyFromVillagers.canBuyToolFromAVillager(level, body);
+        return tool ? !BuyFromVillagers.canBuyToolFromAVillager(level, body) : wantsFuel(level, body, timestamp);
     }
 
     @Override
@@ -99,15 +106,30 @@ public class SeekTool extends Behavior<Villager> {
                 || behavior instanceof BuyFromVillagers || behavior instanceof EatMeals || behavior instanceof Belongings.Gather);
     }
 
+    /** Out of fuel with nobody selling it, for long enough, and with the emeralds to pay a player for it. */
+    private boolean wantsFuel(ServerLevel level, Villager body, long now) {
+        if (!working(body) || Shortage.fuel(level, body).isEmpty() || Shortage.canBuyFromAVillager(level, body)) {
+            shortSince = -1;
+            return false;
+        }
+        if (shortSince < 0) shortSince = now;
+        return now - shortSince >= PATIENCE && Shortage.canPayAPlayer(level, body);
+    }
+
+    private static boolean working(Villager body) {
+        return !body.isBaby() && !body.isTrading() && !body.isSleeping() && body.getBrain().isActive(Activity.WORK);
+    }
+
     private static boolean wantsATool(ServerLevel level, Villager body) {
-        return !body.isBaby() && !body.isTrading() && !body.isSleeping() && body.getBrain().isActive(Activity.WORK)
+        return working(body)
                 && TradeTable.forVillager(body).filter(IdleReason::requiresTool).isPresent() && !Unloading.ownsTool(level, body);
     }
 
     /** Vanilla's trade display uses the main hand while a player looks at it; the emerald goes back up once it's done. */
     private static void showEmerald(ServerLevel level, Villager body) {
-        boolean canPay = TradeTable.forVillager(body).map(table -> table.toolsUpTo(body.getVillagerData().level()).stream()
-                .anyMatch(tool -> tool.price() <= Economy.emeralds(level, body) - Economy.FOOD_MONEY)).orElse(false);
+        boolean canPay = wantsATool(level, body) ? TradeTable.forVillager(body).map(table -> table.toolsUpTo(body.getVillagerData().level()).stream()
+                .anyMatch(tool -> tool.price() <= Economy.emeralds(level, body) - Economy.FOOD_MONEY)).orElse(false)
+                : Shortage.canPayAPlayer(level, body);
         if (canPay && body.getMainHandItem().isEmpty() && !body.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET)) {
             body.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.EMERALD));
             body.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
