@@ -160,7 +160,7 @@ public final class VillagerTradingTests {
         GameTestHelpers.fence(helper);
         java.util.List<Villager> smiths = new java.util.ArrayList<>();
         for (int i = 0; i < 4; i++) {
-            BlockPos table = new BlockPos(6 + 4 * i, 1, 12);
+            BlockPos table = new BlockPos(8 + 2 * i, 1, 12);
             helper.setBlock(table, Blocks.SMITHING_TABLE);
             Villager smith = GameTestHelpers.spawnEmployed(helper, table.south(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
             smiths.add(smith);
@@ -183,7 +183,7 @@ public final class VillagerTradingTests {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos bell = new BlockPos(4, 1, 12);
-        BlockPos table = new BlockPos(20, 1, 12);
+        BlockPos table = new BlockPos(12, 1, 12);
         helper.setBlock(table, Blocks.SMITHING_TABLE);
         Villager smith = GameTestHelpers.spawnEmployed(helper, table.south(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
         VillageTests.claimBell(helper, smith, bell);
@@ -202,7 +202,7 @@ public final class VillagerTradingTests {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos bell = new BlockPos(4, 1, 12);
-        Villager neighbour = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        Villager neighbour = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(8, 1, 12));
         VillageTests.claimBell(helper, neighbour, bell);
         BlockPos table = new BlockPos(66, 1, 12);
         helper.setBlock(table, Blocks.SMITHING_TABLE);
