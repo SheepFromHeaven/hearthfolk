@@ -98,7 +98,7 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
         if (target == null || task == null) return;
         keepHoeInHand(body);
         if (inReach(body)) {
-            if (needsHoeWork(level) && !finishedReaping(level, body)) return;
+            if (needsHoeWork(level, body) && !finishedReaping(level, body)) return;
             act(level, body);
             workLeft = -1;
             advance(level, body, timestamp);
@@ -125,8 +125,8 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
         nextStartAllowed = timestamp + 40;
     }
 
-    private boolean needsHoeWork(ServerLevel level) {
-        return (task == Task.HARVEST && isRipeCrop(level.getBlockState(target)))
+    private boolean needsHoeWork(ServerLevel level, Villager body) {
+        return (task == Task.HARVEST && isHarvestable(level, body, target))
                 || (task == Task.TILL && Field.isTillable(level, target.below()));
     }
 
@@ -169,7 +169,7 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
         BlockPos field = nearestFieldWork(level, body, jobSite.get());
         if (field != null) {
             target = field;
-            task = taskAt(level, field);
+            task = taskAt(level, body, field);
             return true;
         }
         return Unloading.depositableCount(body) > 0 && targetHomeChest(level, body, Task.DEPOSIT);
@@ -200,14 +200,19 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
     private boolean isFieldWork(ServerLevel level, Villager body, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (!Hoes.has(body)) return false;
-        if (isRipeCrop(state)) return true;
+        if (isHarvestable(level, body, pos)) return true;
         if (Crops.isGrowing(state)) return body.getInventory().countItem(Items.BONE_MEAL) > 0;
-        if (isFarmland(level.getBlockState(pos.below()))) return state.isAir() && Crops.hasSeeds(body);
+        if (Crops.isLastFruitCell(level, pos)) return false;
+        if (isFarmland(level.getBlockState(pos.below()))) return state.isAir() && plantableSlot(level, body, pos, null) >= 0;
         return Field.isClearable(state) && Field.isTillable(level, pos.below());
     }
 
-    private Task taskAt(ServerLevel level, BlockPos pos) {
-        if (isRipeCrop(level.getBlockState(pos))) return Task.HARVEST;
+    private static boolean isHarvestable(ServerLevel level, Villager body, BlockPos pos) {
+        return isRipeCrop(level.getBlockState(pos)) || Crops.isHarvestableFruit(level, pos, body.getVillagerData().level());
+    }
+
+    private Task taskAt(ServerLevel level, Villager body, BlockPos pos) {
+        if (isHarvestable(level, body, pos)) return Task.HARVEST;
         if (Crops.isCrop(level.getBlockState(pos))) return Task.BONEMEAL;
         return isFarmland(level.getBlockState(pos.below())) ? Task.PLANT : Task.TILL;
     }
@@ -259,6 +264,13 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
     private void act(ServerLevel level, Villager body) {
         switch (task) {
             case HARVEST -> {
+                if (Crops.isHarvestableFruit(level, target, body.getVillagerData().level())) {
+                    if (harvestFruit(level, body, target)) {
+                        Hoes.wear(level, body);
+                        WorkXp.award(body, WorkXp.HARVESTED);
+                    }
+                    break;
+                }
                 Block ripe = level.getBlockState(target).getBlock();
                 if (RightClickHarvest.tryHarvest(level, body, target)) {
                     Hoes.wear(level, body);
@@ -293,26 +305,31 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
     private static @Nullable Block harvest(ServerLevel level, Villager body, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (!isRipeCrop(state)) return null;
+        collect(level, body, pos, state);
+        return state.getBlock();
+    }
+
+    /** A pumpkin or melon grown beside its stem: the stem stays and bears the next one, so nothing is replanted. */
+    private static boolean harvestFruit(ServerLevel level, Villager body, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!Crops.isHarvestableFruit(level, pos, body.getVillagerData().level())) return false;
+        collect(level, body, pos, state);
+        return true;
+    }
+
+    private static void collect(ServerLevel level, Villager body, BlockPos pos, BlockState state) {
         List<ItemStack> drops = Block.getDrops(state, level, pos, null, body, ItemStack.EMPTY);
         level.destroyBlock(pos, false, body);
         for (ItemStack drop : drops) {
             ItemStack rest = body.getInventory().addItem(drop);
             if (!rest.isEmpty()) Block.popResource(level, pos, rest);
         }
-        return state.getBlock();
     }
 
     private static void plant(ServerLevel level, Villager body, BlockPos pos, @Nullable Block preferred) {
-        if (!level.getBlockState(pos).isAir() || !isFarmland(level.getBlockState(pos.below()))) return;
+        if (!level.getBlockState(pos).isAir() || !isFarmland(level.getBlockState(pos.below())) || Crops.isLastFruitCell(level, pos)) return;
         SimpleContainer inventory = body.getInventory();
-        int slot = -1;
-        for (int i = 0; i < inventory.getContainerSize(); i++) {
-            ItemStack stack = inventory.getItem(i);
-            if (!canPlant(level, body, pos, stack)) continue;
-            boolean isPreferred = stack.getItem() instanceof BlockItem item && item.getBlock() == preferred;
-            if (slot < 0 || isPreferred) slot = i;
-            if (isPreferred) break;
-        }
+        int slot = plantableSlot(level, body, pos, preferred);
         if (slot < 0) return;
         ItemStack seeds = inventory.getItem(slot);
         if (seeds.getItem() instanceof BlockItem item) {
@@ -327,7 +344,26 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
         if (seeds.isEmpty()) inventory.setItem(slot, ItemStack.EMPTY);
     }
 
+    /** The seeds to plant here: stem seeds where a stem fits (they are few), else the preferred crop's, else any. -1 when none. */
+    private static int plantableSlot(ServerLevel level, Villager body, BlockPos pos, @Nullable Block preferred) {
+        SimpleContainer inventory = body.getInventory();
+        int first = -1;
+        int wanted = -1;
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (!canPlant(level, body, pos, stack)) continue;
+            if (Crops.isStemSeed(stack)) return i;
+            if (first < 0) first = i;
+            if (wanted < 0 && stack.getItem() instanceof BlockItem item && item.getBlock() == preferred) wanted = i;
+        }
+        return wanted >= 0 ? wanted : first;
+    }
+
     private static boolean canPlant(ServerLevel level, Villager body, BlockPos pos, ItemStack stack) {
+        if (Crops.isStemSeed(stack)) {
+            return Crops.canPlantStem(level, pos, stack, body.getVillagerData().level())
+                    && stack.getItem() instanceof BlockItem item && item.getBlock().defaultBlockState().canSurvive(level, pos);
+        }
         if (!Crops.isSeed(stack)) return false;
         if (stack.getItem() instanceof BlockItem item) return item.getBlock().defaultBlockState().canSurvive(level, pos);
         return stack.getItem() instanceof SpecialPlantable plantable && plantable.villagerCanPlantItem(body)
