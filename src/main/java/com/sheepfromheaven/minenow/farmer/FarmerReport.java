@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.farmer;
 
+import com.sheepfromheaven.minenow.villager.IdleReason;
 import com.sheepfromheaven.minenow.villager.IdleReport;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -18,6 +19,9 @@ public final class FarmerReport {
     private FarmerReport() {}
 
     public static void register() {
+        IdleReason.addWorkAreaCheck(VillagerProfession.FARMER, (level, farmer) -> farmer.getBrain().getMemory(MemoryModuleType.JOB_SITE)
+                .filter(site -> site.dimension() == level.dimension())
+                .map(site -> Field.ground(level, site.pos(), Field.radiusFor(farmer.getVillagerData().level())).isEmpty()).orElse(false));
         IdleReport.addExtra(VillagerProfession.FARMER, (farmer, lines) -> {
             if (farmer.level() instanceof ServerLevel level) lines.add(fieldLine(level, farmer));
         });

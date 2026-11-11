@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:late_afternoon",
+  "function": "minenow:a_villager_without_a_job_site_shakes_its_head_even_off_duty",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

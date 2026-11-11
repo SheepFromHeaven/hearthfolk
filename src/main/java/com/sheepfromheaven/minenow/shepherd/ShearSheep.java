@@ -200,6 +200,11 @@ public class ShearSheep extends Behavior<Villager> {
         return jobSite(level, body).map(loom -> flockArea(loom).contains(sheep.position())).orElse(false);
     }
 
+    /** No adult sheep within reach of its loom, shearable or not. */
+    public static boolean hasNoFlock(ServerLevel level, Villager body) {
+        return jobSite(level, body).map(loom -> level.getEntitiesOfClass(Sheep.class, flockArea(loom), sheep -> !sheep.isBaby()).isEmpty()).orElse(false);
+    }
+
     private static AABB flockArea(BlockPos loom) {
         return new AABB(loom).inflate(RANGE, HEIGHT, RANGE);
     }

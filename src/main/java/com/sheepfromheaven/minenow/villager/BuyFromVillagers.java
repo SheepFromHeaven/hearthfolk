@@ -436,7 +436,17 @@ public class BuyFromVillagers extends Behavior<Villager> {
         return Optional.empty();
     }
 
-    /** Whether a villager nearby has a tool of its trade it can afford, so it goes to buy it (see {@link SeekTool}). */
+    /** Whether a villager of its village would sell {@code supply} to {@code buyer}, for money above what it must keep or on credit, asleep or down a mine included since they sell again; when none does, a player is the only place left (see {@link SeekGoods}). */
+    static boolean canBuySupplyFromAVillager(ServerLevel level, Villager buyer, TradeTable.Supply supply) {
+        int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
+        int room = CREDIT_LIMIT - debt(buyer);
+        return sellers(level, buyer, false).stream().anyMatch(seller -> offer(level, seller, supply.item(), supply.max(), budget).isPresent()
+                || room > 0 && TradeTable.forVillager(seller).flatMap(table -> table.sellPrice(supply.item(), seller.getVillagerData().level()))
+                .map(full -> lotFor(full, sellable(level, seller, supply.item())))
+                .filter(price -> price.emeralds() <= room && sellable(level, seller, supply.item()) >= price.count()).isPresent());
+    }
+
+    /** Whether a villager nearby has a tool of its trade it can afford, so it goes to buy it (see {@link SeekGoods}). */
     static boolean canBuyToolFromAVillager(ServerLevel level, Villager buyer) {
         return TradeTable.forVillager(buyer).flatMap(table -> toolDeal(level, buyer, table)).isPresent();
     }
@@ -474,12 +484,17 @@ public class BuyFromVillagers extends Behavior<Villager> {
      * within {@link #SEARCH_RANGE} that belong to none either, so two villages never trade.
      */
     private static java.util.List<Villager> sellers(ServerLevel level, Villager buyer) {
+        return sellers(level, buyer, true);
+    }
+
+    /** {@code awakeAndUp} false also counts the ones asleep or down a mine, who sell again when they wake or come up. */
+    private static java.util.List<Villager> sellers(ServerLevel level, Villager buyer, boolean awakeAndUp) {
         Optional<Villages.Village> village = Villages.of(level, buyer);
         java.util.List<Villager> candidates = village.isPresent() ? village.get().villagers(level)
                 : level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(SEARCH_RANGE), seller -> Villages.of(level, seller).isEmpty());
         return candidates.stream()
-                .filter(seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading() && !seller.isSleeping()
-                        && !com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, seller))
+                .filter(seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading()
+                        && (!awakeAndUp || !seller.isSleeping() && !com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, seller)))
                 .sorted(Comparator.comparingDouble(buyer::distanceToSqr))
                 .toList();
     }

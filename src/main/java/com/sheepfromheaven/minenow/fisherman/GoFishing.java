@@ -259,6 +259,11 @@ public class GoFishing extends Behavior<Villager> {
         body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(water != null ? water : target));
     }
 
+    /** No water with a shore to cast from within reach of its barrel. */
+    public static boolean hasNoWater(ServerLevel level, Villager body) {
+        return jobSite(level, body).map(barrel -> FishingWater.shore(level, FishingWater.water(level, barrel)).isEmpty()).orElse(false);
+    }
+
     private static Optional<BlockPos> jobSite(ServerLevel level, Villager body) {
         return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
                 .filter(site -> site.dimension() == level.dimension())

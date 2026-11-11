@@ -437,6 +437,11 @@ public class DigQuarry extends Behavior<Villager> {
         }
     }
 
+    /** No closed rim of cobblestone around its cart, so no mine marked. */
+    public static boolean hasNoMine(ServerLevel level, Villager body) {
+        return furnace(level, body).map(cart -> Quarry.around(level, cart).isEmpty()).orElse(false);
+    }
+
     private static Optional<BlockPos> furnace(ServerLevel level, Villager body) {
         return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
                 .filter(site -> site.dimension() == level.dimension())
