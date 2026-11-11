@@ -176,6 +176,13 @@ public final class ClericTests {
         helper.succeed();
     }
 
+    public static void aClericWithOnlyOneOfEachSellsTheMerchantNothing(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 2);
+        cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, net.minecraft.world.item.alchemy.Potions.SWIFTNESS));
+        helper.assertTrue(ClericExports.surplus(helper.getLevel(), cleric) == 0, "Its last potion of a kind is for its own customers");
+        helper.succeed();
+    }
+
     @SuppressWarnings("removal")
     private static ServerPlayer player(GameTestHelper helper) {
         return helper.makeMockServerPlayerInLevel();

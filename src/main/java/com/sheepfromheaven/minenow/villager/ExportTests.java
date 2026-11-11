@@ -50,6 +50,29 @@ public final class ExportTests {
         });
     }
 
+    public static void aTravellingMerchantBuysAClericsSurplusPotions(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos stand = new BlockPos(11, 1, 12);
+        helper.setBlock(stand, Blocks.BREWING_STAND);
+        Villager cleric = GameTestHelpers.spawnEmployed(helper, stand.west(), stand, VillagerProfession.CLERIC, net.minecraft.world.entity.ai.village.poi.PoiTypes.CLERIC);
+        cleric.setVillagerData(cleric.getVillagerData().withLevel(2));
+        var swiftness = net.minecraft.world.item.alchemy.Potions.SWIFTNESS;
+        var awkward = net.minecraft.world.item.alchemy.Potions.AWKWARD;
+        for (int i = 0; i < 3; i++) cleric.getInventory().addItem(com.sheepfromheaven.minenow.cleric.PotionGoods.stack(Items.POTION, swiftness));
+        for (int i = 0; i < 3; i++) cleric.getInventory().addItem(com.sheepfromheaven.minenow.cleric.PotionGoods.stack(Items.POTION, awkward));
+        helper.assertTrue(Exports.surplus(helper.getLevel(), cleric) >= 4, "Two spare swiftness potions are worth a visit, surplus " + Exports.surplus(helper.getLevel(), cleric));
+        helper.assertTrue(Exports.sendTrader(helper.getLevel(), cleric) != null, "A travelling merchant comes");
+
+        helper.succeedWhen(() -> {
+            int swift = com.sheepfromheaven.minenow.cleric.PotionGoods.count(helper.getLevel(), cleric, Items.POTION, swiftness);
+            int awk = com.sheepfromheaven.minenow.cleric.PotionGoods.count(helper.getLevel(), cleric, Items.POTION, awkward);
+            helper.assertTrue(swift == 1, "The merchant buys all but one swiftness potion, it has " + swift);
+            helper.assertTrue(awk == 3, "...but never the awkward potions it brews with, it has " + awk);
+            helper.assertTrue(Economy.emeralds(helper.getLevel(), cleric) >= 4, "...paying the cleric's price, it has " + Economy.emeralds(helper.getLevel(), cleric));
+        });
+    }
+
     public static void surplusGoodsDrawAWanderingTraderToTheVillage(GameTestHelper helper) {
         Villager armorer = spawnArmorer(helper);
         for (int i = 0; i < 4; i++) armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));

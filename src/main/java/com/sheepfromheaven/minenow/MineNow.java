@@ -121,6 +121,8 @@ public final class MineNow {
             test(helper, TestGroup.CLERIC, "a_cleric_gains_experience_from_brewing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericGainsExperienceFromBrewing);
             test(helper, TestGroup.CLERIC, "a_cleric_sells_its_potions_as_exact_stacks", com.sheepfromheaven.minenow.cleric.ClericTests::aClericSellsItsPotionsAsExactStacks);
             test(helper, TestGroup.CLERIC, "a_novices_trades_leave_out_potions_it_does_not_brew_yet", com.sheepfromheaven.minenow.cleric.ClericTests::aNovicesTradesLeaveOutPotionsItDoesNotBrewYet);
+            test(helper, TestGroup.CLERIC, "a_travelling_merchant_buys_a_clerics_surplus_potions", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantBuysAClericsSurplusPotions);
+            test(helper, TestGroup.CLERIC, "a_cleric_with_only_one_of_each_sells_the_merchant_nothing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithOnlyOneOfEachSellsTheMerchantNothing);
             test(helper, TestGroup.FARMER, "farmer_harvests_and_replants_field_beyond_vanilla_reach", FarmerTests::farmerHarvestsAndReplantsFieldBeyondVanillaReach);
             test(helper, TestGroup.FARMER, "a_journeyman_farmer_harvests_a_pumpkin_grown_beside_its_stem", FarmerTests::aJourneymanFarmerHarvestsAPumpkinGrownBesideItsStem);
             test(helper, TestGroup.FARMER, "a_novice_farmer_leaves_pumpkins_alone", FarmerTests::aNoviceFarmerLeavesPumpkinsAlone);

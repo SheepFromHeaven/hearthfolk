@@ -195,7 +195,7 @@ public final class Exports {
      * it sells beyond {@link #BULK_KEEP} and beyond what it keeps) at half price, sold in whole batches.
      */
     static int surplus(ServerLevel level, Villager villager) {
-        int worth = 0;
+        int worth = com.sheepfromheaven.minenow.cleric.ClericExports.surplus(level, villager);
         for (Item item : Economy.items(level, villager)) {
             Price price = price(villager, item);
             if (price == null) continue;
@@ -332,7 +332,7 @@ public final class Exports {
     }
 
     private static int buy(ServerLevel level, Villager seller, int budget) {
-        int spent = 0;
+        int spent = com.sheepfromheaven.minenow.cleric.ClericExports.sell(level, seller, budget);
         for (Item item : Economy.items(level, seller)) {
             if (!new ItemStack(item).is(GOODS)) continue;
             Price price = price(seller, item);
