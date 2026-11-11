@@ -96,7 +96,7 @@ public final class ExportTests {
         helper.assertTrue(mules.size() == 2 && mules.stream().allMatch(net.minecraft.world.entity.animal.equine.AbstractChestedHorse::hasChest), "...with two pack mules on leads, has " + mules.size());
         helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.equine.TraderLlama.class, merchant.getBoundingBox().inflate(16)).isEmpty(), "...and no trader llamas");
         var sold = merchant.getOffers().stream().map(offer -> offer.getResult().getItem()).toList();
-        helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART, Items.BLAZE_POWDER, Items.GUNPOWDER, Items.SPIDER_EYE, Items.BROWN_MUSHROOM).contains(item)),
+        helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART, Items.BLAZE_POWDER, Items.GUNPOWDER, Items.SPIDER_EYE, Items.BROWN_MUSHROOM, Items.GLASS_BOTTLE).contains(item)),
                 "...selling goods from afar the village can't make, " + sold);
         for (var brewing : java.util.List.of(Items.NETHER_WART, Items.BLAZE_POWDER, Items.GUNPOWDER, Items.SPIDER_EYE, Items.BROWN_MUSHROOM)) {
             helper.assertTrue(sold.contains(brewing), "...and what a cleric brews with, " + brewing + " among " + sold);

@@ -77,6 +77,19 @@ public final class Economy {
         return taken;
     }
 
+    /** A copy of one of the item as it is, from its inventory first, then its chests, without taking it: what it would hand over for a sale (a filled map is the picture it drew). */
+    public static ItemStack peekOne(ServerLevel level, Villager villager, Item item) {
+        for (ItemStack stack : villager.getInventory().getItems()) {
+            if (stack.is(item)) return stack.copyWithCount(1);
+        }
+        for (Container chest : chests(level, villager)) {
+            for (int i = 0; i < chest.getContainerSize(); i++) {
+                if (chest.getItem(i).is(item)) return chest.getItem(i).copyWithCount(1);
+            }
+        }
+        return new ItemStack(item);
+    }
+
     /** One of the item as it is (dye, wear and all), from its inventory first, then its chests; empty if it has none. */
     public static ItemStack takeOne(ServerLevel level, Villager villager, Item item) {
         ItemStack taken = takeOneFrom(villager.getInventory(), item);

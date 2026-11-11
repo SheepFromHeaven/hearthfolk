@@ -1,0 +1,13 @@
+{
+  "type": "minenow:switched_shapeless",
+  "category": "misc",
+  "when_enabled": false,
+  "ingredients": [
+    "minecraft:book",
+    "minecraft:ink_sac",
+    "minecraft:feather"
+  ],
+  "result": {
+    "id": "minecraft:writable_book"
+  }
+}

@@ -38,6 +38,11 @@
       "item": "minecraft:leather",
       "level": 1,
       "price": 0.1667
+    },
+    {
+      "item": "minecraft:ink_sac",
+      "level": 1,
+      "price": 0.5
     }
   ],
   "default_produce": {

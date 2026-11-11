@@ -1,0 +1,67 @@
+{
+  "profession": "minecraft:cartographer",
+  "tool_tag": "#minenow:ink_and_quills",
+  "tools": [
+    {
+      "item": "minenow:ink_and_quill",
+      "price": 2
+    }
+  ],
+  "supplies": [
+    {
+      "item": "minecraft:paper",
+      "price": 0.14,
+      "max": 24
+    },
+    {
+      "item": "minecraft:ink_sac",
+      "price": 0.5,
+      "max": 4
+    },
+    {
+      "item": "minecraft:feather",
+      "price": 0.0625,
+      "max": 2
+    },
+    {
+      "item": "minecraft:glass_bottle",
+      "price": 0.25,
+      "max": 2
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minenow:ink_and_quill",
+      "materials": [
+        {
+          "item": "minecraft:feather",
+          "count": 1
+        },
+        {
+          "item": "minecraft:ink_sac",
+          "count": 1
+        },
+        {
+          "item": "minecraft:glass_bottle",
+          "count": 1
+        }
+      ],
+      "labor": 0.25
+    },
+    {
+      "item": "minecraft:filled_map",
+      "materials": [
+        {
+          "item": "minecraft:paper",
+          "count": 8
+        },
+        {
+          "item": "minecraft:ink_sac",
+          "count": 1
+        }
+      ],
+      "labor": 1.0,
+      "tool_uses": 1
+    }
+  ]
+}

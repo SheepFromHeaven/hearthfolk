@@ -191,7 +191,7 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
                     .orElse(0.0);
             total += perItem * material.count();
         }
-        if (craft.item().getDefaultMaxStackSize() == 1) return new Price(1, Price.ofCraft(total, 0.0));
+        if (craft.item().getDefaultMaxStackSize() == 1 || CraftResults.isUnique(craft.item())) return new Price(1, Price.ofCraft(total, 0.0));
         return Price.of(total / craft.count());
     }
 

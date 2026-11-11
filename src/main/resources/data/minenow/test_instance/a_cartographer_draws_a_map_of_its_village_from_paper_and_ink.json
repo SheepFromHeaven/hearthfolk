@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_19",
+  "function": "minenow:a_cartographer_draws_a_map_of_its_village_from_paper_and_ink",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}
