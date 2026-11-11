@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:merchant_1",
+  "function": "minenow:a_villager_buys_its_supply_from_a_travelling_merchant",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

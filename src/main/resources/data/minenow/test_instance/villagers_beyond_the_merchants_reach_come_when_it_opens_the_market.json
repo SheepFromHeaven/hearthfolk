@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:merchant_8",
+  "function": "minenow:villagers_beyond_the_merchants_reach_come_when_it_opens_the_market",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 6000
+}
