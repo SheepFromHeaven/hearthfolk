@@ -150,19 +150,19 @@
     {
       "item": "minecraft:wheat",
       "price": 0.0625,
-      "max": 32,
+      "max": 8,
       "level": 1
     },
     {
       "item": "minecraft:carrot",
       "price": 0.0625,
-      "max": 32,
+      "max": 8,
       "level": 1
     },
     {
       "item": "minecraft:wheat_seeds",
       "price": 0.0625,
-      "max": 32,
+      "max": 8,
       "level": 1
     },
     {

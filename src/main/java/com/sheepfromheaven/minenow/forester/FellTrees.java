@@ -49,6 +49,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
     private static final double REACH = 3.0;
     private static final int SWING_EVERY = 5;
     private static final int GIVE_UP_AFTER_TICKS = 300;
+    private static final int STUCK_AFTER_TICKS = 60;
     private static final int UNREACHABLE_COOLDOWN = 1200;
     private static final int IDLE_RESCAN_DELAY = 100;
 
@@ -57,7 +58,10 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
     private @Nullable BlockPos plantAt;
     private @Nullable ItemEntity gather;
     private @Nullable BlockPos chest;
+    private @Nullable BlockPos approachTo;
     private long targetSince;
+    private @Nullable Vec3 anchor;
+    private long anchorSince;
     private long nextStartAllowed;
     private int progress;
 
@@ -80,6 +84,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
     @Override
     protected void start(ServerLevel level, Villager body, long timestamp) {
         targetSince = timestamp;
+        anchor = null;
         Tools.showInHand(body, true);
         walk(body);
     }
@@ -96,7 +101,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
             if (body.distanceToSqr(Vec3.atBottomCenterOf(chest)) <= 4.0 && Math.abs(chest.getY() - body.getY()) <= 1.5) {
                 Unloading.deposit(level, body, chest);
                 advance(level, body, timestamp);
-            } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
+            } else if (givenUp(body, timestamp)) {
                 advance(level, body, timestamp);
             } else if (!walkingTo(body, chest)) {
                 walk(body);
@@ -104,7 +109,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
             return;
         }
         if (gather != null) {
-            if (!gather.isAlive() || timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
+            if (!gather.isAlive() || givenUp(body, timestamp)) {
                 if (gather.isAlive()) unreachable.put(gather.blockPosition(), timestamp + UNREACHABLE_COOLDOWN);
                 advance(level, body, timestamp);
             } else if (!walkingTo(body, gather.blockPosition())) {
@@ -116,7 +121,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
             if (body.distanceToSqr(Vec3.atBottomCenterOf(plantAt)) <= 6.0) {
                 plant(level, body, plantAt);
                 advance(level, body, timestamp);
-            } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
+            } else if (givenUp(body, timestamp)) {
                 unreachable.put(plantAt, timestamp + UNREACHABLE_COOLDOWN);
                 advance(level, body, timestamp);
             } else if (!walkingTo(body, plantAt)) {
@@ -139,12 +144,49 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
         double horizontal = Math.sqrt(Math.pow(body.getX() - (log.getX() + 0.5), 2) + Math.pow(body.getZ() - (log.getZ() + 0.5), 2));
         if (horizontal <= REACH && log.getY() >= body.getBlockY() - 1) {
             chop(level, body, axe, log, timestamp);
-        } else if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
+        } else if (givenUp(body, timestamp)) {
             unreachable.put(tree.base(), timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
-        } else if (!walkingTo(body, tree.base())) {
+        } else if (!walkingTo(body, approachTo != null ? approachTo : tree.base())) {
             walk(body);
         }
+    }
+
+    /**
+     * Where to walk to reach a tree: the free ground beside its trunk nearest the villager. Vanilla moves a path target
+     * that is a log up to the first free cell above it, over the crown, which no path reaches, so every walk ran a
+     * search of the whole neighbourhood. The trunk itself when nothing stands beside it.
+     */
+    static BlockPos approach(ServerLevel level, Villager body, Grove.Tree tree) {
+        BlockPos base = tree.base();
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) continue;
+                BlockPos feet = base.offset(dx, 0, dz);
+                boolean free = level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+                        && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()
+                        && level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), net.minecraft.core.Direction.UP);
+                double distance = feet.distToCenterSqr(body.position());
+                if (free && distance < bestDistance) {
+                    best = feet;
+                    bestDistance = distance;
+                }
+            }
+        }
+        return best != null ? best : base;
+    }
+
+    /** The target is out of reach for good when it's been too long, or the villager has stopped getting anywhere (the end of a partial path). */
+    private boolean givenUp(Villager body, long timestamp) {
+        if (timestamp - targetSince > GIVE_UP_AFTER_TICKS) return true;
+        if (anchor == null || body.position().distanceToSqr(anchor) >= 1.0) {
+            anchor = body.position();
+            anchorSince = timestamp;
+            return false;
+        }
+        return timestamp - anchorSince > STUCK_AFTER_TICKS;
     }
 
     @Override
@@ -211,6 +253,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
 
     private void advance(ServerLevel level, Villager body, long timestamp) {
         progress = 0;
+        anchor = null;
         if (pickTarget(level, body)) {
             targetSince = timestamp;
             walk(body);
@@ -254,6 +297,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
                 .filter(candidate -> !unreachable.containsKey(candidate.base()) && (bigTrees || !candidate.big()))
                 .min(Comparator.comparingDouble(candidate -> candidate.base().distToCenterSqr(body.position())))
                 .orElse(null);
+        approachTo = tree == null ? null : approach(level, body, tree);
         return tree != null;
     }
 
@@ -279,9 +323,10 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
     }
 
     private void walk(Villager body) {
-        BlockPos to = chest != null ? chest : gather != null ? gather.blockPosition() : plantAt != null ? plantAt : tree != null ? tree.base() : null;
+        BlockPos to = chest != null ? chest : gather != null ? gather.blockPosition() : plantAt != null ? plantAt : tree != null ? (approachTo != null ? approachTo : tree.base()) : null;
         if (to == null) return;
-        body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(to, SPEED, 1));
+        boolean onTree = chest == null && gather == null && plantAt == null;
+        body.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(to, SPEED, onTree ? 0 : 1));
         body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(to));
     }
 

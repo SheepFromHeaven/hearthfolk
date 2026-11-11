@@ -55,6 +55,12 @@ neoForge {
             systemProperty 'minenow.soak.bell', providers.gradleProperty('soakBell').orElse('true').get()
             systemProperty 'minenow.soak.playerBudget', providers.gradleProperty('soakPlayerBudget').orElse('0').get()
             systemProperty 'minenow.soak.traceFrom', providers.gradleProperty('soakTraceFrom').orElse('-1').get()
+            if (providers.gradleProperty('soakJvm').isPresent())
+                jvmArguments.addAll(providers.gradleProperty('soakJvm').get().split(' ').toList())
+            if (providers.gradleProperty('soakJfr').isPresent())
+                jvmArguments.add('-XX:StartFlightRecording=filename=' + layout.projectDirectory.file('soak-report/soak.jfr').asFile.absolutePath + ',settings=profile,dumponexit=true')
+            if (providers.gradleProperty('soakJfr').isPresent())
+                jvmArguments.add('-XX:FlightRecorderOptions=stackdepth=512')
             systemProperty 'minenow.soak.out', layout.projectDirectory.dir('soak-report').asFile.absolutePath
         }
     }
