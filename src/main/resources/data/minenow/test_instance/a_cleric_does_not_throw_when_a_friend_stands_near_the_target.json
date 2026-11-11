@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:a_cleric_does_not_throw_when_a_friend_stands_near_the_target",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 900
+}

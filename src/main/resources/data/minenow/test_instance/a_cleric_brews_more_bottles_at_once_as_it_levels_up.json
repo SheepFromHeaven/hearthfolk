@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_cleric_brews_more_bottles_at_once_as_it_levels_up",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

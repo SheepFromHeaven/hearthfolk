@@ -50,6 +50,29 @@ public final class ExportTests {
         });
     }
 
+    public static void aTravellingMerchantBuysAClericsSurplusPotions(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos stand = new BlockPos(11, 1, 12);
+        helper.setBlock(stand, Blocks.BREWING_STAND);
+        Villager cleric = GameTestHelpers.spawnEmployed(helper, stand.west(), stand, VillagerProfession.CLERIC, net.minecraft.world.entity.ai.village.poi.PoiTypes.CLERIC);
+        cleric.setVillagerData(cleric.getVillagerData().withLevel(2));
+        var swiftness = net.minecraft.world.item.alchemy.Potions.SWIFTNESS;
+        var awkward = net.minecraft.world.item.alchemy.Potions.AWKWARD;
+        for (int i = 0; i < 3; i++) cleric.getInventory().addItem(com.sheepfromheaven.minenow.cleric.PotionGoods.stack(Items.POTION, swiftness));
+        for (int i = 0; i < 3; i++) cleric.getInventory().addItem(com.sheepfromheaven.minenow.cleric.PotionGoods.stack(Items.POTION, awkward));
+        helper.assertTrue(Exports.surplus(helper.getLevel(), cleric) >= 4, "Two spare swiftness potions are worth a visit, surplus " + Exports.surplus(helper.getLevel(), cleric));
+        helper.assertTrue(Exports.sendTrader(helper.getLevel(), cleric) != null, "A travelling merchant comes");
+
+        helper.succeedWhen(() -> {
+            int swift = com.sheepfromheaven.minenow.cleric.PotionGoods.count(helper.getLevel(), cleric, Items.POTION, swiftness);
+            int awk = com.sheepfromheaven.minenow.cleric.PotionGoods.count(helper.getLevel(), cleric, Items.POTION, awkward);
+            helper.assertTrue(swift == 1, "The merchant buys all but one swiftness potion, it has " + swift);
+            helper.assertTrue(awk == 3, "...but never the awkward potions it brews with, it has " + awk);
+            helper.assertTrue(Economy.emeralds(helper.getLevel(), cleric) >= 4, "...paying the cleric's price, it has " + Economy.emeralds(helper.getLevel(), cleric));
+        });
+    }
+
     public static void surplusGoodsDrawAWanderingTraderToTheVillage(GameTestHelper helper) {
         Villager armorer = spawnArmorer(helper);
         for (int i = 0; i < 4; i++) armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
@@ -73,8 +96,11 @@ public final class ExportTests {
         helper.assertTrue(mules.size() == 2 && mules.stream().allMatch(net.minecraft.world.entity.animal.equine.AbstractChestedHorse::hasChest), "...with two pack mules on leads, has " + mules.size());
         helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.equine.TraderLlama.class, merchant.getBoundingBox().inflate(16)).isEmpty(), "...and no trader llamas");
         var sold = merchant.getOffers().stream().map(offer -> offer.getResult().getItem()).toList();
-        helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART).contains(item)),
+        helper.assertTrue(!sold.isEmpty() && sold.contains(Items.STRING) && sold.stream().allMatch(item -> java.util.List.of(Items.STRING, Items.SUGAR_CANE, Items.COCOA_BEANS, Items.SWEET_BERRIES, Items.HONEYCOMB, Items.NETHER_WART, Items.BLAZE_POWDER, Items.GUNPOWDER, Items.SPIDER_EYE, Items.BROWN_MUSHROOM).contains(item)),
                 "...selling goods from afar the village can't make, " + sold);
+        for (var brewing : java.util.List.of(Items.NETHER_WART, Items.BLAZE_POWDER, Items.GUNPOWDER, Items.SPIDER_EYE, Items.BROWN_MUSHROOM)) {
+            helper.assertTrue(sold.contains(brewing), "...and what a cleric brews with, " + brewing + " among " + sold);
+        }
         var string = merchant.getOffers().stream().filter(offer -> offer.getResult().is(Items.STRING)).findFirst().orElseThrow();
         helper.assertTrue(string.getResult().getCount() == 8 && string.getCostA().getCount() == 1 && string.getCostA().is(Items.EMERALD),
                 "...at the data file's price, 8 string for an emerald, not " + string.getResult().getCount() + " for " + string.getCostA().getCount());

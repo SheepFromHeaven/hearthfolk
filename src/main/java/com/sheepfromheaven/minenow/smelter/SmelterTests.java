@@ -48,6 +48,15 @@ public final class SmelterTests {
                 "The smelter smelts its raw iron in its blast furnace, has " + smelter.getInventory().countItem(Items.IRON_INGOT) + " ingots"));
     }
 
+    public static void anApprenticeSmelterBreaksGoldIngotsIntoNuggets(GameTestHelper helper) {
+        Villager smelter = spawnSmelter(helper);
+        smelter.setVillagerData(smelter.getVillagerData().withLevel(2));
+        smelter.getInventory().addItem(new ItemStack(Items.GOLD_INGOT, 2));
+
+        helper.succeedWhen(() -> helper.assertTrue(smelter.getInventory().countItem(Items.GOLD_NUGGET) >= 9,
+                "The smelter turns a gold ingot into nine nuggets, has " + smelter.getInventory().countItem(Items.GOLD_NUGGET)));
+    }
+
     public static void smelterBurnsLogsIntoCharcoalInAFurnaceBesideIt(GameTestHelper helper) {
         Villager smelter = spawnSmelter(helper);
         smelter.getInventory().addItem(new ItemStack(Items.OAK_LOG, 4));
