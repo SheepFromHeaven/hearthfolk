@@ -2,6 +2,7 @@
   "values": [
     "minenow:miner",
     "minenow:forester",
-    "minenow:golemsmith"
+    "minenow:golemsmith",
+    "minenow:merchant"
   ]
 }

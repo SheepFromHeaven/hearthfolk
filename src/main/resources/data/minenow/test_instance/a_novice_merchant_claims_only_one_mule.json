@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_2",
+  "function": "minenow:a_novice_merchant_claims_only_one_mule",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

@@ -49,6 +49,11 @@ public class WalkToPoi extends Behavior<Villager> {
     }
 
     @Override
+    protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
+        return !com.sheepfromheaven.minenow.merchant.Merchant.hasTour(body);
+    }
+
+    @Override
     protected void start(ServerLevel level, Villager body, long timestamp) {
         var brain = body.getBrain();
         GlobalPos target = brain.getMemory(memory).orElseThrow();

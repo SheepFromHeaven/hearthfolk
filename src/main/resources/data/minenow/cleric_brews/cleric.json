@@ -147,6 +147,33 @@
       },
       "level": 4,
       "stock": 2
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:awkward"
+      },
+      "reagent": "minecraft:golden_carrot",
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:night_vision"
+      },
+      "level": 4,
+      "stock": 2
+    },
+    {
+      "input": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:night_vision"
+      },
+      "reagent": "minecraft:fermented_spider_eye",
+      "output": {
+        "item": "minecraft:potion",
+        "potion": "minecraft:invisibility"
+      },
+      "level": 4,
+      "stock": 2,
+      "price": 4
     }
   ]
 }

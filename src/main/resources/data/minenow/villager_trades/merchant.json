@@ -1,0 +1,38 @@
+{
+  "profession": "minenow:merchant",
+  "supplies": [
+    {
+      "item": "minecraft:chest",
+      "price": 1,
+      "max": 4,
+      "level": 1
+    }
+  ],
+  "crafts": [
+    {
+      "item": "minecraft:hay_block",
+      "materials": [
+        {
+          "item": "minecraft:wheat",
+          "count": 9
+        }
+      ],
+      "labor": 0.05,
+      "stock": 3,
+      "level": 1
+    },
+    {
+      "item": "minecraft:straw_bed",
+      "materials": [
+        {
+          "item": "minecraft:hay_block",
+          "count": 3
+        }
+      ],
+      "count": 4,
+      "labor": 0.1,
+      "stock": 1,
+      "level": 1
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_5",
+  "function": "minenow:a_merchant_leaves_a_players_mule_alone",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

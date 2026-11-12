@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_9",
+  "function": "minenow:a_touring_merchant_sleeps_on_a_straw_bed_at_night_and_gets_up_at_dawn",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1500
+}

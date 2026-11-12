@@ -8,5 +8,7 @@
   "entity.minenow.villager.golemsmith": "Golemsmith",
   "block.minenow.golem_workshop": "Golem Workshop",
   "item.minenow.ink_and_quill": "Ink and Quill",
-  "item.minenow.village_map": "Village Map"
+  "item.minenow.village_map": "Village Map",
+  "entity.minenow.villager.merchant": "Merchant",
+  "block.minenow.pack_station": "Pack Station"
 }

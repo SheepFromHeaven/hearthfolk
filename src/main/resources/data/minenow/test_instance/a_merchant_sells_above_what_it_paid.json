@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:tour_2",
+  "function": "minenow:a_merchant_sells_above_what_it_paid",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 9000
+}

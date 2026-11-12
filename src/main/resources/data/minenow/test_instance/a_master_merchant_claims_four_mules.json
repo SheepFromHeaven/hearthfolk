@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_3",
+  "function": "minenow:a_master_merchant_claims_four_mules",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

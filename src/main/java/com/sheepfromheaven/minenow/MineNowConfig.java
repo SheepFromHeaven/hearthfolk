@@ -18,6 +18,10 @@ public final class MineNowConfig {
             .comment("Whether players can craft the cartographer's ink and quill (feather, ink sac and glass bottle), and whether a book and quill takes it in place of an ink sac and a feather. Off by default: vanilla's book and quill recipe stays as it is.")
             .define("inkAndQuillRecipes", false);
 
+    public static final ModConfigSpec.IntValue MAX_TOURS = BUILDER
+            .comment("How many merchant tours may run at once in a world. A touring merchant keeps the chunks around it ticking, so each tour costs a few loaded chunks; a merchant over the cap waits at home.")
+            .defineInRange("maxMerchantTours", 4, 0, 64);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private MineNowConfig() {}

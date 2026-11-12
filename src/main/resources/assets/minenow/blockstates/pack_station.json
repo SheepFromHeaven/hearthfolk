@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "minenow:block/pack_station"
+    }
+  }
+}

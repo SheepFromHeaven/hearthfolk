@@ -121,6 +121,11 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
         return villager.getVillagerData().profession().unwrapKey().map(byProfession::get);
     }
 
+    /** What the cheapest trade sells {@code item} for at its top level, whoever makes it: the price a merchant pays for it at home. */
+    public static Optional<Price> anySellPrice(Item item) {
+        return byProfession.values().stream().flatMap(table -> table.sellPrice(item, 5).stream()).min(java.util.Comparator.comparingDouble(Price::perItem));
+    }
+
     public static Optional<TradeTable> forProfession(ResourceKey<VillagerProfession> profession) {
         return Optional.ofNullable(byProfession.get(profession));
     }

@@ -66,6 +66,12 @@
       "price": 0.25,
       "max": 4,
       "level": 4
+    },
+    {
+      "item": "minecraft:golden_carrot",
+      "price": 1.5,
+      "max": 2,
+      "level": 4
     }
   ],
   "crafts": [
