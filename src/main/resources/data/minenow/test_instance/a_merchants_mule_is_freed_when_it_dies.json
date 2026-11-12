@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_6",
+  "function": "minenow:a_merchants_mule_is_freed_when_it_dies",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

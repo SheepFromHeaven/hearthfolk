@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_13",
+  "function": "minenow:a_merchant_buys_wheat_for_its_bed_and_crafts_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 9000
+}

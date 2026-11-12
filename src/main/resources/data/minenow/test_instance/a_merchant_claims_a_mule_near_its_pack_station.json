@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_1",
+  "function": "minenow:a_merchant_claims_a_mule_near_its_pack_station",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

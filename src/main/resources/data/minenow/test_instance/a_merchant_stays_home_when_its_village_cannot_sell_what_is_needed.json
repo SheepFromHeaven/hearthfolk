@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:tour_4",
+  "function": "minenow:a_merchant_stays_home_when_its_village_cannot_sell_what_is_needed",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

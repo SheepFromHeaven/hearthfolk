@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_8",
+  "function": "minenow:a_merchant_puts_a_chest_on_its_mule",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

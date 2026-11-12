@@ -296,7 +296,40 @@ public class BuyFromVillagers extends Behavior<Villager> {
                     .findFirst();
             if (deal.isPresent()) return deal;
         }
+        for (com.sheepfromheaven.minenow.merchant.Tour.Want want : com.sheepfromheaven.minenow.merchant.Merchant.shoppingList(level, buyer)) {
+            Optional<Deal> deal = sellers(level, buyer).stream()
+                    .flatMap(seller -> offer(level, seller, want.item(), want.amount(), Economy.emeralds(level, buyer)).stream())
+                    .findFirst();
+            if (deal.isPresent()) return deal;
+        }
         return upgradeDeal(level, buyer, table.get(), Economy.spendable(level, buyer), false).or(() -> gear(level, buyer));
+    }
+
+    /** A supply of its trade it is short of that nobody in its village sells: what a merchant could bring it. */
+    public record Need(Villager buyer, Item item, int room) {}
+
+    /** The supplies of {@code buyer}'s trade it is short of, can pay an import price for, and no villager of its village offers. */
+    public static java.util.List<Need> needs(ServerLevel level, Villager buyer) {
+        Optional<TradeTable> table = TradeTable.forVillager(buyer);
+        if (table.isEmpty() || buyer.isBaby()) return java.util.List.of();
+        java.util.List<Villager> sellers = null;
+        java.util.List<Need> found = new java.util.ArrayList<>();
+        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+            int held = Economy.count(level, buyer, supply.item());
+            if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
+            int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
+            Optional<Price> imported = com.sheepfromheaven.minenow.merchant.Merchant.importPrice(supply.item());
+            if (imported.isEmpty() || budget < imported.get().emeralds()) continue;
+            if (sellers == null) sellers = sellers(level, buyer);
+            if (sellers.stream().anyMatch(seller -> offer(level, seller, supply.item(), supply.max() - held, budget).isPresent())) continue;
+            found.add(new Need(buyer, supply.item(), supply.max() - held));
+        }
+        return found;
+    }
+
+    /** The lot the nearest villager of {@code merchant}'s village would sell it for within {@code budget} emeralds. */
+    public static Optional<Price> homeOffer(ServerLevel level, Villager merchant, Item item, int budget) {
+        return sellers(level, merchant).stream().flatMap(seller -> offer(level, seller, item, 0, budget).stream()).findFirst().map(Deal::price);
     }
 
     /**
@@ -490,8 +523,9 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** {@code awakeAndUp} false also counts the ones asleep or down a mine, who sell again when they wake or come up. */
     private static java.util.List<Villager> sellers(ServerLevel level, Villager buyer, boolean awakeAndUp) {
         Optional<Villages.Village> village = Villages.of(level, buyer);
-        java.util.List<Villager> candidates = village.isPresent() ? village.get().villagers(level)
+        java.util.List<Villager> candidates = village.isPresent() ? new java.util.ArrayList<>(village.get().villagers(level))
                 : level.getEntitiesOfClass(Villager.class, buyer.getBoundingBox().inflate(SEARCH_RANGE), seller -> Villages.of(level, seller).isEmpty());
+        village.ifPresent(own -> com.sheepfromheaven.minenow.merchant.Merchant.marketsIn(level, own).stream().filter(merchant -> !candidates.contains(merchant)).forEach(candidates::add));
         return candidates.stream()
                 .filter(seller -> seller != buyer && seller.isAlive() && !seller.isBaby() && !seller.isTrading()
                         && (!awakeAndUp || !seller.isSleeping() && !com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, seller)))
@@ -500,7 +534,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
     }
 
     private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room, int budget) {
-        Optional<Price> price = TradeTable.forVillager(seller).flatMap(table -> table.sellPrice(item, seller.getVillagerData().level()))
+        Optional<Price> price = (com.sheepfromheaven.minenow.merchant.Merchant.isSelling(seller) ? com.sheepfromheaven.minenow.merchant.Merchant.importPrice(item)
+                : TradeTable.forVillager(seller).flatMap(table -> table.sellPrice(item, seller.getVillagerData().level())))
                 .map(lot -> lotFor(lot, sellable(level, seller, item)));
         if (price.isEmpty() || sellable(level, seller, item) < price.get().count() || budget < price.get().emeralds()) return Optional.empty();
         return Optional.of(new Deal(seller, item, price.get(), room, budget));

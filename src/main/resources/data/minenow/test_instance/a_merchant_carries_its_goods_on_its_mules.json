@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_7",
+  "function": "minenow:a_merchant_carries_its_goods_on_its_mules",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

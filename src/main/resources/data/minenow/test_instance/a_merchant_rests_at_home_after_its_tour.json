@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:tour_5",
+  "function": "minenow:a_merchant_rests_at_home_after_its_tour",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 14000
+}

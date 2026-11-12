@@ -31,7 +31,8 @@ public enum TestGroup {
     CLERIC("Cleric", Blocks.PURPUR_BLOCK, Blocks.AMETHYST_BLOCK),
     DEFENCE("Village defence", Blocks.CRACKED_STONE_BRICKS, Blocks.GOLD_BLOCK),
     VILLAGE("Village", Blocks.MOSSY_COBBLESTONE, Blocks.EMERALD_BLOCK),
-    CARTOGRAPHER("Cartographer", Blocks.SANDSTONE, Blocks.CHISELED_SANDSTONE);
+    CARTOGRAPHER("Cartographer", Blocks.SANDSTONE, Blocks.CHISELED_SANDSTONE),
+    MERCHANT("Merchant", Blocks.COARSE_DIRT, Blocks.HAY_BLOCK);
 
     private static final Map<String, TestGroup> BY_TEST = new ConcurrentHashMap<>();
 

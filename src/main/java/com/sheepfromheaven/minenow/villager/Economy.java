@@ -63,9 +63,15 @@ public final class Economy {
         return Math.max(0, emeralds(level, villager) - reserve(villager));
     }
 
+    /** Chests a villager's goods may sit in: none while a merchant is on tour, since they're days away. */
+    private static List<BlockPos> chestPositions(ServerLevel level, Villager villager) {
+        return com.sheepfromheaven.minenow.merchant.Merchant.onTour(villager) ? List.of() : Workshop.allChests(level, villager);
+    }
+
     public static int take(ServerLevel level, Villager villager, Item item, int amount) {
         int taken = takeFrom(villager.getInventory(), item, amount);
-        for (BlockPos pos : Workshop.allChests(level, villager)) {
+        for (Container pack : com.sheepfromheaven.minenow.merchant.Merchant.packs(level, villager)) taken += takeFrom(pack, item, amount - taken);
+        for (BlockPos pos : chestPositions(level, villager)) {
             if (taken >= amount) break;
             Container chest = HomeStorage.chestContainer(level, pos);
             if (chest == null || chest.countItem(item) == 0) continue;
@@ -93,7 +99,10 @@ public final class Economy {
     /** One of the item as it is (dye, wear and all), from its inventory first, then its chests; empty if it has none. */
     public static ItemStack takeOne(ServerLevel level, Villager villager, Item item) {
         ItemStack taken = takeOneFrom(villager.getInventory(), item);
-        for (BlockPos pos : Workshop.allChests(level, villager)) {
+        for (Container pack : com.sheepfromheaven.minenow.merchant.Merchant.packs(level, villager)) {
+            if (taken.isEmpty()) taken = takeOneFrom(pack, item);
+        }
+        for (BlockPos pos : chestPositions(level, villager)) {
             if (!taken.isEmpty()) break;
             Container chest = HomeStorage.chestContainer(level, pos);
             if (chest == null || chest.countItem(item) == 0) continue;
@@ -108,7 +117,10 @@ public final class Economy {
     /** One item exactly like {@code template} (same components: this enchanted book, not any), from its inventory first, then its chests; empty if it has none. */
     public static ItemStack takeExact(ServerLevel level, Villager villager, ItemStack template) {
         ItemStack taken = takeExactFrom(villager.getInventory(), template);
-        for (BlockPos pos : Workshop.allChests(level, villager)) {
+        for (Container pack : com.sheepfromheaven.minenow.merchant.Merchant.packs(level, villager)) {
+            if (taken.isEmpty()) taken = takeExactFrom(pack, template);
+        }
+        for (BlockPos pos : chestPositions(level, villager)) {
             if (!taken.isEmpty()) break;
             Container chest = HomeStorage.chestContainer(level, pos);
             if (chest == null || chest.countItem(template.getItem()) == 0) continue;
@@ -149,7 +161,7 @@ public final class Economy {
     /** Into its inventory, then the chest the item belongs in (food and emeralds home, trade goods the workshop), then any. */
     public static void give(ServerLevel level, Villager villager, ItemStack stack) {
         if (Unloading.isTool(villager, stack) && !Tools.has(villager) && !Unloading.hasEmptySlot(villager)) makeRoom(level, villager);
-        ItemStack rest = villager.getInventory().addItem(stack);
+        ItemStack rest = com.sheepfromheaven.minenow.merchant.Merchant.pack(level, villager, villager.getInventory().addItem(stack));
         putInChests(level, villager, rest);
     }
 
@@ -175,7 +187,7 @@ public final class Economy {
     }
 
     private static void putInChests(ServerLevel level, Villager villager, ItemStack rest) {
-        List<BlockPos> chests = new java.util.ArrayList<>(Workshop.allChests(level, villager));
+        List<BlockPos> chests = com.sheepfromheaven.minenow.merchant.Merchant.onTour(villager) ? new java.util.ArrayList<>() : new java.util.ArrayList<>(Workshop.allChests(level, villager));
         boolean personal = Workshop.personal(rest);
         chests.sort(java.util.Comparator.comparing(pos -> Workshop.isWorkshopChest(level, villager, pos) == personal));
         for (BlockPos pos : chests) {
@@ -200,6 +212,10 @@ public final class Economy {
     }
 
     static List<Container> chests(ServerLevel level, Villager villager) {
-        return Workshop.allChests(level, villager).stream().map(pos -> HomeStorage.chestContainer(level, pos)).filter(java.util.Objects::nonNull).toList();
+        List<Container> chests = new java.util.ArrayList<>(com.sheepfromheaven.minenow.merchant.Merchant.packs(level, villager));
+        if (!com.sheepfromheaven.minenow.merchant.Merchant.onTour(villager)) {
+            Workshop.allChests(level, villager).stream().map(pos -> HomeStorage.chestContainer(level, pos)).filter(java.util.Objects::nonNull).forEach(chests::add);
+        }
+        return chests;
     }
 }

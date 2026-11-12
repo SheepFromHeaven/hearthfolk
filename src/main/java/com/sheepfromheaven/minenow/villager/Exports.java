@@ -81,6 +81,11 @@ public final class Exports {
     private static final Map<UUID, Market> MARKETS = new HashMap<>();
     /** When a merchant last announced its market, so villagers that polled before it look again at once. */
     static long lastAnnounced = Long.MIN_VALUE;
+
+    /** Makes every villager look again for a seller at once, as when a merchant announces its market at the bell. */
+    public static void announce(long now) {
+        lastAnnounced = now;
+    }
     private static long lastVisit = Long.MIN_VALUE;
 
     private Exports() {}

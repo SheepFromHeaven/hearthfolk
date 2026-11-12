@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:tour_1",
+  "function": "minenow:a_merchant_brings_a_village_what_it_lacks",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 9000
+}

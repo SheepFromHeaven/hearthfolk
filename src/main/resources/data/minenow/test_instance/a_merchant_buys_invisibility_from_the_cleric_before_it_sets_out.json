@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_12",
+  "function": "minenow:a_merchant_buys_invisibility_from_the_cleric_before_it_sets_out",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 3000
+}
