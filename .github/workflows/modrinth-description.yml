@@ -1,0 +1,30 @@
+name: Modrinth description
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/modrinth/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update the Modrinth project page
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+        run: |
+          jq -n --rawfile body docs/modrinth/description.md --rawfile summary docs/modrinth/summary.txt \
+            '{body: $body, description: ($summary | rtrimstr("\n"))}' > payload.json
+          curl --fail-with-body -sS -X PATCH "https://api.modrinth.com/v2/project/${MODRINTH_PROJECT_ID}" \
+            -H "Authorization: ${MODRINTH_TOKEN}" \
+            -H "User-Agent: mine-now-ci" \
+            -H "Content-Type: application/json" \
+            --data @payload.json
