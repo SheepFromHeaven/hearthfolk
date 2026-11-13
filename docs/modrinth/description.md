@@ -4,7 +4,11 @@ Your villagers have been standing around with their arms crossed since the day y
 
 Build a farm and the farmer works it. Dig a mine and a miner climbs down into it with a torch. Put up a loom and the shepherd shears the flock, spins the wool into string and sells it to the fletcher, whose arrows end up with the archer on the roof, watching the road for zombies.
 
-No new mob. No menus. No banner to plant. It is the village you build, with the villagers you already have. They finally do something with it.
+No new mob. No menus. No banner to plant. It is the village you build, with the villagers you already have. Breathe life into your villages and watch them work.
+
+Treat them right and your village will grow. A villager with money and food has children, and a village that earns more can feed more mouths.
+
+No more cycling trades. No more buying the same thing over and over until a villager levels up. Villagers level up by doing their job, and their trades unlock as they do, at fixed prices you can learn.
 
 ## It runs without you
 
