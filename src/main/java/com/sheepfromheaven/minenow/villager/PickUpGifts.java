@@ -14,28 +14,48 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 
-/** A villager that has no tool of its trade picks one up when a player throws it nearby. */
-public class PickUpGiftedTool extends Behavior<Villager> {
+/**
+ * A villager walks over to something it needs that lies nearby, as a player would throw it: a tool of its trade when it
+ * has none, or a supply of its trade it holds less than one batch of (a farmer's first seeds), taking up to the
+ * supply's {@code max}. Vanilla only walks to wanted items when nothing else sets its walk target, which a working
+ * villager's own behaviours almost always do. Only items it can see; a missing tool comes first. Items that belong to
+ * another villager ({@link Belongings}) are left alone.
+ */
+public class PickUpGifts extends Behavior<Villager> {
     private static final int SEARCH_RADIUS = 10;
     private static final float SPEED = 0.6F;
 
     private @Nullable ItemEntity target;
     private long nextSearch;
 
-    public PickUpGiftedTool() {
+    public PickUpGifts() {
         super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.REGISTERED), 300);
     }
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
-        if (level.getGameTime() < nextSearch || TradeTable.forVillager(body).isEmpty() || hasTool(body)) return false;
+        if (level.getGameTime() < nextSearch || TradeTable.forVillager(body).isEmpty()) return false;
         nextSearch = level.getGameTime() + 20;
         target = level.getEntitiesOfClass(ItemEntity.class, body.getBoundingBox().inflate(SEARCH_RADIUS),
-                        item -> item.isAlive() && !item.hasPickUpDelay() && Unloading.isTool(body, item.getItem()))
+                        item -> item.isAlive() && !item.hasPickUpDelay() && (item.getTarget() == null || item.getTarget().equals(body.getUUID()))
+                                && wanted(level, body, item.getItem()) > 0 && body.hasLineOfSight(item))
                 .stream()
-                .min(Comparator.comparingDouble(body::distanceToSqr))
+                .min(Comparator.<ItemEntity>comparingInt(item -> Unloading.isTool(body, item.getItem()) ? 0 : 1).thenComparingDouble(body::distanceToSqr))
                 .orElse(null);
         return target != null;
+    }
+
+    /** How many of it the villager would take: one tool when it has none, a supply up to its {@code max} when short of a batch. */
+    static int wanted(ServerLevel level, Villager body, ItemStack stack) {
+        if (Unloading.isTool(body, stack)) return hasTool(body) ? 0 : 1;
+        return TradeTable.forVillager(body).flatMap(table -> table.suppliesWanted(level, body).stream()
+                        .filter(supply -> stack.is(supply.item()))
+                        .findFirst())
+                .map(supply -> {
+                    int held = Economy.count(level, body, supply.item());
+                    return held < supply.price().count() ? supply.max() - held : 0;
+                })
+                .orElse(0);
     }
 
     @Override
@@ -45,7 +65,7 @@ public class PickUpGiftedTool extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return target != null && target.isAlive() && !hasTool(body);
+        return target != null && target.isAlive() && wanted(level, body, target.getItem()) > 0;
     }
 
     @Override
@@ -54,11 +74,12 @@ public class PickUpGiftedTool extends Behavior<Villager> {
             if (!walkingToTarget(body)) start(level, body, timestamp);
             return;
         }
-        ItemStack hoe = target.getItem().split(1);
-        ItemStack rest = body.getInventory().addItem(hoe);
+        int taking = Math.min(target.getItem().getCount(), wanted(level, body, target.getItem()));
+        ItemStack taken = target.getItem().split(taking);
+        ItemStack rest = body.getInventory().addItem(taken);
         if (!rest.isEmpty()) target.getItem().grow(rest.getCount());
+        body.take(target, taking - rest.getCount());
         if (target.getItem().isEmpty()) target.discard();
-        body.take(target, 1);
     }
 
     private boolean walkingToTarget(Villager body) {

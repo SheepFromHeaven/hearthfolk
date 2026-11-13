@@ -68,7 +68,7 @@ public final class Alarms {
         for (Villages.Village village : Villages.all(level)) {
             for (BlockPos bell : village.bells()) {
                 if (!level.isLoaded(bell)) continue;
-                if (level.getBlockEntity(bell) instanceof BellBlockEntity ringing && ringing.shaking && ringing.ticks < POLL) ring(level, village, bell);
+                if (level.getBlockEntity(bell) instanceof BellBlockEntity ringing && ringing.shaking && ringing.ticks <= POLL) ring(level, village, bell);
                 Raid raid = level.getRaidAt(bell);
                 if (raid != null && raid.isActive() && !raid.isOver() && village.contains(raid.getCenter())) {
                     Alarm alarm = raise(level, village, raid.getCenter());

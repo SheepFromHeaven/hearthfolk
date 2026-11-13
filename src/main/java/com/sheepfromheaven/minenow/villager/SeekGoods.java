@@ -102,7 +102,7 @@ public class SeekGoods extends Behavior<Villager> {
 
     /** Picking up a thrown tool, buying, eating or gathering its belongings walk elsewhere and come first. */
     private static boolean busyElsewhere(Villager body) {
-        return body.getBrain().getRunningBehaviors().stream().anyMatch(behavior -> behavior instanceof PickUpGiftedTool
+        return body.getBrain().getRunningBehaviors().stream().anyMatch(behavior -> behavior instanceof PickUpGifts
                 || behavior instanceof BuyFromVillagers || behavior instanceof EatMeals || behavior instanceof Belongings.Gather);
     }
 

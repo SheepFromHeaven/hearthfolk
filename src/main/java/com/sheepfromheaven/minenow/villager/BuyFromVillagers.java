@@ -90,7 +90,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager buyer) {
         boolean announced = Exports.lastAnnounced > lastChecked;
-        if ((level.getGameTime() < nextStartAllowed && !announced) || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping()) return false;
+        if ((level.getGameTime() < nextStartAllowed && !announced) || buyer.isBaby() || buyer.isTrading() || buyer.isSleeping() || pickingUp(buyer)) return false;
         lastChecked = level.getGameTime();
         nextStartAllowed = level.getGameTime() + RETRY_DELAY;
         repayDebts(level, buyer);
@@ -115,7 +115,12 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager buyer, long timestamp) {
-        return (deal != null || visit != null || merchantDeal != null) && partner().isAlive() && !buyer.isTrading() && timestamp < giveUpAt;
+        return (deal != null || visit != null || merchantDeal != null) && partner().isAlive() && !buyer.isTrading() && timestamp < giveUpAt && !pickingUp(buyer);
+    }
+
+    /** Something it needs lies right here ({@link PickUpGifts}); that comes before a walk to a seller. */
+    private static boolean pickingUp(Villager buyer) {
+        return buyer.getBrain().getRunningBehaviors().stream().anyMatch(behavior -> behavior instanceof PickUpGifts);
     }
 
     @Override
@@ -198,7 +203,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         java.util.List<WanderingTrader> merchants = java.util.stream.Stream.concat(Exports.marketsOf(level, buyer).stream(), Exports.merchantsNear(level, buyer, SEARCH_RANGE).stream())
                 .distinct().toList();
         if (merchants.isEmpty()) return Optional.empty();
-        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+        for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             int held = Economy.count(level, buyer, supply.item());
             if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
             int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
@@ -223,7 +228,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         java.util.List<Villager> sellers = null;
         int worth = 0;
         int spent = 0;
-        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+        for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             int held = Economy.count(level, buyer, supply.item());
             Price price = Exports.waresPrice(supply.item());
             if (price == null || held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
@@ -287,7 +292,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (table.isEmpty() || !shopsForWork(buyer)) return gear(level, buyer);
         Optional<Deal> tool = toolDeal(level, buyer, table.get());
         if (tool.isPresent()) return tool;
-        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+        for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             int held = Economy.count(level, buyer, supply.item());
             if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
             int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
@@ -314,7 +319,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (table.isEmpty() || buyer.isBaby()) return java.util.List.of();
         java.util.List<Villager> sellers = null;
         java.util.List<Need> found = new java.util.ArrayList<>();
-        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+        for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             int held = Economy.count(level, buyer, supply.item());
             if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
             int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
@@ -456,7 +461,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> upgrade = upgradeDeal(level, buyer, table.get(), room, true);
             if (upgrade.isPresent()) return upgrade;
         }
-        for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+        for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             if (Economy.count(level, buyer, supply.item()) >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
             Optional<Deal> lot = sellers(level, buyer).stream()
                     .flatMap(seller -> TradeTable.forVillager(seller).flatMap(sellerTable -> sellerTable.sellPrice(supply.item(), seller.getVillagerData().level()))
@@ -602,7 +607,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isPresent() && shopsForWork(buyer)) {
             int budget = Economy.spendable(level, buyer);
-            for (TradeTable.Supply supply : table.get().suppliesUpTo(buyer.getVillagerData().level())) {
+            for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
                 if (Economy.count(level, buyer, supply.item()) >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
                 Optional<Visit> order = makers.stream()
                         .flatMap(maker -> TradeTable.forVillager(maker).flatMap(makerTable -> makerTable.sellPrice(supply.item(), maker.getVillagerData().level()))

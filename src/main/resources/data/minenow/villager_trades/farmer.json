@@ -62,7 +62,7 @@
     {
       "item": "minecraft:wheat_seeds",
       "level": 1,
-      "price": 0.0125
+      "price": 0.03125
     },
     {
       "item": "minecraft:pumpkin",
@@ -76,6 +76,30 @@
     }
   ],
   "supplies": [
+    {
+      "item": "minecraft:wheat_seeds",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:beetroot_seeds",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:potato",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
+    {
+      "item": "minecraft:carrot",
+      "price": 0.0625,
+      "max": 16,
+      "level": 1
+    },
     {
       "item": "minecraft:bone_meal",
       "price": 0.125,

@@ -223,6 +223,11 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
                 .toList();
     }
 
+    /** The supplies the villager would buy or pick up now: unlocked at its level and needed ({@link SupplyNeeds}). */
+    public List<Supply> suppliesWanted(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.npc.villager.Villager villager) {
+        return suppliesUpTo(villager.getVillagerData().level()).stream().filter(supply -> SupplyNeeds.needed(level, villager, supply.item())).toList();
+    }
+
     public List<Supply> suppliesUpTo(int level) {
         return supplies.stream().filter(supply -> supply.level() <= level).toList();
     }

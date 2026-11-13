@@ -219,15 +219,53 @@ public final class FarmerTradeTests {
         helper.succeed();
     }
 
-    public static void farmerWithNothingToTradeShakesItsHead(GameTestHelper helper) {
+    public static void aSeedlessFarmerOffersToBuySeeds(GameTestHelper helper) {
+        Villager farmer = spawnFarmer(helper);
+        for (int x = 3; x <= 7; x++) {
+            for (int z = 5; z <= 8; z++) helper.setBlock(new BlockPos(x, 0, z), x == 5 && z == 7 ? Blocks.WATER : Blocks.FARMLAND);
+        }
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        ServerPlayer player = player(helper);
+
+        openTrades(player, farmer);
+        Optional<MerchantOffer> buySeeds = offerFor(farmer, Items.WHEAT_SEEDS);
+        helper.assertTrue(buySeeds.isPresent() && buySeeds.get().getResult().is(Items.EMERALD), "A farmer with nothing to plant and farmland waiting offers to buy seeds, offers: " + describe(farmer));
+        helper.assertTrue(offerFor(farmer, Items.POTATO).isPresent() && offerFor(farmer, Items.CARROT).isPresent() && offerFor(farmer, Items.BEETROOT_SEEDS).isPresent(),
+                "...and potatoes, carrots and beetroot seeds, offers: " + describe(farmer));
+        int count = buySeeds.get().getCostA().getCount();
+
+        ItemStack paid = trade(player, new ItemStack(Items.WHEAT_SEEDS, count));
+
+        helper.assertTrue(paid.is(Items.EMERALD), "The player is paid in emeralds, got " + paid);
+        helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) == count, "The farmer now has seeds to plant, " + farmer.getInventory().countItem(Items.WHEAT_SEEDS));
+        helper.succeed();
+    }
+
+    public static void aFarmerSellsSurplusSeedsThirtyTwoToAnEmerald(GameTestHelper helper) {
         Villager farmer = spawnFarmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
-        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 32));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
         ServerPlayer player = player(helper);
 
         openTrades(player, farmer);
 
-        helper.assertTrue(farmer.getOffers().isEmpty(), "A farmer with a hoe and no crops has nothing to trade, offers: " + describe(farmer));
+        Optional<MerchantOffer> seeds = offerSelling(farmer, Items.WHEAT_SEEDS);
+        helper.assertTrue(seeds.isPresent() && seeds.get().getResult().getCount() == 32 && seeds.get().getCostA().getCount() == 1,
+                "Surplus seeds sell 32 to an emerald, offers: " + describe(farmer));
+        helper.succeed();
+    }
+
+    public static void farmerWithNothingToTradeShakesItsHead(GameTestHelper helper) {
+        Villager farmer = spawnFarmer(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
+        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 32));
+        for (var seed : new net.minecraft.world.item.Item[]{Items.WHEAT_SEEDS, Items.BEETROOT_SEEDS, Items.POTATO, Items.CARROT}) farmer.getInventory().addItem(new ItemStack(seed, 16));
+        ServerPlayer player = player(helper);
+
+        openTrades(player, farmer);
+
+        helper.assertTrue(farmer.getOffers().isEmpty(), "A farmer with a hoe and seeds to plant but no crops has nothing to trade, offers: " + describe(farmer));
         helper.assertTrue(!(player.containerMenu instanceof MerchantMenu), "No trade screen should open");
         helper.succeed();
     }

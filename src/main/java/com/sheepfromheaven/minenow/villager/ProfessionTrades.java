@@ -130,7 +130,7 @@ public final class ProfessionTrades {
             }
         }
         int purse = Economy.spendable(level, villager);
-        for (TradeTable.Supply supply : table.suppliesUpTo(villagerLevel)) {
+        for (TradeTable.Supply supply : table.suppliesWanted(level, villager)) {
             int room = (supply.max() - Economy.count(level, villager, supply.item())) / supply.price().count();
             int trades = Math.min(room, purse / supply.price().emeralds());
             if (trades > 0) {

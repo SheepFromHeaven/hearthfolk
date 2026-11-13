@@ -203,6 +203,9 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "farmer_holds_its_hoe_while_working_with_a_player_watching", FarmerTests::farmerHoldsItsHoeWhileWorkingWithAPlayerWatching);
             test(helper, TestGroup.FARMER, "harvesting_wears_out_the_hoe", FarmerTests::harvestingWearsOutTheHoe);
             test(helper, TestGroup.FARMER, "farmer_picks_up_a_hoe_thrown_to_it", FarmerTests::farmerPicksUpAHoeThrownToIt);
+            test(helper, TestGroup.FARMER, "a_farmer_without_seeds_picks_up_seeds_a_player_throws", FarmerTests::aFarmerWithoutSeedsPicksUpSeedsAPlayerThrows);
+            test(helper, TestGroup.FARMER, "a_farmer_without_seeds_picks_up_carrots_a_player_throws", FarmerTests::aFarmerWithoutSeedsPicksUpCarrotsAPlayerThrows);
+            test(helper, TestGroup.FARMER, "a_farmer_without_seeds_picks_up_potatoes_a_player_throws", FarmerTests::aFarmerWithoutSeedsPicksUpPotatoesAPlayerThrows);
             test(helper, TestGroup.FARMER, "farmer_fetches_a_spare_hoe_from_its_home_chest", FarmerTests::farmerFetchesASpareHoeFromItsHomeChest);
             test(helper, TestGroup.TRADING, "hoeless_farmer_offers_to_buy_an_undamaged_hoe", FarmerTradeTests::hoelessFarmerOffersToBuyAnUndamagedHoe);
             test(helper, TestGroup.VILLAGERS, "work_experience_levels_a_villager_up", com.sheepfromheaven.minenow.villager.WorkXpTests::workExperienceLevelsAVillagerUp);
@@ -215,6 +218,8 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "villager_without_a_tool_keeps_its_food_money", com.sheepfromheaven.minenow.villager.EconomyTests::villagerWithoutAToolKeepsItsFoodMoney);
             test(helper, TestGroup.TRADING, "selling_a_hoe_to_a_farmer_moves_real_items", FarmerTradeTests::sellingAHoeToAFarmerMovesRealItems);
             test(helper, TestGroup.TRADING, "farmer_sells_crops_from_its_inventory_and_chest", FarmerTradeTests::farmerSellsCropsFromItsInventoryAndChest);
+            test(helper, TestGroup.TRADING, "a_seedless_farmer_offers_to_buy_seeds", FarmerTradeTests::aSeedlessFarmerOffersToBuySeeds);
+            test(helper, TestGroup.TRADING, "a_farmer_sells_surplus_seeds_thirty_two_to_an_emerald", FarmerTradeTests::aFarmerSellsSurplusSeedsThirtyTwoToAnEmerald);
             test(helper, TestGroup.TRADING, "farmer_with_nothing_to_trade_shakes_its_head", FarmerTradeTests::farmerWithNothingToTradeShakesItsHead);
             test(helper, TestGroup.TRADING, "novice_farmer_only_buys_wooden_hoes", FarmerTradeTests::noviceFarmerOnlyBuysWoodenHoes);
             test(helper, TestGroup.TRADING, "journeyman_farmer_buys_up_to_iron_hoes", FarmerTradeTests::journeymanFarmerBuysUpToIronHoes);
