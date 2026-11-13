@@ -1,4 +1,6 @@
-# MineNow
+# Hearthfolk
+
+Player-facing name Hearthfolk (renamed from MineNow). The mod id, packages, config file (`minenow-local.toml`) and data namespace stay `minenow`, so renaming never breaks worlds.
 
 NeoForge 26.3 mod (NeoForge `26.3.0.101`, mod loader plugin `net.neoforged.moddev`). Group/mod id: `com.sheepfromheaven.minenow`. Java 25.
 
