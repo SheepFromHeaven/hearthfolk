@@ -495,6 +495,42 @@ public final class FarmerTests {
         });
     }
 
+    public static void aFarmerWithoutSeedsPicksUpSeedsAPlayerThrows(GameTestHelper helper) {
+        picksUpAndPlants(helper, Items.WHEAT_SEEDS, Blocks.WHEAT);
+    }
+
+    public static void aFarmerWithoutSeedsPicksUpCarrotsAPlayerThrows(GameTestHelper helper) {
+        picksUpAndPlants(helper, Items.CARROT, Blocks.CARROTS);
+    }
+
+    public static void aFarmerWithoutSeedsPicksUpPotatoesAPlayerThrows(GameTestHelper helper) {
+        picksUpAndPlants(helper, Items.POTATO, Blocks.POTATOES);
+    }
+
+    private static void picksUpAndPlants(GameTestHelper helper, net.minecraft.world.item.Item thrown, net.minecraft.world.level.block.Block crop) {
+        setUpFarm(helper, false);
+        for (int x = FIELD_MIN; x <= FIELD_MAX; x++) {
+            for (int z = FIELD_MIN; z <= FIELD_MAX; z++) helper.setBlock(x, 1, z, Blocks.AIR);
+        }
+        spawnFarmer(helper);
+        @SuppressWarnings("removal") var player = helper.makeMockServerPlayerInLevel();
+        helper.runAfterDelay(20, () -> {
+            BlockPos at = helper.absolutePos(COMPOSTER.west(8));
+            var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), at.getX() + 0.5, at.getY(), at.getZ() + 0.5, new ItemStack(thrown, 8));
+            item.setThrower(player);
+            item.setPickUpDelay(40);
+            helper.getLevel().addFreshEntity(item);
+        });
+
+        helper.succeedWhen(() -> {
+            boolean planted = false;
+            for (int x = FIELD_MIN; x <= FIELD_MAX && !planted; x++) {
+                for (int z = FIELD_MIN; z <= FIELD_MAX && !planted; z++) planted = helper.getBlockState(new BlockPos(x, 1, z)).is(crop);
+            }
+            helper.assertTrue(planted, "A farmer with nothing to plant picks up the " + thrown + " a player throws and plants them");
+        });
+    }
+
     public static void farmerFetchesASpareHoeFromItsHomeChest(GameTestHelper helper) {
         setUpFarm(helper, false);
         helper.setBlock(HOME_CHEST, Blocks.CHEST);

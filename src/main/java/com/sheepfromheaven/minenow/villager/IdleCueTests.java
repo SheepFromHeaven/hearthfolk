@@ -69,6 +69,7 @@ public final class IdleCueTests {
     public static void aWorkerWithoutItsToolSeeksOutANearbyPlayer(GameTestHelper helper) {
         Villager farmer = farmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 16));
         @SuppressWarnings("removal")
         net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
         BlockPos at = helper.absolutePos(new BlockPos(4, 1, 4));
@@ -86,6 +87,7 @@ public final class IdleCueTests {
     public static void aSeekingWorkerPicksUpAToolThrownToIt(GameTestHelper helper) {
         Villager farmer = farmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 16));
         @SuppressWarnings("removal")
         net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
         BlockPos at = helper.absolutePos(new BlockPos(4, 1, 4));

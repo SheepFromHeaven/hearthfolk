@@ -18,10 +18,20 @@ import java.util.Optional;
 public final class FarmerReport {
     private FarmerReport() {}
 
+    /** Nothing to plant and ground in its field waiting for it: only then does a farmer buy or pick up seeds. */
+    static boolean needsSeeds(ServerLevel level, Villager farmer) {
+        if (com.sheepfromheaven.minenow.villager.Economy.items(level, farmer).stream().anyMatch(item -> Crops.isSeed(new net.minecraft.world.item.ItemStack(item)))) return false;
+        return farmer.getBrain().getMemory(MemoryModuleType.JOB_SITE)
+                .filter(site -> site.dimension() == level.dimension())
+                .map(site -> Field.ground(level, site.pos(), Field.radiusFor(farmer.getVillagerData().level())).stream().anyMatch(ground -> level.getBlockState(ground.above()).isAir()))
+                .orElse(false);
+    }
+
     public static void register() {
         IdleReason.addWorkAreaCheck(VillagerProfession.FARMER, (level, farmer) -> farmer.getBrain().getMemory(MemoryModuleType.JOB_SITE)
                 .filter(site -> site.dimension() == level.dimension())
                 .map(site -> Field.ground(level, site.pos(), Field.radiusFor(farmer.getVillagerData().level())).isEmpty()).orElse(false));
+        com.sheepfromheaven.minenow.villager.SupplyNeeds.add(VillagerProfession.FARMER, Crops::isSeed, FarmerReport::needsSeeds);
         IdleReport.addExtra(VillagerProfession.FARMER, (farmer, lines) -> {
             if (farmer.level() instanceof ServerLevel level) lines.add(fieldLine(level, farmer));
         });
