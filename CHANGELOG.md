@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/SheepFromHeaven/mine-now/compare/v0.5.0...v0.5.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **farmer:** first seeds from players, other farmers or thrown to it ([#73](https://github.com/SheepFromHeaven/mine-now/issues/73)) ([54d5bf2](https://github.com/SheepFromHeaven/mine-now/commit/54d5bf2aea8951074a38e4ed4d852d875dedcd04))
+
 ## [0.5.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.4.0...v0.5.0) (2026-11-13)
 
 
