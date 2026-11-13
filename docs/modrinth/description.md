@@ -1,55 +1,29 @@
 # MineNow
 
-Villagers that work the farms and workshops you build.
+Your villagers have been standing around with their arms crossed since the day you found them. Give them a reason.
 
-MineNow adds no custom mob, no town banner and no screens. Vanilla already gives villagers houses (beds), workplaces (workstations), growth (breeding) and schedules. This mod adds behaviour on top, so the villagers you already have farm, mine, craft, trade with each other, fight and travel, and get better at it as they level up. You build the village and the villagers run it.
+Build a farm and the farmer works it. Dig a mine and a miner climbs down into it with a torch. Put up a loom and the shepherd shears the flock, spins the wool into string and sells it to the fletcher, whose arrows end up with the archer on the roof, watching the road for zombies.
 
-## How it works
+No new mob. No menus. No banner to plant. It is the village you build, with the villagers you already have. They finally do something with it.
 
-- **Build a bell and beds.** A village grows out of its bells. Villagers claim a bell, a bed, a workstation and a chest, and the places that belong together become one village.
-- **Give them a workplace.** A composter and a hoe make a farmer, a smoker a butcher, a blast furnace a smelter, and so on. Place the workstation next to what the villager works on.
-- **They work for a living.** Villagers earn experience from work, not only from trading with you, so a village that is busy levels up on its own. They buy their tools and supplies from each other with emeralds, and keep a reserve for food.
-- **They tell you what is wrong.** A villager that cannot work shakes its head. `/minenow villager` shows the nearest one and exactly what is stopping it.
+## It runs without you
 
-## Professions
+Villagers earn emeralds, buy tools from each other, eat twice a day, run out of money, take credit, grow rich and have children. The butcher needs coal and the miner has it. The smelter needs ore. When something is missing, a villager shakes its head at you, and `/minenow villager` tells you exactly why.
 
-Vanilla professions with real work to do:
+## It fights back
 
-- **Farmer** harvests and replants a connected field, and grows pumpkins and melons from journeyman.
-- **Fisherman** casts a rod from the shore. **Shepherd** shears sheep. **Butcher** keeps a herd and smokes meat.
-- **Toolsmith, armorer, weaponsmith and fletcher** craft tools, armor, swords, bows and arrows, and sell them to players and villagers. Armorers dress armor stands, fletchers practise archery.
-- **Cleric** brews potions at a real brewing stand and heals villagers.
-- **Mason** cuts stone and paves the dirt paths you made when redstone powers its stonecutter.
-- **Leatherworker** makes leather goods and renewable dyes. **Librarian** makes paper, books and enchanted books. **Cartographer** draws a map of its village.
+Ring the bell and the armed villagers muster. Swordsmen hold the gate, archers take the high ground you gave them, a cleric throws potions, and a golemsmith slowly builds an iron golem, one block at a time.
 
-New professions:
+## It reaches out
 
-- **Miner** digs a mine inside a cobblestone rim you mark, with ladders, torches and platforms. Its job site is a furnace minecart parked off the rails.
-- **Forester** fells the trees around its nursery (a sapling in a flower pot on a log) and replants them.
-- **Smelter** works the blast furnace and turns ore into ingots.
-- **Golemsmith** repairs iron golems and builds new ones slowly, and sells iron goods.
-- **Merchant** keeps pack mules and takes goods from one village to another on a tour.
+Merchants load their pack mules and walk across the land to the next village with whatever yours is short of. When your village has something worth buying, a travelling merchant turns up at the bell.
 
-## A living village
+## Who works there
 
-- **Defence.** Villagers buy and wear armor, carry swords and bows, and fight hostiles. A bell sends the armed ones to a post, and archers climb to high ground or to hay bales you mark.
-- **Economy.** Everything has a price in emeralds. Villagers sell what they make and buy what they need, take work on credit when they are broke, and order goods from each other.
-- **Wealth makes children.** A rich villager feeds itself well, which lets vanilla breeding do the rest.
-- **Roads.** Villagers prefer the paths and roads you build, so a street is a real shortcut.
-- **Travelling merchants** visit villages that have export goods, and village merchants carry goods between villages that need each other's trade.
+Miner, forester, smelter, golemsmith and merchant are new. Farmer, fisherman, shepherd, butcher, toolsmith, armorer, weaponsmith, fletcher, cleric, mason, leatherworker, librarian and cartographer finally have real work to do.
 
-## Requirements
+## Good to know
 
-- Minecraft 26.3
-- NeoForge 26.3 or newer
-- Java 25
-
-No other mods are required. Worlds from the old Forge 1.21.11 version of MineNow are not compatible.
-
-## Settings
-
-Per-world switches live in `minenow-local.toml`: villagers summoning iron golems (off by default), travelling merchants (on), ink and quill recipes (off) and the number of merchant tours at once (4). Prices and trades are datapacks you can change.
-
-## Links
+Minecraft 26.3 and NeoForge 26.3 or newer, Java 25, no other mods needed. It is not compatible with worlds from the old Forge 1.21.11 version of MineNow. Prices and trades are data packs, and a few per-world switches live in `minenow-local.toml`.
 
 Source and issues: https://github.com/SheepFromHeaven/mine-now
