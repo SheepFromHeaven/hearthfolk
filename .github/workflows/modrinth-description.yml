@@ -22,7 +22,7 @@ jobs:
           MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
         run: |
           jq -n --rawfile body docs/modrinth/description.md --rawfile summary docs/modrinth/summary.txt \
-            '{body: $body, description: ($summary | rtrimstr("\n"))}' > payload.json
+            '{title: "Hearthfolk", body: $body, description: ($summary | rtrimstr("\n"))}' > payload.json
           curl --fail-with-body -sS -X PATCH "https://api.modrinth.com/v2/project/${MODRINTH_PROJECT_ID}" \
             -H "Authorization: ${MODRINTH_TOKEN}" \
             -H "User-Agent: mine-now-ci" \

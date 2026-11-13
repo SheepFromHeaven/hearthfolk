@@ -1,4 +1,4 @@
-# MineNow
+# Hearthfolk
 
 Your villagers have been standing around with their arms crossed since the day you found them. Give them a reason.
 
@@ -28,6 +28,6 @@ Miner, forester, smelter, golemsmith and merchant are new. Farmer, fisherman, sh
 
 ## Good to know
 
-Minecraft 26.3 and NeoForge 26.3 or newer, Java 25, no other mods needed. It is not compatible with worlds from the old Forge 1.21.11 version of MineNow. Prices and trades are data packs, and a few per-world switches live in `minenow-local.toml`.
+Minecraft 26.3 and NeoForge 26.3 or newer, Java 25, no other mods needed. It is not compatible with worlds from the old Forge 1.21.11 version, which was called MineNow. Prices and trades are data packs, and a few per-world switches live in `minenow-local.toml`.
 
 Source and issues: https://github.com/SheepFromHeaven/mine-now

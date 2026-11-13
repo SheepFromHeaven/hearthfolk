@@ -5,7 +5,7 @@ license="All Rights Reserved"
 [[mods]]
 modId="minenow"
 version="0.5.0" # x-release-please-version
-displayName="MineNow"
+displayName="Hearthfolk"
 authors="Marc Emmanuel"
 description='''Villagers that work the farms and workshops you build.'''
 
