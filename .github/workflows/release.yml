@@ -53,8 +53,8 @@ jobs:
           modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: build/libs/*.jar
-          loaders: forge
-          game-versions: 1.21.11
+          loaders: neoforge
+          game-versions: 26.3
           version: ${{ needs.release-please.outputs.tag_name }}
           version-type: release
           changelog-file: CHANGELOG.md
