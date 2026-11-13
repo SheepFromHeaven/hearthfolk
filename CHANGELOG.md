@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.5.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.4.0...v0.5.0) (2026-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* worlds using the old blocks, items and inhabitants lose them.
+
+### Features
+
+* **cartographer:** the cartographer draws a map of its village ([#66](https://github.com/SheepFromHeaven/mine-now/issues/66)) ([6045507](https://github.com/SheepFromHeaven/mine-now/commit/60455071b69ce6792ede7e170a8fb298f1237eb6))
+* **cleric:** the cleric brews potions at its real brewing stand and sells them ([#64](https://github.com/SheepFromHeaven/mine-now/issues/64)) ([5398656](https://github.com/SheepFromHeaven/mine-now/commit/5398656d81015f8c70b1d11ab26edf65a8207dd6))
+* **defence:** villagers buy and wear armor, carry swords and bows, and fight hostiles ([#54](https://github.com/SheepFromHeaven/mine-now/issues/54)) ([03b93b4](https://github.com/SheepFromHeaven/mine-now/commit/03b93b44b9733b0be8db31399aa3252c66896686))
+* **defence:** villagers muster at the bell, archers hold high ground, sight depends on height and light ([#57](https://github.com/SheepFromHeaven/mine-now/issues/57)) ([8aee60e](https://github.com/SheepFromHeaven/mine-now/commit/8aee60ebe75a80ce766f52ed38888226d5c35b54))
+* **dev:** add gametest playground world with barrier-bounded test spaces ([99bafbf](https://github.com/SheepFromHeaven/mine-now/commit/99bafbfa7e09fe19bc55ac76b32723548eba844b))
+* **dev:** use the normal overworld preset for the playtest world ([9ab106a](https://github.com/SheepFromHeaven/mine-now/commit/9ab106a921e8241c2ddbc8173e93da103ae4c285))
+* **dominion:** add banner design tab with apply-from-slot flow ([#40](https://github.com/SheepFromHeaven/mine-now/issues/40)) ([334f952](https://github.com/SheepFromHeaven/mine-now/commit/334f952140cd7256e197e1940b51242b28a5f4af))
+* **dominion:** craft the dominion banner from a bell and add an optional bell recipe ([#46](https://github.com/SheepFromHeaven/mine-now/issues/46)) ([86dfe13](https://github.com/SheepFromHeaven/mine-now/commit/86dfe131e8c6b1921d902a3e286a39cbf58ab885))
+* **economy:** village soak run and the fixes it found ([#59](https://github.com/SheepFromHeaven/mine-now/issues/59)) ([dc9e9c2](https://github.com/SheepFromHeaven/mine-now/commit/dc9e9c22bd42b08427c6d119e6356899c5d5d13c))
+* **economy:** villager reserve and a travelling merchant that exports surplus goods ([#53](https://github.com/SheepFromHeaven/mine-now/issues/53)) ([c2f5c04](https://github.com/SheepFromHeaven/mine-now/commit/c2f5c046290077d1b6e7fb5a44a77afff35efb98))
+* **farmer:** farmers grow and harvest pumpkins and melons ([#62](https://github.com/SheepFromHeaven/mine-now/issues/62)) ([b9847a1](https://github.com/SheepFromHeaven/mine-now/commit/b9847a1b7b4fe6d7237e151de3b7d97dec4f4083))
+* **golemsmith:** golemsmith profession, slowly built village golems, config switches ([#58](https://github.com/SheepFromHeaven/mine-now/issues/58)) ([45365b1](https://github.com/SheepFromHeaven/mine-now/commit/45365b1aaf0c39b2af85f2fd76dcffa1085660e1))
+* **leatherworker:** leather goods, renewable dyes, tanning racks and armor displays ([#51](https://github.com/SheepFromHeaven/mine-now/issues/51)) ([9c8bcec](https://github.com/SheepFromHeaven/mine-now/commit/9c8bcec0932967ac4310f38682adc1794f9d3c45))
+* **librarian:** the librarian makes paper, books and enchanted books at its lectern and sells them ([#65](https://github.com/SheepFromHeaven/mine-now/issues/65)) ([3fd4d9e](https://github.com/SheepFromHeaven/mine-now/commit/3fd4d9e721d79a8524f6a62e3b6233b73f9abaf9))
+* **mason:** stonecutting and road paving for the mason ([#50](https://github.com/SheepFromHeaven/mine-now/issues/50)) ([f55b24f](https://github.com/SheepFromHeaven/mine-now/commit/f55b24fab1d41521316c4829e9a3d7aa62ebb8b8))
+* **merchant:** merchants carry goods between villages on pack mules ([#68](https://github.com/SheepFromHeaven/mine-now/issues/68)) ([04b456d](https://github.com/SheepFromHeaven/mine-now/commit/04b456dcd9306a067dd1e0b4d83c3a56438d0400))
+* **mine:** let miners tunnel at player-placed mine claims ([#44](https://github.com/SheepFromHeaven/mine-now/issues/44)) ([f3273de](https://github.com/SheepFromHeaven/mine-now/commit/f3273dea4c91ea06010f786cde6c6f1266f542ba))
+* **miner:** navigable tunnels, realistic mining and pickaxe requirement ([#48](https://github.com/SheepFromHeaven/mine-now/issues/48)) ([2d803e9](https://github.com/SheepFromHeaven/mine-now/commit/2d803e9c72234dbe703be8c8d5b646c094d5e6e1))
+* rebuild MineNow on vanilla villagers for Minecraft 26.3 ([#49](https://github.com/SheepFromHeaven/mine-now/issues/49)) ([26e54c3](https://github.com/SheepFromHeaven/mine-now/commit/26e54c3c42928f54c1678ee6c11a72e10ee01b93))
+* **structure:** effect-driven territory and marker work-conditions ([#45](https://github.com/SheepFromHeaven/mine-now/issues/45)) ([b8074e9](https://github.com/SheepFromHeaven/mine-now/commit/b8074e9e9fbde315a6f6a4e7e71c5b402ea4df6b))
+* **structure:** register field marker item and crafting recipe ([#43](https://github.com/SheepFromHeaven/mine-now/issues/43)) ([1eab2e4](https://github.com/SheepFromHeaven/mine-now/commit/1eab2e4a68c11c2b3b6cf621e3312f447201e934))
+* **villager:** diagnose missing work area and fuel shortages ([#67](https://github.com/SheepFromHeaven/mine-now/issues/67)) ([a906cd1](https://github.com/SheepFromHeaven/mine-now/commit/a906cd1c2f77fff4f51f34a9166ccae3aef0c4b6))
+* **villager:** show why a villager isn't working, for every profession ([#55](https://github.com/SheepFromHeaven/mine-now/issues/55)) ([faf2f3d](https://github.com/SheepFromHeaven/mine-now/commit/faf2f3ddb9e40d843630a9487047eabae09ae96f))
+* **villager:** villagers buy their supplies from the travelling merchant ([#63](https://github.com/SheepFromHeaven/mine-now/issues/63)) ([4b7a335](https://github.com/SheepFromHeaven/mine-now/commit/4b7a3357b2f3d7ab328743ae5263ebca0a5796fb))
+* **villager:** villagers level up through their work ([#56](https://github.com/SheepFromHeaven/mine-now/issues/56)) ([cd57118](https://github.com/SheepFromHeaven/mine-now/commit/cd5711892839876080de86b47003d69a1830e710))
+* **village:** villages grow out of bells; trade, job sites and the alarm span the whole village ([#60](https://github.com/SheepFromHeaven/mine-now/issues/60)) ([cec4d82](https://github.com/SheepFromHeaven/mine-now/commit/cec4d827134f6869ed0e0a9753e26b23c365ff1f))
+* **weaponsmith:** swords at the grindstone, restores worn blades, hangs its best swords; wall displays shared with the leatherworker ([#52](https://github.com/SheepFromHeaven/mine-now/issues/52)) ([b73b1f5](https://github.com/SheepFromHeaven/mine-now/commit/b73b1f5cfaf935a8774618a458a4209fda5a51eb))
+
+
+### Bug Fixes
+
+* **forester:** plant one sapling per attempt, stay out for the whole trip, and space out plantings ([4794547](https://github.com/SheepFromHeaven/mine-now/commit/4794547151ac56a7f5b01d3f306612533926bc14))
+* **inhabitant:** persist carried inventory across save/load ([c9b7f0f](https://github.com/SheepFromHeaven/mine-now/commit/c9b7f0f0438c2d0b9aaf083c768b84e33cc52ebd))
+* **miner:** require a proper tool to break stone and never break bedrock ([315f6a4](https://github.com/SheepFromHeaven/mine-now/commit/315f6a42a5a9259bb55b397f7dde46d0cb5f924e))
+* **structure:** upgrade stale structure-level configs on version bump ([73d396b](https://github.com/SheepFromHeaven/mine-now/commit/73d396b67491bd44110acbb0f91a2808352d2b68))
+
+
+### Performance Improvements
+
+* **soak:** forester stops searching the whole neighbourhood, soak runs 15% faster ([#61](https://github.com/SheepFromHeaven/mine-now/issues/61)) ([3e0b466](https://github.com/SheepFromHeaven/mine-now/commit/3e0b46644c5e410913582509d7c5ca5742b368bf))
+
 ## [0.4.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.3.0...v0.4.0) (2026-08-09)
 
 
