@@ -1,7 +1,7 @@
 {
   "type": "minecraft:function",
   "environment": "minecraft:default",
-  "function": "minenow:fisherman_unloads_its_catch_at_home",
+  "function": "minenow:a_villager_keeps_its_goods_in_a_barrel_when_there_is_no_chest",
   "structure": "minenow:field_24x6x24",
-  "max_ticks": 4800
+  "max_ticks": 400
 }

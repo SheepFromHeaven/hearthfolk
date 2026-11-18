@@ -16,8 +16,10 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.LockCode;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -42,8 +44,21 @@ public final class HomeStorage {
 
     private HomeStorage() {}
 
+    /** A chest (our own point of interest) or a barrel (vanilla's fisherman workplace, every barrel is one). */
     public static boolean isStoragePoi(Holder<PoiType> type) {
+        return isChestPoi(type) || isBarrelPoi(type);
+    }
+
+    static boolean isChestPoi(Holder<PoiType> type) {
         return type.value() == ModVillagers.HOME_STORAGE.get();
+    }
+
+    static boolean isBarrelPoi(Holder<PoiType> type) {
+        return type.is(PoiTypes.FISHERMAN);
+    }
+
+    public static boolean isStorageBlock(BlockState state) {
+        return state.getBlock() instanceof ChestBlock || state.getBlock() instanceof BarrelBlock;
     }
 
     public static Optional<GlobalPos> storageOf(Villager villager) {
@@ -55,13 +70,15 @@ public final class HomeStorage {
     }
 
     public static Optional<Component> ownerMessage(ServerLevel level, BlockPos chest) {
-        return ownerOf(level, chest).map(owner ->
-                Component.translatableWithFallback("minenow.chest.owned_by", "This chest belongs to %s", owner.getDisplayName()));
+        boolean barrel = level.getBlockState(chest).getBlock() instanceof BarrelBlock;
+        return ownerOf(level, chest).map(owner -> barrel
+                ? Component.translatableWithFallback("minenow.barrel.owned_by", "This barrel belongs to %s", owner.getDisplayName())
+                : Component.translatableWithFallback("minenow.chest.owned_by", "This chest belongs to %s", owner.getDisplayName()));
     }
 
     /** Replaces vanilla's "Chest is locked!" with who owns it. */
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        if (!(event.getLevel() instanceof ServerLevel level) || !(level.getBlockState(event.getPos()).getBlock() instanceof ChestBlock)) return;
+        if (!(event.getLevel() instanceof ServerLevel level) || !isStorageBlock(level.getBlockState(event.getPos()))) return;
         if (!(level.getBlockEntity(event.getPos()) instanceof BaseContainerBlockEntity container) || container.canOpen(event.getEntity())) return;
         ownerMessage(level, event.getPos()).ifPresent(message -> {
             event.getEntity().sendOverlayMessage(message);
@@ -109,7 +126,7 @@ public final class HomeStorage {
     }
 
     public static void onBreak(BreakBlockEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel level) || !(event.getState().getBlock() instanceof ChestBlock)) return;
+        if (!(event.getLevel() instanceof ServerLevel level) || !isStorageBlock(event.getState())) return;
         for (Villager owner : level.getEntitiesOfClass(Villager.class, new AABB(event.getPos()).inflate(OWNER_SEARCH_RADIUS),
                 villager -> Workshop.isWorkshopChest(level, villager, event.getPos()))) {
             Workshop.broken(level, owner, event.getPos());
@@ -140,9 +157,12 @@ public final class HomeStorage {
                 && level.getPoiManager().exists(chest, HomeStorage::isStoragePoi);
     }
 
+    /** A chest first; a barrel only when no chest is free, so a barrel meant for a fisherman isn't taken while a chest would do. */
     private static void claim(ServerLevel level, Villager villager, BlockPos home) {
         PoiManager pois = level.getPoiManager();
-        pois.take(HomeStorage::isStoragePoi, (type, pos) -> otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos), home, RADIUS).ifPresent(chest -> {
+        pois.take(HomeStorage::isChestPoi, (type, pos) -> otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos), home, RADIUS)
+                .or(() -> pois.take(HomeStorage::isBarrelPoi, (type, pos) -> !StorageTheft.hasHopperBelow(level, pos), home, RADIUS))
+                .ifPresent(chest -> {
             takeAllHalves(level, chest);
             villager.setData(ModVillagers.STORAGE, GlobalPos.of(level.dimension(), chest));
         });
@@ -176,15 +196,23 @@ public final class HomeStorage {
     static void releaseChest(ServerLevel level, BlockPos chest) {
         StorageTheft.forget(level, chest);
         PoiManager pois = level.getPoiManager();
+        boolean someonesWorkplace = heldAsJobSite(level, chest);
         for (BlockPos half : halves(level, chest)) {
-            if (pois.exists(half, HomeStorage::isStoragePoi) && isOccupiedStorage(level, half)) pois.release(half);
-            setLocked(level, half, false);
+            if (!someonesWorkplace && pois.exists(half, HomeStorage::isStoragePoi) && isOccupiedStorage(level, half)) pois.release(half);
+            if (!someonesWorkplace) setLocked(level, half, false);
         }
+    }
+
+    /** A barrel's ticket may be a fisherman's job site rather than storage: that one stays taken and locked. */
+    private static boolean heldAsJobSite(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).getBlock() instanceof BarrelBlock && !level.getEntitiesOfClass(Villager.class, new AABB(pos).inflate(OWNER_SEARCH_RADIUS),
+                villager -> villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(site -> site.dimension() == level.dimension() && site.pos().equals(pos)).isPresent()).isEmpty();
     }
 
     public static @Nullable Container chestContainer(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
-        return state.getBlock() instanceof ChestBlock block ? ChestBlock.getContainer(block, state, level, pos, true) : null;
+        if (state.getBlock() instanceof ChestBlock block) return ChestBlock.getContainer(block, state, level, pos, true);
+        return state.getBlock() instanceof BarrelBlock && level.getBlockEntity(pos) instanceof Container barrel ? barrel : null;
     }
 
     static List<BlockPos> halves(ServerLevel level, BlockPos pos) {
@@ -195,6 +223,10 @@ public final class HomeStorage {
             halves.add(pos.relative(ChestBlock.getConnectedDirection(state)));
         }
         return halves;
+    }
+
+    static void lock(ServerLevel level, BlockPos pos) {
+        setLocked(level, pos, true);
     }
 
     private static void setLocked(ServerLevel level, BlockPos pos, boolean locked) {

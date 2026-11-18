@@ -101,7 +101,7 @@ public final class FishermanTests {
         });
     }
 
-    public static void fishermanUnloadsItsCatchAtHome(GameTestHelper helper) {
+    public static void aFishermanKeepsItsCatchInItsBarrel(GameTestHelper helper) {
         Villager fisherman = spawnFisherman(helper);
         digPool(helper, 7, 10);
         fisherman.getInventory().addItem(new ItemStack(Items.FISHING_ROD));
@@ -111,11 +111,14 @@ public final class FishermanTests {
         GameTestHelpers.giveHome(helper, fisherman, new BlockPos(4, 1, 15));
 
         helper.succeedWhen(() -> {
-            var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
+            helper.assertTrue(com.sheepfromheaven.minenow.villager.Storage.isWorkshopStorage(helper.getLevel(), fisherman, helper.absolutePos(BARREL)), "The fisherman's barrel is its workshop storage");
+            var barrel = helper.getBlockEntity(BARREL, net.minecraft.world.level.block.entity.BarrelBlockEntity.class);
+            helper.assertTrue(!barrel.canOpen(helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL)), "...locked to players");
             int cod = 0;
-            for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(Items.COD)) cod += container.getItem(i).getCount();
-            helper.assertTrue(cod >= 64, "The fisherman should carry its catch to its home chest, chest has " + cod + " cod");
+            for (int i = 0; i < barrel.getContainerSize(); i++) if (barrel.getItem(i).is(Items.COD)) cod += barrel.getItem(i).getCount();
+            helper.assertTrue(cod >= 64, "The fisherman puts its catch in its barrel, it has " + cod + " cod");
             helper.assertTrue(rod(fisherman).is(Items.FISHING_ROD), "It keeps its rod");
+            helper.assertTrue(fisherman.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE).isPresent(), "...and its job");
         });
     }
 

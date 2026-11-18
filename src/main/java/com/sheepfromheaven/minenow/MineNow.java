@@ -230,7 +230,7 @@ public final class MineNow {
             test(helper, TestGroup.FISHERMAN, "fisherman_without_a_rod_catches_nothing", FishermanTests::fishermanWithoutARodCatchesNothing);
             test(helper, TestGroup.FISHERMAN, "fisherman_casts_a_bobber_and_a_fish_bites", FishermanTests::fishermanCastsABobberAndAFishBites);
             test(helper, TestGroup.FISHERMAN, "fisherman_ignores_water_beyond_its_range", FishermanTests::fishermanIgnoresWaterBeyondItsRange);
-            test(helper, TestGroup.FISHERMAN, "fisherman_unloads_its_catch_at_home", FishermanTests::fishermanUnloadsItsCatchAtHome);
+            test(helper, TestGroup.FISHERMAN, "a_fisherman_keeps_its_catch_in_its_barrel", FishermanTests::aFishermanKeepsItsCatchInItsBarrel);
             test(helper, TestGroup.SHEPHERD, "shepherd_without_shears_offers_to_buy_them", ShepherdTests::shepherdWithoutShearsOffersToBuyThem);
             test(helper, TestGroup.SHEPHERD, "shepherd_spins_wool_into_string", com.sheepfromheaven.minenow.shepherd.ShepherdTests::shepherdSpinsWoolIntoString);
             test(helper, TestGroup.SHEPHERD, "shepherd_shears_the_sheep_penned_near_its_loom", ShepherdTests::shepherdShearsTheSheepPennedNearItsLoom);
@@ -511,6 +511,9 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_loses_a_job_site_that_was_broken", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerLosesAJobSiteThatWasBroken);
             test(helper, TestGroup.VILLAGERS, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, TestGroup.STORAGE, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
+            test(helper, TestGroup.STORAGE, "a_villager_keeps_its_goods_in_a_barrel_when_there_is_no_chest", HomeStorageTests::aVillagerKeepsItsGoodsInABarrelWhenThereIsNoChest);
+            test(helper, TestGroup.STORAGE, "a_chest_is_preferred_over_a_barrel", HomeStorageTests::aChestIsPreferredOverABarrel);
+            test(helper, TestGroup.STORAGE, "breaking_a_home_barrel_keeps_its_goods_the_owners", HomeStorageTests::breakingAHomeBarrelKeepsItsGoodsTheOwners);
             test(helper, TestGroup.STORAGE, "two_villagers_do_not_share_one_chest", HomeStorageTests::twoVillagersDoNotShareOneChest);
             test(helper, TestGroup.STORAGE, "right_clicking_an_owned_chest_says_who_owns_it", HomeStorageTests::rightClickingAnOwnedChestSaysWhoOwnsIt);
             test(helper, TestGroup.STORAGE, "breaking_a_home_chest_costs_nothing_and_its_goods_stay_the_owners", HomeStorageTests::breakingAHomeChestCostsNothingAndItsGoodsStayTheOwners);

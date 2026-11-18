@@ -16,7 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -127,9 +126,7 @@ public final class StorageTheft {
     }
 
     private static @Nullable Object2IntMap<Item> contents(ServerLevel level, BlockPos chest) {
-        BlockState state = level.getBlockState(chest);
-        if (!(state.getBlock() instanceof ChestBlock block)) return null;
-        Container container = ChestBlock.getContainer(block, state, level, chest, true);
+        Container container = HomeStorage.chestContainer(level, chest);
         if (container == null) return null;
         Object2IntMap<Item> counts = new Object2IntOpenHashMap<>();
         for (int i = 0; i < container.getContainerSize(); i++) {

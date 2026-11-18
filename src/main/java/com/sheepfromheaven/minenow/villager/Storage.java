@@ -13,4 +13,8 @@ public final class Storage {
     public static List<BlockPos> chests(ServerLevel level, Villager villager) {
         return Workshop.allChests(level, villager);
     }
+
+    public static boolean isWorkshopStorage(ServerLevel level, Villager villager, BlockPos pos) {
+        return Workshop.isWorkshopChest(level, villager, pos);
+    }
 }

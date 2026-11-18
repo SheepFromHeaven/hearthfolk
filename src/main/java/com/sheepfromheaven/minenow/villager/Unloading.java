@@ -1,6 +1,5 @@
 package com.sheepfromheaven.minenow.villager;
 
-import net.minecraft.world.level.block.ChestBlock;
 
 import com.sheepfromheaven.minenow.farmer.Crops;
 import net.minecraft.core.BlockPos;
@@ -57,7 +56,7 @@ public final class Unloading {
     public static Optional<BlockPos> unloadTarget(ServerLevel level, Villager villager) {
         List<ItemStack> surplus = surplus(villager);
         if (surplus.isEmpty()) return Optional.empty();
-        Optional<BlockPos> home = HomeStorage.storageIn(level, villager).filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock);
+        Optional<BlockPos> home = HomeStorage.storageIn(level, villager).filter(pos -> HomeStorage.isStorageBlock(level.getBlockState(pos)));
         List<ItemStack> trade = surplus.stream().filter(stack -> !Workshop.personal(stack)).toList();
         Optional<BlockPos> workshop = nearestWorkshopWithRoom(level, villager, trade);
         if (workshop.isPresent()) return workshop;
@@ -69,14 +68,14 @@ public final class Unloading {
     public static boolean chestHasRoomForSurplus(ServerLevel level, Villager villager) {
         List<ItemStack> surplus = surplus(villager);
         return Workshop.allChests(level, villager).stream()
-                .filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock)
+                .filter(pos -> HomeStorage.isStorageBlock(level.getBlockState(pos)))
                 .anyMatch(pos -> surplus.stream().anyMatch(stack -> hasRoom(HomeStorage.chestContainer(level, pos), stack)));
     }
 
     private static Optional<BlockPos> nearestWorkshopWithRoom(ServerLevel level, Villager villager, List<ItemStack> goods) {
         if (goods.isEmpty()) return Optional.empty();
         return Workshop.chestsOf(level, villager).stream()
-                .filter(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock)
+                .filter(pos -> HomeStorage.isStorageBlock(level.getBlockState(pos)))
                 .filter(pos -> goods.stream().anyMatch(stack -> hasRoom(HomeStorage.chestContainer(level, pos), stack)))
                 .min(Comparator.comparingDouble(pos -> pos.distToCenterSqr(villager.position())));
     }

@@ -42,6 +42,56 @@ public final class HomeStorageTests {
         });
     }
 
+    public static void aVillagerKeepsItsGoodsInABarrelWhenThereIsNoChest(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.BARREL);
+        Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, villager);
+
+        helper.succeedWhen(() -> {
+            Optional<GlobalPos> claimed = HomeStorage.storageOf(villager);
+            helper.assertTrue(claimed.isPresent() && claimed.get().pos().equals(helper.absolutePos(CHEST)), "A villager with no chest near its bed keeps its goods in a barrel, claimed " + claimed);
+            var barrel = helper.getBlockEntity(CHEST, net.minecraft.world.level.block.entity.BarrelBlockEntity.class);
+            helper.assertTrue(!barrel.canOpen(helper.makeMockPlayer(GameType.SURVIVAL)), "...and locks it like a chest");
+            helper.assertTrue(helper.getLevel().getPoiManager().getCountInRange(type -> type.is(net.minecraft.world.entity.ai.village.poi.PoiTypes.FISHERMAN), helper.absolutePos(CHEST), 0,
+                    net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.IS_OCCUPIED) == 1, "...which no villager can then take as a fisherman's workplace");
+        });
+    }
+
+    public static void aChestIsPreferredOverABarrel(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        for (BlockPos barrel : new BlockPos[]{BED.west(2), BED.north(2), BED.south(3), CHEST}) helper.setBlock(barrel, Blocks.BARREL);
+        helper.setBlock(CHEST.east(2), Blocks.CHEST);
+        Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, villager);
+
+        helper.succeedWhen(() -> {
+            Optional<GlobalPos> claimed = HomeStorage.storageOf(villager);
+            helper.assertTrue(claimed.isPresent() && claimed.get().pos().equals(helper.absolutePos(CHEST.east(2))), "A chest is taken before any barrel, even nearer ones, claimed " + claimed);
+        });
+    }
+
+    public static void breakingAHomeBarrelKeepsItsGoodsTheOwners(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.BARREL);
+        helper.getBlockEntity(CHEST, net.minecraft.world.level.block.entity.BarrelBlockEntity.class).setItem(0, new ItemStack(Items.EMERALD, 3));
+        Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, owner);
+        ServerPlayer player = survivalPlayer(helper);
+        boolean[] broken = {false};
+
+        helper.onEachTick(() -> {
+            if (broken[0] || HomeStorage.storageOf(owner).isEmpty()) return;
+            broken[0] = true;
+            player.gameMode.destroyBlock(helper.absolutePos(CHEST));
+        });
+        helper.succeedWhen(() -> {
+            helper.assertTrue(broken[0], "Barrel was never claimed, so it was never broken");
+            helper.assertTrue(owner.getInventory().countItem(Items.EMERALD) == 3, "The barrel's goods stay the owner's and it gathers them up, has " + owner.getInventory().countItem(Items.EMERALD));
+            helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 0, "...not the player's");
+        });
+    }
+
     public static void rightClickingAnOwnedChestSaysWhoOwnsIt(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);
@@ -144,6 +194,11 @@ public final class HomeStorageTests {
             helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 3, "Once the owner is dead its goods are anyone's, the player picked up " + player.getInventory().countItem(Items.EMERALD));
             helper.succeed();
         });
+    }
+
+    /** A nitwit never takes a job, so vanilla can't take a free barrel as its workplace before it's claimed as storage. */
+    private static void nitwit(GameTestHelper helper, Villager villager) {
+        villager.setVillagerData(villager.getVillagerData().withProfession(helper.getLevel().registryAccess(), net.minecraft.world.entity.npc.villager.VillagerProfession.NITWIT));
     }
 
     private static ServerPlayer survivalPlayer(GameTestHelper helper) {
