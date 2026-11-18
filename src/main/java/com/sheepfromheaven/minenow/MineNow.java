@@ -492,6 +492,7 @@ public final class MineNow {
             test(helper, TestGroup.MINER, "miner_digs_new_emeralds_out_of_emerald_ore", MinerTests::minerDigsNewEmeraldsOutOfEmeraldOre);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
+            test(helper, TestGroup.ROADS, "a_villager_climbs_out_of_a_river", RoadTests::aVillagerClimbsOutOfARiver);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);
             test(helper, TestGroup.ROADS, "idle_villagers_stroll_along_roads", RoadTests::idleVillagersStrollAlongRoads);
             test(helper, TestGroup.ROADS, "a_paved_street_beats_a_straight_dirt_path", RoadTests::aPavedStreetBeatsAStraightDirtPath);
