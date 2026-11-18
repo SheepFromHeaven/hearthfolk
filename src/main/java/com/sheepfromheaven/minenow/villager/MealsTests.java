@@ -68,21 +68,21 @@ public final class MealsTests {
 
     public static void wealthyVillagerBuysFoodToStartAFamily(GameTestHelper helper) {
         Villager villager = villagerNextToAFarmerWithPotatoes(helper);
-        villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.WEALTHY));
+        villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.required(helper.getLevel(), villager)));
 
         helper.succeedWhen(() -> {
             helper.assertTrue(villager.getInventory().countItem(Items.POTATO) >= Villager.BREEDING_FOOD_THRESHOLD,
                     "A villager with emeralds to spare should buy enough food to be willing to breed, has " + villager.getInventory().countItem(Items.POTATO) + " potatoes");
-            helper.assertTrue(villager.getInventory().countItem(Items.EMERALD) == Wealth.WEALTHY - 1, "It spends one emerald");
+            helper.assertTrue(villager.getInventory().countItem(Items.EMERALD) == Wealth.required(helper.getLevel(), villager) - 1, "It spends one emerald");
         });
     }
 
     public static void poorVillagerKeepsItsEmeralds(GameTestHelper helper) {
         Villager villager = villagerNextToAFarmerWithPotatoes(helper);
-        villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.WEALTHY - 1));
+        villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.required(helper.getLevel(), villager) - 1));
 
         helper.runAfterDelay(900, () -> {
-            helper.assertTrue(villager.getInventory().countItem(Items.EMERALD) == Wealth.WEALTHY - 1, "A villager without emeralds to spare doesn't buy food for a family");
+            helper.assertTrue(villager.getInventory().countItem(Items.EMERALD) == Wealth.required(helper.getLevel(), villager) - 1, "A villager without emeralds to spare doesn't buy food for a family");
             helper.succeed();
         });
     }
@@ -91,12 +91,12 @@ public final class MealsTests {
         Villager villager = villagerNextToAFarmerWithPotatoes(helper);
         BlockPos chest = new BlockPos(4, 1, 6);
         helper.setBlock(chest, Blocks.CHEST);
-        helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class).setItem(0, new ItemStack(Items.POTATO, 20));
         GameTestHelpers.giveHome(helper, villager, new BlockPos(4, 1, 8));
-        helper.runAfterDelay(60, () -> villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.WEALTHY)));
+        GameTestHelpers.fillOnceClaimed(helper, () -> HomeStorage.storageOf(villager).isPresent(), chest, new ItemStack(Items.POTATO, 20));
+        helper.runAfterDelay(60, () -> villager.getInventory().addItem(new ItemStack(Items.EMERALD, Wealth.required(helper.getLevel(), villager))));
 
         helper.runAfterDelay(900, () -> {
-            helper.assertTrue(Economy.emeralds(helper.getLevel(), villager) == Wealth.WEALTHY,
+            helper.assertTrue(Economy.emeralds(helper.getLevel(), villager) == Wealth.required(helper.getLevel(), villager),
                     "A villager whose home chest already holds food for a family buys no more, has " + Economy.emeralds(helper.getLevel(), villager) + " emeralds and "
                             + Economy.count(helper.getLevel(), villager, Items.POTATO) + " potatoes");
             helper.succeed();

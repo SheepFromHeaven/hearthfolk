@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:the_book_carries_the_report_as_its_pages",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

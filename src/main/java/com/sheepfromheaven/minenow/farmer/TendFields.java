@@ -177,7 +177,7 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
 
     private @Nullable BlockPos nearestFieldWork(ServerLevel level, Villager body, BlockPos jobSite) {
         if (candidates.isEmpty()) scanField(level, body, jobSite);
-        candidates.removeIf(pos -> unreachable.containsKey(pos) || !isFieldWork(level, body, pos));
+        candidates.removeIf(pos -> unreachable.containsKey(pos) || !isFieldWork(level, body, pos) || !com.sheepfromheaven.minenow.villager.RainShelter.allows(level, pos));
         if (candidates.isEmpty()) return null;
         BlockPos nearest = null;
         double best = Double.MAX_VALUE;

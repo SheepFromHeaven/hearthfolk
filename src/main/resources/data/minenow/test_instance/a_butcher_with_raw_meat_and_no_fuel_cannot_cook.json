@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_30",
+  "function": "minenow:a_butcher_with_raw_meat_and_no_fuel_cannot_cook",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

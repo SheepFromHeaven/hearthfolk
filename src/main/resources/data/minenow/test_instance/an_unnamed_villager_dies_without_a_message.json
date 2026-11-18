@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:an_unnamed_villager_dies_without_a_message",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 200
+}

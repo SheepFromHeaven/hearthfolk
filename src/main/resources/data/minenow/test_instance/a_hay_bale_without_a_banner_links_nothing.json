@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_42",
+  "function": "minenow:a_hay_bale_without_a_banner_links_nothing",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 600
+}

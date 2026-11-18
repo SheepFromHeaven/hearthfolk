@@ -82,6 +82,24 @@
   ],
   "supplies": [
     {
+      "item": "minecraft:wheat",
+      "price": 0.0625,
+      "max": 8,
+      "level": 1
+    },
+    {
+      "item": "minecraft:carrot",
+      "price": 0.0625,
+      "max": 8,
+      "level": 1
+    },
+    {
+      "item": "minecraft:wheat_seeds",
+      "price": 0.0625,
+      "max": 8,
+      "level": 1
+    },
+    {
       "item": "minecraft:coal",
       "price": 0.0667,
       "max": 32,
@@ -145,24 +163,6 @@
       "item": "minecraft:mangrove_log",
       "price": 0.0625,
       "max": 16,
-      "level": 1
-    },
-    {
-      "item": "minecraft:wheat",
-      "price": 0.0625,
-      "max": 8,
-      "level": 1
-    },
-    {
-      "item": "minecraft:carrot",
-      "price": 0.0625,
-      "max": 8,
-      "level": 1
-    },
-    {
-      "item": "minecraft:wheat_seeds",
-      "price": 0.0625,
-      "max": 8,
       "level": 1
     },
     {

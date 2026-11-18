@@ -217,7 +217,7 @@ public class GoFishing extends Behavior<Villager> {
         if ((Unloading.shouldUnload(body) || (!Tools.has(body) && Unloading.depositableCount(body) > 0)) && targetHomeChest(level, body)) return true;
         if (!Tools.has(body)) return false;
         Optional<FishingWater.Spot> spot = FishingWater.shore(level, FishingWater.water(level, barrel.get())).stream()
-                .filter(candidate -> !unreachable.containsKey(candidate.feet()))
+                .filter(candidate -> !unreachable.containsKey(candidate.feet()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.feet()))
                 .min(Comparator.comparingDouble(candidate -> candidate.feet().distToCenterSqr(body.position())));
         if (spot.isEmpty()) return false;
         target = spot.get().feet();

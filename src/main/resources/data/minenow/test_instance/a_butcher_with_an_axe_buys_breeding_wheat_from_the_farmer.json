@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_32",
+  "function": "minenow:a_butcher_with_an_axe_buys_breeding_wheat_from_the_farmer",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

@@ -29,7 +29,6 @@ import net.minecraft.world.entity.ai.behavior.UpdateActivityFromSchedule;
 import net.minecraft.world.entity.ai.behavior.ValidateNearbyPoi;
 import net.minecraft.world.entity.ai.behavior.VillageBoundRandomStroll;
 import net.minecraft.world.entity.ai.behavior.VillagerGoalPackages;
-import net.minecraft.world.entity.ai.behavior.VillagerMakeLove;
 import net.minecraft.world.entity.ai.behavior.VillagerPanicTrigger;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
@@ -128,7 +127,7 @@ public final class VillagerBrains {
                         ImmutableSet.of(MemoryModuleType.BREED_TARGET),
                         GateBehavior.OrderPolicy.ORDERED,
                         GateBehavior.RunningPolicy.RUN_ONE,
-                        ImmutableList.of(Pair.of(new VillagerMakeLove(), 1)))),
+                        ImmutableList.of(Pair.of(new VillageMakeLove(), 1)))),
                 fullLook(),
                 Pair.of(99, UpdateActivityFromSchedule.create()));
     }

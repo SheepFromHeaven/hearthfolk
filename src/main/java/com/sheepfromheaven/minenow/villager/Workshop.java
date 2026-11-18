@@ -62,7 +62,8 @@ public final class Workshop {
             return;
         }
         List<BlockPos> mine = new ArrayList<>();
-        boolean barrelWorkplace = level.getBlockState(site.get()).getBlock() instanceof net.minecraft.world.level.block.BarrelBlock;
+        boolean barrelWorkplace = level.getBlockState(site.get()).getBlock() instanceof net.minecraft.world.level.block.BarrelBlock
+                && (chestsOf(level, villager).contains(site.get()) || !HomeStorage.holdsItems(level, site.get()));
         if (barrelWorkplace) mine.add(site.get());
         for (BlockPos chest : chestsOf(level, villager)) {
             if (chest.equals(site.get())) continue;
@@ -75,7 +76,7 @@ public final class Workshop {
         while (mine.size() < limit) {
             Optional<BlockPos> free = pois.getInRange(HomeStorage::isStoragePoi, site.get(), RANGE + HEIGHT, PoiManager.Occupancy.HAS_SPACE)
                     .map(PoiRecord::getPos)
-                    .filter(pos -> inRange(site.get(), pos) && !mine.contains(pos) && HomeStorage.otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos))
+                    .filter(pos -> inRange(site.get(), pos) && !mine.contains(pos) && HomeStorage.otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos) && !HomeStorage.holdsItems(level, pos))
                     .min(Comparator.<BlockPos>comparingInt(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock ? 0 : 1).thenComparingDouble(pos -> pos.distSqr(site.get())));
             if (free.isEmpty()) break;
             pois.take(HomeStorage::isStoragePoi, (type, pos) -> pos.equals(free.get()), free.get(), 1);

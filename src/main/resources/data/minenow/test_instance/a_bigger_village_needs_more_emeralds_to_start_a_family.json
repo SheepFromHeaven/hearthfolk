@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_33",
+  "function": "minenow:a_bigger_village_needs_more_emeralds_to_start_a_family",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

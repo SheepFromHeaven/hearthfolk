@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:right_clicking_a_job_block_with_the_inspector_tells_who_claimed_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

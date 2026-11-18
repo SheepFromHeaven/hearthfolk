@@ -78,6 +78,7 @@ public final class EconomyTests {
     public static void villagerKeepsFoodAndToolMoneyWhenBuyingFromPlayers(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 3));
         butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
         ServerPlayer player = player(helper);
         int reserve = Economy.FOOD_MONEY + 1;

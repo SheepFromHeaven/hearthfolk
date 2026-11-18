@@ -11,5 +11,6 @@
   "item.minenow.villager_inspector": "Villager Inspector",
   "item.minenow.village_map": "Village Map",
   "entity.minenow.villager.merchant": "Merchant",
-  "block.minenow.pack_station": "Pack Station"
+  "block.minenow.pack_station": "Pack Station",
+  "message.minenow.birth": "%s was born"
 }

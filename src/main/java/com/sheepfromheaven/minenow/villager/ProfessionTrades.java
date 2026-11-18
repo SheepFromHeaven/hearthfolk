@@ -60,9 +60,11 @@ public final class ProfessionTrades {
     private static void capSupplyOffers(ServerLevel level, Villager villager) {
         TradeTable table = TradeTable.forVillager(villager).orElse(null);
         if (table == null) return;
-        int spendable = Economy.spendable(level, villager);
         for (MerchantOffer offer : villager.getOffers()) {
             if (!offer.getResult().is(Items.EMERALD) || table.isTool(offer.getCostA().getItem())) continue;
+            int spendable = table.suppliesUpTo(villager.getVillagerData().level()).stream()
+                    .filter(supply -> supply.item() == offer.getCostA().getItem()).findFirst()
+                    .map(supply -> BuyFromVillagers.budgetFor(level, villager, supply)).orElse(Economy.spendable(level, villager));
             int affordable = spendable / offer.getResult().getCount();
             while (offer.getMaxUses() - offer.getUses() > affordable) offer.increaseUses();
         }
@@ -129,8 +131,8 @@ public final class ProfessionTrades {
                 offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), sold, batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
-        int purse = Economy.spendable(level, villager);
         for (TradeTable.Supply supply : table.suppliesWanted(level, villager)) {
+            int purse = BuyFromVillagers.budgetFor(level, villager, supply);
             int room = (supply.max() - Economy.count(level, villager, supply.item())) / supply.price().count();
             int trades = Math.min(room, purse / supply.price().emeralds());
             if (trades > 0) {

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_36",
+  "function": "minenow:a_bell_nobody_claimed_belongs_to_no_village",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

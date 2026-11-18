@@ -88,6 +88,7 @@ public final class IdleCueTests {
         Villager farmer = farmer(helper);
         farmer.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
         farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 16));
+        farmer.getInventory().addItem(new ItemStack(Items.POTATO, net.minecraft.world.entity.npc.villager.Villager.BREEDING_FOOD_THRESHOLD));
         @SuppressWarnings("removal")
         net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
         BlockPos at = helper.absolutePos(new BlockPos(4, 1, 4));
@@ -130,8 +131,9 @@ public final class IdleCueTests {
         GameTestHelpers.fence(helper);
         helper.setBlock(SMOKER, Blocks.SMOKER);
         Villager butcher = GameTestHelpers.spawnEmployed(helper, SMOKER.east(), SMOKER, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
+        spawnSurplusPigs(helper);
 
-        helper.assertTrue(IdleReason.of(helper.getLevel(), butcher).contains(IdleReason.NO_TOOL), "A butcher without an axe should be missing its tool");
+        helper.assertTrue(IdleReason.of(helper.getLevel(), butcher).contains(IdleReason.NO_TOOL), "A butcher without an axe, with animals to cull, should be missing its tool");
         String report = String.join("\n", IdleReport.describe(helper.getLevel(), butcher).stream().map(c -> c.getString()).toList());
         helper.assertTrue(report.contains("butcher"), "The report should name the profession:\n" + report);
         helper.assertTrue(report.contains("tool"), "The report should say the tool is missing:\n" + report);
@@ -157,6 +159,10 @@ public final class IdleCueTests {
         });
     }
 
+    private static void spawnSurplusPigs(GameTestHelper helper) {
+        for (int i = 0; i < 6; i++) helper.spawn(net.minecraft.world.entity.EntityTypes.PIG, new BlockPos(9 + i % 3, 1, 14 + i / 3));
+    }
+
     private static Villager butcherWithoutLivestock(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
@@ -168,6 +174,7 @@ public final class IdleCueTests {
 
     private static Villager butcher(GameTestHelper helper) {
         Villager butcher = butcherWithoutLivestock(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.BEEF, 2));
         helper.spawn(net.minecraft.world.entity.EntityTypes.COW, new BlockPos(9, 1, 14));
         return butcher;
     }
@@ -198,7 +205,8 @@ public final class IdleCueTests {
     public static void aWorkerWithoutItsToolDoesNotAlsoShakeForMoney(GameTestHelper helper) {
         Villager butcher = butcher(helper);
         butcher.getInventory().removeAllItems();
-        helper.assertTrue(IdleReason.of(helper.getLevel(), butcher).contains(IdleReason.NO_TOOL), "The butcher has no axe");
+        spawnSurplusPigs(helper);
+        helper.assertTrue(IdleReason.of(helper.getLevel(), butcher).contains(IdleReason.NO_TOOL), "The butcher has no axe and animals to cull");
         helper.assertTrue(!IdleReason.of(helper.getLevel(), butcher).contains(IdleReason.NO_MONEY), "Its tool comes first, SeekGoods handles it");
         helper.assertTrue(IdleCues.show(helper.getLevel(), butcher) == null, "No head shake while it seeks a tool");
         helper.succeed();

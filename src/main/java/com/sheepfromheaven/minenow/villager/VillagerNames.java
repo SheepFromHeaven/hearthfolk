@@ -34,9 +34,13 @@ public final class VillagerNames {
     }
 
     public static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Villager villager) || villager.hasCustomName()) return;
+        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Villager villager)) return;
+        nameIfMissing(villager);
+    }
+
+    static void nameIfMissing(Villager villager) {
         List<String> available = names;
-        if (available.isEmpty()) return;
+        if (villager.hasCustomName() || available.isEmpty()) return;
         villager.setCustomName(Component.literal(available.get(Math.floorMod(villager.getUUID().hashCode(), available.size()))));
     }
 

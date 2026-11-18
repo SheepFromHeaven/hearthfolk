@@ -12,6 +12,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -67,6 +68,24 @@ public final class GameTestHelpers {
         level.getPoiManager().take(type -> type.is(PoiTypes.HOME), (type, pos) -> pos.equals(absBed), absBed, 1)
                 .orElseThrow(() -> helper.assertionException(bedHead, "test.error.expected_block", "bed POI"));
         villager.getBrain().setMemory(MemoryModuleType.HOME, GlobalPos.of(level.dimension(), absBed));
+    }
+
+    /**
+     * Puts goods into a chest once {@code claimed} says a villager has taken it. A chest that already holds items is the
+     * player's and is never claimed, so a test that wants a villager's goods in its chest has to wait for the claim first.
+     */
+    public static void fillOnceClaimed(GameTestHelper helper, java.util.function.BooleanSupplier claimed, BlockPos chest, ItemStack... stacks) {
+        boolean[] filled = {false};
+        helper.onEachTick(() -> {
+            if (filled[0] || !claimed.getAsBoolean()) return;
+            filled[0] = true;
+            fill(helper, chest, stacks);
+        });
+    }
+
+    public static void fill(GameTestHelper helper, BlockPos chest, ItemStack... stacks) {
+        net.minecraft.world.Container container = (net.minecraft.world.Container) helper.getLevel().getBlockEntity(helper.absolutePos(chest));
+        for (int i = 0; i < stacks.length; i++) container.setItem(i, stacks[i]);
     }
 
     /** An employed villager without its starting purse, so tests start from the emeralds they hand it. */

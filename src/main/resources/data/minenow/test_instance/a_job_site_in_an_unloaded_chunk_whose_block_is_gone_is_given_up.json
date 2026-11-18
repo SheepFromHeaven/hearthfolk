@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_job_site_in_an_unloaded_chunk_whose_block_is_gone_is_given_up",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

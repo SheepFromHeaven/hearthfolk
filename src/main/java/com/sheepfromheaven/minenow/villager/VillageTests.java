@@ -35,6 +35,23 @@ public final class VillageTests {
         });
     }
 
+    public static void aBiggerVillageNeedsMoreEmeraldsToStartAFamily(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        BlockPos bell = new BlockPos(12, 1, 12);
+        Villager a = settle(helper, new BlockPos(6, 1, 6), new BlockPos(4, 1, 4), bell);
+        int alone = Wealth.required(helper.getLevel(), a);
+        settle(helper, new BlockPos(18, 1, 18), new BlockPos(20, 1, 19), bell);
+        settle(helper, new BlockPos(18, 1, 6), new BlockPos(20, 1, 4), bell);
+
+        helper.succeedWhen(() -> {
+            int members = Villages.of(helper.getLevel(), a).map(village -> village.members().size()).orElse(0);
+            helper.assertTrue(members == 3, "The three villagers are one village, has " + members);
+            int needed = Wealth.required(helper.getLevel(), a);
+            helper.assertTrue(needed == WealthFormula.current().required(3), "It needs what the formula says for three villagers, needs " + needed);
+            helper.assertTrue(needed > alone, "A village of three needs more than a lone villager (" + alone + "), needs " + needed);
+        });
+    }
+
     public static void bellsWhoseAreasTouchAreOneVillage(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         BlockPos west = new BlockPos(4, 1, 12);

@@ -80,12 +80,21 @@ public final class HomeStorage {
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !isStorageBlock(level.getBlockState(event.getPos()))) return;
         if (!(level.getBlockEntity(event.getPos()) instanceof BaseContainerBlockEntity container) || container.canOpen(event.getEntity())) return;
+        if (liftAbandonedLock(level, event.getPos())) return;
         ownerMessage(level, event.getPos()).ifPresent(message -> {
             event.getEntity().sendOverlayMessage(message);
             level.playSound(null, event.getPos(), SoundEvents.CHEST_LOCKED, SoundSource.BLOCKS, 1.0F, 1.0F);
             event.setCancellationResult(InteractionResult.SUCCESS);
             event.setCanceled(true);
         });
+    }
+
+    /** A lock of ours that no villager holds any more (its owner died unseen, or before this check existed) is lifted, so the click opens it. */
+    private static boolean liftAbandonedLock(ServerLevel level, BlockPos pos) {
+        if (ownerOf(level, pos).isPresent() || heldAsJobSite(level, pos)) return false;
+        List<BlockPos> halves = halves(level, pos);
+        halves.forEach(half -> setLocked(level, half, false));
+        return level.getBlockEntity(pos) instanceof BaseContainerBlockEntity container && container.collectComponents().get(DataComponents.LOCK) == null;
     }
 
     private static Optional<Villager> ownerOf(ServerLevel level, BlockPos chest) {
@@ -107,6 +116,7 @@ public final class HomeStorage {
             StorageTheft.check(level, villager, chest);
         });
         Workshop.tick(level, villager);
+        JobLoss.tick(level, villager);
     }
 
     public static void onDeath(LivingDeathEvent event) {
@@ -160,8 +170,8 @@ public final class HomeStorage {
     /** A chest first; a barrel only when no chest is free, so a barrel meant for a fisherman isn't taken while a chest would do. */
     private static void claim(ServerLevel level, Villager villager, BlockPos home) {
         PoiManager pois = level.getPoiManager();
-        pois.take(HomeStorage::isChestPoi, (type, pos) -> otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos), home, RADIUS)
-                .or(() -> pois.take(HomeStorage::isBarrelPoi, (type, pos) -> !StorageTheft.hasHopperBelow(level, pos), home, RADIUS))
+        pois.take(HomeStorage::isChestPoi, (type, pos) -> otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos) && !holdsItems(level, pos), home, RADIUS)
+                .or(() -> pois.take(HomeStorage::isBarrelPoi, (type, pos) -> !StorageTheft.hasHopperBelow(level, pos) && !holdsItems(level, pos), home, RADIUS))
                 .ifPresent(chest -> {
             takeAllHalves(level, chest);
             villager.setData(ModVillagers.STORAGE, GlobalPos.of(level.dimension(), chest));
@@ -176,6 +186,14 @@ public final class HomeStorage {
             }
             setLocked(level, half, true);
         }
+    }
+
+    /** Something is already in it (either half of a double chest): a chest the player has been using is theirs, never a villager's. */
+    static boolean holdsItems(ServerLevel level, BlockPos chest) {
+        for (BlockPos half : halves(level, chest)) {
+            if (level.getBlockEntity(half) instanceof Container container && !container.isEmpty()) return true;
+        }
+        return false;
     }
 
     static boolean otherHalfIsFree(ServerLevel level, BlockPos chest) {
@@ -206,7 +224,7 @@ public final class HomeStorage {
     /** A barrel's ticket may be a fisherman's job site rather than storage: that one stays taken and locked. */
     private static boolean heldAsJobSite(ServerLevel level, BlockPos pos) {
         return level.getBlockState(pos).getBlock() instanceof BarrelBlock && !level.getEntitiesOfClass(Villager.class, new AABB(pos).inflate(OWNER_SEARCH_RADIUS),
-                villager -> villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(site -> site.dimension() == level.dimension() && site.pos().equals(pos)).isPresent()).isEmpty();
+                villager -> villager.isAlive() && villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(site -> site.dimension() == level.dimension() && site.pos().equals(pos)).isPresent()).isEmpty();
     }
 
     public static @Nullable Container chestContainer(ServerLevel level, BlockPos pos) {
