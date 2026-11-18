@@ -59,6 +59,7 @@ public final class MineNow {
         com.sheepfromheaven.minenow.mason.Mason.register(modBus);
         com.sheepfromheaven.minenow.villager.WallDisplays.register(modBus);
         com.sheepfromheaven.minenow.cartographer.Cartographer.register(modBus);
+        com.sheepfromheaven.minenow.villager.VillagerInspector.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
@@ -547,6 +548,9 @@ public final class MineNow {
             test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_without_a_quill_buys_one_from_a_player", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerWithoutAQuillBuysOneFromAPlayer);
             test(helper, TestGroup.CARTOGRAPHER, "ink_and_quill_recipes_are_off_by_default", com.sheepfromheaven.minenow.cartographer.CartographerTests::inkAndQuillRecipesAreOffByDefault);
             test(helper, TestGroup.CARTOGRAPHER, "ink_and_quill_recipes_can_be_switched_on", com.sheepfromheaven.minenow.cartographer.CartographerTests::inkAndQuillRecipesCanBeSwitchedOn);
+            test(helper, TestGroup.VILLAGERS, "right_clicking_a_villager_with_the_inspector_opens_its_whole_inventory", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::rightClickingAVillagerWithTheInspectorOpensItsWholeInventory);
+            test(helper, TestGroup.VILLAGERS, "the_inspector_reports_the_same_as_the_villager_command", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::theInspectorReportsTheSameAsTheVillagerCommand);
+            test(helper, TestGroup.VILLAGERS, "the_inspector_works_on_an_unemployed_villager_and_a_child", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::theInspectorWorksOnAnUnemployedVillagerAndAChild);
         }));
     }
 
