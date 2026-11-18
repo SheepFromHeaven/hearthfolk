@@ -16,7 +16,7 @@ public final class MineNowClient {
 
     @SubscribeEvent
     static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(EntityTypes.VILLAGER, SwingingVillagerRenderer::new);
+        if (!keepsVanillaVillagers()) event.registerEntityRenderer(EntityTypes.VILLAGER, SwingingVillagerRenderer::new);
         event.registerEntityRenderer(FishermanEntities.VILLAGER_BOBBER.get(), VillagerBobberRenderer::new);
         event.registerBlockEntityRenderer(BlockEntityTypes.FURNACE, FurnaceCartRenderer::new);
     }
@@ -25,6 +25,33 @@ public final class MineNowClient {
     static void onRegisterLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(SwingingVillagerRenderer.SwingingVillagerModel.LAYER, SwingingVillagerRenderer.SwingingVillagerModel::layer);
         event.registerLayerDefinition(SwingingVillagerRenderer.SwingingVillagerModel.NO_HAT_LAYER, SwingingVillagerRenderer.SwingingVillagerModel::noHatLayer);
+    }
+
+    /**
+     * Entity Model Features (and the resource packs built on it, like Fresh Animations) reworks vanilla's villager model,
+     * found by vanilla's model layer names, so with it installed vanilla's villager renderer stays and only our armor is
+     * added on top: villagers keep crossed arms and EMF's animations instead of our free arms and swings.
+     */
+    static boolean keepsVanillaVillagers() {
+        return net.neoforged.fml.ModList.get().isLoaded("entity_model_features");
+    }
+
+    @SubscribeEvent
+    static void onAddLayers(EntityRenderersEvent.AddLayers event) {
+        if (!keepsVanillaVillagers()) return;
+        net.minecraft.client.renderer.entity.LivingEntityRenderer<net.minecraft.world.entity.npc.villager.Villager, net.minecraft.client.renderer.entity.state.VillagerRenderState, net.minecraft.client.model.npc.VillagerModel> villagers = event.getRenderer(EntityTypes.VILLAGER);
+        if (villagers != null) villagers.addLayer(new VillagerArmorLayer(villagers, event.getContext()));
+    }
+
+    @SubscribeEvent
+    static void onRegisterRenderStateModifiers(net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEvent event) {
+        if (!keepsVanillaVillagers()) return;
+        event.registerEntityModifier(net.minecraft.client.renderer.entity.VillagerRenderer.class, (entity, state) -> {
+            if (!(entity instanceof net.minecraft.world.entity.npc.villager.Villager villager) || !(state instanceof net.minecraft.client.renderer.entity.state.VillagerRenderState villagerState)) return;
+            SwingingVillagerRenderer.ArmorState armor = new SwingingVillagerRenderer.ArmorState();
+            armor.fill(villager, villagerState, state.partialTick, net.minecraft.client.Minecraft.getInstance().getItemModelResolver(), false, new float[4]);
+            state.setRenderData(VillagerArmorLayer.ARMOR, armor);
+        });
     }
 
     @SubscribeEvent
