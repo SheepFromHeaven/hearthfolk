@@ -109,3 +109,19 @@ neoForge.runs.client.additionalRuntimeClasspathConfiguration.extendsFrom configu
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+// Puts a fresh build into a local launcher profile for playtesting without a release. The profile is machine-specific,
+// so it comes from `modrinthProfile` in ~/.gradle/gradle.properties, never from this repo.
+tasks.register('installToModrinth', Copy) {
+    group = 'distribution'
+    description = 'Builds the mod and replaces its jar in the mods folder of the profile set as modrinthProfile.'
+    def profile = providers.gradleProperty('modrinthProfile')
+    from tasks.named('jar')
+    rename { it.replace('.jar', '-dev.jar') }
+    into profile.map { "$it/mods" }.orElse(layout.buildDirectory.dir('no-modrinth-profile').map { it.asFile.path })
+    def mods = profile.map { new File(it, 'mods') }.getOrNull()
+    doFirst {
+        if (mods == null) throw new GradleException('Set modrinthProfile=<profile folder> in ~/.gradle/gradle.properties')
+        mods.listFiles({ File f -> f.name ==~ /(minenow|hearthfolk)-.*\.jar/ } as FileFilter)?.each { it.delete() }
+    }
+}
