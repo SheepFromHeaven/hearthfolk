@@ -22,7 +22,7 @@ public final class Wealth {
     }
 
     static boolean wantsFoodForAFamily(ServerLevel level, Villager villager) {
-        return !villager.isBaby() && Economy.emeralds(level, villager) >= required(level, villager) && breedingFoodPoints(level, villager) < Villager.BREEDING_FOOD_THRESHOLD;
+        return !villager.isBaby() && Economy.villagerBudget(Economy.emeralds(level, villager)) >= required(level, villager) && breedingFoodPoints(level, villager) < Villager.BREEDING_FOOD_THRESHOLD;
     }
 
     static boolean isBreedingFood(ItemStack stack) {

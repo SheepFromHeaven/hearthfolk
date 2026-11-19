@@ -92,7 +92,7 @@ public final class Gear {
 
     /** What it may spend on gear. */
     static int budget(ServerLevel level, Villager villager) {
-        return Economy.spendable(level, villager) - SAVINGS;
+        return Economy.villagerBudget(Economy.spendable(level, villager) - SAVINGS);
     }
 
     /** A sword at its side, or a bow and arrows among its goods. */

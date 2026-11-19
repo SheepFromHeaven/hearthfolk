@@ -303,6 +303,10 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "a_wealthy_villager_commissions_armor_nobody_has_in_stock", com.sheepfromheaven.minenow.villager.CommissionTests::aWealthyVillagerCommissionsArmorNobodyHasInStock);
             test(helper, TestGroup.VILLAGER_TRADING, "a_commission_survives_a_restart", com.sheepfromheaven.minenow.villager.CommissionTests::aCommissionSurvivesARestart);
             test(helper, TestGroup.VILLAGER_TRADING, "a_buyer_gets_its_money_back_when_the_order_never_comes", com.sheepfromheaven.minenow.villager.CommissionTests::aBuyerGetsItsMoneyBackWhenTheOrderNeverComes);
+            test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_butcher_with_no_emeralds_gets_wheat_from_the_farmer", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentAButcherWithNoEmeraldsGetsWheatFromTheFarmer);
+            test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_broke_villager_commissions_missing_armor_and_gets_it", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentABrokeVillagerCommissionsMissingArmorAndGetsIt);
+            test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_broke_smelters_debts_stay_as_they_are", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentABrokeSmeltersDebtsStayAsTheyAre);
+            test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_player_still_pays_and_is_paid", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentAPlayerStillPaysAndIsPaid);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_buys_its_supply_from_a_travelling_merchant", VillagerTradingTests::aVillagerBuysItsSupplyFromATravellingMerchant);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_never_buys_from_a_merchant_below_its_reserve", VillagerTradingTests::aVillagerNeverBuysFromAMerchantBelowItsReserve);

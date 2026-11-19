@@ -164,7 +164,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         }
         Price price = deal.price();
         int lots = deal.credit() ? (sellable(level, seller, deal.item()) >= price.count() ? 1 : 0)
-                : Math.min(Math.min(deal.budget(), Economy.emeralds(level, buyer)) / price.emeralds(),
+                : Math.min(Economy.villagerBudget(Math.min(deal.budget(), Economy.emeralds(level, buyer))) / price.emeralds(),
                 Math.min(sellable(level, seller, deal.item()) / price.count(), Math.max(1, deal.room() / price.count())));
         if (lots <= 0) return;
         if (deal.credit()) {
@@ -172,8 +172,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             debts.merge(seller.getUUID(), price.emeralds(), Integer::sum);
             buyer.setData(ModVillagers.DEBTS, java.util.Map.copyOf(debts));
         } else {
-            int paid = Economy.take(level, buyer, Items.EMERALD, lots * price.emeralds());
-            Economy.give(level, seller, new ItemStack(Items.EMERALD, paid));
+            Economy.pay(level, buyer, seller, lots * price.emeralds());
         }
         if (deal.wear()) {
             if (deal.item() == Items.ARROW) Gear.wear(buyer, new ItemStack(Items.ARROW, Economy.take(level, seller, Items.ARROW, lots * price.count())));
@@ -206,7 +205,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             int held = Economy.count(level, buyer, supply.item());
             if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
-            int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
+            int budget = Economy.villagerBudget(outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer));
             for (WanderingTrader merchant : merchants) {
                 Optional<MerchantOffer> offer = Exports.wareFor(merchant, supply.item());
                 if (offer.isPresent() && offer.get().getCostA().getCount() <= budget && supply.max() - held > 0) {
@@ -247,10 +246,10 @@ public class BuyFromVillagers extends Behavior<Villager> {
         MerchantOffer offer = deal.offer();
         int emeralds = offer.getCostA().getCount();
         int each = offer.getResult().getCount();
-        int lots = Math.min(Math.min(deal.budget(), Economy.emeralds(level, buyer)) / emeralds,
+        int lots = Math.min(Economy.villagerBudget(Math.min(deal.budget(), Economy.emeralds(level, buyer))) / emeralds,
                 Math.min(Math.max(1, deal.room() / each), offer.getMaxUses() - offer.getUses()));
         if (lots <= 0 || offer.isOutOfStock()) return;
-        Economy.take(level, buyer, Items.EMERALD, lots * emeralds);
+        Economy.pay(level, buyer, null, lots * emeralds);
         Economy.give(level, buyer, new ItemStack(deal.item(), lots * each));
         for (int i = 0; i < lots; i++) offer.increaseUses();
         buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(deal.merchant(), true));
@@ -260,13 +259,15 @@ public class BuyFromVillagers extends Behavior<Villager> {
     }
 
     private static Optional<Deal> findDeal(ServerLevel level, Villager buyer) {
-        if (Economy.emeralds(level, buyer) <= 0) return Optional.empty();
-        if (Meals.on() && Meals.hasAMeal(level, buyer) && Meals.wantsAChange(level, buyer) && Economy.spendable(level, buyer) > 0) {
+        if (Economy.villagerBudget(Economy.emeralds(level, buyer)) <= 0) return Optional.empty();
+        int spendable = Economy.villagerBudget(Economy.spendable(level, buyer));
+        int wallet = Economy.villagerBudget(Economy.emeralds(level, buyer));
+        if (Meals.on() && Meals.hasAMeal(level, buyer) && Meals.wantsAChange(level, buyer) && spendable > 0) {
             boolean meat = Meals.wantsMeat(buyer);
             Optional<Deal> change = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Meals.isMeal(new ItemStack(item)) && Meals.isMeat(item) == meat)
-                            .flatMap(item -> offer(level, seller, item, 0, Economy.spendable(level, buyer)).stream()))
+                            .flatMap(item -> offer(level, seller, item, 0, spendable).stream()))
                     .max(Comparator.comparingDouble((Deal deal) -> (double) deal.price().count() * Meals.nutrition(deal.item()) / deal.price().emeralds()));
             if (change.isPresent()) return change;
         }
@@ -275,7 +276,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> meal = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Meals.isMeal(new ItemStack(item)))
-                            .flatMap(item -> offer(level, seller, item, 0, Economy.emeralds(level, buyer)).stream()))
+                            .flatMap(item -> offer(level, seller, item, 0, wallet).stream()))
                     .max(Comparator.comparingDouble((Deal deal) -> (double) deal.price().count() * Meals.nutrition(deal.item()) / deal.price().emeralds())
                             .thenComparing(Comparator.comparingDouble((Deal deal) -> buyer.distanceToSqr(deal.seller())).reversed()));
             if (meal.isPresent()) return meal;
@@ -284,7 +285,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> food = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Wealth.isBreedingFood(new ItemStack(item)))
-                            .flatMap(item -> offer(level, seller, item, 0, Economy.spendable(level, buyer)).stream()))
+                            .flatMap(item -> offer(level, seller, item, 0, spendable).stream()))
                     .findFirst();
             if (food.isPresent()) return food;
         }
@@ -295,7 +296,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             int held = Economy.count(level, buyer, supply.item());
             if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
-            int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
+            int budget = Economy.villagerBudget(outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer));
             Optional<Deal> deal = sellers(level, buyer).stream()
                     .flatMap(seller -> offer(level, seller, supply.item(), supply.max() - held, budget).stream())
                     .findFirst();
@@ -303,11 +304,11 @@ public class BuyFromVillagers extends Behavior<Villager> {
         }
         for (com.sheepfromheaven.minenow.merchant.Tour.Want want : com.sheepfromheaven.minenow.merchant.Merchant.shoppingList(level, buyer)) {
             Optional<Deal> deal = sellers(level, buyer).stream()
-                    .flatMap(seller -> offer(level, seller, want.item(), want.amount(), Economy.emeralds(level, buyer)).stream())
+                    .flatMap(seller -> offer(level, seller, want.item(), want.amount(), wallet).stream())
                     .findFirst();
             if (deal.isPresent()) return deal;
         }
-        return upgradeDeal(level, buyer, table.get(), Economy.spendable(level, buyer), false).or(() -> gear(level, buyer));
+        return upgradeDeal(level, buyer, table.get(), spendable, false).or(() -> gear(level, buyer));
     }
 
     /** A supply of its trade it is short of that nobody in its village sells: what a merchant could bring it. */
@@ -417,9 +418,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
         java.util.Map<java.util.UUID, Integer> left = new java.util.HashMap<>();
         for (var entry : debts.entrySet()) {
             if (!(level.getEntity(entry.getKey()) instanceof Villager creditor) || !creditor.isAlive()) continue;
-            int pay = Math.min(entry.getValue(), Math.max(0, Economy.spendable(level, buyer)));
-            if (pay > 0) Economy.give(level, creditor, new ItemStack(Items.EMERALD, Economy.take(level, buyer, Items.EMERALD, pay)));
-            if (entry.getValue() > pay) left.put(entry.getKey(), entry.getValue() - pay);
+            int paid = Economy.pay(level, buyer, creditor, Math.min(entry.getValue(), Math.max(0, Economy.spendable(level, buyer))));
+            if (entry.getValue() > paid) left.put(entry.getKey(), entry.getValue() - paid);
         }
         buyer.setData(ModVillagers.DEBTS, java.util.Map.copyOf(left));
     }
@@ -442,7 +442,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** A tool or one lot of a supply of its trade, on credit, when it can't pay for them and still owes little enough. */
     private static Optional<Deal> creditDeal(ServerLevel level, Villager buyer) {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
-        if (table.isEmpty() || !shopsForWork(buyer)) return Optional.empty();
+        if (table.isEmpty() || !shopsForWork(buyer) || !Economy.villagersPay()) return Optional.empty();
         int room = CREDIT_LIMIT - debt(buyer);
         if (room <= 0) return Optional.empty();
         if (IdleReason.lacksTool(level, buyer)) {
@@ -491,7 +491,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private static Optional<Deal> toolDeal(ServerLevel level, Villager buyer, TradeTable table) {
         if (!IdleReason.lacksTool(level, buyer)) return Optional.empty();
-        int wallet = Economy.emeralds(level, buyer) - Economy.FOOD_MONEY;
+        int wallet = Economy.villagerBudget(Economy.emeralds(level, buyer) - Economy.FOOD_MONEY);
         return sellers(level, buyer).stream()
                 .flatMap(seller -> TradeTable.forVillager(seller).stream()
                         .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
@@ -606,7 +606,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isPresent() && shopsForWork(buyer)) {
-            int budget = Economy.spendable(level, buyer);
+            int budget = Economy.villagerBudget(Economy.spendable(level, buyer));
             for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
                 if (Economy.count(level, buyer, supply.item()) >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
                 Optional<Visit> order = makers.stream()
@@ -642,9 +642,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
         Commissions.Order order = visit.order();
         switch (visit.errand()) {
             case ORDER -> {
-                if (Commissions.placed(buyer).isPresent() || !Commissions.takesOrders(maker) || Economy.emeralds(level, buyer) < order.paid()) return;
-                int paid = Economy.take(level, buyer, Items.EMERALD, order.paid());
-                Economy.give(level, maker, new ItemStack(Items.EMERALD, paid));
+                if (Commissions.placed(buyer).isPresent() || !Commissions.takesOrders(maker) || Economy.villagerBudget(Economy.emeralds(level, buyer)) < order.paid()) return;
+                int paid = Economy.pay(level, buyer, maker, order.paid());
                 Commissions.place(buyer, maker, new Commissions.Order(order.buyer(), order.item(), order.count(), order.path(), paid, level.getGameTime()));
             }
             case COLLECT -> {

@@ -63,6 +63,30 @@ public final class Economy {
         return Math.max(0, emeralds(level, villager) - reserve(villager));
     }
 
+    /**
+     * Whether villagers pay each other ({@code villagersPayEachOther}). Off, they take what they need from each other
+     * for free; players still pay villagers and are paid by them as always.
+     */
+    public static boolean villagersPay() {
+        return com.sheepfromheaven.minenow.MineNowConfig.enabled(com.sheepfromheaven.minenow.MineNowConfig.Feature.VILLAGERS_PAY_EACH_OTHER);
+    }
+
+    /**
+     * Pays {@code emeralds} for another villager's goods or work, to {@code to} (null: they leave the village with a
+     * travelling merchant). Nothing moves while villagers don't pay each other. Returns what was paid.
+     */
+    public static int pay(ServerLevel level, Villager from, @org.jspecify.annotations.Nullable Villager to, int emeralds) {
+        if (!villagersPay() || emeralds <= 0) return 0;
+        int paid = take(level, from, Items.EMERALD, emeralds);
+        if (to != null) give(level, to, new ItemStack(Items.EMERALD, paid));
+        return paid;
+    }
+
+    /** What a villager may spend on another villager's goods out of {@code budget}: no limit while villagers don't pay each other. */
+    public static int villagerBudget(int budget) {
+        return villagersPay() ? budget : Integer.MAX_VALUE;
+    }
+
     /** Chests a villager's goods may sit in: none while a merchant is on tour, since they're days away. */
     private static List<BlockPos> chestPositions(ServerLevel level, Villager villager) {
         return com.sheepfromheaven.minenow.merchant.Merchant.onTour(villager) ? List.of() : Workshop.allChests(level, villager);
