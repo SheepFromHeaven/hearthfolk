@@ -448,6 +448,9 @@ public final class MineNow {
             test(helper, TestGroup.DEFENCE, "a_perched_archer_stays_up_and_shoots_raiders_further_than_it_would_on_the_ground", com.sheepfromheaven.minenow.villager.GearTests::aPerchedArcherStaysUpAndShootsRaidersFurtherThanItWouldOnTheGround);
             test(helper, TestGroup.DEFENCE, "an_archer_without_high_ground_gathers_at_the_bell", com.sheepfromheaven.minenow.villager.GearTests::anArcherWithoutHighGroundGathersAtTheBell);
             test(helper, TestGroup.DEFENCE, "an_archer_climbs_into_a_roofed_tower", com.sheepfromheaven.minenow.villager.GearTests::anArcherClimbsIntoARoofedTower);
+            test(helper, TestGroup.DEFENCE, "without_defence_an_armed_villager_panics_instead_of_fighting", com.sheepfromheaven.minenow.villager.GearTests::withoutDefenceAnArmedVillagerPanicsInsteadOfFighting);
+            test(helper, TestGroup.DEFENCE, "without_defence_the_bell_sends_an_armed_villager_into_hiding", com.sheepfromheaven.minenow.villager.GearTests::withoutDefenceTheBellSendsAnArmedVillagerIntoHiding);
+            test(helper, TestGroup.DEFENCE, "without_defence_a_villager_with_spare_money_buys_no_armor", com.sheepfromheaven.minenow.villager.GearTests::withoutDefenceAVillagerWithSpareMoneyBuysNoArmor);
             test(helper, TestGroup.DEFENCE, "an_archer_prefers_a_marked_post_to_higher_ground", com.sheepfromheaven.minenow.villager.GearTests::anArcherPrefersAMarkedPostToHigherGround);
             test(helper, TestGroup.DEFENCE, "a_villager_on_high_ground_notices_a_hostile_further_off_than_one_on_the_ground", com.sheepfromheaven.minenow.villager.GearTests::aVillagerOnHighGroundNoticesAHostileFurtherOffThanOneOnTheGround);
             test(helper, TestGroup.DEFENCE, "a_fallen_villagers_gear_drops", com.sheepfromheaven.minenow.villager.GearTests::aFallenVillagersGearDrops);

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_defend_the_village",
+  "function": "minenow:without_defence_the_bell_sends_an_armed_villager_into_hiding",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

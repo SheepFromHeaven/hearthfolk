@@ -505,7 +505,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     /** The most protective armor (or, once fully armored, the best sword, or a bow and arrows for an archer) the nearest seller has that it can afford. */
     private static Optional<Deal> gear(ServerLevel level, Villager buyer) {
-        int budget = Gear.budget(level, buyer);
+        int budget = Alarms.on() ? Gear.budget(level, buyer) : 0;
         if (budget <= 0) return Optional.empty();
         return sellers(level, buyer).stream()
                 .flatMap(seller -> Economy.items(level, seller).stream()
@@ -589,7 +589,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private static Optional<Visit> newCommission(ServerLevel level, Villager buyer) {
         if (Commissions.placed(buyer).isPresent()) return Optional.empty();
         long now = level.getGameTime();
-        int gearBudget = Gear.budget(level, buyer);
+        int gearBudget = Alarms.on() ? Gear.budget(level, buyer) : 0;
         java.util.List<Villager> makers = sellers(level, buyer).stream().filter(Commissions::takesOrders).toList();
         if (gearBudget > 0) {
             Optional<Visit> gear = makers.stream()

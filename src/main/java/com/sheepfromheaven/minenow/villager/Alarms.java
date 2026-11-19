@@ -37,6 +37,10 @@ public final class Alarms {
 
     private Alarms() {}
 
+    static boolean on() {
+        return com.sheepfromheaven.minenow.MineNowConfig.enabled(com.sheepfromheaven.minenow.MineNowConfig.Feature.VILLAGERS_DEFEND_THE_VILLAGE);
+    }
+
     static final class Alarm {
         private final BlockPos origin;
         private long until;
@@ -62,6 +66,10 @@ public final class Alarms {
 
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % POLL != 0) return;
+        if (!on()) {
+            ALARMS.remove(level);
+            return;
+        }
         long now = level.getGameTime();
         List<Alarm> alarms = ALARMS.computeIfAbsent(level, l -> new ArrayList<>());
         alarms.removeIf(alarm -> now > alarm.until || now < alarm.until - 2L * Muster.ALARM_TICKS);
@@ -103,7 +111,7 @@ public final class Alarms {
 
     /** A hostile hurting a villager in an alarm is where the threat is now. */
     public static void onDamage(LivingDamageEvent.Post event) {
-        if (!(event.getEntity() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) return;
+        if (!on() || !(event.getEntity() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) return;
         if (!(event.getSource().getEntity() instanceof LivingEntity attacker) || !hostile(attacker)) return;
         of(level, villager).filter(alarm -> !alarm.raid).ifPresent(alarm -> alarm.threat = attacker.blockPosition());
     }
