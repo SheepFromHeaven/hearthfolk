@@ -5,6 +5,7 @@ import com.sheepfromheaven.minenow.farmer.FarmerReport;
 import com.sheepfromheaven.minenow.villager.IdleCueTests;
 import com.sheepfromheaven.minenow.farmer.FarmerRules;
 import com.sheepfromheaven.minenow.farmer.FarmerTests;
+import com.sheepfromheaven.minenow.farmer.SwitchedFarmerTests;
 import com.sheepfromheaven.minenow.fisherman.FishermanEntities;
 import com.sheepfromheaven.minenow.miner.Miner;
 import com.sheepfromheaven.minenow.miner.MinerTests;
@@ -129,12 +130,19 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(StorageTheft::onEntityJoin);
 
         modBus.addListener(com.sheepfromheaven.minenow.gametest.FeatureOff::register);
+        modBus.addListener(com.sheepfromheaven.minenow.gametest.ProfessionOff::register);
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             helper.register(com.sheepfromheaven.minenow.soak.VillageSoak.ID, com.sheepfromheaven.minenow.soak.VillageSoak::run);
             test(helper, TestGroup.VILLAGERS, "every_feature_is_on_by_default", com.sheepfromheaven.minenow.gametest.FeatureTests::everyFeatureIsOnByDefault);
             test(helper, TestGroup.VILLAGERS, "a_feature_environment_switches_only_its_feature_off", com.sheepfromheaven.minenow.gametest.FeatureTests::aFeatureEnvironmentSwitchesOnlyItsFeatureOff);
             test(helper, TestGroup.VILLAGERS, "a_switch_survives_a_save_and_reload", com.sheepfromheaven.minenow.gametest.FeatureTests::aSwitchSurvivesASaveAndReload);
             test(helper, TestGroup.VILLAGERS, "a_new_world_starts_from_the_toml", com.sheepfromheaven.minenow.gametest.FeatureTests::aNewWorldStartsFromTheToml);
+            test(helper, TestGroup.VILLAGERS, "every_profession_is_on_by_default", com.sheepfromheaven.minenow.gametest.ProfessionTests::everyProfessionIsOnByDefault);
+            test(helper, TestGroup.VILLAGERS, "a_villagers_profession_switch_is_the_worlds_value", com.sheepfromheaven.minenow.gametest.ProfessionTests::aVillagersProfessionSwitchIsTheWorldsValue);
+            test(helper, TestGroup.VILLAGERS, "a_profession_switch_survives_a_save_and_reload", com.sheepfromheaven.minenow.gametest.ProfessionTests::aProfessionSwitchSurvivesASaveAndReload);
+            test(helper, TestGroup.VILLAGERS, "a_new_world_starts_professions_from_the_toml", com.sheepfromheaven.minenow.gametest.ProfessionTests::aNewWorldStartsProfessionsFromTheToml);
+            test(helper, TestGroup.VILLAGERS, "a_switched_off_profession_takes_no_part_in_villager_trading", com.sheepfromheaven.minenow.gametest.ProfessionTests::aSwitchedOffProfessionTakesNoPartInVillagerTrading);
+            test(helper, TestGroup.VILLAGERS, "a_profession_environment_switches_only_its_profession_off", com.sheepfromheaven.minenow.gametest.ProfessionTests::aProfessionEnvironmentSwitchesOnlyItsProfessionOff);
             test(helper, TestGroup.VILLAGERS, "every_setting_has_a_name_and_tooltip", com.sheepfromheaven.minenow.gametest.SettingsMenuTests::everySettingHasANameAndTooltip);
             test(helper, TestGroup.VILLAGERS, "the_menus_setters_change_only_the_world", com.sheepfromheaven.minenow.gametest.SettingsMenuTests::theMenusSettersChangeOnlyTheWorld);
             test(helper, TestGroup.CLERIC, "every_brew_is_a_vanilla_brewing_recipe", com.sheepfromheaven.minenow.cleric.ClericTests::everyBrewIsAVanillaBrewingRecipe);
@@ -185,6 +193,13 @@ public final class MineNow {
             test(helper, TestGroup.TRADING, "a_farmer_buys_stem_seeds_from_the_player_when_it_grows_them", FarmerTradeTests::aFarmerBuysStemSeedsFromThePlayerWhenItGrowsThem);
             test(helper, TestGroup.FARMER, "farmer_retills_farmland_that_was_trampled", FarmerTests::farmerRetillsFarmlandThatWasTrampled);
             test(helper, TestGroup.FARMER, "farmer_with_a_full_inventory_still_harvests", FarmerTests::farmerWithAFullInventoryStillHarvests);
+            test(helper, TestGroup.FARMER, "a_switched_off_farmer_harvests_the_vanilla_way", SwitchedFarmerTests::aSwitchedOffFarmerHarvestsTheVanillaWay);
+            test(helper, TestGroup.FARMER, "a_farmer_that_is_on_harvests_with_tend_fields", SwitchedFarmerTests::aFarmerThatIsOnHarvestsWithTendFields);
+            test(helper, TestGroup.FARMER, "a_switched_off_farmer_bakes_bread_at_its_composter", SwitchedFarmerTests::aSwitchedOffFarmerBakesBreadAtItsComposter);
+            test(helper, TestGroup.FARMER, "a_switched_off_farmer_bone_meals_growing_crops", SwitchedFarmerTests::aSwitchedOffFarmerBoneMealsGrowingCrops);
+            test(helper, TestGroup.FARMER, "a_switched_off_farmer_may_trample_farmland", SwitchedFarmerTests::aSwitchedOffFarmerMayTrampleFarmland);
+            test(helper, TestGroup.FARMER, "a_farmer_that_is_on_does_not_trample_farmland", SwitchedFarmerTests::aFarmerThatIsOnDoesNotTrampleFarmland);
+            test(helper, TestGroup.FARMER, "a_farmer_switched_back_on_stops_its_vanilla_farm_work", SwitchedFarmerTests::aFarmerSwitchedBackOnStopsItsVanillaFarmWork);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_is_diagnosed", IdleCueTests::aWorkerWithoutItsToolIsDiagnosed);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_holds_up_an_emerald", IdleCueTests::aWorkerWithoutItsToolHoldsUpAnEmerald);
             test(helper, TestGroup.VILLAGERS, "a_broke_worker_without_its_tool_holds_no_emerald", IdleCueTests::aBrokeWorkerWithoutItsToolHoldsNoEmerald);

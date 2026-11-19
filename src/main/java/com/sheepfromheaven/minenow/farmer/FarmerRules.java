@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.farmer;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
@@ -13,12 +14,20 @@ public final class FarmerRules {
         return villager.getVillagerData().profession().is(VillagerProfession.FARMER);
     }
 
+    /**
+     * A farmer whose profession is switched on: Hearthfolk tends its field and it never tramples farmland. Switched off, a
+     * farmer is vanilla's and does vanilla's farm work ({@link VanillaFarmWork}).
+     */
+    public static boolean hearthfolkFarmer(Villager villager) {
+        return isFarmer(villager) && MineNowConfig.professionEnabled(villager.getVillagerData().profession());
+    }
+
     public static void onEntityJoin(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
         RightClickHarvest.onEntityJoin(event);
     }
 
     public static void onFarmlandTrample(BlockEvent.FarmlandTrampleEvent event) {
-        if (event.getEntity() instanceof Villager villager && isFarmer(villager)) event.setCanceled(true);
+        if (event.getEntity() instanceof Villager villager && hearthfolkFarmer(villager)) event.setCanceled(true);
     }
 
     static boolean griefingAllowed(ServerLevel level) {

@@ -1,11 +1,16 @@
 package com.sheepfromheaven.minenow;
 
 import com.mojang.serialization.Codec;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -33,11 +38,17 @@ public final class MineNowConfig {
             .defineInRange("maxMerchantTours", 4, 0, 64);
 
     private static final Map<Feature, ModConfigSpec.BooleanValue> FEATURES = new EnumMap<>(Feature.class);
+    private static final Map<Profession, ModConfigSpec.BooleanValue> PROFESSIONS = new EnumMap<>(Profession.class);
 
     static {
         BUILDER.comment("Systems of Hearthfolk that can each be switched off. Off, villagers do as in vanilla there.").push("features");
         for (Feature feature : Feature.values()) {
             FEATURES.put(feature, BUILDER.comment(feature.comment).define(feature.key, true));
+        }
+        BUILDER.pop();
+        BUILDER.comment("Professions that can each be switched off. Off, a villager of that profession works and trades as in vanilla.").push("professions");
+        for (Profession profession : Profession.values()) {
+            PROFESSIONS.put(profession, BUILDER.comment(profession.comment).define(profession.getSerializedName(), true));
         }
         BUILDER.pop();
     }
@@ -69,6 +80,34 @@ public final class MineNowConfig {
 
     public static void setDefault(Feature feature, boolean on) {
         FEATURES.get(feature).set(on);
+    }
+
+    /** Whether a villager's profession is on in the running world. A profession with no switch is always on. */
+    public static boolean professionEnabled(Holder<VillagerProfession> profession) {
+        return profession.unwrapKey().map(key -> professionEnabled(key)).orElse(true);
+    }
+
+    public static boolean professionEnabled(ResourceKey<VillagerProfession> profession) {
+        return Profession.of(profession).map(each -> professionEnabled(each)).orElse(true);
+    }
+
+    /** Read live, like {@link #enabled(Feature)}. */
+    public static boolean professionEnabled(Profession profession) {
+        return world().map(settings -> settings.enabled(profession)).orElseGet(() -> defaultValue(profession));
+    }
+
+    /** Sets the running world's value; with no world running, the toml's. */
+    public static void set(Profession profession, boolean on) {
+        world().ifPresentOrElse(settings -> settings.set(profession, on), () -> setDefault(profession, on));
+    }
+
+    /** What the toml says, the value a new world starts with. On until the config has loaded. */
+    public static boolean defaultValue(Profession profession) {
+        return tomlOr(PROFESSIONS.get(profession), true);
+    }
+
+    public static void setDefault(Profession profession, boolean on) {
+        PROFESSIONS.get(profession).set(on);
     }
 
     public static boolean villagersSummonGolems() {
@@ -148,6 +187,35 @@ public final class MineNowConfig {
         @Override
         public String getSerializedName() {
             return key;
+        }
+    }
+
+    /**
+     * The professions that can be switched off, one entry per profession with a switch of its own: the switch is saved per
+     * world, its toml key is the profession's name, and a villager reads it through {@link #professionEnabled(Holder)}.
+     */
+    public enum Profession implements StringRepresentable {
+        FARMER(Identifier.fromNamespaceAndPath("minecraft", "farmer"),
+                "Whether farmers tend the fields beside their composter, and never trample farmland. Off: they farm as in vanilla, with vanilla's trades, and take no part in villager trading.");
+
+        public static final Codec<Profession> CODEC = StringRepresentable.fromEnum(Profession::values);
+
+        private final Identifier profession;
+        private final String comment;
+
+        Profession(Identifier profession, String comment) {
+            this.profession = profession;
+            this.comment = comment;
+        }
+
+        /** The switch of this profession, if it has one; a profession without one is always on. */
+        public static java.util.Optional<Profession> of(ResourceKey<VillagerProfession> profession) {
+            return Arrays.stream(values()).filter(each -> each.profession.equals(profession.identifier())).findFirst();
+        }
+
+        @Override
+        public String getSerializedName() {
+            return profession.getPath();
         }
     }
 }

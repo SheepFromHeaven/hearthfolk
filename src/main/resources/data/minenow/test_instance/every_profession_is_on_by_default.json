@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:every_profession_is_on_by_default",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

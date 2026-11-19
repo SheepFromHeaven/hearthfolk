@@ -38,6 +38,7 @@ public final class WorkXp {
         if (xp <= 0 || !(villager.level() instanceof ServerLevel level)) return;
         var profession = villager.getVillagerData().profession();
         if (profession.is(VillagerProfession.NONE) || profession.is(VillagerProfession.NITWIT)) return;
+        if (!MineNowConfig.professionEnabled(profession)) return;
         int day = (int) (level.getGameTime() / DAY);
         if (villager.getData(ModVillagers.WORK_XP_DAY) != day) {
             villager.setData(ModVillagers.WORK_XP_DAY, day);
