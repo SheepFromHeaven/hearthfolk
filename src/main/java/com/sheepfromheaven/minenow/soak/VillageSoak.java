@@ -222,7 +222,7 @@ public final class VillageSoak {
             }
             if (Boolean.getBoolean("minenow.soak.traceMines") && tick[0] % 20 == 0) {
                 StringBuilder down = new StringBuilder();
-                for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds())) {
+                for (Villager v : level.getEntitiesOfClass(Villager.class, ground(helper))) {
                     if (v.isBaby() || !Miner.isDownAMine(level, v)) continue;
                     down.append(tick[0]).append(' ').append(v.getName().getString()).append(' ').append(v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?"))
                             .append(String.format(" at %.2f %.2f %.2f", v.getX() - helper.absolutePos(BlockPos.ZERO).getX(), v.getY() - helper.absolutePos(BlockPos.ZERO).getY(), v.getZ() - helper.absolutePos(BlockPos.ZERO).getZ()))
@@ -328,6 +328,11 @@ public final class VillageSoak {
             masonDay[1]++;
             if (mason.getData(ModVillagers.COMMISSIONS).stream().anyMatch(order -> order.item().isEmpty())) masonDay[2]++;
         }
+    }
+
+    /** The structure plus the ground laid around and below it, so miners in their tunnels past the edge are still counted. */
+    private static net.minecraft.world.phys.AABB ground(GameTestHelper helper) {
+        return helper.getBounds().inflate(MARGIN, 0, MARGIN).expandTowards(0, -DEPTH, 0);
     }
 
     private static boolean isTool(ItemStack stack) {
@@ -546,7 +551,7 @@ public final class VillageSoak {
             Container chest = HomeStorage.chestContainer(level, helper.absolutePos(at(1 + (i % 5) * CELL_W, 1 + (i / 5) * CELL_D, 5, 1, 13)));
             if (chest != null) total += chest.countItem(Items.EMERALD);
         }
-        for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds())) total += v.getInventory().countItem(Items.EMERALD);
+        for (Villager v : level.getEntitiesOfClass(Villager.class, ground(helper))) total += v.getInventory().countItem(Items.EMERALD);
         for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, helper.getBounds().inflate(8), item -> item.getItem().is(Items.EMERALD))) {
             total += item.getItem().getCount();
         }
@@ -599,7 +604,7 @@ public final class VillageSoak {
             herd.merge(animal.getType().toShortString(), animal.isBaby() ? "+1 young" : "+1", (a, b) -> a + b);
         }
         csv.append(day).append(",livestock,0,0,0,0,0,0,0,\"").append(herd).append("\"\n");
-        List<Villager> everyone = level.getEntitiesOfClass(Villager.class, helper.getBounds());
+        List<Villager> everyone = level.getEntitiesOfClass(Villager.class, ground(helper));
         Set<Villager> original = new HashSet<>();
         for (Resident resident : residents) original.add(resident.villager());
         Map<String, Integer> newcomers = new TreeMap<>();
@@ -681,7 +686,7 @@ public final class VillageSoak {
         }
         Set<Villager> original = new HashSet<>();
         for (Resident resident : residents) original.add(resident.villager());
-        for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds(), v -> !original.contains(v))) {
+        for (Villager v : level.getEntitiesOfClass(Villager.class, ground(helper), v -> !original.contains(v))) {
             text.append("== born here: ").append(v.getName().getString()).append(v.isBaby() ? " (baby)" : " " + v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?")
                     + " level " + v.getVillagerData().level()).append(" at ").append(helper.relativePos(v.blockPosition()).toShortString())
                     .append(", job site ").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE).map(g -> helper.relativePos(g.pos()).toShortString()).orElse("-"))
