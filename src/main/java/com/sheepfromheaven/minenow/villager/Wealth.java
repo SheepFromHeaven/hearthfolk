@@ -11,7 +11,8 @@ import net.minecraft.world.food.VillagerFood;
  * more the more villagers its village has) buys the bread, carrots,
  * potatoes or beetroot that make vanilla villagers willing to breed whenever it carries less than
  * {@link Villager#BREEDING_FOOD_THRESHOLD} food points in its goods (its chests count, or it buys again every time it
- * unloads). Vanilla does the rest (a partner, a free bed).
+ * unloads). Vanilla does the rest (a partner, a free bed). While villagers don't pay each other it fetches it only
+ * with a free bed in reach ({@link VillageBeds#anyFree}), since money no longer limits it.
  */
 public final class Wealth {
     private Wealth() {}
@@ -21,8 +22,10 @@ public final class Wealth {
         return WealthFormula.current().required(villagers);
     }
 
+    /** While villagers don't pay each other money limits nothing, so a free bed is what limits it instead. */
     static boolean wantsFoodForAFamily(ServerLevel level, Villager villager) {
-        return !villager.isBaby() && Economy.villagerBudget(Economy.emeralds(level, villager)) >= required(level, villager) && breedingFoodPoints(level, villager) < Villager.BREEDING_FOOD_THRESHOLD;
+        return !villager.isBaby() && Economy.villagerBudget(Economy.emeralds(level, villager)) >= required(level, villager) && breedingFoodPoints(level, villager) < Villager.BREEDING_FOOD_THRESHOLD
+                && (Economy.villagersPay() || VillageBeds.anyFree(level, villager));
     }
 
     static boolean isBreedingFood(ItemStack stack) {

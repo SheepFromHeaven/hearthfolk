@@ -43,6 +43,36 @@ public final class PayEachOtherTests {
         });
     }
 
+    /** Free breeding food without a free bed only fed a village whose beds were full: in the soak, 50 carrots and potatoes a day left the farmers for nothing. */
+    public static void withoutPaymentBreedingFoodIsFetchedOnlyWithAFreeBed(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager seller = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        seller.getInventory().addItem(new ItemStack(Items.WOODEN_HOE));
+        seller.getInventory().addItem(new ItemStack(Items.CARROT, 64));
+        GameTestHelpers.giveHome(helper, seller, new BlockPos(19, 1, 3));
+        BlockPos loom = new BlockPos(4, 1, 12);
+        helper.setBlock(loom, Blocks.LOOM);
+        Villager buyer = GameTestHelpers.spawnEmployed(helper, loom.east(), loom, VillagerProfession.SHEPHERD, PoiTypes.SHEPHERD);
+        buyer.getInventory().addItem(new ItemStack(Items.SHEARS));
+        GameTestHelpers.giveHome(helper, buyer, new BlockPos(4, 1, 3));
+        long[] tick = {0};
+        boolean[] fetchedWithoutBed = {false};
+        helper.onEachTick(() -> {
+            tick[0]++;
+            if (tick[0] < 400 && buyer.getInventory().countItem(Items.CARROT) > 0) fetchedWithoutBed[0] = true;
+            if (tick[0] == 400) GameTestHelpers.placeBed(helper, new BlockPos(10, 1, 3));
+        });
+
+        helper.succeedWhen(() -> {
+            helper.assertFalse(fetchedWithoutBed[0], "With no free bed in the village a villager fetches no breeding food");
+            helper.assertTrue(tick[0] > 400, "...waiting to see that it doesn't");
+            helper.assertTrue(buyer.getInventory().countItem(Items.CARROT) > 0, "...and once there is one it fetches some, has " + buyer.getInventory().countItem(Items.CARROT));
+        });
+    }
+
     public static void withoutPaymentABrokeVillagerCommissionsMissingArmorAndGetsIt(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
