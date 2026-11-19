@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:config",
+  "function": "minenow:the_menus_setters_change_only_the_world",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}
