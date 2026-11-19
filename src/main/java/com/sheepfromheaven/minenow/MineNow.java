@@ -559,6 +559,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "unemployed_villager_follows_a_player_holding_an_emerald", FollowTests::unemployedVillagerFollowsAPlayerHoldingAnEmerald);
             test(helper, TestGroup.VILLAGERS, "employed_villager_ignores_the_emerald", FollowTests::employedVillagerIgnoresTheEmerald);
             test(helper, TestGroup.VILLAGERS, "following_far_from_home_abandons_the_old_bed", FollowTests::followingFarFromHomeAbandonsTheOldBed);
+            test(helper, TestGroup.VILLAGERS, "without_following_an_unemployed_villager_ignores_the_emerald", FollowTests::withoutFollowingAnUnemployedVillagerIgnoresTheEmerald);
             test(helper, TestGroup.VILLAGERS, "villager_picks_the_nearest_bell_when_the_afternoon_starts", MeetingTests::villagerPicksTheNearestBellWhenTheAfternoonStarts);
             test(helper, TestGroup.VILLAGERS, "villagers_do_not_hand_items_to_each_other", MeetingTests::villagersDoNotHandItemsToEachOther);
             test(helper, TestGroup.VILLAGE, "villagers_that_claimed_a_bell_are_one_village", com.sheepfromheaven.minenow.villager.VillageTests::villagersThatClaimedABellAreOneVillage);

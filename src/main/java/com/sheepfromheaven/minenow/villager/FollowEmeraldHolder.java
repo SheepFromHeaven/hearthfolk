@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow.villager;
 
 import com.google.common.collect.ImmutableMap;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
@@ -77,7 +78,8 @@ public class FollowEmeraldHolder extends Behavior<Villager> {
     }
 
     private static boolean canFollow(Villager body) {
-        return !body.isBaby() && !body.isSleeping() && !body.isTrading()
+        return MineNowConfig.enabled(MineNowConfig.Feature.VILLAGERS_FOLLOW_EMERALDS)
+                && !body.isBaby() && !body.isSleeping() && !body.isTrading()
                 && body.getVillagerData().profession().is(VillagerProfession.NONE)
                 && BUSY.stream().noneMatch(body.getBrain()::isActive);
     }
