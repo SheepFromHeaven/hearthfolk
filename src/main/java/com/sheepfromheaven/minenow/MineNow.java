@@ -622,6 +622,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "the_report_names_the_block_at_the_job_site", com.sheepfromheaven.minenow.villager.JobLossTests::theReportNamesTheBlockAtTheJobSite);
             test(helper, TestGroup.VILLAGERS, "a_job_site_now_holding_another_kind_of_block_is_forgotten", com.sheepfromheaven.minenow.villager.JobLossTests::aJobSiteNowHoldingAnotherKindOfBlockIsForgotten);
             test(helper, TestGroup.VILLAGERS, "a_journeyman_keeps_its_trade_without_a_job_site", com.sheepfromheaven.minenow.villager.JobLossTests::aJourneymanKeepsItsTradeWithoutAJobSite);
+            test(helper, TestGroup.VILLAGERS, "a_job_block_placed_near_the_old_one_goes_to_the_same_villager", com.sheepfromheaven.minenow.villager.JobLossTests::aJobBlockPlacedNearTheOldOneGoesToTheSameVillager);
             test(helper, TestGroup.VILLAGERS, "a_banner_on_a_hay_bale_links_a_bed_too_far_from_the_bell", com.sheepfromheaven.minenow.villager.VillageMarkerTests::aBannerOnAHayBaleLinksABedTooFarFromTheBell);
             test(helper, TestGroup.VILLAGERS, "a_hay_bale_without_a_banner_links_nothing", com.sheepfromheaven.minenow.villager.VillageMarkerTests::aHayBaleWithoutABannerLinksNothing);
             test(helper, TestGroup.VILLAGERS, "a_banner_on_another_block_links_nothing", com.sheepfromheaven.minenow.villager.VillageMarkerTests::aBannerOnAnotherBlockLinksNothing);

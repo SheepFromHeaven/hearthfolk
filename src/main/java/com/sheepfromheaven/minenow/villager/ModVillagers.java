@@ -135,6 +135,12 @@ public final class ModVillagers {
                     .serialize(Codec.LONG.fieldOf("time"))
                     .build());
 
+    /** Where a villager's job site last was, so a workstation moved close by goes back to the same villager. */
+    public static final Supplier<AttachmentType<java.util.Optional<net.minecraft.core.BlockPos>>> LAST_JOB_SITE = ATTACHMENT_TYPES.register("last_job_site",
+            () -> AttachmentType.<java.util.Optional<net.minecraft.core.BlockPos>>builder(() -> java.util.Optional.empty())
+                    .serialize(net.minecraft.core.BlockPos.CODEC.optionalFieldOf("pos"))
+                    .build());
+
     /** When a butcher last fed this young animal, -1 for never. */
     public static final Supplier<AttachmentType<Long>> FED_AT = ATTACHMENT_TYPES.register("fed_at",
             () -> AttachmentType.builder(() -> -1L)

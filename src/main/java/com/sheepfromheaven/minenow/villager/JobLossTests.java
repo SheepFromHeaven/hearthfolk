@@ -111,4 +111,25 @@ public final class JobLossTests {
         helper.succeedWhen(() -> helper.assertTrue(villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty(),
                 "A chest is a point of interest but no butcher's job site, and vanilla only checks within 16 blocks"));
     }
+
+    private static Villager workerWhoseJobBlockWasBroken(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(SMOKER, Blocks.SMOKER);
+        Villager villager = GameTestHelpers.spawnEmployed(helper, SMOKER.east(), SMOKER, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
+        helper.runAfterDelay(45, () -> helper.setBlock(SMOKER, Blocks.AIR));
+        return villager;
+    }
+
+    public static void aJobBlockPlacedNearTheOldOneGoesToTheSameVillager(GameTestHelper helper) {
+        Villager villager = workerWhoseJobBlockWasBroken(helper);
+        BlockPos moved = SMOKER.offset(0, 0, 4);
+        helper.runAfterDelay(200, () -> helper.setBlock(moved, Blocks.SMOKER));
+        helper.runAfterDelay(400, () -> {
+            helper.assertTrue(villager.getVillagerData().profession().is(VillagerProfession.BUTCHER), "A moved workstation keeps the trade, is " + villager.getVillagerData().profession());
+            helper.assertTrue(villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).map(site -> site.pos().equals(helper.absolutePos(moved))).orElse(false),
+                    "The villager takes the moved block as its job site, has " + villager.getBrain().getMemory(MemoryModuleType.JOB_SITE));
+            helper.succeed();
+        });
+    }
 }
