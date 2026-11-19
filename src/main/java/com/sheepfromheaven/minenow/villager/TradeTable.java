@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.villager;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.sheepfromheaven.minenow.MineNow;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
@@ -117,13 +118,22 @@ public record TradeTable(ResourceKey<VillagerProfession> profession, Optional<Ta
     private static final int MAX_CRAFT_DEPTH = 4;
     private static volatile Map<ResourceKey<VillagerProfession>, TradeTable> byProfession = Map.of();
 
+    /** The trade of a villager whose profession is switched on. A switched-off profession takes no part in villager trading, so this is the one gate for all of it. */
     public static Optional<TradeTable> forVillager(Villager villager) {
-        return villager.getVillagerData().profession().unwrapKey().map(byProfession::get);
+        var profession = villager.getVillagerData().profession();
+        if (!MineNowConfig.professionEnabled(profession)) return Optional.empty();
+        return profession.unwrapKey().map(byProfession::get);
+    }
+
+    /** Whether the villager's profession has a trade file, switched on or not, so its report still finds a switched-off villager. */
+    public static boolean hasTradeFile(Villager villager) {
+        return villager.getVillagerData().profession().unwrapKey().map(byProfession::containsKey).orElse(false);
     }
 
     /** What the cheapest trade sells {@code item} for at its top level, whoever makes it: the price a merchant pays for it at home. */
     public static Optional<Price> anySellPrice(Item item) {
-        return byProfession.values().stream().flatMap(table -> table.sellPrice(item, 5).stream()).min(java.util.Comparator.comparingDouble(Price::perItem));
+        return byProfession.values().stream().filter(table -> MineNowConfig.professionEnabled(table.profession()))
+                .flatMap(table -> table.sellPrice(item, 5).stream()).min(java.util.Comparator.comparingDouble(Price::perItem));
     }
 
     public static Optional<TradeTable> forProfession(ResourceKey<VillagerProfession> profession) {

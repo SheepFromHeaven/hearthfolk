@@ -139,6 +139,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villagers_profession_switch_is_the_worlds_value", com.sheepfromheaven.minenow.gametest.ProfessionTests::aVillagersProfessionSwitchIsTheWorldsValue);
             test(helper, TestGroup.VILLAGERS, "a_profession_switch_survives_a_save_and_reload", com.sheepfromheaven.minenow.gametest.ProfessionTests::aProfessionSwitchSurvivesASaveAndReload);
             test(helper, TestGroup.VILLAGERS, "a_new_world_starts_professions_from_the_toml", com.sheepfromheaven.minenow.gametest.ProfessionTests::aNewWorldStartsProfessionsFromTheToml);
+            test(helper, TestGroup.VILLAGERS, "a_switched_off_profession_takes_no_part_in_villager_trading", com.sheepfromheaven.minenow.gametest.ProfessionTests::aSwitchedOffProfessionTakesNoPartInVillagerTrading);
             test(helper, TestGroup.VILLAGERS, "every_setting_has_a_name_and_tooltip", com.sheepfromheaven.minenow.gametest.SettingsMenuTests::everySettingHasANameAndTooltip);
             test(helper, TestGroup.VILLAGERS, "the_menus_setters_change_only_the_world", com.sheepfromheaven.minenow.gametest.SettingsMenuTests::theMenusSettersChangeOnlyTheWorld);
             test(helper, TestGroup.CLERIC, "every_brew_is_a_vanilla_brewing_recipe", com.sheepfromheaven.minenow.cleric.ClericTests::everyBrewIsAVanillaBrewingRecipe);

@@ -46,7 +46,7 @@ public final class IdleReport {
     private static int run(CommandSourceStack source, boolean farmersOnly) {
         ServerLevel level = source.getLevel();
         Optional<Villager> villager = level.getEntitiesOfClass(Villager.class, new AABB(BlockPos.containing(source.getPosition())).inflate(SEARCH_RADIUS),
-                        v -> !v.isBaby() && TradeTable.forVillager(v).isPresent() && (!farmersOnly || v.getVillagerData().profession().is(VillagerProfession.FARMER))).stream()
+                        v -> !v.isBaby() && TradeTable.hasTradeFile(v) && (!farmersOnly || v.getVillagerData().profession().is(VillagerProfession.FARMER))).stream()
                 .min(Comparator.comparingDouble(v -> v.distanceToSqr(source.getPosition())));
         if (villager.isEmpty()) {
             source.sendFailure(Component.literal("No " + (farmersOnly ? "farmer" : "working villager") + " within " + SEARCH_RADIUS + " blocks"));
@@ -72,18 +72,11 @@ public final class IdleReport {
         add(lines, "Inventory: " + used + "/" + villager.getInventory().getContainerSize() + " slots used");
 
         lines.add(ReportBook.heading("Job"));
-        add(lines, JobLoss.describe(level, villager));
-        List<String> job = new ArrayList<>();
-        TradeTable.forVillager(villager).filter(IdleReason::requiresTool).ifPresent(table -> {
-            Optional<ItemStack> tool = villager.getInventory().getItems().stream().filter(stack -> Unloading.isTool(villager, stack)).findFirst();
-            job.add(tool.map(held -> "Tool: " + held.getHoverName().getString() + " " + (held.getMaxDamage() - held.getDamageValue()) + "/" + held.getMaxDamage())
-                    .orElse("Tool: " + (Unloading.ownsTool(level, villager) ? "none on it, it fetches one from its chest" : IdleReason.needsToolNow(level, villager) ? "no tool of its trade, it won't do the work that needs one until it gets one" : "no tool of its trade, it does what it can without one and buys one when it can")));
-        });
-        BiConsumer<Villager, List<String>> extra = villager.getVillagerData().profession().unwrapKey().map(EXTRAS::get).orElse(null);
-        if (extra != null) extra.accept(villager, job);
-        job.forEach(line -> add(lines, line));
-        List<IdleReason> reasons = IdleReason.of(level, villager);
-        add(lines, reasons.isEmpty() ? "Nothing is stopping it" : "Stopping it: " + String.join("; ", reasons.stream().map(reason -> reason.message).toList()));
+        if (TradeTable.hasTradeFile(villager) && TradeTable.forVillager(villager).isEmpty()) {
+            add(lines, "Switched off in this world: it works as in vanilla and takes no part in villager trading");
+        } else {
+            describeJob(level, villager, lines);
+        }
 
         lines.add(ReportBook.heading("Storage"));
         add(lines, HomeStorage.storageIn(level, villager)
@@ -96,6 +89,22 @@ public final class IdleReport {
         lines.add(ReportBook.heading("Breeding"));
         BreedingReport.lines(level, villager).forEach(line -> add(lines, line));
         return lines;
+    }
+
+    /** The job of a villager whose profession is switched on: its job site, tool, what its profession adds, and what stops it. */
+    private static void describeJob(ServerLevel level, Villager villager, List<Component> lines) {
+        add(lines, JobLoss.describe(level, villager));
+        List<String> job = new ArrayList<>();
+        TradeTable.forVillager(villager).filter(IdleReason::requiresTool).ifPresent(table -> {
+            Optional<ItemStack> tool = villager.getInventory().getItems().stream().filter(stack -> Unloading.isTool(villager, stack)).findFirst();
+            job.add(tool.map(held -> "Tool: " + held.getHoverName().getString() + " " + (held.getMaxDamage() - held.getDamageValue()) + "/" + held.getMaxDamage())
+                    .orElse("Tool: " + (Unloading.ownsTool(level, villager) ? "none on it, it fetches one from its chest" : IdleReason.needsToolNow(level, villager) ? "no tool of its trade, it won't do the work that needs one until it gets one" : "no tool of its trade, it does what it can without one and buys one when it can")));
+        });
+        BiConsumer<Villager, List<String>> extra = villager.getVillagerData().profession().unwrapKey().map(EXTRAS::get).orElse(null);
+        if (extra != null) extra.accept(villager, job);
+        job.forEach(line -> add(lines, line));
+        List<IdleReason> reasons = IdleReason.of(level, villager);
+        add(lines, reasons.isEmpty() ? "Nothing is stopping it" : "Stopping it: " + String.join("; ", reasons.stream().map(reason -> reason.message).toList()));
     }
 
     private static void add(List<Component> lines, String text) {
