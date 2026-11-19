@@ -127,8 +127,11 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(StorageTheft::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(StorageTheft::onEntityJoin);
 
+        modBus.addListener(com.sheepfromheaven.minenow.gametest.FeatureOff::register);
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             helper.register(com.sheepfromheaven.minenow.soak.VillageSoak.ID, com.sheepfromheaven.minenow.soak.VillageSoak::run);
+            test(helper, TestGroup.VILLAGERS, "every_feature_is_on_by_default", com.sheepfromheaven.minenow.gametest.FeatureTests::everyFeatureIsOnByDefault);
+            test(helper, TestGroup.VILLAGERS, "a_feature_environment_switches_only_its_feature_off", com.sheepfromheaven.minenow.gametest.FeatureTests::aFeatureEnvironmentSwitchesOnlyItsFeatureOff);
             test(helper, TestGroup.CLERIC, "every_brew_is_a_vanilla_brewing_recipe", com.sheepfromheaven.minenow.cleric.ClericTests::everyBrewIsAVanillaBrewingRecipe);
             test(helper, TestGroup.CLERIC, "a_cleric_fills_bottles_at_water_and_brews_awkward_potions", com.sheepfromheaven.minenow.cleric.ClericTests::aClericFillsBottlesAtWaterAndBrewsAwkwardPotions);
             test(helper, TestGroup.CLERIC, "a_cleric_without_water_brews_nothing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithoutWaterBrewsNothing);

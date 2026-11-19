@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:config",
+  "function": "minenow:every_feature_is_on_by_default",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}
