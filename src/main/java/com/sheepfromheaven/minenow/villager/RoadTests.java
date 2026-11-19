@@ -104,17 +104,63 @@ public final class RoadTests {
             helper.setBlock(18, 0, i, Blocks.STONE_BRICKS);
         }
         Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(11, 1, 11));
-        int[] ticks = {0, 0};
+        boolean[] seen = {false};
         helper.onEachTick(() -> {
-            if (++ticks[0] < 100) return;
-            if (Roads.isRoad(helper.getLevel(), villager.blockPosition())) ticks[1]++;
+            StrollAlongRoads stroll = findIn(villager.getBrain(), 0);
+            if (stroll == null) return;
+            seen[0] = true;
+            if (hasConsideredAStroll(stroll)) {
+                throw helper.assertionException("With road preference off an idle villager must not stroll along roads");
+            }
         });
 
-        helper.runAfterDelay(2300, () -> {
-            float share = ticks[1] / (float) (ticks[0] - 99);
-            helper.assertTrue(share < 0.2F, "With road preference off an idle villager should not seek out roads (the ring is ~12% of the area), was " + Math.round(share * 100) + "%");
+        helper.runAfterDelay(1200, () -> {
+            helper.assertTrue(seen[0], "The villager's brain holds no StrollAlongRoads, so the test would pass for nothing");
             helper.succeed();
         });
+    }
+
+    /**
+     * StrollAlongRoads starts and stops within one brain tick, so Brain.getRunningBehaviors never lists it between ticks.
+     * Its start check only gets past the switch by stamping nextStroll, so that field says whether it would have run.
+     */
+    private static StrollAlongRoads findIn(Object holder, int depth) {
+        if (holder instanceof StrollAlongRoads stroll) return stroll;
+        if (depth > 4) return null;
+        try {
+            if (holder instanceof java.util.Map<?, ?> map) {
+                for (Object value : map.values()) {
+                    StrollAlongRoads found = findIn(value, depth + 1);
+                    if (found != null) return found;
+                }
+            } else if (holder instanceof Iterable<?> items) {
+                for (Object item : items) {
+                    StrollAlongRoads found = findIn(item, depth + 1);
+                    if (found != null) return found;
+                }
+            } else if (holder instanceof net.minecraft.world.entity.ai.Brain<?>) {
+                for (java.lang.reflect.Field field : holder.getClass().getDeclaredFields()) {
+                    if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) continue;
+                    if (!java.util.Map.class.isAssignableFrom(field.getType()) && !Iterable.class.isAssignableFrom(field.getType())) continue;
+                    field.setAccessible(true);
+                    StrollAlongRoads found = findIn(field.get(holder), depth + 1);
+                    if (found != null) return found;
+                }
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+        return null;
+    }
+
+    private static boolean hasConsideredAStroll(StrollAlongRoads stroll) {
+        try {
+            java.lang.reflect.Field field = StrollAlongRoads.class.getDeclaredField("nextStroll");
+            field.setAccessible(true);
+            return field.getLong(stroll) != 0;
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static void aVillagerClimbsOutOfARiver(GameTestHelper helper) {
