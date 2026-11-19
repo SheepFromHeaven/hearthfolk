@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_get_names",
+  "function": "minenow:without_names_a_spawned_villager_stays_nameless",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

@@ -77,7 +77,7 @@ public final class MineNowConfig {
         VILLAGERS_PREFER_ROADS("villagersPreferRoads",
                 "Whether villagers prefer walking on paths and roads, and stroll along them when idle. Off: they walk as in vanilla."),
         VILLAGERS_LEVEL_THROUGH_WORK("villagersLevelThroughWork",
-                "Whether villagers earn experience from their work, not only from trading with players. Off: only trading levels them up, as in vanilla."),
+                "Whether villagers earn experience from their work, not only from trading with players. Levels gate a lot (how far a farmer's field reaches, how deep a miner digs, which recipes a craftsman knows), so with this off they progress much more slowly. Off: only trading levels them up, as in vanilla."),
         VILLAGERS_GET_NAMES("villagersGetNames",
                 "Whether every villager gets a name, and their births and deaths are announced. Off: new villagers stay nameless as in vanilla.");
 

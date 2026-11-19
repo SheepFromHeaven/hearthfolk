@@ -165,6 +165,7 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "a_novice_farmer_does_not_plant_pumpkin_seeds", FarmerTests::aNoviceFarmerDoesNotPlantPumpkinSeeds);
             test(helper, TestGroup.FARMER, "stems_and_fruit_are_recognized", FarmerTests::stemsAndFruitAreRecognized);
             test(helper, TestGroup.FARMER, "farmer_gains_experience_from_harvesting", FarmerTests::farmerGainsExperienceFromHarvesting);
+            test(helper, TestGroup.FARMER, "without_level_through_work_a_harvesting_farmer_gains_no_experience", FarmerTests::withoutLevelThroughWorkAHarvestingFarmerGainsNoExperience);
             test(helper, TestGroup.FARMER, "farmer_keeps_tending_after_brain_is_rebuilt", FarmerTests::farmerKeepsTendingAfterBrainIsRebuilt);
             test(helper, TestGroup.FARMER, "farmer_deposits_harvest_in_its_workshop_chest", FarmerTests::farmerDepositsHarvestInItsWorkshopChest);
             test(helper, TestGroup.FARMER, "farmer_without_hoe_leaves_ripe_crops_alone", FarmerTests::farmerWithoutHoeLeavesRipeCropsAlone);
@@ -234,6 +235,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "work_experience_has_a_daily_cap", com.sheepfromheaven.minenow.villager.WorkXpTests::workExperienceHasADailyCap);
             test(helper, TestGroup.VILLAGERS, "small_actions_add_up_to_whole_experience", com.sheepfromheaven.minenow.villager.WorkXpTests::smallActionsAddUpToWholeExperience);
             test(helper, TestGroup.VILLAGERS, "unemployed_villagers_earn_no_work_experience", com.sheepfromheaven.minenow.villager.WorkXpTests::unemployedVillagersEarnNoWorkExperience);
+            test(helper, TestGroup.VILLAGERS, "without_level_through_work_progress_is_kept", com.sheepfromheaven.minenow.villager.WorkXpTests::withoutLevelThroughWorkProgressIsKept);
             test(helper, TestGroup.VILLAGER_TRADING, "starting_purse_comes_with_the_job", com.sheepfromheaven.minenow.villager.EconomyTests::startingPurseComesWithTheJob);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_gets_its_purse_only_once", com.sheepfromheaven.minenow.villager.EconomyTests::aVillagerGetsItsPurseOnlyOnce);
             test(helper, TestGroup.VILLAGER_TRADING, "villager_keeps_food_and_tool_money_when_buying_from_players", com.sheepfromheaven.minenow.villager.EconomyTests::villagerKeepsFoodAndToolMoneyWhenBuyingFromPlayers);
@@ -551,6 +553,8 @@ public final class MineNow {
             test(helper, TestGroup.FLETCHER, "fletcher_practises_at_a_target_and_collects_its_arrows", com.sheepfromheaven.minenow.fletcher.FletcherTests::fletcherPractisesAtATargetAndCollectsItsArrows);
             test(helper, TestGroup.MINER, "miner_digs_new_emeralds_out_of_emerald_ore", MinerTests::minerDigsNewEmeraldsOutOfEmeraldOre);
             test(helper, TestGroup.VILLAGERS, "villager_is_given_a_name_when_it_spawns", VillagerNamesTests::villagerIsGivenANameWhenItSpawns);
+            test(helper, TestGroup.VILLAGERS, "without_names_a_spawned_villager_stays_nameless", VillagerNamesTests::withoutNamesASpawnedVillagerStaysNameless);
+            test(helper, TestGroup.VILLAGERS, "without_names_a_born_villager_stays_nameless", VillagerNamesTests::withoutNamesABornVillagerStaysNameless);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);
             test(helper, TestGroup.ROADS, "a_villager_climbs_out_of_a_river", RoadTests::aVillagerClimbsOutOfARiver);
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);

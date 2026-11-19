@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_level_through_work",
+  "function": "minenow:without_level_through_work_progress_is_kept",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 40
+}

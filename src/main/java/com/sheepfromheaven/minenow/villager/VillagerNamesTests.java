@@ -24,6 +24,25 @@ public final class VillagerNamesTests {
         });
     }
 
+    public static void withoutNamesASpawnedVillagerStaysNameless(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.assertTrue(!VillagerNames.names().isEmpty(), "The name list should be loaded, or this proves nothing");
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, SPAWN);
+
+        helper.runAfterDelay(5, () -> {
+            helper.assertTrue(!villager.hasCustomName(), "With names switched off a villager gets no name");
+            helper.succeed();
+        });
+    }
+
+    public static void withoutNamesABornVillagerStaysNameless(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        Villager baby = EntityTypes.VILLAGER.create(helper.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);
+        VillagerNames.nameIfMissing(baby);
+        helper.assertTrue(!baby.hasCustomName(), "With names switched off a newborn is not named, so its birth is not announced by name");
+        helper.succeed();
+    }
+
     public static void aNameFromANameTagIsKept(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         Villager villager = EntityTypes.VILLAGER.create(helper.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);

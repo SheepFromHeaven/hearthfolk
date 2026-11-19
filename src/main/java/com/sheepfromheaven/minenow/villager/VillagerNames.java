@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.villager;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.sheepfromheaven.minenow.MineNow;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
@@ -40,7 +41,7 @@ public final class VillagerNames {
 
     static void nameIfMissing(Villager villager) {
         List<String> available = names;
-        if (villager.hasCustomName() || available.isEmpty()) return;
+        if (!MineNowConfig.enabled(MineNowConfig.Feature.VILLAGERS_GET_NAMES) || villager.hasCustomName() || available.isEmpty()) return;
         villager.setCustomName(Component.literal(available.get(Math.floorMod(villager.getUUID().hashCode(), available.size()))));
     }
 

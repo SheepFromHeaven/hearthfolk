@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.villager;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
@@ -33,6 +34,7 @@ public final class WorkXp {
     private WorkXp() {}
 
     public static void award(Villager villager, double xp) {
+        if (!MineNowConfig.enabled(MineNowConfig.Feature.VILLAGERS_LEVEL_THROUGH_WORK)) return;
         if (xp <= 0 || !(villager.level() instanceof ServerLevel level)) return;
         var profession = villager.getVillagerData().profession();
         if (profession.is(VillagerProfession.NONE) || profession.is(VillagerProfession.NITWIT)) return;
