@@ -48,7 +48,7 @@ public class StrollAlongRoads extends Behavior<Villager> {
             if (Math.abs(dx) < MIN_DISTANCE && Math.abs(dz) < MIN_DISTANCE) continue;
             for (int dy = HEIGHT; dy >= -HEIGHT; dy--) {
                 BlockPos feet = origin.offset(dx, dy, dz);
-                if (Roads.isStandableRoad(level, feet)) return feet;
+                if (Roads.isStandableRoad(level, feet) && !RainShelter.wet(level, feet)) return feet;
             }
         }
         return null;

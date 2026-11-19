@@ -129,6 +129,24 @@ public final class ModVillagers {
                     .serialize(Commissions.Placed.CODEC.listOf().fieldOf("placed"))
                     .build());
 
+    /** Since when a villager with a profession has had no job site, {@code Long.MIN_VALUE} while it has one. */
+    public static final Supplier<AttachmentType<Long>> NO_JOB_SINCE = ATTACHMENT_TYPES.register("no_job_since",
+            () -> AttachmentType.builder(() -> Long.MIN_VALUE)
+                    .serialize(Codec.LONG.fieldOf("time"))
+                    .build());
+
+    /** Where a villager's job site last was, so a workstation moved close by goes back to the same villager. */
+    public static final Supplier<AttachmentType<java.util.Optional<net.minecraft.core.BlockPos>>> LAST_JOB_SITE = ATTACHMENT_TYPES.register("last_job_site",
+            () -> AttachmentType.<java.util.Optional<net.minecraft.core.BlockPos>>builder(() -> java.util.Optional.empty())
+                    .serialize(net.minecraft.core.BlockPos.CODEC.optionalFieldOf("pos"))
+                    .build());
+
+    /** When a butcher last fed this young animal, -1 for never. */
+    public static final Supplier<AttachmentType<Long>> FED_AT = ATTACHMENT_TYPES.register("fed_at",
+            () -> AttachmentType.builder(() -> -1L)
+                    .serialize(Codec.LONG.fieldOf("time"))
+                    .build());
+
     public static final Supplier<AttachmentType<Boolean>> LAST_MEAL_MEAT = ATTACHMENT_TYPES.register("last_meal_meat",
             () -> AttachmentType.builder(() -> false)
                     .serialize(Codec.BOOL.fieldOf("meat"))

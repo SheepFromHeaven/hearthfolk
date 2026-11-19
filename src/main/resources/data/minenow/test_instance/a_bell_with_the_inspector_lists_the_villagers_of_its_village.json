@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_35",
+  "function": "minenow:a_bell_with_the_inspector_lists_the_villagers_of_its_village",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

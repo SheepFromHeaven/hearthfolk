@@ -24,6 +24,10 @@ import net.minecraft.world.item.equipment.Equippable;
  * chestplate deepened over the robe; a helmet replaces the profession's hat (see {@link SwingingVillagerRenderer}).
  */
 public class VillagerArmorLayer extends RenderLayer<VillagerRenderState, VillagerModel> {
+    /** The armor's state on vanilla's villager render state, when vanilla's renderer is kept for EMF (see {@link MineNowClient}). */
+    static final net.minecraft.util.context.ContextKey<SwingingVillagerRenderer.ArmorState> ARMOR =
+            new net.minecraft.util.context.ContextKey<>(net.minecraft.resources.Identifier.fromNamespaceAndPath(com.sheepfromheaven.minenow.MineNow.MOD_ID, "villager_armor"));
+
     private final ArmorModelSet<Fitted> models;
     private final EquipmentLayerRenderer equipmentRenderer;
 
@@ -81,8 +85,8 @@ public class VillagerArmorLayer extends RenderLayer<VillagerRenderState, Village
 
     @Override
     public void submit(PoseStack poseStack, SubmitNodeCollector collector, int lightCoords, VillagerRenderState state, float yRot, float xRot) {
-        if (!(state instanceof SwingingVillagerRenderer.SwingState swing) || state.isBaby) return;
-        SwingingVillagerRenderer.ArmorState armor = swing.armor;
+        SwingingVillagerRenderer.ArmorState armor = state instanceof SwingingVillagerRenderer.SwingState swing ? swing.armor : state.getRenderData(ARMOR);
+        if (armor == null || state.isBaby) return;
         piece(poseStack, collector, armor.chestEquipment, EquipmentSlot.CHEST, lightCoords, armor);
         piece(poseStack, collector, armor.legsEquipment, EquipmentSlot.LEGS, lightCoords, armor);
         piece(poseStack, collector, armor.feetEquipment, EquipmentSlot.FEET, lightCoords, armor);

@@ -13,19 +13,19 @@ import java.util.Optional;
 final class Shortage {
     private Shortage() {}
 
-    /** The cheapest fuel of its trade, when the trade buys fuel, it has its tool and holds none. */
+    /** The cheapest fuel of its trade, when the trade buys fuel, it isn't waiting on its tool first, is out of other work and holds none. */
     static Optional<TradeTable.Supply> fuel(ServerLevel level, Villager villager) {
         Optional<TradeTable> table = TradeTable.forVillager(villager);
-        if (table.isEmpty() || IdleReason.requiresTool(table.get()) && !Unloading.ownsTool(level, villager)) return Optional.empty();
+        if (table.isEmpty() || IdleReason.needsToolNow(level, villager) || !IdleReason.needsFuelNow(level, villager)) return Optional.empty();
         if (Economy.items(level, villager).stream().anyMatch(item -> FurnaceTending.isFuel(new ItemStack(item)))) return Optional.empty();
-        List<TradeTable.Supply> fuels = fuels(table.get(), villager);
+        List<TradeTable.Supply> fuels = fuels(level, table.get(), villager);
         if (fuels.stream().noneMatch(supply -> new ItemStack(supply.item()).is(ItemTags.COALS))) return Optional.empty();
         return fuels.stream().min(Comparator.comparingInt(supply -> supply.price().emeralds()));
     }
 
     /** Whether any villager of its village would sell it some fuel, for money or on credit. */
     static boolean canBuyFromAVillager(ServerLevel level, Villager villager) {
-        return TradeTable.forVillager(villager).stream().flatMap(table -> fuels(table, villager).stream())
+        return TradeTable.forVillager(villager).stream().flatMap(table -> fuels(level, table, villager).stream())
                 .anyMatch(supply -> BuyFromVillagers.canBuySupplyFromAVillager(level, villager, supply));
     }
 
@@ -34,8 +34,8 @@ final class Shortage {
         return fuel(level, villager).filter(supply -> supply.price().emeralds() <= Economy.emeralds(level, villager) - Economy.FOOD_MONEY).isPresent();
     }
 
-    private static List<TradeTable.Supply> fuels(TradeTable table, Villager villager) {
+    private static List<TradeTable.Supply> fuels(ServerLevel level, TradeTable table, Villager villager) {
         return table.suppliesUpTo(villager.getVillagerData().level()).stream()
-                .filter(supply -> FurnaceTending.isFuel(new ItemStack(supply.item()))).toList();
+                .filter(supply -> FurnaceTending.isFuel(new ItemStack(supply.item())) && SupplyNeeds.needed(level, villager, supply.item())).toList();
     }
 }

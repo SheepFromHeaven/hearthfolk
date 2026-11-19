@@ -75,26 +75,7 @@ public class SwingingVillagerRenderer extends AgeableMobRenderer<Villager, Villa
             swing.aiming = entity.getMainHandItem().getItem() instanceof net.minecraft.world.item.BowItem;
             if (swing.gripped) this.itemModelResolver.updateForLiving(swing.grippedItem, held(entity), ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, entity);
             else swing.grippedItem.clear();
-            ArmorState armor = swing.armor;
-            HumanoidMobRenderer.extractHumanoidRenderState(entity, armor, partialTicks, this.itemModelResolver);
-            armor.yRot = state.yRot;
-            armor.xRot = state.xRot;
-            armor.bodyRot = state.bodyRot;
-            armor.walkAnimationPos = state.walkAnimationPos;
-            armor.walkAnimationSpeed = state.walkAnimationSpeed;
-            armor.ageInTicks = state.ageInTicks;
-            armor.isBaby = state.isBaby;
-            armor.entityType = state.entityType;
-            armor.outlineColor = state.outlineColor;
-            armor.swingAnimation = 0.0F;
-            armor.currentSwing = null;
-            armor.freeArms = swing.gripped && !state.isBaby;
-            float[] pose = SwingingVillagerModel.freeArmPose(state, swing.swing);
-            armor.rightArmX = pose[0];
-            armor.leftArmX = pose[1];
-            armor.rightArmY = pose[2];
-            armor.leftArmY = pose[3];
-            armor.spread = SwingingVillagerModel.SPREAD;
+            swing.armor.fill(entity, state, partialTicks, this.itemModelResolver, swing.gripped && !state.isBaby, SwingingVillagerModel.freeArmPose(state, swing.swing));
         }
     }
 
@@ -129,6 +110,28 @@ public class SwingingVillagerRenderer extends AgeableMobRenderer<Villager, Villa
         public float rightArmY;
         public float leftArmY;
         public float spread;
+
+        /** What its armor needs from the villager: the worn pieces and the villager's pose, arms free or crossed. */
+        void fill(Villager entity, VillagerRenderState state, float partialTicks, net.minecraft.client.renderer.item.ItemModelResolver items, boolean free, float[] pose) {
+            HumanoidMobRenderer.extractHumanoidRenderState(entity, this, partialTicks, items);
+            yRot = state.yRot;
+            xRot = state.xRot;
+            bodyRot = state.bodyRot;
+            walkAnimationPos = state.walkAnimationPos;
+            walkAnimationSpeed = state.walkAnimationSpeed;
+            ageInTicks = state.ageInTicks;
+            isBaby = state.isBaby;
+            entityType = state.entityType;
+            outlineColor = state.outlineColor;
+            swingAnimation = 0.0F;
+            currentSwing = null;
+            freeArms = free;
+            rightArmX = pose[0];
+            leftArmX = pose[1];
+            rightArmY = pose[2];
+            leftArmY = pose[3];
+            spread = SwingingVillagerModel.SPREAD;
+        }
     }
 
     /**

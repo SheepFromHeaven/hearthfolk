@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_39",
+  "function": "minenow:a_free_bed_anywhere_in_the_village_lets_them_breed",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 600
+}

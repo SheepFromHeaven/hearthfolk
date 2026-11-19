@@ -65,7 +65,7 @@ public class TendFlowers extends Behavior<Villager> {
         Optional<BlockPos> cauldron = body.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
         if (cauldron.isEmpty()) return false;
         flower = BlockPos.betweenClosedStream(cauldron.get().offset(-RANGE, -HEIGHT, -RANGE), cauldron.get().offset(RANGE, HEIGHT, RANGE))
-                .filter(pos -> wanted(level, body, pos))
+                .filter(pos -> wanted(level, body, pos) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, pos))
                 .map(BlockPos::immutable)
                 .min(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position())))
                 .orElse(null);

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_40",
+  "function": "minenow:a_baby_takes_a_free_bed_of_the_village",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 600
+}

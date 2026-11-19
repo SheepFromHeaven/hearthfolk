@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:rain",
+  "function": "minenow:a_worker_standing_in_the_rain_walks_under_a_nearby_roof",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

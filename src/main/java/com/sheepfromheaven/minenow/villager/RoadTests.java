@@ -77,6 +77,24 @@ public final class RoadTests {
         });
     }
 
+    public static void aVillagerClimbsOutOfARiver(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        for (int x = 1; x <= 22; x++) {
+            for (int z = 1; z <= 22; z++) {
+                boolean river = x >= 9 && x <= 13;
+                helper.setBlock(x, 1, z, river ? Blocks.WATER : Blocks.DIRT);
+                helper.setBlock(x, 2, z, river ? Blocks.WATER : Blocks.GRASS_BLOCK);
+            }
+        }
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(11, 2, 11));
+        BlockPos bank = helper.absolutePos(new BlockPos(18, 3, 11));
+        helper.onEachTick(() -> villager.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET,
+                new net.minecraft.world.entity.ai.memory.WalkTarget(bank, 0.5F, 1)));
+        helper.succeedWhen(() -> helper.assertTrue(villager.blockPosition().distManhattan(bank) <= 2 && !villager.isInWater(),
+                "The villager should climb out of the river onto the bank, is at " + helper.relativePos(villager.blockPosition())));
+    }
+
     private static Villager setUpUShapedRoad(GameTestHelper helper, int roadZ) {
         GameTestHelpers.fence(helper);
         for (int x = 2; x <= 21; x++) {

@@ -62,8 +62,12 @@ public final class Workshop {
             return;
         }
         List<BlockPos> mine = new ArrayList<>();
+        boolean barrelWorkplace = level.getBlockState(site.get()).getBlock() instanceof net.minecraft.world.level.block.BarrelBlock
+                && (chestsOf(level, villager).contains(site.get()) || !HomeStorage.holdsItems(level, site.get()));
+        if (barrelWorkplace) mine.add(site.get());
         for (BlockPos chest : chestsOf(level, villager)) {
-            if (inRange(site.get(), chest) && level.getBlockState(chest).getBlock() instanceof ChestBlock && level.getPoiManager().exists(chest, HomeStorage::isStoragePoi)) mine.add(chest);
+            if (chest.equals(site.get())) continue;
+            if (inRange(site.get(), chest) && HomeStorage.isStorageBlock(level.getBlockState(chest)) && level.getPoiManager().exists(chest, HomeStorage::isStoragePoi)) mine.add(chest);
             else HomeStorage.releaseChest(level, chest);
         }
         int limit = Math.clamp(villager.getVillagerData().level(), 1, 5);
@@ -72,14 +76,15 @@ public final class Workshop {
         while (mine.size() < limit) {
             Optional<BlockPos> free = pois.getInRange(HomeStorage::isStoragePoi, site.get(), RANGE + HEIGHT, PoiManager.Occupancy.HAS_SPACE)
                     .map(PoiRecord::getPos)
-                    .filter(pos -> inRange(site.get(), pos) && !mine.contains(pos) && HomeStorage.otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos))
-                    .min(Comparator.comparingDouble(pos -> pos.distSqr(site.get())));
+                    .filter(pos -> inRange(site.get(), pos) && !mine.contains(pos) && HomeStorage.otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos) && !HomeStorage.holdsItems(level, pos))
+                    .min(Comparator.<BlockPos>comparingInt(pos -> level.getBlockState(pos).getBlock() instanceof ChestBlock ? 0 : 1).thenComparingDouble(pos -> pos.distSqr(site.get())));
             if (free.isEmpty()) break;
             pois.take(HomeStorage::isStoragePoi, (type, pos) -> pos.equals(free.get()), free.get(), 1);
             mine.add(free.get());
         }
         for (BlockPos chest : mine) {
-            HomeStorage.takeAllHalves(level, chest);
+            if (!chest.equals(site.get())) HomeStorage.takeAllHalves(level, chest);
+            else HomeStorage.lock(level, chest);
             StorageTheft.check(level, villager, chest);
         }
         if (mine.isEmpty()) villager.removeData(ModVillagers.WORKSHOP);

@@ -40,6 +40,18 @@ public final class WorkshopTests {
         });
     }
 
+    public static void aWorkshopDoesNotClaimAChestThatAlreadyHoldsItems(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        helper.setBlock(NEAR_CHEST, Blocks.CHEST);
+        helper.getBlockEntity(NEAR_CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertTrue(Workshop.chestsOf(helper.getLevel(), shepherd).isEmpty(), "A chest with items in it is the player's, not a workshop's, has " + Workshop.chestsOf(helper.getLevel(), shepherd));
+            helper.assertTrue(!helper.getBlockEntity(NEAR_CHEST, ChestBlockEntity.class).isLocked(), "...and stays unlocked");
+            helper.succeed();
+        });
+    }
+
     public static void trappedChestsAreNeverClaimed(GameTestHelper helper) {
         Villager shepherd = spawnShepherd(helper);
         GameTestHelpers.giveHome(helper, shepherd, BED);
@@ -80,7 +92,7 @@ public final class WorkshopTests {
         Villager shepherd = spawnShepherd(helper);
         shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
         helper.setBlock(NEAR_CHEST, Blocks.CHEST);
-        helper.getBlockEntity(NEAR_CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.WOOL.white(), 36));
+        GameTestHelpers.fillOnceClaimed(helper, () -> !Workshop.chestsOf(helper.getLevel(), shepherd).isEmpty(), NEAR_CHEST, new ItemStack(Items.WOOL.white(), 36));
         @SuppressWarnings("removal")
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
 

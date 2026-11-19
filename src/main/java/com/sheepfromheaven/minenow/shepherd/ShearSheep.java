@@ -190,7 +190,7 @@ public class ShearSheep extends Behavior<Villager> {
         }
         if (!Tools.has(body)) return false;
         sheep = level.getEntitiesOfClass(Sheep.class, flockArea(loom.get()),
-                        candidate -> candidate.readyForShearing() && !unreachableSheep.containsKey(candidate.getUUID())).stream()
+                        candidate -> candidate.readyForShearing() && !unreachableSheep.containsKey(candidate.getUUID()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.blockPosition())).stream()
                 .min(Comparator.comparingDouble(body::distanceToSqr))
                 .orElse(null);
         return sheep != null;

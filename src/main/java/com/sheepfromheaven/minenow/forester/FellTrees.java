@@ -279,7 +279,7 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
         Optional<NurseryTree> kind = nurseryTree(level, body);
         if (kind.isPresent() && slotOf(body, kind.get()) >= 0) {
             plantAt = body.getData(Forester.REPLANT).stream()
-                    .filter(pos -> !unreachable.containsKey(pos))
+                    .filter(pos -> !unreachable.containsKey(pos) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, pos))
                     .min(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position())))
                     .orElse(null);
             if (plantAt != null) return true;
@@ -287,14 +287,14 @@ public class FellTrees extends Behavior<Villager> implements com.sheepfromheaven
         int range = ForesterSkill.groveRange(body.getVillagerData().level());
         gather = level.getEntitiesOfClass(ItemEntity.class, new AABB(nursery.get()).inflate(range, Grove.HEIGHT, range),
                         item -> Forester.GATHERS.contains(item.getItem().getItem()) && body.getInventory().canAddItem(item.getItem())
-                                && !unreachable.containsKey(item.blockPosition())).stream()
+                                && !unreachable.containsKey(item.blockPosition()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, item.blockPosition())).stream()
                 .min(Comparator.comparingDouble(body::distanceToSqr))
                 .orElse(null);
         if (gather != null) return true;
         if (!Tools.has(body)) return false;
         boolean bigTrees = ForesterSkill.fellsBigTrees(body.getVillagerData().level());
         tree = Grove.trees(level, nursery.get(), range).stream()
-                .filter(candidate -> !unreachable.containsKey(candidate.base()) && (bigTrees || !candidate.big()))
+                .filter(candidate -> !unreachable.containsKey(candidate.base()) && (bigTrees || !candidate.big()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.base()))
                 .min(Comparator.comparingDouble(candidate -> candidate.base().distToCenterSqr(body.position())))
                 .orElse(null);
         approachTo = tree == null ? null : approach(level, body, tree);

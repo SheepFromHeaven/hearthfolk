@@ -385,7 +385,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
      * Fuel it has none of may come out of everything above its food money, like a first tool: a butcher whose purse
      * was down to its reserve could never buy coal, so never smoked, sold or earned again.
      */
-    private static boolean outOfFuel(ServerLevel level, Villager buyer, TradeTable.Supply supply) {
+    static boolean outOfFuel(ServerLevel level, Villager buyer, TradeTable.Supply supply) {
         return FurnaceTending.isFuel(new ItemStack(supply.item())) && Economy.items(level, buyer).stream().noneMatch(item -> FurnaceTending.isFuel(new ItemStack(item)));
     }
 
@@ -445,7 +445,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         if (table.isEmpty() || !shopsForWork(buyer)) return Optional.empty();
         int room = CREDIT_LIMIT - debt(buyer);
         if (room <= 0) return Optional.empty();
-        if (IdleReason.requiresTool(table.get()) && !Unloading.ownsTool(level, buyer)) {
+        if (IdleReason.lacksTool(level, buyer)) {
             Optional<Deal> tool = sellers(level, buyer).stream()
                     .flatMap(seller -> TradeTable.forVillager(seller).stream()
                             .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
@@ -490,7 +490,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     }
 
     private static Optional<Deal> toolDeal(ServerLevel level, Villager buyer, TradeTable table) {
-        if (!IdleReason.requiresTool(table) || Unloading.ownsTool(level, buyer)) return Optional.empty();
+        if (!IdleReason.lacksTool(level, buyer)) return Optional.empty();
         int wallet = Economy.emeralds(level, buyer) - Economy.FOOD_MONEY;
         return sellers(level, buyer).stream()
                 .flatMap(seller -> TradeTable.forVillager(seller).stream()
@@ -674,5 +674,10 @@ public class BuyFromVillagers extends Behavior<Villager> {
     private void walk(Villager buyer) {
         buyer.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(new EntityTracker(partner(), false), SPEED, 1));
         buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(partner(), true));
+    }
+
+    /** What a villager may pay for a supply: fuel it has none of may use everything above its food money, the rest only what is above its reserve. */
+    static int budgetFor(ServerLevel level, Villager buyer, TradeTable.Supply supply) {
+        return outOfFuel(level, buyer, supply) ? Math.max(0, Economy.emeralds(level, buyer) - Economy.FOOD_MONEY) : Economy.spendable(level, buyer);
     }
 }

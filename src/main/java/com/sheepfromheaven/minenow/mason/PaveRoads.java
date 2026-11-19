@@ -189,7 +189,7 @@ public class PaveRoads extends Behavior<Villager> {
 
     private boolean choose(ServerLevel level, Villager body, List<BlockPos> candidates) {
         for (BlockPos pos : candidates.stream().sorted(Comparator.comparingDouble(pos -> pos.distToCenterSqr(body.position()))).toList()) {
-            if (unreachable.containsKey(pos) || !wanted(level, body, pos)) continue;
+            if (unreachable.containsKey(pos) || !wanted(level, body, pos) || !com.sheepfromheaven.minenow.villager.RainShelter.allows(level, pos)) continue;
             RoadPattern.Material what = materialFor(level, body, pos);
             if (what == null) continue;
             target = pos;

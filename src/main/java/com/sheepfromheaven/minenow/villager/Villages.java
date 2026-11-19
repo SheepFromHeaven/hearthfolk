@@ -33,6 +33,7 @@ public final class Villages {
     static final int HEIGHT = 48;
     static final int REFRESH = 100;
 
+    private static final net.minecraft.world.level.block.Block MARKER_BASE = net.minecraft.world.level.block.Blocks.HAY_BLOCK;
     private static final Map<ServerLevel, Index> INDEX = new WeakHashMap<>();
 
     private Villages() {}
@@ -113,6 +114,7 @@ public final class Villages {
             for (BlockPos chest : Workshop.allChests(level, villager)) own.add(add(points, chest));
             pointsOf.add(own);
         }
+        addMarkers(level, points);
 
         int[] group = new int[points.size()];
         for (int i = 0; i < group.length; i++) group[i] = i;
@@ -158,6 +160,24 @@ public final class Villages {
         Index index = new Index(level.getGameTime(), villages, Map.copyOf(byMember));
         INDEX.put(level, index);
         return index;
+    }
+
+    /**
+     * A banner on a hay bale links the places within reach of it (2x the reach, like any place): found through the archer
+     * post POI, which indexes every hay bale, one query per occupied cell of the grid rather than one per place.
+     */
+    private static void addMarkers(ServerLevel level, List<BlockPos> points) {
+        Map<Long, BlockPos> centres = new HashMap<>();
+        for (BlockPos point : points) centres.putIfAbsent(cell(point.getX(), point.getZ()), point);
+        Set<BlockPos> found = new LinkedHashSet<>();
+        for (BlockPos centre : centres.values()) {
+            level.getPoiManager().getInRange(type -> type.is(ModVillagers.ARCHER_POST.getKey()), centre, 4 * REACH, net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY)
+                    .map(record -> record.getPos())
+                    .filter(pos -> level.getBlockState(pos).is(MARKER_BASE) && level.getBlockState(pos.above()).is(net.minecraft.tags.BlockTags.BANNERS))
+                    .filter(pos -> points.stream().anyMatch(point -> within(point, pos, 2 * REACH)))
+                    .forEach(found::add);
+        }
+        points.addAll(found);
     }
 
     private static int add(List<BlockPos> points, BlockPos pos) {

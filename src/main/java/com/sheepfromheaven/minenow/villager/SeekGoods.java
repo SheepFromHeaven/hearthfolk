@@ -121,8 +121,7 @@ public class SeekGoods extends Behavior<Villager> {
     }
 
     private static boolean wantsATool(ServerLevel level, Villager body) {
-        return working(body)
-                && TradeTable.forVillager(body).filter(IdleReason::requiresTool).isPresent() && !Unloading.ownsTool(level, body);
+        return working(body) && IdleReason.needsToolNow(level, body);
     }
 
     /** Vanilla's trade display uses the main hand while a player looks at it; the emerald goes back up once it's done. */

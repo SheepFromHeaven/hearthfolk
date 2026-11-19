@@ -121,6 +121,7 @@ public class ShowArmor extends Behavior<Villager> {
         if (furnace.isEmpty()) return false;
         for (ArmorStand candidate : level.getEntitiesOfClass(ArmorStand.class, new AABB(furnace.get()).inflate(RANGE, HEIGHT, RANGE), ArmorStand::isAlive).stream()
                 .sorted(Comparator.comparingDouble(body::distanceToSqr)).toList()) {
+            if (!com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.blockPosition())) continue;
             Villager owner = Armorer.owner(level, candidate);
             boolean mine = owner == body;
             if (owner != null && !mine) continue;

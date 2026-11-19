@@ -63,8 +63,8 @@ public final class FarmerTradeTests {
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
         farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 10));
         helper.setBlock(HOME_CHEST, Blocks.CHEST);
-        helper.getBlockEntity(HOME_CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.WHEAT, 30));
         GameTestHelpers.giveHome(helper, farmer, BED);
+        GameTestHelpers.fillOnceClaimed(helper, () -> com.sheepfromheaven.minenow.villager.HomeStorage.storageOf(farmer).isPresent(), HOME_CHEST, new ItemStack(Items.WHEAT, 30));
         ServerPlayer player = player(helper);
 
         helper.succeedWhen(() -> {

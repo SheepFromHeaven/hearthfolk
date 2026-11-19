@@ -42,6 +42,108 @@ public final class HomeStorageTests {
         });
     }
 
+    public static void theFreeCommandGivesDroppedBelongingsBackToThePlayer(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.CHEST);
+        Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, owner);
+        ServerPlayer player = survivalPlayer(helper);
+        boolean[] broken = {false};
+
+        helper.onEachTick(() -> {
+            if (broken[0] || HomeStorage.storageOf(owner).isEmpty()) return;
+            broken[0] = true;
+            GameTestHelpers.fill(helper, CHEST, new ItemStack(Items.DIAMOND, 3));
+            player.gameMode.destroyBlock(helper.absolutePos(CHEST));
+            var dropped = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(), item -> item.getItem().is(Items.DIAMOND));
+            helper.assertTrue(!dropped.isEmpty() && dropped.getFirst().getTarget() != null, "The villager's goods drop with a pickup lock");
+            var source = helper.getLevel().getServer().createCommandSourceStack().withLevel(helper.getLevel()).withPosition(Vec3.atCenterOf(helper.absolutePos(CHEST)));
+            helper.getLevel().getServer().getCommands().performPrefixedCommand(source, "minenow free");
+            helper.assertTrue(dropped.getFirst().getTarget() == null, "After /minenow free anyone can pick the items up");
+            helper.assertTrue(!dropped.getFirst().hasData(ModVillagers.BELONGS_TO), "...and the villager no longer counts them as its own");
+            helper.succeed();
+        });
+    }
+
+    public static void aVillagerDoesNotClaimAChestThatAlreadyHoldsItems(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.CHEST);
+        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
+        BlockPos empty = CHEST.east(2);
+        helper.setBlock(empty, Blocks.CHEST);
+        Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+
+        helper.succeedWhen(() -> {
+            Optional<GlobalPos> claimed = HomeStorage.storageOf(villager);
+            helper.assertTrue(claimed.isPresent(), "It should claim the empty chest");
+            helper.assertTrue(claimed.get().pos().equals(helper.absolutePos(empty)), "A chest with items in it is the player's, claimed " + claimed.get());
+            helper.assertTrue(!helper.getBlockEntity(CHEST, ChestBlockEntity.class).isLocked(), "...and stays unlocked");
+        });
+    }
+
+    public static void aVillagerWithOnlyAFullChestNearClaimsNothing(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.CHEST);
+        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
+        Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, villager);
+
+        helper.runAfterDelay(400, () -> {
+            helper.assertTrue(HomeStorage.storageOf(villager).isEmpty(), "A chest that already holds items is never claimed, claimed " + HomeStorage.storageOf(villager));
+            helper.succeed();
+        });
+    }
+
+    public static void aVillagerKeepsItsGoodsInABarrelWhenThereIsNoChest(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.BARREL);
+        Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, villager);
+
+        helper.succeedWhen(() -> {
+            Optional<GlobalPos> claimed = HomeStorage.storageOf(villager);
+            helper.assertTrue(claimed.isPresent() && claimed.get().pos().equals(helper.absolutePos(CHEST)), "A villager with no chest near its bed keeps its goods in a barrel, claimed " + claimed);
+            var barrel = helper.getBlockEntity(CHEST, net.minecraft.world.level.block.entity.BarrelBlockEntity.class);
+            helper.assertTrue(!barrel.canOpen(helper.makeMockPlayer(GameType.SURVIVAL)), "...and locks it like a chest");
+            helper.assertTrue(helper.getLevel().getPoiManager().getCountInRange(type -> type.is(net.minecraft.world.entity.ai.village.poi.PoiTypes.FISHERMAN), helper.absolutePos(CHEST), 0,
+                    net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.IS_OCCUPIED) == 1, "...which no villager can then take as a fisherman's workplace");
+        });
+    }
+
+    public static void aChestIsPreferredOverABarrel(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        for (BlockPos barrel : new BlockPos[]{BED.west(2), BED.north(2), BED.south(3), CHEST}) helper.setBlock(barrel, Blocks.BARREL);
+        helper.setBlock(CHEST.east(2), Blocks.CHEST);
+        Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, villager);
+
+        helper.succeedWhen(() -> {
+            Optional<GlobalPos> claimed = HomeStorage.storageOf(villager);
+            helper.assertTrue(claimed.isPresent() && claimed.get().pos().equals(helper.absolutePos(CHEST.east(2))), "A chest is taken before any barrel, even nearer ones, claimed " + claimed);
+        });
+    }
+
+    public static void breakingAHomeBarrelKeepsItsGoodsTheOwners(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.BARREL);
+        Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        nitwit(helper, owner);
+        ServerPlayer player = survivalPlayer(helper);
+        boolean[] broken = {false};
+
+        helper.onEachTick(() -> {
+            if (broken[0] || HomeStorage.storageOf(owner).isEmpty()) return;
+            broken[0] = true;
+            GameTestHelpers.fill(helper, CHEST, new ItemStack(Items.EMERALD, 3));
+            player.gameMode.destroyBlock(helper.absolutePos(CHEST));
+        });
+        helper.succeedWhen(() -> {
+            helper.assertTrue(broken[0], "Barrel was never claimed, so it was never broken");
+            helper.assertTrue(owner.getInventory().countItem(Items.EMERALD) == 3, "The barrel's goods stay the owner's and it gathers them up, has " + owner.getInventory().countItem(Items.EMERALD));
+            helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 0, "...not the player's");
+        });
+    }
+
     public static void rightClickingAnOwnedChestSaysWhoOwnsIt(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);
@@ -77,8 +179,6 @@ public final class HomeStorageTests {
     public static void breakingAHomeChestCostsNothingAndItsGoodsStayTheOwners(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);
-        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.COBBLESTONE, 10));
-        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(1, new ItemStack(Items.EMERALD, 3));
         Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
         ServerPlayer player = survivalPlayer(helper);
         boolean[] broken = {false};
@@ -86,6 +186,7 @@ public final class HomeStorageTests {
         helper.onEachTick(() -> {
             if (broken[0] || HomeStorage.storageOf(owner).isEmpty()) return;
             broken[0] = true;
+            GameTestHelpers.fill(helper, CHEST, new ItemStack(Items.COBBLESTONE, 10), new ItemStack(Items.EMERALD, 3));
             player.gameMode.destroyBlock(helper.absolutePos(CHEST));
             var dropped = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(), item -> item.getItem().is(Items.EMERALD));
             helper.assertTrue(!dropped.isEmpty(), "The chest's goods drop when it breaks");
@@ -126,7 +227,6 @@ public final class HomeStorageTests {
     public static void aDeadOwnersGoodsAreFreeToTake(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);
-        helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.EMERALD, 3));
         Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
         ServerPlayer player = survivalPlayer(helper);
         boolean[] done = {false};
@@ -134,6 +234,7 @@ public final class HomeStorageTests {
         helper.onEachTick(() -> {
             if (done[0] || HomeStorage.storageOf(owner).isEmpty()) return;
             done[0] = true;
+            GameTestHelpers.fill(helper, CHEST, new ItemStack(Items.EMERALD, 3));
             player.gameMode.destroyBlock(helper.absolutePos(CHEST));
             owner.kill(helper.getLevel());
             var dropped = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(), item -> item.getItem().is(Items.EMERALD));
@@ -144,6 +245,11 @@ public final class HomeStorageTests {
             helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 3, "Once the owner is dead its goods are anyone's, the player picked up " + player.getInventory().countItem(Items.EMERALD));
             helper.succeed();
         });
+    }
+
+    /** A nitwit never takes a job, so vanilla can't take a free barrel as its workplace before it's claimed as storage. */
+    private static void nitwit(GameTestHelper helper, Villager villager) {
+        villager.setVillagerData(villager.getVillagerData().withProfession(helper.getLevel().registryAccess(), net.minecraft.world.entity.npc.villager.VillagerProfession.NITWIT));
     }
 
     private static ServerPlayer survivalPlayer(GameTestHelper helper) {
@@ -235,6 +341,7 @@ public final class HomeStorageTests {
         helper.onEachTick(() -> {
             if (!placed[0] && HomeStorage.storageOf(owner).isPresent()) {
                 placed[0] = true;
+                GameTestHelpers.fill(helper, RAISED_CHEST, new ItemStack(Items.WHEAT, 64));
                 useItemOn(helper, thief, Items.HOPPER, RAISED_CHEST.below(2), Direction.UP);
             }
         });
@@ -256,6 +363,7 @@ public final class HomeStorageTests {
         helper.onEachTick(() -> {
             if (!placed[0] && HomeStorage.storageOf(owner).isPresent()) {
                 placed[0] = true;
+                GameTestHelpers.fill(helper, RAISED_CHEST, new ItemStack(Items.WHEAT, 64));
                 useItemOn(helper, thief, Items.HOPPER_MINECART, RAISED_CHEST.below(), Direction.UP);
             }
         });
@@ -282,7 +390,6 @@ public final class HomeStorageTests {
     private static Villager setUpRaisedChest(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(RAISED_CHEST, Blocks.CHEST);
-        helper.getBlockEntity(RAISED_CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.WHEAT, 64));
         return GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
     }
 

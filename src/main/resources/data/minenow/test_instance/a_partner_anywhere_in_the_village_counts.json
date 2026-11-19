@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_37",
+  "function": "minenow:a_partner_anywhere_in_the_village_counts",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 600
+}

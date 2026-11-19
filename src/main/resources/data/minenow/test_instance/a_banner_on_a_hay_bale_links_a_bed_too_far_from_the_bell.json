@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_41",
+  "function": "minenow:a_banner_on_a_hay_bale_links_a_bed_too_far_from_the_bell",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 600
+}

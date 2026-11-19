@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.villager.FurnaceTending;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
+import com.sheepfromheaven.minenow.villager.RainShelter;
 import com.sheepfromheaven.minenow.villager.Tools;
 import com.sheepfromheaven.minenow.villager.Unloading;
 import net.minecraft.core.BlockPos;
@@ -57,6 +58,7 @@ public class TendHerd extends Behavior<Villager> {
     private static final int GIVE_UP_AFTER_TICKS = 300;
     private static final int UNREACHABLE_COOLDOWN = 600;
     private static final int IDLE_RESCAN_DELAY = 100;
+    private static final int SMOKER_INPUT = 0;
 
     private enum Task { CULL, BREED, SMOKE, DEPOSIT }
 
@@ -226,11 +228,11 @@ public class TendHerd extends Behavior<Villager> {
             int young = herd.size() - adults;
             if (Tools.has(body) && ButcherHerd.toCull(adults, young) > 0 && ButcherHerd.killsLeft(killsInTheLastDay(now)) > 0) {
                 Comparator<Animal> woundedFirst = Comparator.<Animal, Boolean>comparing(member -> !swingsLanded.containsKey(member.getUUID())).thenComparing(nearest);
-                Optional<Animal> victim = herd.stream().filter(member -> !member.isBaby() && !isPet(member) && reachable(member)).min(woundedFirst);
+                Optional<Animal> victim = herd.stream().filter(member -> !member.isBaby() && !isPet(member) && reachable(member) && RainShelter.allows(level, member.blockPosition())).min(woundedFirst);
                 if (victim.isPresent()) return target(Task.CULL, victim.get(), null);
             }
             if (ButcherHerd.wantsOffspring(adults, young)) {
-                List<Animal> ready = herd.stream().filter(member -> readyToBreed(member) && food(body, member).isPresent() && reachable(member)).toList();
+                List<Animal> ready = herd.stream().filter(member -> readyToBreed(member) && food(body, member).isPresent() && reachable(member) && RainShelter.allows(level, member.blockPosition())).toList();
                 int foodCount = ready.isEmpty() ? 0 : food(body, ready.getFirst()).map(ItemStack::getCount).orElse(0);
                 boolean partnerWaiting = herd.stream().anyMatch(Animal::isInLove);
                 if (!ready.isEmpty() && (partnerWaiting || (ready.size() >= 2 && foodCount >= 2))) {
@@ -268,13 +270,90 @@ public class TendHerd extends Behavior<Villager> {
         return jobSite(level, body).map(smoker -> pen(smoker).contains(animal.position())).orElse(false);
     }
 
+    /**
+     * What the butcher begs for. It buys its axe and its fuel whatever it is doing, and does any task it holds what it needs for
+     * (feed breeds, an axe culls, fuel smokes); only when it wants to do something and none of that is possible does it go to a
+     * player, for the axe if there are animals to cull, for fuel if there is something to smoke.
+     */
+    public static void registerWants() {
+        com.sheepfromheaven.minenow.villager.IdleReason.addWants(VillagerProfession.BUTCHER,
+                new com.sheepfromheaven.minenow.villager.IdleReason.Wants(TendHerd::blocked, TendHerd::hasSurplus, TendHerd::hasSomethingToSmoke));
+    }
+
+    /** It wants to do something it lacks what it needs for, and has nothing else it wants and could do. */
+    static boolean blocked(ServerLevel level, Villager body) {
+        Optional<BlockPos> smoker = jobSite(level, body);
+        if (smoker.isEmpty()) return false;
+        boolean axe = Tools.has(body);
+        boolean fuel = com.sheepfromheaven.minenow.villager.Economy.items(level, body).stream().anyMatch(item -> FurnaceTending.isFuel(new ItemStack(item)));
+        boolean smoke = hasSomethingToSmoke(level, body);
+        boolean cull = hasSurplus(level, body);
+        boolean breed = false;
+        boolean feed = false;
+        Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
+        for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()), candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK))) {
+            herds.computeIfAbsent(candidate.getType(), type -> new java.util.ArrayList<>()).add(candidate);
+        }
+        for (List<Animal> herd : herds.values()) {
+            int adults = (int) herd.stream().filter(member -> !member.isBaby()).count();
+            if (adults >= ButcherHerd.BREEDING_PAIR && ButcherHerd.wantsOffspring(adults, herd.size() - adults)) {
+                breed = true;
+                feed |= herd.stream().anyMatch(member -> food(body, member).isPresent());
+            }
+        }
+        boolean possible = cull && axe || smoke && fuel || breed && feed;
+        boolean wantedButImpossible = cull && !axe || smoke && !fuel || breed && !feed;
+        return wantedButImpossible && !possible;
+    }
+
+    /** The feed its herds still need to breed: a pair's worth for each kind that has two adults and room to grow. */
+    static int feedNeededForBreeding(ServerLevel level, Villager body) {
+        Optional<BlockPos> smoker = jobSite(level, body);
+        if (smoker.isEmpty()) return 0;
+        Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
+        for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()), candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK))) {
+            herds.computeIfAbsent(candidate.getType(), type -> new java.util.ArrayList<>()).add(candidate);
+        }
+        int needed = 0;
+        for (List<Animal> herd : herds.values()) {
+            int adults = (int) herd.stream().filter(member -> !member.isBaby()).count();
+            if (adults >= ButcherHerd.BREEDING_PAIR && ButcherHerd.wantsOffspring(adults, herd.size() - adults)) needed += ButcherHerd.BREEDING_PAIR;
+        }
+        return needed;
+    }
+
+    /** Raw meat or fish in its goods, or in its smoker waiting for fuel. */
+    static boolean hasSomethingToSmoke(ServerLevel level, Villager body) {
+        boolean carried = com.sheepfromheaven.minenow.villager.Economy.items(level, body).stream().anyMatch(item -> smokable(level, new ItemStack(item)));
+        return carried || jobSite(level, body).map(smoker -> level.getBlockEntity(smoker) instanceof AbstractFurnaceBlockEntity furnace
+                && !furnace.getItem(SMOKER_INPUT).isEmpty()).orElse(false);
+    }
+
+    private static boolean smokable(ServerLevel level, ItemStack stack) {
+        return level.recipeAccess().getRecipeFor(RecipeType.SMOKING, new net.minecraft.world.item.crafting.SingleRecipeInput(stack), level).isPresent();
+    }
+
+    /** Adult livestock beyond its breeding stock that aren't pets: the animals an axe is for. */
+    static boolean hasSurplus(ServerLevel level, Villager body) {
+        Optional<BlockPos> smoker = jobSite(level, body);
+        if (smoker.isEmpty()) return false;
+        Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
+        for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()), candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK))) {
+            herds.computeIfAbsent(candidate.getType(), type -> new java.util.ArrayList<>()).add(candidate);
+        }
+        return herds.values().stream().anyMatch(herd -> {
+            int adults = (int) herd.stream().filter(member -> !member.isBaby()).count();
+            return ButcherHerd.toCull(adults, herd.size() - adults) > 0 && herd.stream().anyMatch(member -> !member.isBaby() && !isPet(member));
+        });
+    }
+
     /** No livestock within reach of its smoker. */
     public static boolean hasNoHerd(ServerLevel level, Villager body) {
         return jobSite(level, body).map(smoker -> level.getEntitiesOfClass(Animal.class, pen(smoker),
                 animal -> animal.isAlive() && animal.getType().builtInRegistryHolder().is(LIVESTOCK)).isEmpty()).orElse(false);
     }
 
-    private static AABB pen(BlockPos smoker) {
+    static AABB pen(BlockPos smoker) {
         return new AABB(smoker).inflate(RANGE, HEIGHT, RANGE);
     }
 
@@ -297,7 +376,7 @@ public class TendHerd extends Behavior<Villager> {
         }
     }
 
-    private static Optional<BlockPos> jobSite(ServerLevel level, Villager body) {
+    static Optional<BlockPos> jobSite(ServerLevel level, Villager body) {
         return body.getBrain().getMemory(MemoryModuleType.JOB_SITE)
                 .filter(site -> site.dimension() == level.dimension())
                 .map(GlobalPos::pos);

@@ -84,7 +84,7 @@ public final class FurnaceTending {
     }
 
     /** Coal or charcoal, or failing that logs or planks, which burn like a player's furnace burns them: a smoker needs no coal mine. */
-    static boolean isFuel(ItemStack stack) {
+    public static boolean isFuel(ItemStack stack) {
         return stack.is(ItemTags.COALS) || stack.is(ItemTags.LOGS_THAT_BURN) || stack.is(ItemTags.PLANKS);
     }
 

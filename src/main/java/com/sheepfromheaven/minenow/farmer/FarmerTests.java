@@ -534,9 +534,9 @@ public final class FarmerTests {
     public static void farmerFetchesASpareHoeFromItsHomeChest(GameTestHelper helper) {
         setUpFarm(helper, false);
         helper.setBlock(HOME_CHEST, Blocks.CHEST);
-        helper.getBlockEntity(HOME_CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.IRON_HOE));
         Villager farmer = spawnFarmerWithoutHoe(helper);
         GameTestHelpers.giveHome(helper, farmer, BED);
+        GameTestHelpers.fillOnceClaimed(helper, () -> com.sheepfromheaven.minenow.villager.HomeStorage.storageOf(farmer).isPresent(), HOME_CHEST, new ItemStack(Items.IRON_HOE));
 
         helper.succeedWhen(() -> {
             helper.assertTrue(Hoes.has(farmer), "Farmer should take the hoe from its own chest");

@@ -81,7 +81,7 @@ public class PracticeArchery extends Behavior<Villager> {
                 .orElse(null);
         if (target == null) return false;
         stand = standFor(level, body, target);
-        return stand != null;
+        return stand != null && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, stand);
     }
 
     @Override

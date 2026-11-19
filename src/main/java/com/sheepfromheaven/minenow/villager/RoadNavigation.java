@@ -3,6 +3,9 @@ package com.sheepfromheaven.minenow.villager;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
@@ -43,6 +46,20 @@ public class RoadNavigation extends GroundPathNavigation {
         return drop < 2 ? 0.0F : 8.0F * (float) Math.pow(4.0, drop - 2);
     }
 
+    /**
+     * Vanilla plans straight through these and the villager then stands in front of them for good: an open trapdoor is a solid
+     * panel across its cell, and one in the top half of its cell leaves 1.81 blocks of headroom for a villager of 1.95. A closed
+     * trapdoor in the bottom half is a floor a villager walks over, so that one stays.
+     */
+    static boolean blockedByTrapdoor(BlockState state) {
+        return state.getBlock() instanceof TrapDoorBlock && (state.getValue(TrapDoorBlock.OPEN) || state.getValue(TrapDoorBlock.HALF) == Half.TOP);
+    }
+
+    /** Nobody stands on an open trapdoor: it has no top, so vanilla's hop onto it ends in a fall into the cell. */
+    static boolean isOpenTrapdoor(BlockState state) {
+        return state.getBlock() instanceof TrapDoorBlock && state.getValue(TrapDoorBlock.OPEN);
+    }
+
     private static class RoadNodeEvaluator extends WalkNodeEvaluator {
         int visited;
 
@@ -67,7 +84,9 @@ public class RoadNavigation extends GroundPathNavigation {
             int kept = 0;
             for (int i = 0; i < count; i++) {
                 Node node = neighbors[i];
-                if (!com.sheepfromheaven.minenow.miner.Miner.shaftClosedTo(this.mob, node.x, node.y, node.z)) neighbors[kept++] = node;
+                if (!com.sheepfromheaven.minenow.miner.Miner.shaftClosedTo(this.mob, node.x, node.y, node.z)
+                        && !blockedByTrapdoor(this.currentContext.level().getBlockState(node.asBlockPos()))
+                        && !isOpenTrapdoor(this.currentContext.level().getBlockState(node.asBlockPos().below()))) neighbors[kept++] = node;
             }
             count = kept;
             for (int i = 0; i < count; i++) {

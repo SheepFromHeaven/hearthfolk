@@ -1,7 +1,9 @@
 package com.sheepfromheaven.minenow.villager;
 
 import com.google.common.collect.ImmutableMap;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
@@ -16,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import org.jspecify.annotations.Nullable;
 
@@ -49,6 +52,30 @@ public final class Belongings {
             level.addFreshEntity(item);
         }
         container.setChanged();
+    }
+
+    /**
+     * Gives the dropped goods within {@code radius} blocks of {@code pos} back to the players: no owner, no pickup lock, so
+     * the villager doesn't gather them either. For items a villager claimed that were the player's, e.g. a chest it took
+     * while it already held the player's things.
+     */
+    public static int freeNear(ServerLevel level, Vec3 pos, int radius) {
+        int freed = 0;
+        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, new AABB(BlockPos.containing(pos)).inflate(radius), item -> item.hasData(BELONGS_TO))) {
+            item.removeData(BELONGS_TO);
+            item.setTarget(null);
+            freed++;
+        }
+        return freed;
+    }
+
+    /** {@code /minenow free}: frees the villagers' dropped goods within {@link #SEARCH} blocks. */
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("minenow").then(Commands.literal("free").executes(context -> {
+            int freed = freeNear(context.getSource().getLevel(), context.getSource().getPosition(), SEARCH);
+            context.getSource().sendSuccess(() -> Component.literal(freed == 0 ? "No claimed items within " + SEARCH + " blocks" : "Freed " + freed + " claimed item stacks, anyone can pick them up now"), false);
+            return freed;
+        })));
     }
 
     /** A dead (or zombified) villager's goods are anyone's. */

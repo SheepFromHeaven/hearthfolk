@@ -120,8 +120,8 @@ public final class FletcherTests {
         Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
         BlockPos chest = new BlockPos(16, 1, 6);
         helper.setBlock(chest, Blocks.CHEST);
-        helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class).setItem(0, new ItemStack(Items.STICK, 40));
         GameTestHelpers.giveHome(helper, miner, new BlockPos(16, 1, 8));
+        GameTestHelpers.fillOnceClaimed(helper, () -> com.sheepfromheaven.minenow.villager.HomeStorage.storageOf(miner).isPresent(), chest, new ItemStack(Items.STICK, 40));
         miner.getInventory().addItem(new ItemStack(Items.STONE_PICKAXE));
         miner.getInventory().addItem(new ItemStack(Items.LADDER, 32));
         miner.getInventory().addItem(new ItemStack(Items.TORCH, 32));

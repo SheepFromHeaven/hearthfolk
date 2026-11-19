@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_29",
+  "function": "minenow:a_butcher_with_surplus_animals_buys_an_axe",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

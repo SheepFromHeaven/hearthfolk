@@ -164,6 +164,218 @@ public final class ButcherTests {
         });
     }
 
+    public static void aButcherWithoutAnAxeOrFuelStillBreedsItsHerd(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+        GameTestHelpers.gatedPen(helper, 9);
+        List<Animal> cows = herd(helper, EntityTypes.COW, 2);
+
+        helper.succeedWhen(() -> {
+            var calves = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.cow.Cow.class, helper.getBounds(), Animal::isBaby);
+            helper.assertTrue(!calves.isEmpty(), "Breeding needs only feed, no axe and no fuel; cows "
+                    + cows.stream().map(cow -> "age " + cow.getAge() + (cow.isInLove() ? " in love" : "")).toList() + ", wheat " + count(butcher, Items.WHEAT)
+                    + ", running " + butcher.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList());
+        });
+    }
+
+    public static void aButcherWithoutAnAxeCullsNothing(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        GameTestHelpers.gatedPen(helper, 9);
+        List<Animal> pigs = herd(helper, EntityTypes.PIG, ButcherHerd.BREEDING_STOCK + 3);
+
+        helper.runAfterDelay(900, () -> {
+            helper.assertTrue(alive(pigs) == pigs.size(), "Killing takes an axe, so without one nothing is culled, " + alive(pigs) + " of " + pigs.size() + " alive, butcher holds "
+                    + butcher.getInventory().getItems().stream().filter(stack -> !stack.isEmpty()).map(ItemStack::toString).toList());
+            helper.succeed();
+        });
+    }
+
+    private static java.util.List<com.sheepfromheaven.minenow.villager.IdleReason> reasons(GameTestHelper helper, Villager butcher) {
+        return com.sheepfromheaven.minenow.villager.IdleReason.of(helper.getLevel(), butcher);
+    }
+
+    public static void aButcherWithNothingToCookIsNotStoppedByMissingFuel(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        helper.assertTrue(!reasons(helper, butcher).contains(com.sheepfromheaven.minenow.villager.IdleReason.NO_MATERIALS),
+                "Fuel is for cooking, so with nothing to cook its lack is no reason, got " + reasons(helper, butcher));
+        helper.succeed();
+    }
+
+    public static void aButcherWithRawMeatAndNoFuelCannotCook(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 3));
+        helper.assertTrue(reasons(helper, butcher).contains(com.sheepfromheaven.minenow.villager.IdleReason.NO_MATERIALS),
+                "Raw meat and no fuel is a shortage, got " + reasons(helper, butcher));
+        helper.succeed();
+    }
+
+    public static void aButcherWithNothingToCullIsNotStoppedByMissingAnAxe(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.COW, 2);
+        helper.assertTrue(!reasons(helper, butcher).contains(com.sheepfromheaven.minenow.villager.IdleReason.NO_TOOL),
+                "An axe is for culling, so with no surplus its lack is no reason, got " + reasons(helper, butcher));
+        helper.succeed();
+    }
+
+    public static void aButcherWithSurplusAnimalsAndNoAxeLacksATool(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.PIG, ButcherHerd.BREEDING_STOCK + 2);
+        helper.assertTrue(reasons(helper, butcher).contains(com.sheepfromheaven.minenow.villager.IdleReason.NO_TOOL),
+                "Animals to cull and no axe is a shortage, got " + reasons(helper, butcher));
+        helper.succeed();
+    }
+
+    public static void aButcherBuysAnAxeEvenWithNothingToCull(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.COW, 2);
+        spawnToolsmithWithAxe(helper);
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.STONE_AXE) == 1,
+                "What it buys doesn't depend on the task at hand: it buys the tool of its trade; has " + count(butcher, Items.STONE_AXE) + " axes, " + count(butcher, Items.EMERALD) + " emeralds"));
+    }
+
+    public static void aButcherBuysCoalEvenWithNothingToSmoke(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 8));
+        BlockPos cart = new BlockPos(18, 1, 12);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 40));
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.COAL) > 0,
+                "It stocks fuel before it has anything to cook, as it stocks an axe before there is anything to cull; has " + count(butcher, Items.EMERALD) + " emeralds"));
+    }
+
+    public static void aButcherThatCanBreedDoesNotBegForAnAxe(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.PIG, ButcherHerd.BREEDING_STOCK + 2);
+        herd(helper, EntityTypes.COW, 2);
+        helper.assertTrue(!com.sheepfromheaven.minenow.villager.IdleReason.needsToolNow(helper.getLevel(), butcher),
+                "With animals to cull but no axe, a butcher that can still breed is not blocked, so it doesn't beg for one");
+        helper.assertTrue(!reasons(helper, butcher).contains(com.sheepfromheaven.minenow.villager.IdleReason.NO_TOOL), "...and nothing says it lacks one, got " + reasons(helper, butcher));
+        helper.succeed();
+    }
+
+    public static void aButcherThatCanSmokeDoesNotBegForAnAxe(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 3));
+        butcher.getInventory().addItem(new ItemStack(Items.COAL, 3));
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.PIG, ButcherHerd.BREEDING_STOCK + 2);
+        helper.assertTrue(!com.sheepfromheaven.minenow.villager.IdleReason.needsToolNow(helper.getLevel(), butcher),
+                "A butcher with meat and fuel to smoke is not blocked by the missing axe, so it doesn't beg for one");
+        helper.succeed();
+    }
+
+    public static void aButcherWithSurplusAnimalsBuysAnAxe(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 6));
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.PIG, ButcherHerd.BREEDING_STOCK + 2);
+        spawnToolsmithWithAxe(helper);
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.STONE_AXE) == 1, "With animals to cull it buys the axe, has " + count(butcher, Items.STONE_AXE)));
+    }
+
+    public static void aButcherShopsForBreedingFeedBeforeFuel(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        var supplies = com.sheepfromheaven.minenow.villager.TradeTable.forVillager(butcher).orElseThrow().suppliesUpTo(1);
+        int firstFuel = -1;
+        int firstFeed = -1;
+        for (int i = 0; i < supplies.size(); i++) {
+            Item item = supplies.get(i).item();
+            if (firstFuel < 0 && (item == Items.COAL || item == Items.CHARCOAL || new ItemStack(item).is(net.minecraft.tags.ItemTags.LOGS))) firstFuel = i;
+            if (firstFeed < 0 && (item == Items.WHEAT || item == Items.CARROT || item == Items.WHEAT_SEEDS)) firstFeed = i;
+        }
+        helper.assertTrue(firstFeed >= 0 && firstFuel >= 0 && firstFeed < firstFuel, "Breeding feed comes before fuel in its shopping order, feed at " + firstFeed + ", fuel at " + firstFuel);
+        helper.succeed();
+    }
+
+    private static Villager spawnFarmerSellingWheat(GameTestHelper helper) {
+        BlockPos composter = new BlockPos(18, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 60));
+        return farmer;
+    }
+
+    public static void aButcherWithoutAnAxeBuysBreedingWheatFromTheFarmer(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        GameTestHelpers.giveStartingPurse(helper, butcher);
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.COW, 2);
+        spawnFarmerSellingWheat(helper);
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.WHEAT) > 0,
+                "A butcher with its starting purse and no axe buys wheat to breed its cows; has " + count(butcher, Items.WHEAT) + " wheat, " + count(butcher, Items.EMERALD) + " emeralds, running "
+                        + butcher.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).filter(n -> !n.isEmpty()).toList()));
+    }
+
+    public static void aButcherWithAnAxeBuysBreedingWheatFromTheFarmer(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        GameTestHelpers.giveStartingPurse(helper, butcher);
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.COW, 2);
+        spawnFarmerSellingWheat(helper);
+
+        helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.WHEAT) > 0,
+                "A butcher with its starting purse and an axe buys wheat to breed its cows; has " + count(butcher, Items.WHEAT) + " wheat, " + count(butcher, Items.EMERALD) + " emeralds"));
+    }
+
+    public static void aButcherInTheRainBreedsCowsNextToARoof(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        com.sheepfromheaven.minenow.villager.RainShelterTests.openSky(helper);
+        com.sheepfromheaven.minenow.villager.RainShelterTests.whenItRains(helper, () -> {
+            Villager butcher = spawnButcher(helper);
+            butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+            GameTestHelpers.gatedPen(helper, 9);
+            com.sheepfromheaven.minenow.villager.RainShelterTests.roof(helper, new BlockPos(18, 4, 12));
+            herd(helper, EntityTypes.COW, 2);
+
+            helper.succeedWhen(() -> {
+                helper.assertTrue(!helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.cow.Cow.class, helper.getBounds(), Animal::isBaby).isEmpty(),
+                        "With a roof a short trip from the pen the butcher still breeds its cows in the rain");
+                com.sheepfromheaven.minenow.villager.RainShelterTests.restoreSky(helper);
+            });
+        });
+    }
+
+    public static void aButcherInTheRainLeavesTheCowsAloneWhenNoRoofIsNear(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        com.sheepfromheaven.minenow.villager.RainShelterTests.openSky(helper);
+        com.sheepfromheaven.minenow.villager.RainShelterTests.whenItRains(helper, () -> {
+            Villager butcher = spawnButcher(helper);
+            butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+            GameTestHelpers.gatedPen(helper, 9);
+            herd(helper, EntityTypes.COW, 2);
+
+            helper.runAfterDelay(700, () -> {
+                helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.cow.Cow.class, helper.getBounds(), Animal::isBaby).isEmpty(), "No calf: the pen is a long way from any roof");
+                helper.assertTrue(count(butcher, Items.WHEAT) == 4, "...and its wheat is untouched, has " + count(butcher, Items.WHEAT));
+                com.sheepfromheaven.minenow.villager.RainShelterTests.restoreSky(helper);
+                helper.succeed();
+            });
+        });
+    }
+
+    private static void spawnToolsmithWithAxe(GameTestHelper helper) {
+        BlockPos table = new BlockPos(18, 1, 12);
+        helper.setBlock(table, Blocks.SMITHING_TABLE);
+        Villager toolsmith = GameTestHelpers.spawnEmployed(helper, table.west(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
+        toolsmith.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+    }
+
     public static void butcherLeavesSheepAndNamedAnimalsAlone(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
@@ -182,6 +394,7 @@ public final class ButcherTests {
     public static void aButcherOutOfFuelSpendsItsToolMoneyOnCoal(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 3));
         butcher.getInventory().addItem(new ItemStack(Items.EMERALD, com.sheepfromheaven.minenow.villager.Economy.reserve(butcher)));
         BlockPos cart = new BlockPos(18, 1, 12);
         helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
@@ -191,7 +404,7 @@ public final class ButcherTests {
         butcher.setData(com.sheepfromheaven.minenow.villager.ModVillagers.DEBTS, java.util.Map.of(miner.getUUID(), 3));
 
         helper.succeedWhen(() -> helper.assertTrue(count(butcher, Items.COAL) > 0,
-                "A butcher with only its reserve, no fuel and no credit left buys coal with the part kept for a tool, since without fuel it can't work; has " + count(butcher, Items.EMERALD) + " emeralds"));
+                "A butcher with only its reserve, raw meat and no fuel and no credit left buys coal with the part kept for a tool, since without fuel it can't cook; has " + count(butcher, Items.EMERALD) + " emeralds"));
     }
 
     public static void aButcherWithoutFuelBuysNoFishItCannotSmoke(GameTestHelper helper) {
@@ -309,5 +522,60 @@ public final class ButcherTests {
         GameTestHelpers.fence(helper);
         helper.setBlock(SMOKER, Blocks.SMOKER);
         return GameTestHelpers.spawnEmployed(helper, SMOKER.east(), SMOKER, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
+    }
+
+    public static void aButcherOutOfFuelOffersToBuyCoalFromAPlayerWithOnlyItsToolMoney(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 3));
+        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 3));
+
+        helper.runAfterDelay(5, () -> {
+            var offers = com.sheepfromheaven.minenow.villager.ProfessionTrades.currentOffers(helper.getLevel(), butcher);
+            helper.assertTrue(offers.stream().anyMatch(offer -> offer.getCostA().is(Items.COAL) && offer.getResult().is(Items.EMERALD)),
+                    "With no fuel it spends down to its food money on coal, so a player has something to trade; offers: " + offers.size());
+            helper.succeed();
+        });
+    }
+
+    private static Animal spawnCalf(GameTestHelper helper) {
+        Animal calf = helper.spawn(EntityTypes.COW, new BlockPos(11, 1, 11));
+        calf.setAge(-24000);
+        return calf;
+    }
+
+    public static void aButcherFeedsItsLeftoverWheatToABabyCow(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 3));
+        Animal calf = spawnCalf(helper);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(calf.getAge() > -23000, "With no breeding to do the wheat is left over, so the calf is fed and grows up faster, age " + calf.getAge());
+            helper.assertTrue(count(butcher, Items.WHEAT) == 2, "It spent one wheat, has " + count(butcher, Items.WHEAT));
+        });
+    }
+
+    public static void aButcherFeedsABabyAnimalOnlyOncePerDay(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 5));
+        spawnCalf(helper);
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(count(butcher, Items.WHEAT) == 4, "One feeding in a day, so one wheat gone, has " + count(butcher, Items.WHEAT));
+            helper.succeed();
+        });
+    }
+
+    public static void aButcherKeepsWheatForBreedingBeforeFeedingABabyAnimal(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 2));
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.COW, 2);
+        Animal calf = spawnCalf(helper);
+
+        helper.runAfterDelay(100, () -> {
+            helper.assertTrue(calf.getAge() < -23500, "The wheat is needed for the adult cows, so the calf is not fed, age " + calf.getAge());
+            helper.succeed();
+        });
     }
 }

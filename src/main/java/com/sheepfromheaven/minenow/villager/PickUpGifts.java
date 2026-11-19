@@ -45,9 +45,15 @@ public class PickUpGifts extends Behavior<Villager> {
         return target != null;
     }
 
+    /** The most emeralds a villager takes as gifts: what it needs to start a family plus its reserve. */
+    static int emeraldCap(ServerLevel level, Villager body) {
+        return Wealth.required(level, body) + Economy.reserve(body);
+    }
+
     /** How many of it the villager would take: one tool when it has none, a supply up to its {@code max} when short of a batch. */
     static int wanted(ServerLevel level, Villager body, ItemStack stack) {
         if (Unloading.isTool(body, stack)) return hasTool(body) ? 0 : 1;
+        if (stack.is(net.minecraft.world.item.Items.EMERALD)) return Math.max(0, emeraldCap(level, body) - Economy.emeralds(level, body));
         return TradeTable.forVillager(body).flatMap(table -> table.suppliesWanted(level, body).stream()
                         .filter(supply -> stack.is(supply.item()))
                         .findFirst())

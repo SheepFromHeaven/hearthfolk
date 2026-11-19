@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:rain",
+  "function": "minenow:a_butcher_in_the_rain_leaves_the_cows_alone_when_no_roof_is_near",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

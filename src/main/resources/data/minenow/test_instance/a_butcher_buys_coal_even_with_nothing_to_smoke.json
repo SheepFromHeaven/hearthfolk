@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_38",
+  "function": "minenow:a_butcher_buys_coal_even_with_nothing_to_smoke",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

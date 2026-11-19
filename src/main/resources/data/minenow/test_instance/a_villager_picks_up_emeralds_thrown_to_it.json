@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_34",
+  "function": "minenow:a_villager_picks_up_emeralds_thrown_to_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}
