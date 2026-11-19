@@ -53,6 +53,13 @@ public final class ModVillagers {
                     .copyOnDeath()
                     .build());
 
+    /** A villager's vanilla trades, for while its profession is switched off (see {@link VanillaTrades}). */
+    public static final Supplier<AttachmentType<VanillaTrades>> VANILLA_TRADES = ATTACHMENT_TYPES.register("vanilla_trades",
+            () -> AttachmentType.builder(VanillaTrades::none)
+                    .serialize(VanillaTrades.CODEC.fieldOf("trades"))
+                    .copyOnDeath()
+                    .build());
+
     public static final Supplier<AttachmentType<Integer>> WORK_XP_DAY = ATTACHMENT_TYPES.register("work_xp_day",
             () -> AttachmentType.builder(() -> -1)
                     .serialize(Codec.INT.fieldOf("day"))

@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow.farmer;
 import com.sheepfromheaven.minenow.MineNowConfig;
 import com.sheepfromheaven.minenow.MineNowConfig.Profession;
 import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
+import com.sheepfromheaven.minenow.villager.ProfessionTrades;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
@@ -14,6 +15,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.event.level.BlockEvent;
+
+import java.util.List;
 
 /**
  * A farmer switched off farms as vanilla's, and switched on as Hearthfolk's. Vanilla's work sits inside a RunOne, which
@@ -143,6 +146,58 @@ public final class SwitchedFarmerTests {
                     "Expected vanilla's composter work to stop once the farmer is switched on, bread went from " + breadWhenOn[0]
                             + " to " + farmer.getInventory().countItem(Items.BREAD));
         });
+    }
+
+    /**
+     * Switched off, a journeyman farmer shows vanilla's trades, rolled for each of its three levels, and the same ones every
+     * time trading is opened.
+     */
+    public static void aSwitchedOffFarmerShowsVanillaTradesForEveryLevel(GameTestHelper helper) {
+        helper.assertTrue(!MineNowConfig.professionEnabled(Profession.FARMER), "The farmer's environment switches the farmer off");
+        Villager farmer = journeyman(helper);
+        List<String> first = offers(helper, farmer);
+        helper.assertTrue(first.size() == 6, "Expected vanilla's two trades for each of its three levels, got " + first);
+        helper.assertTrue(first.equals(offers(helper, farmer)), "Expected the same trades on opening trading again, got " + offers(helper, farmer));
+        helper.succeed();
+    }
+
+    /**
+     * Switched on, Hearthfolk's offers replace vanilla's; switched off again, the vanilla trades come back unchanged, so a
+     * player can't reroll them by toggling. A level gained while off adds vanilla's trades for it, as vanilla does.
+     */
+    public static void aSwitchedOffFarmerKeepsItsVanillaTradesAcrossToggling(GameTestHelper helper) {
+        Villager farmer = journeyman(helper);
+        List<String> vanilla = offers(helper, farmer);
+        try {
+            MineNowConfig.set(Profession.FARMER, true);
+            List<String> hearthfolk = offers(helper, farmer);
+            helper.assertTrue(!hearthfolk.equals(vanilla), "Expected Hearthfolk's offers once switched on, got " + hearthfolk);
+        } finally {
+            MineNowConfig.set(Profession.FARMER, false);
+        }
+        helper.assertTrue(offers(helper, farmer).equals(vanilla), "Expected the same vanilla trades after switching on and off, got "
+                + offers(helper, farmer) + " instead of " + vanilla);
+        farmer.increaseMerchantCareer(helper.getLevel());
+        List<String> levelled = offers(helper, farmer);
+        helper.assertTrue(levelled.size() == vanilla.size() + 2 && levelled.subList(0, vanilla.size()).equals(vanilla),
+                "Expected a new level to add vanilla's trades for it and keep the rest, got " + levelled);
+        helper.succeed();
+    }
+
+    private static Villager journeyman(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, CROP, COMPOSTER, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.setVillagerData(farmer.getVillagerData().withLevel(3));
+        return farmer;
+    }
+
+    private static List<String> offers(GameTestHelper helper, Villager villager) {
+        return ProfessionTrades.currentOffers(helper.getLevel(), villager).stream()
+                .map(offer -> offer.getBaseCostA().getCount() + " " + offer.getBaseCostA().getItem() + offer.getItemCostB().map(b -> " + " + b.count() + " " + b.item().value()).orElse("")
+                        + " -> " + offer.getResult().getCount() + " " + offer.getResult().getItem())
+                .toList();
     }
 
     private static void setUpCrop(GameTestHelper helper) {

@@ -41,5 +41,8 @@
   "minenow.settings.inkAndQuillRecipes": "Ink and Quill Recipes",
   "minenow.settings.inkAndQuillRecipes.tooltip": "Players can craft the cartographer's ink and quill from a feather, an ink sac and a glass bottle, and a book and quill takes it in place of an ink sac and a feather.\nOff: vanilla's book and quill recipe stays as it is.",
   "minenow.settings.maxMerchantTours": "Merchant Tours at Once",
-  "minenow.settings.maxMerchantTours.tooltip": "How many village merchants may be on a tour at the same time. A touring merchant keeps the chunks around it loaded; one over the limit waits at home."
+  "minenow.settings.maxMerchantTours.tooltip": "How many village merchants may be on a tour at the same time. A touring merchant keeps the chunks around it loaded; one over the limit waits at home.",
+  "minenow.settings.section.professions": "Professions",
+  "minenow.settings.profession.farmer": "Farmer",
+  "minenow.settings.profession.farmer.tooltip": "Farmers tend the field beside their composter with a hoe, never trample farmland, and trade their crops with players and other villagers.\nOff: farmers farm and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off."
 }

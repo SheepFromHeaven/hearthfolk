@@ -15,7 +15,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
 
 
-/** Offers of any villager whose profession has a {@link TradeTable}, rebuilt from its needs, goods, level and that table every time a player opens trading (it never pays below {@link Economy#reserve}); vanilla's fixed trade sets are dropped. */
+/** Offers of any villager whose profession has a {@link TradeTable}, rebuilt from its needs, goods, level and that table every time a player opens trading (it never pays below {@link Economy#reserve}); vanilla's fixed trade sets are dropped, and kept aside for while the profession is switched off ({@link VanillaTrades}). */
 public final class ProfessionTrades {
     private static final int XP_PER_TRADE = 2;
     private static final float SELL_PRICE_MULTIPLIER = 0.05F;
@@ -25,8 +25,18 @@ public final class ProfessionTrades {
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
         if (event.getHand() != InteractionHand.MAIN_HAND || event.getEntity().isSecondaryUseActive()) return;
         if (!(event.getTarget() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) return;
-        if (TradeTable.forVillager(villager).isEmpty() || villager.isBaby() || villager.isTrading()) return;
-        rebuildOffers(level, villager);
+        if (villager.isBaby() || villager.isTrading()) return;
+        prepareOffers(level, villager);
+    }
+
+    /**
+     * Readies the offers a player opening trading sees: Hearthfolk's, rebuilt; or with the profession switched off, its
+     * vanilla trades, rolled once ({@link VanillaTrades}). A profession without a trade file is left to vanilla.
+     */
+    private static void prepareOffers(ServerLevel level, Villager villager) {
+        if (!TradeTable.hasTradeFile(villager)) return;
+        if (TradeTable.forVillager(villager).isEmpty()) VanillaTrades.show(level, villager);
+        else rebuildOffers(level, villager);
     }
 
     public static void onTrade(TradeWithVillagerEvent event) {
@@ -97,11 +107,12 @@ public final class ProfessionTrades {
 
     /** The offers a player would see on opening this villager's trades, rebuilt from its trade file and goods. */
     public static java.util.List<MerchantOffer> currentOffers(ServerLevel level, Villager villager) {
-        rebuildOffers(level, villager);
+        prepareOffers(level, villager);
         return villager.getOffers();
     }
 
     static void rebuildOffers(ServerLevel level, Villager villager) {
+        VanillaTrades.putAway(villager);
         MerchantOffers offers = villager.getOffers();
         offers.clear();
         TradeTable table = TradeTable.forVillager(villager).orElse(null);

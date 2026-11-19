@@ -200,6 +200,8 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "a_switched_off_farmer_may_trample_farmland", SwitchedFarmerTests::aSwitchedOffFarmerMayTrampleFarmland);
             test(helper, TestGroup.FARMER, "a_farmer_that_is_on_does_not_trample_farmland", SwitchedFarmerTests::aFarmerThatIsOnDoesNotTrampleFarmland);
             test(helper, TestGroup.FARMER, "a_farmer_switched_back_on_stops_its_vanilla_farm_work", SwitchedFarmerTests::aFarmerSwitchedBackOnStopsItsVanillaFarmWork);
+            test(helper, TestGroup.FARMER, "a_switched_off_farmer_shows_vanilla_trades_for_every_level", SwitchedFarmerTests::aSwitchedOffFarmerShowsVanillaTradesForEveryLevel);
+            test(helper, TestGroup.FARMER, "a_switched_off_farmer_keeps_its_vanilla_trades_across_toggling", SwitchedFarmerTests::aSwitchedOffFarmerKeepsItsVanillaTradesAcrossToggling);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_is_diagnosed", IdleCueTests::aWorkerWithoutItsToolIsDiagnosed);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_holds_up_an_emerald", IdleCueTests::aWorkerWithoutItsToolHoldsUpAnEmerald);
             test(helper, TestGroup.VILLAGERS, "a_broke_worker_without_its_tool_holds_no_emerald", IdleCueTests::aBrokeWorkerWithoutItsToolHoldsNoEmerald);

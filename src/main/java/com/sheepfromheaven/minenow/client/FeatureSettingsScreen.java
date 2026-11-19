@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.client;
 
 import com.sheepfromheaven.minenow.MineNowConfig;
 import com.sheepfromheaven.minenow.MineNowConfig.Feature;
+import com.sheepfromheaven.minenow.MineNowConfig.Profession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
@@ -56,6 +57,12 @@ public final class FeatureSettingsScreen extends OptionsSubScreen {
         village.add(toggle("inkAndQuillRecipes", MineNowConfig.inkAndQuillRecipes(), MineNowConfig::setInkAndQuillRecipes));
         village.add(number("maxMerchantTours", MineNowConfig.maxMerchantTours(), 0, 64, MineNowConfig::setMaxMerchantTours));
         list.addSmall(village);
+        list.addHeader(Component.translatable("minenow.settings.section.professions"));
+        List<AbstractWidget> professions = new ArrayList<>();
+        for (Profession profession : Profession.values()) {
+            professions.add(toggle(profession.settingsKey(), MineNowConfig.professionEnabled(profession), on -> MineNowConfig.set(profession, on)));
+        }
+        list.addSmall(professions);
     }
 
     private AbstractWidget toggle(String key, boolean value, Consumer<Boolean> setter) {

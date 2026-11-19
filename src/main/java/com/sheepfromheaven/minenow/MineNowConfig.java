@@ -213,6 +213,11 @@ public final class MineNowConfig {
             return Arrays.stream(values()).filter(each -> each.profession.equals(profession.identifier())).findFirst();
         }
 
+        /** Its row in the settings menu: {@code minenow.settings.profession.<name>} in en_us.json, and that plus {@code .tooltip}. */
+        public String settingsKey() {
+            return "profession." + getSerializedName();
+        }
+
         @Override
         public String getSerializedName() {
             return profession.getPath();

@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.MineNowConfig;
 import com.sheepfromheaven.minenow.MineNowConfig.Feature;
+import com.sheepfromheaven.minenow.MineNowConfig.Profession;
 import com.sheepfromheaven.minenow.WorldSettings;
 import net.minecraft.gametest.framework.GameTestHelper;
 
@@ -25,11 +26,12 @@ public final class SettingsMenuTests {
         List<String> keys = new ArrayList<>();
         for (Feature feature : Feature.values()) keys.add(feature.getSerializedName());
         keys.addAll(List.of("travellingMerchants", "villagersSummonGolems", "inkAndQuillRecipes", "maxMerchantTours"));
+        for (Profession profession : Profession.values()) keys.add(profession.settingsKey());
         for (String key : keys) {
             helper.assertTrue(lang.has("minenow.settings." + key), key + " has a readable name");
             helper.assertTrue(lang.has("minenow.settings." + key + ".tooltip"), key + " has a tooltip");
         }
-        for (String key : List.of("title.world", "title.defaults", "title.remote", "remote", "section.village")) {
+        for (String key : List.of("title.world", "title.defaults", "title.remote", "remote", "section.village", "section.professions")) {
             helper.assertTrue(lang.has("minenow.settings." + key), key + " has a text");
         }
         helper.succeed();
