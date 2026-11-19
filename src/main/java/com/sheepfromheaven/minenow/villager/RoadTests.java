@@ -110,7 +110,7 @@ public final class RoadTests {
             if (Roads.isRoad(helper.getLevel(), villager.blockPosition())) ticks[1]++;
         });
 
-        helper.runAfterDelay(1500, () -> {
+        helper.runAfterDelay(2300, () -> {
             float share = ticks[1] / (float) (ticks[0] - 99);
             helper.assertTrue(share < 0.2F, "With road preference off an idle villager should not seek out roads (the ring is ~12% of the area), was " + Math.round(share * 100) + "%");
             helper.succeed();
