@@ -86,6 +86,16 @@ public final class ProfessionTests {
         helper.succeed();
     }
 
+    /** The {@code profession_farmer} environment switches the farmer off for its batch and no other profession. */
+    public static void aProfessionEnvironmentSwitchesOnlyItsProfessionOff(GameTestHelper helper) {
+        for (Profession profession : Profession.values()) {
+            boolean expected = profession != Profession.FARMER;
+            helper.assertTrue(MineNowConfig.professionEnabled(profession) == expected,
+                    profession.getSerializedName() + (expected ? " stays on" : " is off in its environment"));
+        }
+        helper.succeed();
+    }
+
     /**
      * Switched off, a villager has no trade table, so villager trading, idle reasons and work experience all leave it alone,
      * while its report still finds it and says so. Switched back on, it trades and earns experience again.

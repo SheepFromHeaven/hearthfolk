@@ -129,6 +129,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(StorageTheft::onEntityJoin);
 
         modBus.addListener(com.sheepfromheaven.minenow.gametest.FeatureOff::register);
+        modBus.addListener(com.sheepfromheaven.minenow.gametest.ProfessionOff::register);
         modBus.addListener(RegisterEvent.class, event -> event.register(Registries.TEST_FUNCTION, helper -> {
             helper.register(com.sheepfromheaven.minenow.soak.VillageSoak.ID, com.sheepfromheaven.minenow.soak.VillageSoak::run);
             test(helper, TestGroup.VILLAGERS, "every_feature_is_on_by_default", com.sheepfromheaven.minenow.gametest.FeatureTests::everyFeatureIsOnByDefault);
@@ -140,6 +141,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_profession_switch_survives_a_save_and_reload", com.sheepfromheaven.minenow.gametest.ProfessionTests::aProfessionSwitchSurvivesASaveAndReload);
             test(helper, TestGroup.VILLAGERS, "a_new_world_starts_professions_from_the_toml", com.sheepfromheaven.minenow.gametest.ProfessionTests::aNewWorldStartsProfessionsFromTheToml);
             test(helper, TestGroup.VILLAGERS, "a_switched_off_profession_takes_no_part_in_villager_trading", com.sheepfromheaven.minenow.gametest.ProfessionTests::aSwitchedOffProfessionTakesNoPartInVillagerTrading);
+            test(helper, TestGroup.VILLAGERS, "a_profession_environment_switches_only_its_profession_off", com.sheepfromheaven.minenow.gametest.ProfessionTests::aProfessionEnvironmentSwitchesOnlyItsProfessionOff);
             test(helper, TestGroup.VILLAGERS, "every_setting_has_a_name_and_tooltip", com.sheepfromheaven.minenow.gametest.SettingsMenuTests::everySettingHasANameAndTooltip);
             test(helper, TestGroup.VILLAGERS, "the_menus_setters_change_only_the_world", com.sheepfromheaven.minenow.gametest.SettingsMenuTests::theMenusSettersChangeOnlyTheWorld);
             test(helper, TestGroup.CLERIC, "every_brew_is_a_vanilla_brewing_recipe", com.sheepfromheaven.minenow.cleric.ClericTests::everyBrewIsAVanillaBrewingRecipe);
