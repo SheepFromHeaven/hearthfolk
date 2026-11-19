@@ -556,6 +556,8 @@ public final class MineNow {
             test(helper, TestGroup.ROADS, "villager_still_cuts_across_when_the_road_is_a_long_detour", RoadTests::villagerStillCutsAcrossWhenTheRoadIsALongDetour);
             test(helper, TestGroup.ROADS, "idle_villagers_stroll_along_roads", RoadTests::idleVillagersStrollAlongRoads);
             test(helper, TestGroup.ROADS, "a_paved_street_beats_a_straight_dirt_path", RoadTests::aPavedStreetBeatsAStraightDirtPath);
+            test(helper, TestGroup.ROADS, "without_road_preference_a_villager_cuts_across_the_grass", RoadTests::withoutRoadPreferenceAVillagerCutsAcrossTheGrass);
+            test(helper, TestGroup.ROADS, "without_road_preference_an_idle_villager_does_not_stroll_to_roads", RoadTests::withoutRoadPreferenceAnIdleVillagerDoesNotStrollToRoads);
             test(helper, TestGroup.VILLAGERS, "unemployed_villager_follows_a_player_holding_an_emerald", FollowTests::unemployedVillagerFollowsAPlayerHoldingAnEmerald);
             test(helper, TestGroup.VILLAGERS, "employed_villager_ignores_the_emerald", FollowTests::employedVillagerIgnoresTheEmerald);
             test(helper, TestGroup.VILLAGERS, "following_far_from_home_abandons_the_old_bed", FollowTests::followingFarFromHomeAbandonsTheOldBed);

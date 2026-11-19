@@ -77,6 +77,46 @@ public final class RoadTests {
         });
     }
 
+    public static void withoutRoadPreferenceAVillagerCutsAcrossTheGrass(GameTestHelper helper) {
+        Villager villager = setUpUShapedRoad(helper, 6);
+        helper.runAfterDelay(5, () -> {
+            Path path = pathToGoal(helper, villager);
+            boolean cutAcross = false;
+            for (int i = 0; i < path.getNodeCount(); i++) {
+                BlockPos node = helper.relativePos(path.getNode(i).asBlockPos());
+                if (node.getZ() <= 5 && node.getX() >= 6 && node.getX() <= 16) cutAcross = true;
+            }
+            helper.assertTrue(path.canReach() && cutAcross, "With road preference off the villager should cut across the grass: " + describe(helper, path));
+            helper.succeed();
+        });
+    }
+
+    public static void withoutRoadPreferenceAnIdleVillagerDoesNotStrollToRoads(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        for (int x = 1; x <= 22; x++) {
+            for (int z = 1; z <= 22; z++) helper.setBlock(x, 0, z, Blocks.GRASS_BLOCK);
+        }
+        for (int i = 5; i <= 18; i++) {
+            helper.setBlock(i, 0, 5, Blocks.STONE_BRICKS);
+            helper.setBlock(i, 0, 18, Blocks.STONE_BRICKS);
+            helper.setBlock(5, 0, i, Blocks.STONE_BRICKS);
+            helper.setBlock(18, 0, i, Blocks.STONE_BRICKS);
+        }
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(11, 1, 11));
+        int[] ticks = {0, 0};
+        helper.onEachTick(() -> {
+            if (++ticks[0] < 100) return;
+            if (Roads.isRoad(helper.getLevel(), villager.blockPosition())) ticks[1]++;
+        });
+
+        helper.runAfterDelay(1500, () -> {
+            float share = ticks[1] / (float) (ticks[0] - 99);
+            helper.assertTrue(share < 0.2F, "With road preference off an idle villager should not seek out roads (the ring is ~12% of the area), was " + Math.round(share * 100) + "%");
+            helper.succeed();
+        });
+    }
+
     public static void aVillagerClimbsOutOfARiver(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

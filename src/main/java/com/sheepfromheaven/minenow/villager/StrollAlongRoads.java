@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow.villager;
 
 import com.google.common.collect.ImmutableMap;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -28,6 +29,7 @@ public class StrollAlongRoads extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
+        if (!MineNowConfig.enabled(MineNowConfig.Feature.VILLAGERS_PREFER_ROADS)) return false;
         if (level.getGameTime() < nextStroll) return false;
         RandomSource random = body.getRandom();
         nextStroll = level.getGameTime() + 60 + random.nextInt(120);

@@ -73,7 +73,7 @@ public final class MineNowConfig {
         VILLAGERS_FOLLOW_EMERALDS("villagersFollowEmeralds",
                 "Whether jobless villagers follow a player holding an emerald, so they can be led to a new home. Off: they ignore it."),
         VILLAGER_CHESTS_LOCKED("villagerChestsLocked",
-                "Whether a villager's chests and barrels are locked for players. Off: players can open them, and taking from them is not theft."),
+                "Whether a villager's chests, barrels, armor stands and wall displays are locked for players. Off: players can open and take from them, and taking is not theft."),
         VILLAGERS_PREFER_ROADS("villagersPreferRoads",
                 "Whether villagers prefer walking on paths and roads, and stroll along them when idle. Off: they walk as in vanilla."),
         VILLAGERS_LEVEL_THROUGH_WORK("villagersLevelThroughWork",
