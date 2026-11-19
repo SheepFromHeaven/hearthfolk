@@ -48,19 +48,32 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** {@code credit}: one lot it takes now and pays for later (see {@link #CREDIT_LIMIT}). */
     /** {@code gift}: a meal it is given, {@code room} items of it, by a neighbour with far more than it could sell. */
     /** {@code upgrade}: a better tool of its trade, replacing its old one, which it throws away: nobody buys a worn tool. */
-    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit, boolean gift, boolean upgrade) {
+    /** {@code breeding}: food bought to start a family ({@link Wealth}), counted for the soak report. */
+    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit, boolean gift, boolean upgrade, boolean breeding) {
         Deal(Villager seller, Item item, Price price, int room, int budget) {
-            this(seller, item, price, room, budget, false, false, false, false);
+            this(seller, item, price, room, budget, false, false, false, false, false);
         }
 
         Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear) {
-            this(seller, item, price, room, budget, wear, false, false, false);
+            this(seller, item, price, room, budget, wear, false, false, false, false);
         }
 
         Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit) {
-            this(seller, item, price, room, budget, wear, credit, false, false);
+            this(seller, item, price, room, budget, wear, credit, false, false, false);
+        }
+
+        Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit, boolean gift, boolean upgrade) {
+            this(seller, item, price, room, budget, wear, credit, gift, upgrade, false);
+        }
+
+        Deal forBreeding() {
+            return new Deal(seller, item, price, room, budget, wear, credit, gift, upgrade, true);
         }
     }
+
+    /** Tool upgrades bought and breeding food handed over, by item, since the server started: read by the soak report. */
+    public static final java.util.concurrent.atomic.AtomicInteger UPGRADES = new java.util.concurrent.atomic.AtomicInteger();
+    public static final java.util.Map<Item, Integer> BREEDING_FOOD = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * A craftsman too broke to buy what its trade needs (a tool, a supply) may take one lot on credit from a seller with
@@ -182,6 +195,8 @@ public class BuyFromVillagers extends Behavior<Villager> {
             if (old >= 0) buyer.getInventory().removeItemNoUpdate(old);
             int handed = Economy.take(level, seller, deal.item(), lots * price.count());
             Economy.give(level, buyer, new ItemStack(deal.item(), handed));
+            if (deal.upgrade()) UPGRADES.incrementAndGet();
+            if (deal.breeding()) BREEDING_FOOD.merge(deal.item(), handed, Integer::sum);
             if (old >= 0 && !buyer.getMainHandItem().isEmpty()) Tools.showInHand(buyer, true);
         }
         buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(seller, true));
@@ -287,7 +302,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Wealth.isBreedingFood(new ItemStack(item)))
                             .flatMap(item -> offer(level, seller, item, 0, spendable).stream()))
-                    .findFirst();
+                    .findFirst().map(Deal::forBreeding);
             if (food.isPresent()) return food;
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);

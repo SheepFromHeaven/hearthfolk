@@ -55,6 +55,7 @@ neoForge {
             systemProperty 'minenow.soak.bell', providers.gradleProperty('soakBell').orElse('true').get()
             systemProperty 'minenow.soak.playerBudget', providers.gradleProperty('soakPlayerBudget').orElse('0').get()
             systemProperty 'minenow.soak.traceFrom', providers.gradleProperty('soakTraceFrom').orElse('-1').get()
+            systemProperty 'minenow.soak.features', providers.gradleProperty('soakFeatures').orElse('').get()
             if (providers.gradleProperty('soakJvm').isPresent())
                 jvmArguments.addAll(providers.gradleProperty('soakJvm').get().split(' ').toList())
             if (providers.gradleProperty('soakJfr').isPresent())
