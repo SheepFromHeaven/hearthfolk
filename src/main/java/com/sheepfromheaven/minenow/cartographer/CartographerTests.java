@@ -232,7 +232,7 @@ public final class CartographerTests {
     }
 
     public static void inkAndQuillRecipesAreOffByDefault(GameTestHelper helper) {
-        helper.assertTrue(!MineNowConfig.INK_AND_QUILL_RECIPES.get(), "The switch is off unless asked for");
+        helper.assertTrue(!MineNowConfig.inkAndQuillRecipes(), "The switch is off unless asked for");
         helper.assertTrue(crafted(helper, Items.FEATHER, Items.INK_SAC, Items.GLASS_BOTTLE).isEmpty(), "Players can't craft a quill");
         helper.assertTrue(crafted(helper, Items.BOOK, Items.INK_SAC, Items.FEATHER).filter(stack -> stack.is(Items.WRITABLE_BOOK)).isPresent(), "A book and quill is vanilla's recipe");
         helper.assertTrue(crafted(helper, Items.BOOK, Cartographer.INK_AND_QUILL.get()).isEmpty(), "...and doesn't take the quill");
@@ -240,16 +240,16 @@ public final class CartographerTests {
     }
 
     public static void inkAndQuillRecipesCanBeSwitchedOn(GameTestHelper helper) {
-        boolean before = MineNowConfig.INK_AND_QUILL_RECIPES.get();
+        boolean before = MineNowConfig.inkAndQuillRecipes();
         try {
-            MineNowConfig.INK_AND_QUILL_RECIPES.set(true);
+            MineNowConfig.setInkAndQuillRecipes(true);
             helper.assertTrue(crafted(helper, Items.FEATHER, Items.INK_SAC, Items.GLASS_BOTTLE).filter(stack -> stack.is(Cartographer.INK_AND_QUILL.get())).isPresent(),
                     "A feather, an ink sac and a glass bottle make an ink and quill");
             helper.assertTrue(crafted(helper, Items.BOOK, Cartographer.INK_AND_QUILL.get()).filter(stack -> stack.is(Items.WRITABLE_BOOK)).isPresent(),
                     "A book and an ink and quill make a book and quill");
             helper.assertTrue(crafted(helper, Items.BOOK, Items.INK_SAC, Items.FEATHER).isEmpty(), "...and vanilla's recipe is gone");
         } finally {
-            MineNowConfig.INK_AND_QUILL_RECIPES.set(before);
+            MineNowConfig.setInkAndQuillRecipes(before);
         }
         helper.succeed();
     }

@@ -1,13 +1,18 @@
 package com.sheepfromheaven.minenow;
 
 import com.mojang.serialization.Codec;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringRepresentable;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.EnumMap;
 import java.util.Map;
 
-/** Switches in {@code config/minenow-local.toml}, one file for the whole game; edits apply while it runs. */
+/**
+ * The switches. Each world keeps its own values in its save ({@link WorldSettings}); {@code config/minenow-local.toml}, one file
+ * for the whole game, holds the defaults a new world starts with, and is what is read with no world running.
+ */
 public final class MineNowConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
@@ -41,26 +46,75 @@ public final class MineNowConfig {
 
     private MineNowConfig() {}
 
-    /** Safe before the world's config has loaded (recipes are shown to the client early): off then. */
-    public static boolean inkAndQuillRecipes() {
-        try {
-            return INK_AND_QUILL_RECIPES.get();
-        } catch (IllegalStateException notLoaded) {
-            return false;
-        }
+    /** The running world's settings, or empty with no server (main menu, or a client connected to a dedicated server). */
+    private static java.util.Optional<WorldSettings> world() {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        return server == null ? java.util.Optional.empty() : java.util.Optional.of(WorldSettings.of(server));
     }
 
-    /** Read live, so a behaviour can ask on every start check. On until the config has loaded. */
+    /** Read live, so a behaviour can ask on every start check. */
     public static boolean enabled(Feature feature) {
-        try {
-            return FEATURES.get(feature).get();
-        } catch (IllegalStateException notLoaded) {
-            return true;
-        }
+        return world().map(settings -> settings.enabled(feature)).orElseGet(() -> defaultValue(feature));
     }
 
+    /** Sets the running world's value; with no world running, the toml's. */
     public static void set(Feature feature, boolean on) {
+        world().ifPresentOrElse(settings -> settings.set(feature, on), () -> setDefault(feature, on));
+    }
+
+    /** What the toml says, the value a new world starts with. On until the config has loaded. */
+    public static boolean defaultValue(Feature feature) {
+        return tomlOr(FEATURES.get(feature), true);
+    }
+
+    public static void setDefault(Feature feature, boolean on) {
         FEATURES.get(feature).set(on);
+    }
+
+    public static boolean villagersSummonGolems() {
+        return world().map(WorldSettings::villagersSummonGolems).orElseGet(() -> tomlOr(VILLAGERS_SUMMON_GOLEMS, false));
+    }
+
+    public static void setVillagersSummonGolems(boolean on) {
+        world().ifPresentOrElse(settings -> settings.setFlag(WorldSettings.SUMMON_GOLEMS, on), () -> VILLAGERS_SUMMON_GOLEMS.set(on));
+    }
+
+    public static boolean travellingMerchants() {
+        return world().map(WorldSettings::travellingMerchants).orElseGet(() -> tomlOr(TRAVELLING_MERCHANTS, true));
+    }
+
+    public static void setTravellingMerchants(boolean on) {
+        world().ifPresentOrElse(settings -> settings.setFlag(WorldSettings.TRAVELLING_MERCHANTS, on), () -> TRAVELLING_MERCHANTS.set(on));
+    }
+
+    /**
+     * Crafting is decided on the server, which reads the world's value live. The recipe book's display is computed when datapacks
+     * load (before the server exists on a new world, so from the toml then; {@code /reload} redoes it), and a 26.3 client only gets
+     * those displays from the server, so nothing has to be sent to it.
+     */
+    public static boolean inkAndQuillRecipes() {
+        return world().map(WorldSettings::inkAndQuillRecipes).orElseGet(() -> tomlOr(INK_AND_QUILL_RECIPES, false));
+    }
+
+    public static void setInkAndQuillRecipes(boolean on) {
+        world().ifPresentOrElse(settings -> settings.setFlag(WorldSettings.INK_AND_QUILL, on), () -> INK_AND_QUILL_RECIPES.set(on));
+    }
+
+    public static int maxMerchantTours() {
+        return world().map(WorldSettings::maxMerchantTours).orElseGet(() -> tomlOr(MAX_TOURS, 4));
+    }
+
+    public static void setMaxMerchantTours(int tours) {
+        world().ifPresentOrElse(settings -> settings.setMaxMerchantTours(tours), () -> MAX_TOURS.set(tours));
+    }
+
+    /** The toml's value, or {@code fallback} before the config has loaded (recipes are shown to the client early). */
+    static <T> T tomlOr(ModConfigSpec.ConfigValue<T> value, T fallback) {
+        try {
+            return value.get();
+        } catch (IllegalStateException notLoaded) {
+            return fallback;
+        }
     }
 
     public enum Feature implements StringRepresentable {

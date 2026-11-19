@@ -203,8 +203,8 @@ public final class MerchantTests {
     }
 
     public static void toursAreCapped(GameTestHelper helper) {
-        int before = MineNowConfig.MAX_TOURS.get();
-        MineNowConfig.MAX_TOURS.set(0);
+        int before = MineNowConfig.maxMerchantTours();
+        MineNowConfig.setMaxMerchantTours(0);
         Villager merchant = homeVillage(helper, true);
         butcherAcross(helper);
 
@@ -213,7 +213,7 @@ public final class MerchantTests {
                 helper.assertTrue(merchant.getData(Merchant.TOUR).isEmpty(), "With no tour slots a merchant stays home");
                 helper.succeed();
             } finally {
-                MineNowConfig.MAX_TOURS.set(before);
+                MineNowConfig.setMaxMerchantTours(before);
             }
         });
     }

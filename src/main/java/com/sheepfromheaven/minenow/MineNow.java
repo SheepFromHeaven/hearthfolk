@@ -47,6 +47,7 @@ public final class MineNow {
 
     public MineNow(IEventBus modBus, net.neoforged.fml.ModContainer container) {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.LOCAL, MineNowConfig.SPEC);
+        NeoForge.EVENT_BUS.addListener(WorldSettings::onServerStopped);
         ModVillagers.register(modBus);
         FishermanEntities.register(modBus);
         Miner.register(modBus);
@@ -132,6 +133,8 @@ public final class MineNow {
             helper.register(com.sheepfromheaven.minenow.soak.VillageSoak.ID, com.sheepfromheaven.minenow.soak.VillageSoak::run);
             test(helper, TestGroup.VILLAGERS, "every_feature_is_on_by_default", com.sheepfromheaven.minenow.gametest.FeatureTests::everyFeatureIsOnByDefault);
             test(helper, TestGroup.VILLAGERS, "a_feature_environment_switches_only_its_feature_off", com.sheepfromheaven.minenow.gametest.FeatureTests::aFeatureEnvironmentSwitchesOnlyItsFeatureOff);
+            test(helper, TestGroup.VILLAGERS, "a_switch_survives_a_save_and_reload", com.sheepfromheaven.minenow.gametest.FeatureTests::aSwitchSurvivesASaveAndReload);
+            test(helper, TestGroup.VILLAGERS, "a_new_world_starts_from_the_toml", com.sheepfromheaven.minenow.gametest.FeatureTests::aNewWorldStartsFromTheToml);
             test(helper, TestGroup.CLERIC, "every_brew_is_a_vanilla_brewing_recipe", com.sheepfromheaven.minenow.cleric.ClericTests::everyBrewIsAVanillaBrewingRecipe);
             test(helper, TestGroup.CLERIC, "a_cleric_fills_bottles_at_water_and_brews_awkward_potions", com.sheepfromheaven.minenow.cleric.ClericTests::aClericFillsBottlesAtWaterAndBrewsAwkwardPotions);
             test(helper, TestGroup.CLERIC, "a_cleric_without_water_brews_nothing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithoutWaterBrewsNothing);

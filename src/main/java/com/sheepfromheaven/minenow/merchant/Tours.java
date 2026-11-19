@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Planning and running merchant tours ({@link Tour}): which villages are short of what the merchant's own village sells,
  * the walk between them, and the chunks kept ticking around a merchant on the road (at most
- * {@link MineNowConfig#MAX_TOURS} tours at once, so the cost stays bounded).
+ * {@link MineNowConfig#maxMerchantTours()} tours at once, so the cost stays bounded).
  */
 public final class Tours {
     static final int SHOP_TICKS = 1200;
@@ -63,7 +63,7 @@ public final class Tours {
     }
 
     static boolean slotFree(UUID merchant) {
-        return ACTIVE.contains(merchant) || ACTIVE.size() < MineNowConfig.MAX_TOURS.get();
+        return ACTIVE.contains(merchant) || ACTIVE.size() < MineNowConfig.maxMerchantTours();
     }
 
     static List<Villager> markets(ServerLevel level) {
