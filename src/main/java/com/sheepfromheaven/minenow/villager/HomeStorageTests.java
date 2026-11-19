@@ -408,4 +408,107 @@ public final class HomeStorageTests {
         helper.setBlock(other, right.setValue(ChestBlock.TYPE, ChestType.LEFT));
         return other;
     }
+
+    public static void withoutLocksAPlayerOpensAVillagersHomeChest(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        helper.setBlock(CHEST, Blocks.CHEST);
+        Villager owner = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
+        owner.setCustomName(net.minecraft.network.chat.Component.literal("Jim"));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(HomeStorage.storageOf(owner).isPresent(), "With locks off a villager still claims the chest near its bed");
+            BlockPos abs = helper.absolutePos(CHEST);
+            var event = net.neoforged.neoforge.common.CommonHooks.onRightClickBlock(player, InteractionHand.MAIN_HAND, abs,
+                    new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
+            helper.assertFalse(event.isCanceled(), "With locks off the click goes on to open the chest");
+            ChestBlockEntity chest = helper.getBlockEntity(CHEST, ChestBlockEntity.class);
+            helper.assertTrue(chest.canOpen(player), "With locks off a player can open a villager's chest");
+            String message = HomeStorage.ownerMessage(helper.getLevel(), abs).map(net.minecraft.network.chat.Component::getString).orElse("");
+            helper.assertTrue(message.contains("Jim"), "The chest still says whose it is, got '" + message + "'");
+        });
+    }
+
+    public static void withoutLocksAHopperDrainingAVillagersChestIsNotTheft(GameTestHelper helper) {
+        @SuppressWarnings("removal")
+        ServerPlayer placer = helper.makeMockServerPlayerInLevel();
+        Villager owner = setUpRaisedChest(helper);
+        long[] placedAt = {-1};
+
+        helper.onEachTick(() -> {
+            if (placedAt[0] < 0 && HomeStorage.storageOf(owner).isPresent()) {
+                placedAt[0] = helper.getTick();
+                GameTestHelpers.fill(helper, RAISED_CHEST, new ItemStack(Items.WHEAT, 64));
+                useItemOn(helper, placer, Items.HOPPER, RAISED_CHEST.below(2), Direction.UP);
+            }
+        });
+        helper.succeedWhen(() -> {
+            helper.assertTrue(placedAt[0] >= 0 && helper.getTick() - placedAt[0] > 120, "Waiting for the hopper to drain through a few checks");
+            var hopper = helper.getBlockEntity(RAISED_CHEST.below(), net.minecraft.world.level.block.entity.HopperBlockEntity.class);
+            helper.assertTrue(hopper.countItem(Items.WHEAT) > 0, "The hopper drains the chest");
+            int reputation = owner.getGossips().getReputation(placer.getUUID(), type -> true);
+            helper.assertTrue(reputation == 0, "With locks off a hopper taking from a villager's chest is no theft, reputation=" + reputation);
+        });
+    }
+
+    public static void withoutLocksAHopperSwallowingAVillagersDroppedGoodsIsNotTheft(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        @SuppressWarnings("removal")
+        ServerPlayer placer = helper.makeMockServerPlayerInLevel();
+        Villager owner = helper.spawn(net.minecraft.world.entity.EntityTypes.VILLAGER, new BlockPos(20, 1, 20));
+        owner.setNoAi(true);
+        BlockPos hopper = new BlockPos(10, 1, 10);
+        useItemOn(helper, placer, Items.HOPPER, hopper.below(), Direction.UP);
+        var goods = new net.minecraft.world.SimpleContainer(new ItemStack(Items.EMERALD, 3));
+        Belongings.drop(helper.getLevel(), helper.absolutePos(hopper.above()), goods, owner);
+
+        helper.succeedWhen(() -> {
+            var container = helper.getBlockEntity(hopper, net.minecraft.world.level.block.entity.HopperBlockEntity.class);
+            helper.assertTrue(container.countItem(Items.EMERALD) == 3, "The hopper swallows the villager's emeralds, has " + container.countItem(Items.EMERALD));
+            int reputation = owner.getGossips().getReputation(placer.getUUID(), type -> true);
+            helper.assertTrue(reputation == 0, "With locks off a hopper swallowing dropped goods is no theft, reputation " + reputation);
+        });
+    }
+
+    /**
+     * Flips {@code villagerChestsLocked} itself, so it runs in the {@code config} environment, the only test there touching
+     * that switch, and only once the chest is claimed, so {@code every_feature_is_on_by_default} has seen it on. The hopper minecart is placed just after a check and the switch goes back on before the next one, so
+     * its take falls between the last check while unlocked and the first one after.
+     */
+    public static void aHopperPlacedWhileChestsWereUnlockedIsNotBlamedOnceTheyLockAgain(GameTestHelper helper) {
+        var locks = com.sheepfromheaven.minenow.MineNowConfig.Feature.VILLAGER_CHESTS_LOCKED;
+        helper.runAfterDelay(500, () -> com.sheepfromheaven.minenow.MineNowConfig.set(locks, true));
+        @SuppressWarnings("removal")
+        ServerPlayer placer = helper.makeMockServerPlayerInLevel();
+        Villager owner = setUpRaisedChest(helper);
+        owner.setNoAi(true);
+        helper.setBlock(RAISED_CHEST.below(), Blocks.RAIL);
+        long[] filledAt = {-1};
+        long[] lockAt = {-1};
+        long[] checkedAt = {-1};
+
+        helper.onEachTick(() -> {
+            long phase = (helper.getLevel().getGameTime() + owner.getId()) % 40;
+            if (filledAt[0] < 0 && HomeStorage.storageOf(owner).isPresent()) {
+                filledAt[0] = helper.getTick();
+                com.sheepfromheaven.minenow.MineNowConfig.set(locks, false);
+                GameTestHelpers.fill(helper, RAISED_CHEST, new ItemStack(Items.WHEAT, 30));
+            } else if (filledAt[0] >= 0 && lockAt[0] < 0 && helper.getTick() - filledAt[0] > 40 && phase == 1) {
+                useItemOn(helper, placer, Items.HOPPER_MINECART, RAISED_CHEST.below(), Direction.UP);
+                lockAt[0] = helper.getTick() + 36;
+            } else if (lockAt[0] >= 0 && helper.getTick() == lockAt[0]) {
+                com.sheepfromheaven.minenow.MineNowConfig.set(locks, true);
+                checkedAt[0] = helper.getTick() + 100;
+            } else if (checkedAt[0] >= 0 && helper.getTick() == checkedAt[0]) {
+                int left = helper.getBlockEntity(RAISED_CHEST, ChestBlockEntity.class).countItem(Items.WHEAT);
+                helper.assertTrue(left == 0, "The hopper minecart drained the chest while locks were off, " + left + " left");
+                int reputation = owner.getGossips().getReputation(placer.getUUID(), type -> true);
+                helper.assertTrue(reputation == 0, "What the hopper minecart took while locks were off is not blamed once they're back on, reputation=" + reputation);
+                ChestBlockEntity chest = helper.getBlockEntity(RAISED_CHEST, ChestBlockEntity.class);
+                helper.assertFalse(chest.canOpen(placer), "Once locks are back on the chest is locked again");
+                helper.succeed();
+            }
+        });
+    }
 }

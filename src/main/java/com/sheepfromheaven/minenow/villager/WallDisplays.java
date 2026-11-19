@@ -201,7 +201,7 @@ public class WallDisplays extends Behavior<Villager> {
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        if (!(event.getTarget() instanceof ItemFrame rack) || !(rack.level() instanceof ServerLevel level)) return;
+        if (!(event.getTarget() instanceof ItemFrame rack) || !(rack.level() instanceof ServerLevel level) || !StorageTheft.locked()) return;
         Villager villager = owner(level, rack);
         if (villager == null) return;
         event.setCanceled(true);
@@ -211,7 +211,7 @@ public class WallDisplays extends Behavior<Villager> {
 
     /** Breaking a display costs nothing: the item goes back to its villager, and a frame it hung itself too. */
     public static void onAttackEntity(AttackEntityEvent event) {
-        if (!(event.getTarget() instanceof ItemFrame rack) || !(rack.level() instanceof ServerLevel level)) return;
+        if (!(event.getTarget() instanceof ItemFrame rack) || !(rack.level() instanceof ServerLevel level) || !StorageTheft.locked()) return;
         Villager villager = owner(level, rack);
         if (villager == null) return;
         event.setCanceled(true);

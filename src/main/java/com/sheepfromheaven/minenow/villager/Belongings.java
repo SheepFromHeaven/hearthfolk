@@ -93,6 +93,7 @@ public final class Belongings {
      */
     public static void onEntityLeave(EntityLeaveLevelEvent event) {
         if (!(event.getEntity() instanceof ItemEntity item) || !(event.getLevel() instanceof ServerLevel level) || item.getRemovalReason() != Entity.RemovalReason.DISCARDED) return;
+        if (!StorageTheft.locked()) return;
         UUID target = item.getTarget();
         if (target == null || !(level.getEntity(target) instanceof Villager owner) || !owner.isAlive()) return;
         Set<UUID> thieves = new LinkedHashSet<>();

@@ -598,6 +598,10 @@ public final class MineNow {
             test(helper, TestGroup.STORAGE, "hopper_draining_an_owned_chest_is_theft_by_its_placer", HomeStorageTests::hopperDrainingAnOwnedChestIsTheftByItsPlacer);
             test(helper, TestGroup.STORAGE, "hopper_minecart_draining_an_owned_chest_is_theft_by_its_placer", HomeStorageTests::hopperMinecartDrainingAnOwnedChestIsTheftByItsPlacer);
             test(helper, TestGroup.STORAGE, "villager_does_not_claim_a_chest_above_a_hopper", HomeStorageTests::villagerDoesNotClaimAChestAboveAHopper);
+            test(helper, TestGroup.STORAGE, "without_locks_a_player_opens_a_villagers_home_chest", HomeStorageTests::withoutLocksAPlayerOpensAVillagersHomeChest);
+            test(helper, TestGroup.STORAGE, "without_locks_a_hopper_draining_a_villagers_chest_is_not_theft", HomeStorageTests::withoutLocksAHopperDrainingAVillagersChestIsNotTheft);
+            test(helper, TestGroup.STORAGE, "without_locks_a_hopper_swallowing_a_villagers_dropped_goods_is_not_theft", HomeStorageTests::withoutLocksAHopperSwallowingAVillagersDroppedGoodsIsNotTheft);
+            test(helper, TestGroup.STORAGE, "a_hopper_placed_while_chests_were_unlocked_is_not_blamed_once_they_lock_again", HomeStorageTests::aHopperPlacedWhileChestsWereUnlockedIsNotBlamedOnceTheyLockAgain);
             test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_rebuilds_its_quill_from_feather_ink_and_bottle", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerRebuildsItsQuillFromFeatherInkAndBottle);
             test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_without_a_quill_draws_no_map", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerWithoutAQuillDrawsNoMap);
             test(helper, TestGroup.CARTOGRAPHER, "a_cartographer_without_a_village_draws_no_map", com.sheepfromheaven.minenow.cartographer.CartographerTests::aCartographerWithoutAVillageDrawsNoMap);
