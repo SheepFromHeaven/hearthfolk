@@ -146,6 +146,7 @@ public final class MineNow {
             test(helper, TestGroup.CLERIC, "a_travelling_merchant_buys_a_clerics_surplus_potions", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantBuysAClericsSurplusPotions);
             test(helper, TestGroup.CLERIC, "a_cleric_with_only_one_of_each_sells_the_merchant_nothing", com.sheepfromheaven.minenow.cleric.ClericTests::aClericWithOnlyOneOfEachSellsTheMerchantNothing);
             test(helper, TestGroup.CLERIC, "a_cleric_heals_a_hurt_villager_that_pays", com.sheepfromheaven.minenow.cleric.ClericTests::aClericHealsAHurtVillagerThatPays);
+            test(helper, TestGroup.CLERIC, "without_payment_a_cleric_heals_a_hurt_villager_with_no_emeralds", com.sheepfromheaven.minenow.cleric.ClericTests::withoutPaymentAClericHealsAHurtVillagerWithNoEmeralds);
             test(helper, TestGroup.CLERIC, "a_cleric_does_not_heal_a_villager_that_cannot_pay", com.sheepfromheaven.minenow.cleric.ClericTests::aClericDoesNotHealAVillagerThatCannotPay);
             test(helper, TestGroup.CLERIC, "a_cleric_does_not_heal_golems", com.sheepfromheaven.minenow.cleric.ClericTests::aClericDoesNotHealGolems);
             test(helper, TestGroup.CLERIC, "a_cleric_brews_splash_healing_from_healing_potions_and_gunpowder", com.sheepfromheaven.minenow.cleric.ClericTests::aClericBrewsSplashHealingFromHealingPotionsAndGunpowder);
@@ -306,6 +307,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_butcher_with_no_emeralds_gets_wheat_from_the_farmer", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentAButcherWithNoEmeraldsGetsWheatFromTheFarmer);
             test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_broke_villager_commissions_missing_armor_and_gets_it", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentABrokeVillagerCommissionsMissingArmorAndGetsIt);
             test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_broke_smelters_debts_stay_as_they_are", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentABrokeSmeltersDebtsStayAsTheyAre);
+            test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_fuelless_butcher_with_no_money_is_not_out_of_materials", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentAFuellessButcherWithNoMoneyIsNotOutOfMaterials);
             test(helper, TestGroup.VILLAGER_TRADING, "without_payment_a_player_still_pays_and_is_paid", com.sheepfromheaven.minenow.villager.PayEachOtherTests::withoutPaymentAPlayerStillPaysAndIsPaid);
             test(helper, TestGroup.VILLAGER_TRADING, "butcher_buys_wheat_from_the_farmer", VillagerTradingTests::butcherBuysWheatFromTheFarmer);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_buys_its_supply_from_a_travelling_merchant", VillagerTradingTests::aVillagerBuysItsSupplyFromATravellingMerchant);
@@ -502,6 +504,7 @@ public final class MineNow {
             test(helper, TestGroup.MERCHANT, "a_merchant_leaves_a_players_mule_alone", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantLeavesAPlayersMuleAlone);
             test(helper, TestGroup.MERCHANT, "a_merchants_mule_is_freed_when_it_dies", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantsMuleIsFreedWhenItDies);
             test(helper, TestGroup.MERCHANT, "a_merchant_brings_a_village_what_it_lacks", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantBringsAVillageWhatItLacks);
+            test(helper, TestGroup.MERCHANT, "without_payment_a_broke_merchant_plans_a_tour_to_a_village_that_needs_what_its_village_sells", com.sheepfromheaven.minenow.merchant.MerchantTests::withoutPaymentABrokeMerchantPlansATourToAVillageThatNeedsWhatItsVillageSells);
             test(helper, TestGroup.MERCHANT, "a_merchant_sells_above_what_it_paid", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantSellsAboveWhatItPaid);
             test(helper, TestGroup.MERCHANT, "a_merchant_stays_home_when_nothing_is_needed", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantStaysHomeWhenNothingIsNeeded);
             test(helper, TestGroup.MERCHANT, "a_merchant_stays_home_when_its_village_cannot_sell_what_is_needed", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantStaysHomeWhenItsVillageCannotSellWhatIsNeeded);

@@ -157,6 +157,17 @@ public final class MerchantTests {
         });
     }
 
+    public static void withoutPaymentABrokeMerchantPlansATourToAVillageThatNeedsWhatItsVillageSells(GameTestHelper helper) {
+        Villager merchant = homeVillage(helper, true);
+        Economy.take(helper.getLevel(), merchant, Items.EMERALD, Economy.emeralds(helper.getLevel(), merchant));
+        Villager butcher = butcherAcross(helper);
+        Economy.take(helper.getLevel(), butcher, Items.EMERALD, Economy.emeralds(helper.getLevel(), butcher));
+
+        helper.succeedWhen(() -> helper.assertTrue(merchant.getData(Merchant.TOUR).filter(tour -> tour.wanted().stream().anyMatch(want -> want.item() == Items.WHEAT)).isPresent()
+                        || merchant.getData(Merchant.RESTED_AT) > 0,
+                "A merchant with no emeralds plans a tour carrying wheat to the broke butcher across the fields, tour " + merchant.getData(Merchant.TOUR)));
+    }
+
     public static void aMerchantSellsAboveWhatItPaid(GameTestHelper helper) {
         Villager merchant = homeVillage(helper, true);
         Villager butcher = butcherAcross(helper);

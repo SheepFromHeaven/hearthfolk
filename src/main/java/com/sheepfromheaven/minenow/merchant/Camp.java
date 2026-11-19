@@ -110,7 +110,7 @@ final class Camp {
     static boolean fetchInvisibility(ServerLevel level, Villager merchant, Tour tour, long now) {
         if (now - tour.since() > FETCH_TICKS || PotionGoods.count(level, merchant, Items.POTION, Potions.INVISIBILITY) > 0) return false;
         int price = Brews.all().stream().filter(brew -> brew.output().potion().equals(Potions.INVISIBILITY)).findFirst().flatMap(Brews.Brew::price).orElse(POTION_PRICE);
-        if (Economy.spendable(level, merchant) < price) return false;
+        if (Economy.villagerBudget(Economy.spendable(level, merchant)) < price) return false;
         Optional<Villages.Village> home = Villages.of(level, merchant);
         if (home.isEmpty()) return false;
         Optional<Villager> cleric = home.get().villagers(level).stream()
@@ -124,7 +124,7 @@ final class Camp {
         }
         ItemStack potion = PotionGoods.takeOne(level, cleric.get(), Items.POTION, Potions.INVISIBILITY);
         if (potion.isEmpty()) return false;
-        Economy.give(level, cleric.get(), new ItemStack(Items.EMERALD, Economy.take(level, merchant, Items.EMERALD, price)));
+        Economy.pay(level, merchant, cleric.get(), price);
         Economy.give(level, merchant, potion);
         return false;
     }

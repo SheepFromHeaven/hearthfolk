@@ -106,6 +106,26 @@ public final class PayEachOtherTests {
         });
     }
 
+    public static void withoutPaymentAFuellessButcherWithNoMoneyIsNotOutOfMaterials(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos smoker = new BlockPos(11, 1, 14);
+        helper.setBlock(smoker, Blocks.SMOKER);
+        Villager butcher = GameTestHelpers.spawnEmployed(helper, smoker.east(), smoker, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
+        butcher.getInventory().addItem(new ItemStack(Items.IRON_AXE));
+        butcher.getInventory().addItem(new ItemStack(Items.BEEF, 2));
+        butcher.setData(ModVillagers.DEBTS, Map.of(java.util.UUID.randomUUID(), BuyFromVillagers.CREDIT_LIMIT));
+        helper.spawn(net.minecraft.world.entity.EntityTypes.COW, new BlockPos(9, 1, 14));
+        BlockPos cart = new BlockPos(18, 1, 6);
+        helper.setBlock(cart, com.sheepfromheaven.minenow.miner.Miner.FURNACE_CART.get());
+        Villager miner = GameTestHelpers.spawnEmployed(helper, cart.west(), cart, com.sheepfromheaven.minenow.miner.Miner.PROFESSION, com.sheepfromheaven.minenow.miner.Miner.POI);
+        miner.getInventory().addItem(new ItemStack(Items.COAL, 40));
+
+        java.util.List<IdleReason> reasons = IdleReason.of(helper.getLevel(), butcher);
+        helper.assertTrue(!reasons.contains(IdleReason.NO_MATERIALS), "A butcher with no fuel, no money and no credit left takes the miner's coal for free, so it isn't out of materials: " + reasons);
+        helper.succeed();
+    }
+
     public static void withoutPaymentAPlayerStillPaysAndIsPaid(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

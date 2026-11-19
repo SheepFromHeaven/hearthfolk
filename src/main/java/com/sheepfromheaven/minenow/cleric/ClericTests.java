@@ -207,6 +207,18 @@ public final class ClericTests {
         });
     }
 
+    public static void withoutPaymentAClericHealsAHurtVillagerWithNoEmeralds(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 3);
+        cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
+        Villager patient = patient(helper, new BlockPos(6, 1, 12), 0, 5.0F);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(patient.getHealth() > 5.0F, "The cleric heals a hurt villager with no emeralds, health " + patient.getHealth());
+            helper.assertTrue(cleric.getInventory().countItem(Items.EMERALD) == 0, "...for nothing, it has " + cleric.getInventory().countItem(Items.EMERALD));
+            helper.assertTrue(count(helper, cleric, Potions.HEALING) == 0, "...with its healing potion");
+        });
+    }
+
     public static void aClericDoesNotHealAVillagerThatCannotPay(GameTestHelper helper) {
         Villager cleric = spawnCleric(helper, 3);
         cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));

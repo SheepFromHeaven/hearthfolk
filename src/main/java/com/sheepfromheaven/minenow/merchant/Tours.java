@@ -99,7 +99,7 @@ public final class Tours {
             if (!demand.isEmpty()) candidates.add(new Candidate(bell.get(), demand));
         }
         candidates.sort(Comparator.comparingDouble(candidate -> candidate.bell().distSqr(here)));
-        int budget = Economy.spendable(level, merchant);
+        int budget = Economy.villagerBudget(Economy.spendable(level, merchant));
         int slots = freeSlots(level, merchant);
         Map<Item, Integer> wanted = new LinkedHashMap<>();
         List<BlockPos> stops = new ArrayList<>();

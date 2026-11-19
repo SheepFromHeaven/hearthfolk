@@ -219,7 +219,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /**
      * What it would spend at a travelling merchant right now, in whole emeralds: for each supply of its trade it is short of
      * that the merchant carries ({@link Exports#waresPrice}) and no villager in its village sells, as many lots as it can
-     * afford above its reserve and fit under the supply's {@code max}. Needs like this draw a merchant to the village, as export goods do ({@link Exports}).
+     * afford above its reserve (all it needs while villagers don't pay each other) and fit under the supply's {@code max}. Needs like this draw a merchant to the village, as export goods do ({@link Exports}).
      */
     static int demand(ServerLevel level, Villager buyer) {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
@@ -231,11 +231,12 @@ public class BuyFromVillagers extends Behavior<Villager> {
             int held = Economy.count(level, buyer, supply.item());
             Price price = Exports.waresPrice(supply.item());
             if (price == null || held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
-            int budget = (outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer)) - spent;
+            int budget = Economy.villagerBudget(outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer)) - spent;
             int lots = Math.min(budget / price.emeralds(), Math.max(1, (supply.max() - held) / price.count()));
             if (lots <= 0) continue;
             if (sellers == null) sellers = sellers(level, buyer);
-            if (sellers.stream().anyMatch(seller -> offer(level, seller, supply.item(), supply.max() - held, Economy.emeralds(level, buyer)).isPresent())) continue;
+            int wallet = Economy.villagerBudget(Economy.emeralds(level, buyer));
+            if (sellers.stream().anyMatch(seller -> offer(level, seller, supply.item(), supply.max() - held, wallet).isPresent())) continue;
             worth += lots * price.emeralds();
             spent += lots * price.emeralds();
         }
@@ -314,7 +315,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** A supply of its trade it is short of that nobody in its village sells: what a merchant could bring it. */
     public record Need(Villager buyer, Item item, int room) {}
 
-    /** The supplies of {@code buyer}'s trade it is short of, can pay an import price for, and no villager of its village offers. */
+    /** The supplies of {@code buyer}'s trade it is short of, can pay an import price for (any while villagers don't pay each other), and no villager of its village offers. */
     public static java.util.List<Need> needs(ServerLevel level, Villager buyer) {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty() || buyer.isBaby()) return java.util.List.of();
@@ -323,7 +324,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
         for (TradeTable.Supply supply : table.get().suppliesWanted(level, buyer)) {
             int held = Economy.count(level, buyer, supply.item());
             if (held >= supply.price().count() || waitsForFuel(level, buyer, table.get(), supply)) continue;
-            int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
+            int budget = Economy.villagerBudget(outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer));
             Optional<Price> imported = com.sheepfromheaven.minenow.merchant.Merchant.importPrice(supply.item());
             if (imported.isEmpty() || budget < imported.get().emeralds()) continue;
             if (sellers == null) sellers = sellers(level, buyer);
@@ -390,11 +391,11 @@ public class BuyFromVillagers extends Behavior<Villager> {
         return FurnaceTending.isFuel(new ItemStack(supply.item())) && Economy.items(level, buyer).stream().noneMatch(item -> FurnaceTending.isFuel(new ItemStack(item)));
     }
 
-    /** Whether a villager nearby has a tool of its trade that {@code fits} in stock, unlocked at its level, that it could pay for above its reserve or on credit. */
+    /** Whether a villager nearby has a tool of its trade that {@code fits} in stock, unlocked at its level, that it could pay for above its reserve or on credit, or any while villagers don't pay each other. */
     public static boolean couldBuyTool(ServerLevel level, Villager buyer, java.util.function.Predicate<ItemStack> fits) {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty()) return false;
-        int budget = Economy.spendable(level, buyer) + Math.max(0, CREDIT_LIMIT - debt(buyer));
+        int budget = Economy.villagersPay() ? Economy.spendable(level, buyer) + Math.max(0, CREDIT_LIMIT - debt(buyer)) : Integer.MAX_VALUE;
         int buyerLevel = buyer.getVillagerData().level();
         return sellers(level, buyer).stream().anyMatch(seller -> TradeTable.forVillager(seller).stream()
                 .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
@@ -474,9 +475,9 @@ public class BuyFromVillagers extends Behavior<Villager> {
         return Optional.empty();
     }
 
-    /** Whether a villager of its village would sell {@code supply} to {@code buyer}, for money above what it must keep or on credit, asleep or down a mine included since they sell again; when none does, a player is the only place left (see {@link SeekGoods}). */
+    /** Whether a villager of its village would sell {@code supply} to {@code buyer}, for money above what it must keep or on credit (or for free while villagers don't pay each other), asleep or down a mine included since they sell again; when none does, a player is the only place left (see {@link SeekGoods}). */
     static boolean canBuySupplyFromAVillager(ServerLevel level, Villager buyer, TradeTable.Supply supply) {
-        int budget = outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer);
+        int budget = Economy.villagerBudget(outOfFuel(level, buyer, supply) ? Economy.emeralds(level, buyer) - Economy.FOOD_MONEY : Economy.spendable(level, buyer));
         int room = CREDIT_LIMIT - debt(buyer);
         return sellers(level, buyer, false).stream().anyMatch(seller -> offer(level, seller, supply.item(), supply.max(), budget).isPresent()
                 || room > 0 && TradeTable.forVillager(seller).flatMap(table -> table.sellPrice(supply.item(), seller.getVillagerData().level()))
