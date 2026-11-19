@@ -331,6 +331,8 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_alternates_bread_and_meat", MealsTests::aVillagerAlternatesBreadAndMeat);
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_with_only_bread_buys_some_meat_for_a_change", MealsTests::aVillagerWithOnlyBreadBuysSomeMeatForAChange);
             test(helper, TestGroup.VILLAGER_TRADING, "poor_villager_keeps_its_emeralds", MealsTests::poorVillagerKeepsItsEmeralds);
+            test(helper, TestGroup.VILLAGERS, "without_meals_a_hungry_villager_does_not_eat", MealsTests::withoutMealsAHungryVillagerDoesNotEat);
+            test(helper, TestGroup.VILLAGER_TRADING, "without_meals_a_hungry_villager_with_emeralds_does_not_buy_food", MealsTests::withoutMealsAHungryVillagerWithEmeraldsDoesNotBuyFood);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_crafts_a_tool_at_its_smithing_table", ToolsmithTests::toolsmithCraftsAToolAtItsSmithingTable);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_gains_experience_from_crafting", ToolsmithTests::toolsmithGainsExperienceFromCrafting);
             test(helper, TestGroup.TOOLSMITH, "toolsmith_keeps_one_of_each_tool_in_stock", ToolsmithTests::toolsmithKeepsOneOfEachToolInStock);

@@ -261,7 +261,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     private static Optional<Deal> findDeal(ServerLevel level, Villager buyer) {
         if (Economy.emeralds(level, buyer) <= 0) return Optional.empty();
-        if (Meals.hasAMeal(level, buyer) && Meals.wantsAChange(level, buyer) && Economy.spendable(level, buyer) > 0) {
+        if (Meals.on() && Meals.hasAMeal(level, buyer) && Meals.wantsAChange(level, buyer) && Economy.spendable(level, buyer) > 0) {
             boolean meat = Meals.wantsMeat(buyer);
             Optional<Deal> change = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()

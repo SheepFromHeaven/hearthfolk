@@ -173,6 +173,42 @@ public final class MealsTests {
                 "A farmer with more carrots than it could sell gives a hungry neighbour with no money a meal"));
     }
 
+    public static void withoutMealsAHungryVillagerDoesNotEat(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(12, 1, 12));
+        villager.getInventory().addItem(new ItemStack(Items.BREAD, 3));
+        Meals.makeHungry(villager);
+        long lastMeal = villager.getData(ModVillagers.LAST_MEAL);
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertTrue(villager.getInventory().countItem(Items.BREAD) == 3, "With meals off a villager eats nothing, has "
+                    + villager.getInventory().countItem(Items.BREAD) + " loaves");
+            helper.assertTrue(villager.getData(ModVillagers.LAST_MEAL) == lastMeal, "...and its last meal stays as it was");
+            helper.succeed();
+        });
+    }
+
+    public static void withoutMealsAHungryVillagerWithEmeraldsDoesNotBuyFood(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos composter = new BlockPos(19, 1, 12);
+        helper.setBlock(composter, Blocks.COMPOSTER);
+        Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
+        farmer.getInventory().addItem(new ItemStack(Items.CARROT, 40));
+        Villager hungry = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
+        hungry.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
+        Meals.makeHungry(hungry);
+
+        helper.runAfterDelay(500, () -> {
+            helper.assertTrue(hungry.getInventory().countItem(Items.CARROT) == 0 && hungry.getInventory().countItem(Items.EMERALD) == 2,
+                    "With meals off a hungry villager buys no food, has " + hungry.getInventory().countItem(Items.CARROT) + " carrots and "
+                    + hungry.getInventory().countItem(Items.EMERALD) + " emeralds");
+            helper.assertTrue(farmer.getInventory().countItem(Items.CARROT) == 40, "...and the farmer sold none");
+            helper.succeed();
+        });
+    }
+
     private static Villager villagerNextToAFarmerWithPotatoes(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
