@@ -3,6 +3,7 @@ package com.sheepfromheaven.minenow;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.sheepfromheaven.minenow.MineNowConfig.Feature;
+import com.sheepfromheaven.minenow.MineNowConfig.Profession;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -45,6 +46,7 @@ public final class WorldSettings extends SavedData {
     private static WorldSettings fromToml() {
         WorldSettings settings = new WorldSettings(Map.of(), Optional.empty());
         for (Feature feature : Feature.values()) settings.enabled(feature);
+        for (Profession profession : Profession.values()) settings.enabled(profession);
         settings.villagersSummonGolems();
         settings.travellingMerchants();
         settings.inkAndQuillRecipes();
@@ -71,6 +73,14 @@ public final class WorldSettings extends SavedData {
 
     public void set(Feature feature, boolean on) {
         setFlag(feature.getSerializedName(), on);
+    }
+
+    public boolean enabled(Profession profession) {
+        return flag(profession.getSerializedName(), MineNowConfig.defaultValue(profession));
+    }
+
+    public void set(Profession profession, boolean on) {
+        setFlag(profession.getSerializedName(), on);
     }
 
     public boolean villagersSummonGolems() {
