@@ -19,8 +19,9 @@ import net.minecraft.world.entity.npc.villager.Villager;
 
 
 /**
- * A farmer's WORK package: vanilla's, minus WorkAtComposter (bakes wheat into bread, composts seeds), HarvestFarmland
- * (tool-free harvesting) and UseBonemeal. TendFields does that work instead. Used by VillagerBrains.
+ * A farmer's WORK package: vanilla's, with TendFields doing the field work (harvesting, replanting, tilling, bone meal)
+ * while the farmer's profession is switched on. Switched off, vanilla's own composter, harvest and bone meal work, which
+ * the second RunOne holds behind {@link VanillaFarmWork}'s gate, does that instead. Used by VillagerBrains.
  */
 public final class FarmerWork {
     private static final float SPEED = 0.5F;
@@ -36,7 +37,10 @@ public final class FarmerWork {
                 Pair.of(5, new RunOne<Villager>(ImmutableList.of(
                         Pair.of(StrollAroundPoi.create(MemoryModuleType.JOB_SITE, 0.4F, 4), 2),
                         Pair.of(StrollToPoi.create(MemoryModuleType.JOB_SITE, 0.4F, 1, 10), 5),
-                        Pair.of(StrollToPoiList.create(MemoryModuleType.SECONDARY_JOB_SITE, SPEED, 1, 6, MemoryModuleType.JOB_SITE), 5)))),
+                        Pair.of(StrollToPoiList.create(MemoryModuleType.SECONDARY_JOB_SITE, SPEED, 1, 6, MemoryModuleType.JOB_SITE), 5),
+                        Pair.of(new VanillaFarmWork.Composting(), 7),
+                        Pair.of(new VanillaFarmWork.Harvesting(), 2),
+                        Pair.of(new VanillaFarmWork.Bonemealing(), 4)))),
                 Pair.of(10, new ShowTradesToPlayer(400, 1600)),
                 Pair.of(10, SetLookAndInteract.create(EntityTypes.PLAYER, 4)),
                 Pair.of(2, com.sheepfromheaven.minenow.villager.VillagerBrains.jobSiteWalk()),
