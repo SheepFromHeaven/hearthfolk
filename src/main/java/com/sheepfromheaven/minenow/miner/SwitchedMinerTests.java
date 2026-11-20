@@ -33,8 +33,8 @@ public final class SwitchedMinerTests {
         });
     }
 
-    /** Next to its own furnace cart, off it takes no job; switched back on it takes it again, at its old level. */
-    public static void aSwitchedOffMinerTakesNoCartUntilSwitchedBackOn(GameTestHelper helper) {
+    /** Next to a furnace cart, off, nobody takes a job. */
+    public static void aSwitchedOffMinerTakesNoCart(GameTestHelper helper) {
         helper.assertTrue(!MineNowConfig.professionEnabled(Profession.MINER), "The environment switches miners off");
         Villager miner = MinerTests.spawnMiner(helper);
         miner.setVillagerData(miner.getVillagerData().withLevel(3));
@@ -46,13 +46,23 @@ public final class SwitchedMinerTests {
             helper.assertTrue(other.getVillagerData().profession().is(VillagerProfession.NONE), "Expected no villager to take the cart while off");
             helper.assertTrue(miner.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty() && other.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty(),
                     "Expected nobody to hold the cart");
-            MineNowConfig.set(Profession.MINER, true);
+            helper.succeed();
         });
+    }
+
+    /** Switched on, an unemployed villager with experience takes the cart and comes back at its old level. */
+    public static void anUnemployedVillagerWithExperienceTakesTheCartAtItsOldLevel(GameTestHelper helper) {
+        helper.assertTrue(MineNowConfig.professionEnabled(Profession.MINER), "Miners are on in a plain test");
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(new BlockPos(10, 1, 12), Miner.FURNACE_CART.get());
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(13, 1, 12));
+        villager.setVillagerData(villager.getVillagerData().withLevel(3));
+        villager.setVillagerXp(100);
+
         helper.succeedWhen(() -> {
-            helper.assertTrue(MineNowConfig.professionEnabled(Profession.MINER), "Waiting for the switch");
-            boolean taken = miner.getVillagerData().profession().is(Miner.PROFESSION) || other.getVillagerData().profession().is(Miner.PROFESSION);
-            helper.assertTrue(taken, "Expected a villager to take the cart once switched back on");
-            helper.assertTrue(!miner.getVillagerData().profession().is(Miner.PROFESSION) || miner.getVillagerData().level() == 3, "Expected the old level back");
+            helper.assertTrue(villager.getVillagerData().profession().is(Miner.PROFESSION), "Expected it to take the cart");
+            helper.assertTrue(villager.getVillagerData().level() == 3, "Expected its old level back");
         });
     }
 

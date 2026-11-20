@@ -54,10 +54,8 @@ final class JobLoss {
     private static void releaseSwitchedOffJob(ServerLevel level, Villager villager) {
         if (villager.isBaby()) return;
         var memory = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE);
+        if (!MineNowConfig.professionEnabled(MineNowConfig.Profession.MINER)) com.sheepfromheaven.minenow.miner.Miner.forgetMine(villager.getUUID());
         if (MineNowConfig.switchedOffHearthfolk(villager.getVillagerData().profession())) {
-            if (villager.getVillagerData().profession().is(com.sheepfromheaven.minenow.miner.Miner.PROFESSION)) {
-                memory.ifPresent(site -> com.sheepfromheaven.minenow.miner.Miner.forgetMine(villager.getUUID(), site.pos()));
-            }
             if (memory.isPresent()) villager.releasePoi(MemoryModuleType.JOB_SITE);
             villager.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
             villager.setVillagerData(villager.getVillagerData().withProfession(level.registryAccess(), VillagerProfession.NONE));
@@ -69,12 +67,10 @@ final class JobLoss {
         if (memory.isEmpty() || memory.get().dimension() != level.dimension()) return;
         var type = level.getPoiManager().getType(memory.get().pos());
         if (type.isEmpty()) return;
-        var own = villager.getVillagerData().profession().value();
         boolean claimedOff = false;
         for (MineNowConfig.Profession each : MineNowConfig.Profession.values()) {
             if (!each.isHearthfolk() || MineNowConfig.professionEnabled(each)) continue;
-            var off = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.VILLAGER_PROFESSION).getOrThrow(each.key()).value();
-            if (off.heldJobSite().test(type.get()) && !own.heldJobSite().test(type.get())) claimedOff = true;
+            if (type.get().unwrapKey().filter(key -> key.identifier().equals(each.key().identifier())).isPresent()) claimedOff = true;
         }
         if (claimedOff) {
             villager.releasePoi(MemoryModuleType.JOB_SITE);

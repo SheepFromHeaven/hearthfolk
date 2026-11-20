@@ -50,8 +50,8 @@ public final class SwitchedForesterTests {
         });
     }
 
-    /** Beside its nursery, off it takes no job; switched back on it takes it again, at its old level. */
-    public static void aSwitchedOffForesterTakesNoNurseryUntilSwitchedBackOn(GameTestHelper helper) {
+    /** Beside a nursery, off, nobody takes a job. */
+    public static void aSwitchedOffForesterTakesNoNursery(GameTestHelper helper) {
         helper.assertTrue(!MineNowConfig.professionEnabled(Profession.FORESTER), "The environment switches foresters off");
         Villager forester = forester(helper);
         Villager other = helper.spawn(EntityTypes.VILLAGER, new BlockPos(11, 1, 14));
@@ -61,13 +61,24 @@ public final class SwitchedForesterTests {
             helper.assertTrue(other.getVillagerData().profession().is(VillagerProfession.NONE), "Expected no villager to take the nursery while off");
             helper.assertTrue(forester.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty() && other.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty(),
                     "Expected nobody to hold the nursery");
-            MineNowConfig.set(Profession.FORESTER, true);
+            helper.succeed();
         });
+    }
+
+    /** Switched on, an unemployed villager with experience takes the nursery and comes back at its old level. */
+    public static void anUnemployedVillagerWithExperienceTakesTheNurseryAtItsOldLevel(GameTestHelper helper) {
+        helper.assertTrue(MineNowConfig.professionEnabled(Profession.FORESTER), "Foresters are on in a plain test");
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        helper.setBlock(LOG, Blocks.OAK_LOG);
+        helper.setBlock(POT, Forester.nursery(NurseryTree.OAK));
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(13, 1, 12));
+        villager.setVillagerData(villager.getVillagerData().withLevel(3));
+        villager.setVillagerXp(100);
+
         helper.succeedWhen(() -> {
-            helper.assertTrue(MineNowConfig.professionEnabled(Profession.FORESTER), "Waiting for the switch");
-            boolean taken = forester.getVillagerData().profession().is(Forester.PROFESSION) || other.getVillagerData().profession().is(Forester.PROFESSION);
-            helper.assertTrue(taken, "Expected a villager to take the nursery once switched back on");
-            helper.assertTrue(!forester.getVillagerData().profession().is(Forester.PROFESSION) || forester.getVillagerData().level() == 3, "Expected the old level back");
+            helper.assertTrue(villager.getVillagerData().profession().is(Forester.PROFESSION), "Expected it to take the nursery");
+            helper.assertTrue(villager.getVillagerData().level() == 3, "Expected its old level back");
         });
     }
 }

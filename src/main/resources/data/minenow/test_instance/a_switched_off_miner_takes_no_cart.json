@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_miner",
+  "function": "minenow:a_switched_off_miner_takes_no_cart",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 700
+}
