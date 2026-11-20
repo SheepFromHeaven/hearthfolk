@@ -129,6 +129,8 @@ public final class SwitchedFarmerTests {
                 if (!ripe(helper, CROP)) {
                     breadWhenOn[0] = farmer.getInventory().countItem(Items.BREAD);
                     MineNowConfig.set(Profession.FARMER, true);
+                    helper.setBlock(LATER_CROP.below(), Blocks.FARMLAND);
+                    helper.setBlock(LATER_CROP.below().west(), Blocks.FARMLAND);
                     helper.setBlock(LATER_CROP, ripeWheat());
                     farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 9));
                     phase[0] = 1;

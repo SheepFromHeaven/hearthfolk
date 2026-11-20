@@ -43,7 +43,11 @@ public record VanillaTrades(Optional<ResourceKey<VillagerProfession>> profession
         int rolledTo = saved.shown() ? data.level() : saved.rolledTo();
         villager.setOffers(offers);
         if (rolledTo < data.level()) {
-            villager.setVillagerData(data.withLevel(rolledTo));
+            villager.setVillagerData(data.withLevel(Math.max(1, rolledTo)));
+            if (rolledTo == 0) {
+                villager.setOffers(null);
+                villager.getOffers();
+            }
             while (villager.getVillagerData().level() < data.level()) villager.increaseMerchantCareer(level);
         }
         villager.setData(ModVillagers.VANILLA_TRADES, new VanillaTrades(profession, villager.getOffers(), data.level(), true));
