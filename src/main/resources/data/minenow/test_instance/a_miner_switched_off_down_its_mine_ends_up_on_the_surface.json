@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_miner",
+  "function": "minenow:a_miner_switched_off_down_its_mine_ends_up_on_the_surface",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1500
+}

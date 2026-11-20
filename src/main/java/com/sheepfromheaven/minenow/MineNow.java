@@ -421,6 +421,13 @@ public final class MineNow {
             test(helper, TestGroup.TOOLSMITH, "a_farmer_without_money_to_spare_keeps_its_wooden_hoe", ToolsmithTests::aFarmerWithoutMoneyToSpareKeepsItsWoodenHoe);
             test(helper, TestGroup.TOOLSMITH, "a_broke_miner_takes_a_stone_pickaxe_on_credit_for_ore_its_wooden_one_cant_dig", ToolsmithTests::aBrokeMinerTakesAStonePickaxeOnCreditForOreItsWoodenOneCantDig);
             test(helper, TestGroup.TOOLSMITH, "a_broke_miner_keeps_its_wooden_pickaxe_when_it_digs_everything", ToolsmithTests::aBrokeMinerKeepsItsWoodenPickaxeWhenItDigsEverything);
+            test(helper, TestGroup.MINER, "a_switched_off_miner_loses_its_job_and_keeps_its_items", com.sheepfromheaven.minenow.miner.SwitchedMinerTests::aSwitchedOffMinerLosesItsJobAndKeepsItsItems);
+            test(helper, TestGroup.MINER, "a_miner_switched_off_down_its_mine_ends_up_on_the_surface", com.sheepfromheaven.minenow.miner.SwitchedMinerTests::aMinerSwitchedOffDownItsMineEndsUpOnTheSurface);
+            test(helper, TestGroup.MINER, "a_switched_off_miner_takes_no_cart", com.sheepfromheaven.minenow.miner.SwitchedMinerTests::aSwitchedOffMinerTakesNoCart);
+            test(helper, TestGroup.MINER, "an_unemployed_villager_with_experience_takes_the_cart_at_its_old_level", com.sheepfromheaven.minenow.miner.SwitchedMinerTests::anUnemployedVillagerWithExperienceTakesTheCartAtItsOldLevel);
+            test(helper, TestGroup.FORESTER, "a_switched_off_forester_loses_its_job_and_keeps_its_items", com.sheepfromheaven.minenow.forester.SwitchedForesterTests::aSwitchedOffForesterLosesItsJobAndKeepsItsItems);
+            test(helper, TestGroup.FORESTER, "a_switched_off_forester_takes_no_nursery", com.sheepfromheaven.minenow.forester.SwitchedForesterTests::aSwitchedOffForesterTakesNoNursery);
+            test(helper, TestGroup.FORESTER, "an_unemployed_villager_with_experience_takes_the_nursery_at_its_old_level", com.sheepfromheaven.minenow.forester.SwitchedForesterTests::anUnemployedVillagerWithExperienceTakesTheNurseryAtItsOldLevel);
             test(helper, TestGroup.MINER, "unemployed_villager_becomes_a_miner_at_a_free_furnace", MinerTests::unemployedVillagerBecomesAMinerAtAFreeFurnace);
             test(helper, TestGroup.FORESTER, "potting_a_sapling_on_a_log_makes_a_nursery", com.sheepfromheaven.minenow.forester.ForesterTests::pottingASaplingOnALogMakesANursery);
             test(helper, TestGroup.FORESTER, "a_sapling_does_not_grow_into_a_villager_standing_in_it", com.sheepfromheaven.minenow.forester.ForesterTests::aSaplingDoesNotGrowIntoAVillagerStandingInIt);

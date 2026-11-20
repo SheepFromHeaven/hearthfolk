@@ -50,8 +50,8 @@ public final class Miner {
         POI_TYPES.register("miner", () -> new PoiType(ImmutableSet.copyOf(FURNACE_CART.get().getStateDefinition().getPossibleStates()), 1, 1));
         PROFESSIONS.register("miner", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.miner"),
-                poi -> poi.is(POI),
-                poi -> poi.is(POI),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_TOOLSMITH,
@@ -169,7 +169,7 @@ public final class Miner {
                 Quarry quarry = Quarry.around(level, cart);
                 if (quarry.isEmpty()) SHAFTS.remove(cart);
                 else SHAFTS.put(cart, new Shaft(level.dimension(), quarry.outline().stream().map(cell -> net.minecraft.core.BlockPos.asLong(cell.getX(), 0, cell.getZ()))
-                        .collect(java.util.stream.Collectors.toUnmodifiableSet()), quarry.top()));
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet()), quarry.top(), villager.getUUID()));
             }
         });
         if (villager.tickCount % 20 == 0) {
@@ -181,7 +181,13 @@ public final class Miner {
         }
     }
 
-    private record Shaft(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension, java.util.Set<Long> columns, int top) {
+    /** A miner that lost its job no longer works its mine: the shaft is no longer one a miner keeps, and it is no longer down it as a miner. */
+    public static void forgetMine(java.util.UUID miner) {
+        SHAFTS.values().removeIf(shaft -> shaft.owner().equals(miner));
+        UNDERGROUND.remove(miner);
+    }
+
+    private record Shaft(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension, java.util.Set<Long> columns, int top, java.util.UUID owner) {
         boolean holds(net.minecraft.core.BlockPos pos) {
             return pos.getY() <= top && columns.contains(net.minecraft.core.BlockPos.asLong(pos.getX(), 0, pos.getZ()));
         }

@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.villager;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -20,6 +21,7 @@ final class JobLoss {
     private JobLoss() {}
 
     static void tick(ServerLevel level, Villager villager) {
+        releaseSwitchedOffJob(level, villager);
         forgetGoneJobSite(level, villager);
         var profession = villager.getVillagerData().profession();
         if (villager.isBaby() || profession.is(VillagerProfession.NONE) || profession.is(VillagerProfession.NITWIT)
@@ -41,6 +43,38 @@ final class JobLoss {
             villager.removeData(ModVillagers.NO_JOB_SINCE);
             villager.removeData(ModVillagers.LAST_JOB_SITE);
             villager.refreshBrain(level);
+        }
+    }
+
+    /**
+     * A Hearthfolk profession has no vanilla work to fall back to, so switched off its villagers lose the job at once,
+     * whatever their level, keeping experience, pockets and home chest. A villager that still claims the job block of a
+     * switched-off profession (vanilla finds job sites through a tag, not through the profession's own predicate) lets it go.
+     */
+    private static void releaseSwitchedOffJob(ServerLevel level, Villager villager) {
+        if (villager.isBaby()) return;
+        var memory = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE);
+        if (!MineNowConfig.professionEnabled(MineNowConfig.Profession.MINER)) com.sheepfromheaven.minenow.miner.Miner.forgetMine(villager.getUUID());
+        if (MineNowConfig.switchedOffHearthfolk(villager.getVillagerData().profession())) {
+            if (memory.isPresent()) villager.releasePoi(MemoryModuleType.JOB_SITE);
+            villager.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
+            villager.setVillagerData(villager.getVillagerData().withProfession(level.registryAccess(), VillagerProfession.NONE));
+            villager.removeData(ModVillagers.NO_JOB_SINCE);
+            villager.removeData(ModVillagers.LAST_JOB_SITE);
+            villager.refreshBrain(level);
+            return;
+        }
+        if (memory.isEmpty() || memory.get().dimension() != level.dimension()) return;
+        var type = level.getPoiManager().getType(memory.get().pos());
+        if (type.isEmpty()) return;
+        boolean claimedOff = false;
+        for (MineNowConfig.Profession each : MineNowConfig.Profession.values()) {
+            if (!each.isHearthfolk() || MineNowConfig.professionEnabled(each)) continue;
+            if (type.get().unwrapKey().filter(key -> key.identifier().equals(each.key().identifier())).isPresent()) claimedOff = true;
+        }
+        if (claimedOff) {
+            villager.releasePoi(MemoryModuleType.JOB_SITE);
+            villager.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
         }
     }
 
