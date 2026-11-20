@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_cleric",
+  "function": "minenow:a_switched_off_cleric_sells_no_healing_to_a_hurt_villager",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1000
+}

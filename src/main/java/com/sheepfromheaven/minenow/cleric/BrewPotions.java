@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.cleric;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.Unloading;
@@ -60,7 +61,7 @@ public class BrewPotions extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.CLERIC) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(VillagerProfession.CLERIC) || !MineNowConfig.professionEnabled(body.getVillagerData().profession()) || !body.getBrain().isActive(Activity.WORK)) return false;
         if (pickTarget(level, body)) return true;
         nextStartAllowed = level.getGameTime() + IDLE_RESCAN_DELAY;
         return false;
@@ -74,7 +75,7 @@ public class BrewPotions extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return target != null && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && timestamp - since < GIVE_UP_AFTER_TICKS;
+        return target != null && MineNowConfig.professionEnabled(body.getVillagerData().profession()) && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && timestamp - since < GIVE_UP_AFTER_TICKS;
     }
 
     @Override

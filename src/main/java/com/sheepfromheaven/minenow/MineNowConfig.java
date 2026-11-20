@@ -202,7 +202,15 @@ public final class MineNowConfig {
         SHEPHERD(Identifier.fromNamespaceAndPath("minecraft", "shepherd"),
                 "Whether shepherds shear the sheep by their loom and open fence gates. Off: they work and trade as in vanilla, and take no part in villager trading."),
         BUTCHER(Identifier.fromNamespaceAndPath("minecraft", "butcher"),
-                "Whether butchers keep a herd by their smoker, smoke meat, feed the young and open fence gates. Off: they work and trade as in vanilla, and take no part in villager trading.");
+                "Whether butchers keep a herd by their smoker, smoke meat, feed the young and open fence gates. Off: they work and trade as in vanilla, and take no part in villager trading."),
+        LIBRARIAN(Identifier.fromNamespaceAndPath("minecraft", "librarian"),
+                "Whether librarians make paper, books and enchanted books at their lectern. Off: they bind no books, with vanilla's trades, and take no part in villager trading."),
+        CLERIC(Identifier.fromNamespaceAndPath("minecraft", "cleric"),
+                "Whether clerics brew potions at their brewing stand, heal villagers and throw splash potions. Off: they brew nothing and fight like any villager, with vanilla's trades, and take no part in villager trading."),
+        MASON(Identifier.fromNamespaceAndPath("minecraft", "mason"),
+                "Whether masons cut stone for sale and pave dirt paths while a redstone signal reaches their stonecutter. Off: they pave nothing and take no paving orders, with vanilla's trades, and take no part in villager trading."),
+        CARTOGRAPHER(Identifier.fromNamespaceAndPath("minecraft", "cartographer"),
+                "Whether cartographers draw a map of their village at their cartography table. Off: they draw no map, with vanilla's trades, and take no part in villager trading.");
 
         public static final Codec<Profession> CODEC = StringRepresentable.fromEnum(Profession::values);
 

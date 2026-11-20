@@ -261,7 +261,7 @@ public final class CartographerTests {
                 .map(holder -> holder.value().assemble(input));
     }
 
-    private static Villager spawn(GameTestHelper helper, int level, boolean inAVillage) {
+    static Villager spawn(GameTestHelper helper, int level, boolean inAVillage) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(TABLE, Blocks.CARTOGRAPHY_TABLE);
@@ -274,7 +274,7 @@ public final class CartographerTests {
         return cartographer;
     }
 
-    private static void stock(Villager cartographer) {
+    static void stock(Villager cartographer) {
         cartographer.getInventory().addItem(new ItemStack(Cartographer.INK_AND_QUILL.get()));
         cartographer.getInventory().addItem(new ItemStack(Items.PAPER, 8));
         cartographer.getInventory().addItem(new ItemStack(Items.INK_SAC));

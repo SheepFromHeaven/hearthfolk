@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.mason;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import com.sheepfromheaven.minenow.villager.WorkXp;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Commissions;
@@ -104,7 +105,7 @@ public class PaveRoads extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.MASON) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(VillagerProfession.MASON) || !MineNowConfig.professionEnabled(body.getVillagerData().profession()) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + RESCAN;
         return pickTarget(level, body);
     }
@@ -117,7 +118,7 @@ public class PaveRoads extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return target != null && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && timestamp - since < GIVE_UP_AFTER_TICKS;
+        return target != null && MineNowConfig.professionEnabled(body.getVillagerData().profession()) && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && timestamp - since < GIVE_UP_AFTER_TICKS;
     }
 
     @Override
@@ -259,7 +260,7 @@ public class PaveRoads extends Behavior<Villager> {
 
     /** Whether this mason paves at all just now: from apprentice on, at its stonecutter, while a redstone signal reaches it. */
     public static boolean takesWork(ServerLevel level, Villager mason) {
-        if (!mason.getVillagerData().profession().is(VillagerProfession.MASON) || MasonSkill.workshopRange(mason.getVillagerData().level()) == 0) return false;
+        if (!mason.getVillagerData().profession().is(VillagerProfession.MASON) || !MineNowConfig.professionEnabled(mason.getVillagerData().profession()) || MasonSkill.workshopRange(mason.getVillagerData().level()) == 0) return false;
         return mason.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(site -> site.dimension() == level.dimension())
                 .filter(site -> level.getBlockState(site.pos()).is(Blocks.STONECUTTER) && level.hasNeighborSignal(site.pos())).isPresent();
     }

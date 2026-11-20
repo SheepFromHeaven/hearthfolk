@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_mason",
+  "function": "minenow:a_switched_off_mason_refuses_a_paving_order",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1000
+}
