@@ -72,5 +72,11 @@
   "minenow.settings.profession.miner": "Miner",
   "minenow.settings.profession.miner.tooltip": "Miners dig a mine at their furnace minecart and sell what they dig.\nOff: miners lose their job and keep their items, and no villager takes a furnace minecart as a job site.",
   "minenow.settings.profession.forester": "Forester",
-  "minenow.settings.profession.forester.tooltip": "Foresters fell the trees around their nursery and plant new ones.\nOff: foresters lose their job and keep their items, and no villager takes a nursery as a job site."
+  "minenow.settings.profession.forester.tooltip": "Foresters fell the trees around their nursery and plant new ones.\nOff: foresters lose their job and keep their items, and no villager takes a nursery as a job site.",
+  "minenow.settings.profession.smelter": "Smelter",
+  "minenow.settings.profession.smelter.tooltip": "Smelters smelt raw ore and burn logs into charcoal at their blast furnace, and trade with players and other villagers.\nOff: a villager at a blast furnace is an armorer, and keeps its items.",
+  "minenow.settings.profession.golemsmith": "Golemsmith",
+  "minenow.settings.profession.golemsmith.tooltip": "Golemsmiths mend iron golems and build new ones at their golem workshop.\nOff: golemsmiths lose their job and keep their items, and no villager takes a golem workshop as a job site. A half-built golem stays where it stands. With villagersSummonGolems off too, a village gets no new golems.",
+  "minenow.settings.profession.merchant": "Merchant",
+  "minenow.settings.profession.merchant.tooltip": "Merchants keep pack mules at their pack station and go on tours to other villages.\nOff: merchants lose their job and keep their items, a tour in progress ends, their mules are let go and the cargo in their chests goes to the merchant, and no villager takes a pack station as a job site."
 }

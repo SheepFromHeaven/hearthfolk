@@ -56,6 +56,8 @@ final class JobLoss {
         var memory = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE);
         if (!MineNowConfig.professionEnabled(MineNowConfig.Profession.MINER)) com.sheepfromheaven.minenow.miner.Miner.forgetMine(villager.getUUID());
         if (MineNowConfig.switchedOffHearthfolk(villager.getVillagerData().profession())) {
+            if (villager.getVillagerData().profession().is(com.sheepfromheaven.minenow.merchant.Merchant.PROFESSION)) com.sheepfromheaven.minenow.merchant.Merchant.release(level, villager);
+            villager.removeData(com.sheepfromheaven.minenow.golemsmith.Golemsmith.SITE);
             if (memory.isPresent()) villager.releasePoi(MemoryModuleType.JOB_SITE);
             villager.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
             villager.setVillagerData(villager.getVillagerData().withProfession(level.registryAccess(), VillagerProfession.NONE));
@@ -69,7 +71,7 @@ final class JobLoss {
         if (type.isEmpty()) return;
         boolean claimedOff = false;
         for (MineNowConfig.Profession each : MineNowConfig.Profession.values()) {
-            if (!each.isHearthfolk() || MineNowConfig.professionEnabled(each)) continue;
+            if (!each.losesJobWhenOff() || MineNowConfig.professionEnabled(each)) continue;
             if (type.get().unwrapKey().filter(key -> key.identifier().equals(each.key().identifier())).isPresent()) claimedOff = true;
         }
         if (claimedOff) {

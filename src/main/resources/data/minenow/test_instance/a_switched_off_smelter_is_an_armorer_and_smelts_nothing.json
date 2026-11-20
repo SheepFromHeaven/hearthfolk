@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_smelter",
+  "function": "minenow:a_switched_off_smelter_is_an_armorer_and_smelts_nothing",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 700
+}

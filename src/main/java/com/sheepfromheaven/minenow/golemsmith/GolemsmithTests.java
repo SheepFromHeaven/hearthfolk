@@ -314,7 +314,7 @@ public final class GolemsmithTests {
         helper.succeed();
     }
 
-    private static int placed(GameTestHelper helper, net.minecraft.world.level.block.Block block) {
+    static int placed(GameTestHelper helper, net.minecraft.world.level.block.Block block) {
         int count = 0;
         for (BlockPos pos : BlockPos.betweenClosed(0, 1, 0, 23, 5, 23)) {
             if (helper.getBlockState(pos).is(block)) count++;
