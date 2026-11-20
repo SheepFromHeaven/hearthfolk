@@ -50,5 +50,13 @@
   "minenow.settings.profession.shepherd": "Shepherd",
   "minenow.settings.profession.shepherd.tooltip": "Shepherds shear the sheep by their loom, spin wool into string, open fence gates, and trade with players and other villagers.\nOff: shepherds work and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
   "minenow.settings.profession.butcher": "Butcher",
-  "minenow.settings.profession.butcher.tooltip": "Butchers keep a herd by their smoker, breed, cull and feed it, smoke meat, open fence gates, and trade with players and other villagers.\nOff: butchers work and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off."
+  "minenow.settings.profession.butcher.tooltip": "Butchers keep a herd by their smoker, breed, cull and feed it, smoke meat, open fence gates, and trade with players and other villagers.\nOff: butchers work and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.librarian": "Librarian",
+  "minenow.settings.profession.librarian.tooltip": "Librarians make paper, books and enchanted books at their lectern, and trade them with players and other villagers.\nOff: librarians bind no books and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.cleric": "Cleric",
+  "minenow.settings.profession.cleric.tooltip": "Clerics brew potions at their brewing stand, sell them, heal hurt villagers and throw splash potions at enemies.\nOff: clerics brew and heal nothing, panic like any villager, and trade as in vanilla, taking no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.mason": "Mason",
+  "minenow.settings.profession.mason.tooltip": "Masons cut stone for sale, and pave dirt paths while a redstone signal reaches their stonecutter or a villager pays them to.\nOff: masons pave nothing, take no paving orders and trade as in vanilla, taking no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.cartographer": "Cartographer",
+  "minenow.settings.profession.cartographer.tooltip": "Cartographers draw a map of their village and trade it with players and other villagers.\nOff: cartographers draw no map and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off."
 }

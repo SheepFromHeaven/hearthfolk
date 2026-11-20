@@ -210,6 +210,17 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_breeds_nothing", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherBreedsNothing);
             test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_feeds_no_baby_animal", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherFeedsNoBabyAnimal);
             test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_shows_vanilla_trades_that_cost_emeralds", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherShowsVanillaTradesThatCostEmeralds);
+            test(helper, TestGroup.LIBRARIAN, "a_switched_off_librarian_binds_no_books", com.sheepfromheaven.minenow.librarian.SwitchedLibrarianTests::aSwitchedOffLibrarianBindsNoBooks);
+            test(helper, TestGroup.LIBRARIAN, "a_switched_off_librarian_offers_only_vanilla_trades", com.sheepfromheaven.minenow.librarian.SwitchedLibrarianTests::aSwitchedOffLibrarianOffersOnlyVanillaTrades);
+            test(helper, TestGroup.CLERIC, "a_switched_off_cleric_brews_nothing", com.sheepfromheaven.minenow.cleric.SwitchedClericTests::aSwitchedOffClericBrewsNothing);
+            test(helper, TestGroup.CLERIC, "a_switched_off_cleric_sells_no_healing_to_a_hurt_villager", com.sheepfromheaven.minenow.cleric.SwitchedClericTests::aSwitchedOffClericSellsNoHealingToAHurtVillager);
+            test(helper, TestGroup.CLERIC, "a_switched_off_cleric_is_unarmed_and_throws_nothing", com.sheepfromheaven.minenow.cleric.SwitchedClericTests::aSwitchedOffClericIsUnarmedAndThrowsNothing);
+            test(helper, TestGroup.CLERIC, "a_switched_off_cleric_offers_only_vanilla_trades", com.sheepfromheaven.minenow.cleric.SwitchedClericTests::aSwitchedOffClericOffersOnlyVanillaTrades);
+            test(helper, TestGroup.MASON, "a_switched_off_mason_paves_no_path_with_a_signal", com.sheepfromheaven.minenow.mason.SwitchedMasonTests::aSwitchedOffMasonPavesNoPathWithASignal);
+            test(helper, TestGroup.MASON, "a_switched_off_mason_refuses_a_paving_order", com.sheepfromheaven.minenow.mason.SwitchedMasonTests::aSwitchedOffMasonRefusesAPavingOrder);
+            test(helper, TestGroup.MASON, "a_switched_off_mason_offers_only_vanilla_trades", com.sheepfromheaven.minenow.mason.SwitchedMasonTests::aSwitchedOffMasonOffersOnlyVanillaTrades);
+            test(helper, TestGroup.CARTOGRAPHER, "a_switched_off_cartographer_draws_no_map", com.sheepfromheaven.minenow.cartographer.SwitchedCartographerTests::aSwitchedOffCartographerDrawsNoMap);
+            test(helper, TestGroup.CARTOGRAPHER, "a_switched_off_cartographer_offers_only_vanilla_trades", com.sheepfromheaven.minenow.cartographer.SwitchedCartographerTests::aSwitchedOffCartographerOffersOnlyVanillaTrades);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_is_diagnosed", IdleCueTests::aWorkerWithoutItsToolIsDiagnosed);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_holds_up_an_emerald", IdleCueTests::aWorkerWithoutItsToolHoldsUpAnEmerald);
             test(helper, TestGroup.VILLAGERS, "a_broke_worker_without_its_tool_holds_no_emerald", IdleCueTests::aBrokeWorkerWithoutItsToolHoldsNoEmerald);

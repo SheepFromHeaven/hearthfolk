@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_librarian",
+  "function": "minenow:a_switched_off_librarian_binds_no_books",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1000
+}

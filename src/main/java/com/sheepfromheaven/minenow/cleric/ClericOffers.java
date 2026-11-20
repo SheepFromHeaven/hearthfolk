@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.cleric;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -17,6 +18,7 @@ public final class ClericOffers {
     private ClericOffers() {}
 
     public static void add(ServerLevel level, Villager cleric, List<MerchantOffer> offers) {
+        if (!MineNowConfig.professionEnabled(cleric.getVillagerData().profession())) return;
         for (Brews.Brew brew : Brews.upTo(cleric.getVillagerData().level())) {
             if (brew.price().isEmpty()) continue;
             int stock = PotionGoods.count(level, cleric, brew.output().form(), brew.output().potion());

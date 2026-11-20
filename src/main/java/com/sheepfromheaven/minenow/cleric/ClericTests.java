@@ -23,7 +23,7 @@ public final class ClericTests {
 
     private ClericTests() {}
 
-    private static Villager spawnCleric(GameTestHelper helper, int level) {
+    static Villager spawnCleric(GameTestHelper helper, int level) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(STAND, Blocks.BREWING_STAND);

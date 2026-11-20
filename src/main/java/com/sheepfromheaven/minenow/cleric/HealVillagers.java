@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.cleric;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.WorkXp;
@@ -55,7 +56,7 @@ public class HealVillagers extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
-        if (level.getGameTime() < nextStartAllowed || body.isTrading() || !ClericFight.isCleric(body) || body.isSleeping()) return false;
+        if (level.getGameTime() < nextStartAllowed || body.isTrading() || !ClericFight.isCleric(body) || !MineNowConfig.professionEnabled(body.getVillagerData().profession()) || body.isSleeping()) return false;
         if (body.getBrain().isActive(Activity.FIGHT) || body.getBrain().isActive(Activity.PANIC) || body.getBrain().isActive(Activity.REST)) return false;
         patient = pickPatient(level, body);
         if (patient == null) nextStartAllowed = level.getGameTime() + RESCAN_DELAY;
