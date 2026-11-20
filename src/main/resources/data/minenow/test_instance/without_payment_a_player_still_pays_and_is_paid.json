@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_pay_each_other",
+  "function": "minenow:without_payment_a_player_still_pays_and_is_paid",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

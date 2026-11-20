@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.villager;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
@@ -34,6 +35,8 @@ import java.util.UUID;
 /**
  * Players can't open an owned chest and villagers only add to it, so any drop in its contents between
  * two checks was taken by something else: a hopper or hopper minecart underneath. Its placer is the thief.
+ * With {@code villagerChestsLocked} off nothing is theft: contents are still recorded, and the first check after it
+ * comes back on records every chest afresh, so nothing taken while it was off is blamed.
  */
 public final class StorageTheft {
     public static final int BREAK_GOSSIP = 25;
@@ -43,6 +46,7 @@ public final class StorageTheft {
 
     private static final Map<GlobalPos, Object2IntMap<Item>> SNAPSHOTS = new HashMap<>();
     private static final List<PendingCart> PENDING_CARTS = new ArrayList<>();
+    private static boolean wasUnlocked;
 
     private StorageTheft() {}
 
@@ -51,11 +55,18 @@ public final class StorageTheft {
         level.broadcastEntityEvent(owner, (byte) 13);
     }
 
+    public static boolean locked() {
+        return MineNowConfig.enabled(MineNowConfig.Feature.VILLAGER_CHESTS_LOCKED);
+    }
+
     public static void check(ServerLevel level, Villager owner, BlockPos chest) {
         Object2IntMap<Item> now = contents(level, chest);
         if (now == null) return;
+        boolean locked = locked();
+        if (locked && wasUnlocked) SNAPSHOTS.clear();
+        wasUnlocked = !locked;
         Object2IntMap<Item> before = SNAPSHOTS.put(GlobalPos.of(level.dimension(), chest), now);
-        if (before == null) return;
+        if (before == null || !locked) return;
         int stolen = 0;
         for (Object2IntMap.Entry<Item> entry : before.object2IntEntrySet()) {
             stolen += Math.max(0, entry.getIntValue() - now.getInt(entry.getKey()));

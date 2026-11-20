@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.cleric;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.WorkXp;
@@ -27,7 +28,7 @@ import java.util.Optional;
 
 /**
  * A cleric heals a hurt villager that can pay: it walks to the nearest villager within {@link #RANGE} blocks below
- * {@link #HURT} of its health that holds the price of its healing potion, takes the emeralds from its goods, and gives
+ * {@link #HURT} of its health that holds the price of its healing potion, takes the emeralds from its goods (nothing while villagers do not pay each other), and gives
  * it the potion to drink. Iron golems are the golemsmith's business. In CORE like BrewPotions, while it is awake and
  * not fighting.
  */
@@ -55,7 +56,7 @@ public class HealVillagers extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
-        if (level.getGameTime() < nextStartAllowed || body.isTrading() || !ClericFight.isCleric(body) || body.isSleeping()) return false;
+        if (level.getGameTime() < nextStartAllowed || body.isTrading() || !ClericFight.isCleric(body) || !MineNowConfig.professionEnabled(body.getVillagerData().profession()) || body.isSleeping()) return false;
         if (body.getBrain().isActive(Activity.FIGHT) || body.getBrain().isActive(Activity.PANIC) || body.getBrain().isActive(Activity.REST)) return false;
         patient = pickPatient(level, body);
         if (patient == null) nextStartAllowed = level.getGameTime() + RESCAN_DELAY;
@@ -67,7 +68,7 @@ public class HealVillagers extends Behavior<Villager> {
         if (price.isEmpty() || PotionGoods.count(level, cleric, Items.POTION, Potions.HEALING) < 1) return null;
         return level.getEntitiesOfClass(Villager.class, cleric.getBoundingBox().inflate(RANGE),
                         other -> other != cleric && other.isAlive() && !other.isSleeping() && other.getHealth() < other.getMaxHealth() * HURT
-                                && Economy.emeralds(level, other) >= price.get())
+                                && Economy.villagerBudget(Economy.emeralds(level, other)) >= price.get())
                 .stream().min(Comparator.comparingDouble(cleric::distanceToSqr)).orElse(null);
     }
 
@@ -95,11 +96,10 @@ public class HealVillagers extends Behavior<Villager> {
 
     private static void heal(ServerLevel level, Villager cleric, Villager patient) {
         int price = price(cleric).orElse(0);
-        if (price <= 0 || Economy.emeralds(level, patient) < price) return;
+        if (price <= 0 || Economy.villagerBudget(Economy.emeralds(level, patient)) < price) return;
         ItemStack potion = PotionGoods.takeOne(level, cleric, Items.POTION, Potions.HEALING);
         if (potion.isEmpty()) return;
-        Economy.take(level, patient, Items.EMERALD, price);
-        Economy.give(level, cleric, new ItemStack(Items.EMERALD, price));
+        Economy.pay(level, patient, cleric, price);
         PotionContents contents = potion.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
         if (contents != null) contents.applyToLivingEntity(patient, 1.0F);
         cleric.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);

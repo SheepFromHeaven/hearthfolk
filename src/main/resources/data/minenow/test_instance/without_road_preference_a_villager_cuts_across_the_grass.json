@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_prefer_roads",
+  "function": "minenow:without_road_preference_a_villager_cuts_across_the_grass",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

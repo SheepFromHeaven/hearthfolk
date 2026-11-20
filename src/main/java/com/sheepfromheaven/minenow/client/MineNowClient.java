@@ -55,6 +55,12 @@ public final class MineNowClient {
     }
 
     @SubscribeEvent
+    static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+        net.neoforged.fml.ModList.get().getModContainerById(MineNow.MOD_ID).ifPresent(container -> container.registerExtensionPoint(
+                net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, (mod, parent) -> new FeatureSettingsScreen(parent)));
+    }
+
+    @SubscribeEvent
     static void onScreenInit(ScreenEvent.Init.Post event) {
         GametestPlaygroundWorld.onScreenInit(event);
     }

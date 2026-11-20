@@ -94,7 +94,7 @@ public class PanicOrFight extends VillagerPanicTrigger {
     }
 
     private static boolean ableToFight(Villager body) {
-        return Gear.isArmed(body) && body.getHealth() > body.getMaxHealth() / 3.0F;
+        return Alarms.on() && Gear.isArmed(body) && body.getHealth() > body.getMaxHealth() / 3.0F;
     }
 
     /** What attacked it, if that's a hostile, else the nearest hostile; only within reach of a chase from {@code from}, or of its bow when it holds high ground. */

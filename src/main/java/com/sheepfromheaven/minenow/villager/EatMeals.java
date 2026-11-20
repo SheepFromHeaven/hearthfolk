@@ -17,7 +17,7 @@ public class EatMeals extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager villager) {
-        if (level.getGameTime() < nextCheck || villager.isBaby() || villager.isSleeping()) return false;
+        if (!Meals.on() || level.getGameTime() < nextCheck || villager.isBaby() || villager.isSleeping()) return false;
         nextCheck = level.getGameTime() + CHECK_EVERY;
         return Meals.isHungry(villager) && Meals.hasAMeal(level, villager);
     }

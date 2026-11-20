@@ -43,7 +43,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * Using a carved pumpkin on an iron block while sneaking makes one (without sneaking, golem building stays vanilla).
  * It mends hurt iron golems with ingots and, from journeyman, builds them ({@link TendGolems}). Breaking the iron of a
  * golem it has started is allowed, but it remembers who did. Villagers no longer summon golems out of thin air: the
- * golemsmith is where a village's golems come from (unless {@link MineNowConfig#VILLAGERS_SUMMON_GOLEMS} says otherwise).
+ * golemsmith is where a village's golems come from (unless {@link MineNowConfig#villagersSummonGolems()} says otherwise).
  */
 public final class Golemsmith {
     public static final ResourceKey<PoiType> POI = ResourceKey.create(Registries.POINT_OF_INTEREST_TYPE, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "golemsmith"));
@@ -68,8 +68,8 @@ public final class Golemsmith {
         POI_TYPES.register("golemsmith", () -> new PoiType(ImmutableSet.copyOf(WORKSHOP.get().getStateDefinition().getPossibleStates()), 1, 1));
         PROFESSIONS.register("golemsmith", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.golemsmith"),
-                poi -> poi.is(POI),
-                poi -> poi.is(POI),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_ARMORER,
@@ -91,7 +91,7 @@ public final class Golemsmith {
      * pumpkin are spawned as {@code TRIGGERED}, and those placed with the village structure as {@code STRUCTURE}.
      */
     public static void onFinalizeSpawn(FinalizeSpawnEvent event) {
-        if (MineNowConfig.VILLAGERS_SUMMON_GOLEMS.get()) return;
+        if (MineNowConfig.villagersSummonGolems()) return;
         if (event.getEntity() instanceof IronGolem && event.getSpawnType() == EntitySpawnReason.MOB_SUMMONED) event.setSpawnCancelled(true);
     }
 
@@ -99,7 +99,7 @@ public final class Golemsmith {
     public static void onBreak(BreakBlockEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !event.getState().is(Blocks.IRON_BLOCK) || event.getPlayer() == null) return;
         for (Villager owner : level.getEntitiesOfClass(Villager.class, new AABB(event.getPos()).inflate(SITE_SEARCH),
-                villager -> villager.hasData(SITE) && villager.getData(SITE).ironCells().contains(event.getPos()))) {
+                villager -> villager.getVillagerData().profession().is(PROFESSION) && villager.hasData(SITE) && villager.getData(SITE).ironCells().contains(event.getPos()))) {
             StorageTheft.punish(level, owner, event.getPlayer().getUUID(), StorageTheft.BREAK_GOSSIP);
         }
     }

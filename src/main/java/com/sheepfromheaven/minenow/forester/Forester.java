@@ -63,8 +63,8 @@ public final class Forester {
         POI_TYPES.register("forester", () -> new PoiType(ImmutableSet.copyOf(NURSERY.get().getStateDefinition().getPossibleStates()), 1, 1));
         PROFESSIONS.register("forester", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.forester"),
-                poi -> poi.is(POI),
-                poi -> poi.is(POI),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
                 GATHERS,
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_FLETCHER,

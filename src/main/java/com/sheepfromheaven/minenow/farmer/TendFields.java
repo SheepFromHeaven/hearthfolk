@@ -73,7 +73,7 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed) return false;
-        if (!FarmerRules.isFarmer(body) || !FarmerRules.griefingAllowed(level) || body.isTrading()) return false;
+        if (!FarmerRules.hearthfolkFarmer(body) || !FarmerRules.griefingAllowed(level) || body.isTrading()) return false;
         if (!body.getBrain().isActive(Activity.WORK)) return false;
         candidates.clear();
         if (pickNextTarget(level, body)) return true;
@@ -90,7 +90,7 @@ public class TendFields extends Behavior<Villager> implements com.sheepfromheave
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return target != null && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && jobSite(level, body).isPresent();
+        return target != null && FarmerRules.hearthfolkFarmer(body) && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && jobSite(level, body).isPresent();
     }
 
     @Override

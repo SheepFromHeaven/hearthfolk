@@ -23,7 +23,7 @@ public final class ClericTests {
 
     private ClericTests() {}
 
-    private static Villager spawnCleric(GameTestHelper helper, int level) {
+    static Villager spawnCleric(GameTestHelper helper, int level) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(STAND, Blocks.BREWING_STAND);
@@ -203,6 +203,18 @@ public final class ClericTests {
             helper.assertTrue(patient.getHealth() > 5.0F, "The cleric heals the hurt villager, health " + patient.getHealth());
             helper.assertTrue(patient.getInventory().countItem(Items.EMERALD) == 2, "...for three emeralds, it has " + patient.getInventory().countItem(Items.EMERALD));
             helper.assertTrue(cleric.getInventory().countItem(Items.EMERALD) == 3, "...which the cleric keeps, it has " + cleric.getInventory().countItem(Items.EMERALD));
+            helper.assertTrue(count(helper, cleric, Potions.HEALING) == 0, "...with its healing potion");
+        });
+    }
+
+    public static void withoutPaymentAClericHealsAHurtVillagerWithNoEmeralds(GameTestHelper helper) {
+        Villager cleric = spawnCleric(helper, 3);
+        cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
+        Villager patient = patient(helper, new BlockPos(6, 1, 12), 0, 5.0F);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(patient.getHealth() > 5.0F, "The cleric heals a hurt villager with no emeralds, health " + patient.getHealth());
+            helper.assertTrue(cleric.getInventory().countItem(Items.EMERALD) == 0, "...for nothing, it has " + cleric.getInventory().countItem(Items.EMERALD));
             helper.assertTrue(count(helper, cleric, Potions.HEALING) == 0, "...with its healing potion");
         });
     }

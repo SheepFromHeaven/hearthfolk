@@ -76,9 +76,14 @@ public final class HomeStorage {
                 : Component.translatableWithFallback("minenow.chest.owned_by", "This chest belongs to %s", owner.getDisplayName()));
     }
 
-    /** Replaces vanilla's "Chest is locked!" with who owns it. */
+    /** Replaces vanilla's "Chest is locked!" with who owns it. With locks off it opens and still says whose it is. */
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !isStorageBlock(level.getBlockState(event.getPos()))) return;
+        if (!StorageTheft.locked()) {
+            halves(level, event.getPos()).forEach(half -> setLocked(level, half, false));
+            ownerMessage(level, event.getPos()).ifPresent(event.getEntity()::sendOverlayMessage);
+            return;
+        }
         if (!(level.getBlockEntity(event.getPos()) instanceof BaseContainerBlockEntity container) || container.canOpen(event.getEntity())) return;
         if (liftAbandonedLock(level, event.getPos())) return;
         ownerMessage(level, event.getPos()).ifPresent(message -> {
@@ -184,7 +189,7 @@ public final class HomeStorage {
             if (!half.equals(chest) && !isOccupiedStorage(level, half)) {
                 pois.take(HomeStorage::isStoragePoi, (type, pos) -> pos.equals(half), half, 1);
             }
-            setLocked(level, half, true);
+            setLocked(level, half, StorageTheft.locked());
         }
     }
 
@@ -244,7 +249,7 @@ public final class HomeStorage {
     }
 
     static void lock(ServerLevel level, BlockPos pos) {
-        setLocked(level, pos, true);
+        setLocked(level, pos, StorageTheft.locked());
     }
 
     private static void setLocked(ServerLevel level, BlockPos pos, boolean locked) {

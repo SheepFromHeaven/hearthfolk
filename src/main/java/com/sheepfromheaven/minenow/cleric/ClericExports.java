@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.cleric;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import com.sheepfromheaven.minenow.villager.Economy;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -18,7 +19,7 @@ public final class ClericExports {
     private ClericExports() {}
 
     private static boolean isCleric(Villager villager) {
-        return villager.getVillagerData().profession().is(VillagerProfession.CLERIC);
+        return villager.getVillagerData().profession().is(VillagerProfession.CLERIC) && MineNowConfig.professionEnabled(villager.getVillagerData().profession());
     }
 
     private static int sellable(ServerLevel level, Villager cleric, Brews.Brew brew) {

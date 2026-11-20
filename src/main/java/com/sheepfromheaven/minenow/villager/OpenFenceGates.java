@@ -37,6 +37,7 @@ public class OpenFenceGates extends Behavior<Villager> {
 
     public static boolean canOpen(Mob mob) {
         return mob instanceof Villager villager && !villager.isBaby()
+                && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(villager.getVillagerData().profession())
                 && (villager.getVillagerData().profession().is(VillagerProfession.SHEPHERD) || villager.getVillagerData().profession().is(VillagerProfession.BUTCHER));
     }
 

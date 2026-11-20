@@ -271,7 +271,7 @@ public final class Exports {
 
     /** The village around this player may draw a merchant: {@code roll} below the visit chance for its export goods, unless merchants are switched off ({@code travellingMerchants}). */
     static void visitNear(ServerLevel level, ServerPlayer player, java.util.function.DoubleSupplier roll) {
-        if (!com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.get()) return;
+        if (!com.sheepfromheaven.minenow.MineNowConfig.travellingMerchants()) return;
         if (!level.getEntitiesOfClass(WanderingTrader.class, player.getBoundingBox().inflate(TRADER_RANGE)).isEmpty()) return;
         var villagers = level.getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(VILLAGE_RANGE), Villager::isAlive);
         Map<Villager, Integer> trade = new HashMap<>();

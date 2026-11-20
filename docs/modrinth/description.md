@@ -26,6 +26,51 @@ Merchants load their pack mules and walk across the land to the next village wit
 
 Miner, forester, smelter, golemsmith and merchant are new. Farmer, fisherman, shepherd, butcher, toolsmith, armorer, weaponsmith, fletcher, cleric, mason, leatherworker, librarian and cartographer finally have real work to do.
 
+## Settings
+
+Every world keeps its own settings, so one world can have villagers who fight and another can have none. Open the mod list, pick Hearthfolk and press Config. In single player that edits the world you are in, and each change applies at once. From the main menu it edits the defaults new worlds start with.
+
+Turning a switch off:
+
+- Villagers Defend the Village: nobody fights or musters at the bell. Villagers panic and hide, as in vanilla.
+- Villagers Eat Meals: nobody eats, and no food goes on meals.
+- Villagers Pay Each Other: villagers take what they need from each other for free. Players still pay.
+- Villagers Follow Emeralds: jobless villagers ignore an emerald held by a player.
+- Villager Chests Locked: players can open and take from villager chests, barrels, armor stands and wall displays, and taking is not theft.
+- Villagers Prefer Roads: villagers walk as in vanilla and no longer stroll along roads.
+- Villagers Level Through Work: only trading levels villagers up, so they progress much more slowly.
+- Villagers Get Names: new villagers stay nameless, and births and deaths are not announced. Names already given stay.
+- Travelling Merchants: no travelling merchants come to your village.
+- Villagers Summon Golems: off is the default. Villagers no longer summon golems, and the golemsmith builds them instead.
+- Ink and Quill Recipes: off is the default. The book and quill recipe stays as vanilla has it.
+- Merchant Tours at Once: how many village merchants may be on tour at the same time (default 4). Lower it and the rest wait at home.
+
+Every profession has a switch too, under Professions. Turning off a vanilla profession (farmer, fisherman, shepherd, butcher, librarian, cleric, mason, cartographer, toolsmith, fletcher, armorer, weaponsmith, leatherworker): its villagers work and trade as in vanilla, with vanilla's trades, and take no part in villager trading. What each one stops doing:
+
+- Farmer: no tending the fields beside the composter, and farmland can be trampled again.
+- Fisherman: no fishing at the water by the barrel.
+- Shepherd: no shearing the sheep by the loom and no opening fence gates.
+- Butcher: no herd by the smoker, no smoking meat, no feeding the young and no opening fence gates.
+- Librarian: no paper, books or enchanted books at the lectern.
+- Cleric: no brewing, no healing villagers and no splash potions. They fight like any villager.
+- Mason: no cutting stone for sale and no paving dirt paths or paving orders.
+- Cartographer: no map of the village.
+- Toolsmith: no crafting tools at the smithing table.
+- Fletcher: no crafting at the fletching table and no archery practice.
+- Armorer: no crafting armor and shields and no dressing armor stands. Stands it dressed stay its own.
+- Weaponsmith: no crafting swords, no grinding worn blades and no swords on the wall. Swords already on the wall stay its own.
+- Leatherworker: no leather goods, no bone-mealing tall flowers for dye, no dyeing armor, no tanning racks and no dressing armor stands. Racks and stands already up stay its own.
+
+Turning off a Hearthfolk profession: its villagers lose the job and keep their items, and no villager takes its job block as a job site.
+
+- Miner: no mines dug at furnace minecarts.
+- Forester: no felling or replanting trees around nurseries.
+- Smelter: no smelting ore or burning charcoal. A villager at a blast furnace is an armorer instead, and keeps its items.
+- Golemsmith: no mending or building iron golems at workshops. A half-built golem stays where it stands, and with Villagers Summon Golems off a village gets no new golems.
+- Merchant: no pack mules and no tours. A tour in progress ends, the mules are let go with their cargo given to the merchant.
+
+`minenow-local.toml`, in the config folder, holds the defaults new worlds start with. It is one file for the whole game, and a server owner sets up a server world's start there, since a server keeps its own settings and they can't be changed from the menu while connected.
+
 ## Good to know
 
-Minecraft 26.3 and NeoForge 26.3 or newer, Java 25, no other mods needed. It is not compatible with worlds from the old Forge 1.21.11 version, which was called MineNow. Prices and trades are data packs, and a few per-world switches live in `minenow-local.toml`.
+Minecraft 26.3 and NeoForge 26.3 or newer, Java 25, no other mods needed. It is not compatible with worlds from the old Forge 1.21.11 version, which was called MineNow. Prices and trades are data packs.

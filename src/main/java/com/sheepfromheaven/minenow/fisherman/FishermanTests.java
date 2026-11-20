@@ -123,7 +123,7 @@ public final class FishermanTests {
     }
 
     /** A 5x5 pond, one block deep, whose west edge starts at {@code x}. */
-    private static void digPool(GameTestHelper helper, int x, int z) {
+    static void digPool(GameTestHelper helper, int x, int z) {
         for (int dx = 0; dx < 5; dx++) {
             for (int dz = 0; dz < 5; dz++) helper.setBlock(x + dx, 0, z + dz, Blocks.WATER);
         }

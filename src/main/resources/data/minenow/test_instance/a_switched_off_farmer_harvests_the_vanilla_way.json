@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_farmer",
+  "function": "minenow:a_switched_off_farmer_harvests_the_vanilla_way",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

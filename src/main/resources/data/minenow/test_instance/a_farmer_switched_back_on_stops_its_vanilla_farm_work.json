@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_farmer_switching",
+  "function": "minenow:a_farmer_switched_back_on_stops_its_vanilla_farm_work",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 4800
+}

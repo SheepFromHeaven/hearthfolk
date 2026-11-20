@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.armorer;
 
 import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.villager.Economy;
+import com.sheepfromheaven.minenow.villager.StorageTheft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -87,7 +88,7 @@ public final class Armorer {
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        if (!(event.getTarget() instanceof ArmorStand stand) || !(stand.level() instanceof ServerLevel level)) return;
+        if (!(event.getTarget() instanceof ArmorStand stand) || !(stand.level() instanceof ServerLevel level) || !StorageTheft.locked()) return;
         Villager armorer = owner(level, stand);
         if (armorer == null) return;
         event.setCanceled(true);

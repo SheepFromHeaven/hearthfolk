@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:all_of",
+  "definitions": [
+    {
+      "type": "minecraft:clock_time",
+      "clock": "minecraft:overworld",
+      "time": 3000
+    },
+    {
+      "type": "minenow:feature_off",
+      "feature": "villagersDefendTheVillage"
+    }
+  ]
+}

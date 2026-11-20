@@ -157,6 +157,17 @@ public final class MerchantTests {
         });
     }
 
+    public static void withoutPaymentABrokeMerchantPlansATourToAVillageThatNeedsWhatItsVillageSells(GameTestHelper helper) {
+        Villager merchant = homeVillage(helper, true);
+        Economy.take(helper.getLevel(), merchant, Items.EMERALD, Economy.emeralds(helper.getLevel(), merchant));
+        Villager butcher = butcherAcross(helper);
+        Economy.take(helper.getLevel(), butcher, Items.EMERALD, Economy.emeralds(helper.getLevel(), butcher));
+
+        helper.succeedWhen(() -> helper.assertTrue(merchant.getData(Merchant.TOUR).filter(tour -> tour.wanted().stream().anyMatch(want -> want.item() == Items.WHEAT)).isPresent()
+                        || merchant.getData(Merchant.RESTED_AT) > 0,
+                "A merchant with no emeralds plans a tour carrying wheat to the broke butcher across the fields, tour " + merchant.getData(Merchant.TOUR)));
+    }
+
     public static void aMerchantSellsAboveWhatItPaid(GameTestHelper helper) {
         Villager merchant = homeVillage(helper, true);
         Villager butcher = butcherAcross(helper);
@@ -192,8 +203,8 @@ public final class MerchantTests {
     }
 
     public static void toursAreCapped(GameTestHelper helper) {
-        int before = MineNowConfig.MAX_TOURS.get();
-        MineNowConfig.MAX_TOURS.set(0);
+        int before = MineNowConfig.maxMerchantTours();
+        MineNowConfig.setMaxMerchantTours(0);
         Villager merchant = homeVillage(helper, true);
         butcherAcross(helper);
 
@@ -202,7 +213,7 @@ public final class MerchantTests {
                 helper.assertTrue(merchant.getData(Merchant.TOUR).isEmpty(), "With no tour slots a merchant stays home");
                 helper.succeed();
             } finally {
-                MineNowConfig.MAX_TOURS.set(before);
+                MineNowConfig.setMaxMerchantTours(before);
             }
         });
     }
@@ -359,7 +370,7 @@ public final class MerchantTests {
         return butcher;
     }
 
-    private static Villager spawnMerchant(GameTestHelper helper, int level) {
+    static Villager spawnMerchant(GameTestHelper helper, int level) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(STATION, Merchant.PACK_STATION.get());

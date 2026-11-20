@@ -383,6 +383,19 @@ public final class FarmerTests {
                 "A farmer should earn experience from harvesting, xp " + farmer.getVillagerXp()));
     }
 
+    public static void withoutLevelThroughWorkAHarvestingFarmerGainsNoExperience(GameTestHelper helper) {
+        setUpFarm(helper, false);
+        Villager farmer = spawnFarmer(helper);
+        GameTestHelpers.allowWorkXp(farmer);
+
+        helper.succeedWhen(() -> {
+            forEachFieldCrop(helper, (pos, state) ->
+                    helper.assertTrue(!((CropBlock) state.getBlock()).isMaxAge(state), "Expected crop at " + pos + " to be harvested"));
+            helper.assertTrue(farmer.getVillagerXp() == 0,
+                    "With work experience switched off a harvesting farmer gains none, xp " + farmer.getVillagerXp());
+        });
+    }
+
     public static void cropsAndSeedsAreRecognizedBeyondVanillaWheat(GameTestHelper helper) {
         BlockState ripePitcher = Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, 4);
         BlockState youngPitcher = Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, 2);

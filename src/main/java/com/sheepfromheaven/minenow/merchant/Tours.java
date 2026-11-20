@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Planning and running merchant tours ({@link Tour}): which villages are short of what the merchant's own village sells,
  * the walk between them, and the chunks kept ticking around a merchant on the road (at most
- * {@link MineNowConfig#MAX_TOURS} tours at once, so the cost stays bounded).
+ * {@link MineNowConfig#maxMerchantTours()} tours at once, so the cost stays bounded).
  */
 public final class Tours {
     static final int SHOP_TICKS = 1200;
@@ -63,7 +63,7 @@ public final class Tours {
     }
 
     static boolean slotFree(UUID merchant) {
-        return ACTIVE.contains(merchant) || ACTIVE.size() < MineNowConfig.MAX_TOURS.get();
+        return ACTIVE.contains(merchant) || ACTIVE.size() < MineNowConfig.maxMerchantTours();
     }
 
     static List<Villager> markets(ServerLevel level) {
@@ -72,6 +72,10 @@ public final class Tours {
             if (level.getEntity(id) instanceof Villager merchant && merchant.isAlive() && Merchant.isSelling(merchant)) found.add(merchant);
         }
         return found;
+    }
+
+    static boolean active(Villager merchant) {
+        return ACTIVE.contains(merchant.getUUID());
     }
 
     static void resume(Villager merchant) {
@@ -99,7 +103,7 @@ public final class Tours {
             if (!demand.isEmpty()) candidates.add(new Candidate(bell.get(), demand));
         }
         candidates.sort(Comparator.comparingDouble(candidate -> candidate.bell().distSqr(here)));
-        int budget = Economy.spendable(level, merchant);
+        int budget = Economy.villagerBudget(Economy.spendable(level, merchant));
         int slots = freeSlots(level, merchant);
         Map<Item, Integer> wanted = new LinkedHashMap<>();
         List<BlockPos> stops = new ArrayList<>();

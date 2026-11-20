@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_weaponsmith",
+  "function": "minenow:a_switched_off_weaponsmith_racks_no_sword",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 900
+}

@@ -48,6 +48,17 @@ public final class WorkXpTests {
         helper.succeed();
     }
 
+    public static void withoutLevelThroughWorkProgressIsKept(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(12, 1, 12));
+        villager.setVillagerData(villager.getVillagerData().withProfession(helper.getLevel().registryAccess(), net.minecraft.world.entity.npc.villager.VillagerProfession.FARMER));
+        villager.setData(ModVillagers.WORK_XP_PROGRESS, 0.5);
+        WorkXp.award(villager, 3);
+        helper.assertTrue(villager.getVillagerXp() == 0, "With work experience switched off, work gives no experience, xp " + villager.getVillagerXp());
+        helper.assertTrue(villager.getData(ModVillagers.WORK_XP_PROGRESS) == 0.5, "Carried progress is kept for when the switch comes back on, is " + villager.getData(ModVillagers.WORK_XP_PROGRESS));
+        helper.succeed();
+    }
+
     public static void unemployedVillagersEarnNoWorkExperience(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         Villager villager = helper.spawn(EntityTypes.VILLAGER, new BlockPos(12, 1, 12));

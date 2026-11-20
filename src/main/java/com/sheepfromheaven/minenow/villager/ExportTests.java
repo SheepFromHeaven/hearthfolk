@@ -128,16 +128,16 @@ public final class ExportTests {
         @SuppressWarnings("removal")
         net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.setPos(armorer.position());
-        boolean before = com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.get();
+        boolean before = com.sheepfromheaven.minenow.MineNowConfig.travellingMerchants();
         try {
-            com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.set(false);
+            com.sheepfromheaven.minenow.MineNowConfig.setTravellingMerchants(false);
             Exports.visitNear(helper.getLevel(), player, () -> 0.0);
             helper.assertTrue(merchants(helper) == 0, "Switched off, no merchant comes however many exports, got " + merchants(helper));
-            com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.set(true);
+            com.sheepfromheaven.minenow.MineNowConfig.setTravellingMerchants(true);
             Exports.visitNear(helper.getLevel(), player, () -> 0.0);
             helper.assertTrue(merchants(helper) == 1, "Switched on, the same village draws one, got " + merchants(helper));
         } finally {
-            com.sheepfromheaven.minenow.MineNowConfig.TRAVELLING_MERCHANTS.set(before);
+            com.sheepfromheaven.minenow.MineNowConfig.setTravellingMerchants(before);
         }
         helper.succeed();
     }

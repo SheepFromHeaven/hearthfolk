@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_pay_each_other_commission",
+  "function": "minenow:without_payment_a_broke_villager_commissions_missing_armor_and_gets_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 4800
+}

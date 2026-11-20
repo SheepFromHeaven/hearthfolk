@@ -46,7 +46,7 @@ public class DyeArmor extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.LEATHERWORKER) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(VillagerProfession.LEATHERWORKER) || !com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + RESCAN;
         return plainPiece(body) >= 0 && dye(body) >= 0;
     }
@@ -62,7 +62,7 @@ public class DyeArmor extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS && plainPiece(body) >= 0 && dye(body) >= 0;
+        return com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS && plainPiece(body) >= 0 && dye(body) >= 0;
     }
 
     @Override

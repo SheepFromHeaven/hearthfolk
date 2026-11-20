@@ -207,14 +207,14 @@ public final class GolemsmithTests {
 
     public static void villagerGolemsCanBeSwitchedBackOn(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
-        boolean before = com.sheepfromheaven.minenow.MineNowConfig.VILLAGERS_SUMMON_GOLEMS.get();
+        boolean before = com.sheepfromheaven.minenow.MineNowConfig.villagersSummonGolems();
         try {
-            com.sheepfromheaven.minenow.MineNowConfig.VILLAGERS_SUMMON_GOLEMS.set(true);
+            com.sheepfromheaven.minenow.MineNowConfig.setVillagersSummonGolems(true);
             var summoned = net.minecraft.util.SpawnUtil.trySpawnMob(EntityTypes.IRON_GOLEM, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED,
                     helper.getLevel(), helper.absolutePos(new BlockPos(12, 1, 12)), 10, 8, 6, net.minecraft.util.SpawnUtil.Strategy.LEGACY_IRON_GOLEM, false);
             helper.assertTrue(summoned.isPresent(), "With the switch on, villagers summon golems as in vanilla");
         } finally {
-            com.sheepfromheaven.minenow.MineNowConfig.VILLAGERS_SUMMON_GOLEMS.set(before);
+            com.sheepfromheaven.minenow.MineNowConfig.setVillagersSummonGolems(before);
         }
         helper.succeed();
     }
@@ -314,7 +314,7 @@ public final class GolemsmithTests {
         helper.succeed();
     }
 
-    private static int placed(GameTestHelper helper, net.minecraft.world.level.block.Block block) {
+    static int placed(GameTestHelper helper, net.minecraft.world.level.block.Block block) {
         int count = 0;
         for (BlockPos pos : BlockPos.betweenClosed(0, 1, 0, 23, 5, 23)) {
             if (helper.getBlockState(pos).is(block)) count++;

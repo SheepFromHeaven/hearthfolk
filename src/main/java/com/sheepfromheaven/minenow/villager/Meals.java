@@ -31,7 +31,12 @@ public final class Meals {
 
     private Meals() {}
 
+    public static boolean on() {
+        return com.sheepfromheaven.minenow.MineNowConfig.enabled(com.sheepfromheaven.minenow.MineNowConfig.Feature.VILLAGERS_EAT_MEALS);
+    }
+
     public static boolean isHungry(Villager villager) {
+        if (!on()) return false;
         long now = villager.level().getGameTime();
         if (!villager.hasData(ModVillagers.LAST_MEAL)) villager.setData(ModVillagers.LAST_MEAL, now);
         return now - villager.getData(ModVillagers.LAST_MEAL) >= MEAL_INTERVAL;

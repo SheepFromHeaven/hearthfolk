@@ -1,5 +1,7 @@
 package com.sheepfromheaven.minenow.soak;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
+import com.sheepfromheaven.minenow.villager.BuyFromVillagers;
 import com.sheepfromheaven.minenow.villager.Commissions;
 
 import com.mojang.logging.LogUtils;
@@ -138,7 +140,9 @@ public final class VillageSoak {
         boolean starterTools = !Boolean.getBoolean("minenow.soak.noTools");
         Path out = Path.of(System.getProperty("minenow.soak.out", "build/soak"));
         ServerLevel level = helper.getLevel();
-        LOGGER.info("[soak] building a village of {} for {} days", ROSTER.length, days);
+        Map<MineNowConfig.Feature, Boolean> restore = applyFeatures(System.getProperty("minenow.soak.features", ""));
+        String switches = switches();
+        LOGGER.info("[soak] building a village of {} for {} days, {}", ROSTER.length, days, switches);
 
         GameTestHelpers.fence(helper);
         buildGround(helper);
@@ -199,6 +203,7 @@ public final class VillageSoak {
         LOGGER.info("[soak] village built, running {} ticks", totalTicks);
         Set<UUID> merchantsSeen = new HashSet<>();
         long[] tick = {0};
+        int[] masonDay = new int[3];
         boolean[] hadJob = new boolean[ROSTER.length];
         net.minecraft.core.GlobalPos[] lastSite = new net.minecraft.core.GlobalPos[ROSTER.length];
         java.util.Arrays.fill(hadJob, true);
@@ -217,7 +222,7 @@ public final class VillageSoak {
             }
             if (Boolean.getBoolean("minenow.soak.traceMines") && tick[0] % 20 == 0) {
                 StringBuilder down = new StringBuilder();
-                for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds())) {
+                for (Villager v : level.getEntitiesOfClass(Villager.class, ground(helper))) {
                     if (v.isBaby() || !Miner.isDownAMine(level, v)) continue;
                     down.append(tick[0]).append(' ').append(v.getName().getString()).append(' ').append(v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?"))
                             .append(String.format(" at %.2f %.2f %.2f", v.getX() - helper.absolutePos(BlockPos.ZERO).getX(), v.getY() - helper.absolutePos(BlockPos.ZERO).getY(), v.getZ() - helper.absolutePos(BlockPos.ZERO).getZ()))
@@ -261,6 +266,7 @@ public final class VillageSoak {
                 }
             }
             if (!trace.isEmpty() && (tick[0] % 1200 == 0 || (tick[0] >= traceFrom && tick[0] < traceFrom + 1200 && tick[0] % 20 == 0))) trace(level, helper, out, tick[0], residents, trace);
+            if (tick[0] % 100 == 0) sampleMason(residents, masonDay);
             if (tick[0] % 2000 == 0) {
                 double seconds = (System.nanoTime() - started) / 1e9;
                 LOGGER.info("[soak] tick {} ({} ticks/s, sprinting {})", tick[0], String.format("%.0f", tick[0] / Math.max(seconds, 0.001)),
@@ -271,18 +277,66 @@ public final class VillageSoak {
             }
             if (tick[0] % DAY == 0) {
                 int day = (int) (tick[0] / DAY);
-                dailyReport(level, helper, out, day, residents, merchantsSeen.size());
+                dailyReport(level, helper, out, day, residents, merchantsSeen.size(), masonDay);
+                java.util.Arrays.fill(masonDay, 0);
                 double seconds = (System.nanoTime() - started) / 1e9;
                 double cpu = java.lang.management.ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime() / 1e9;
                 LOGGER.info("[soak] day {}/{} done after {}s ({} ticks/s), server thread cpu {}s ({} ticks per cpu second)", day, days, String.format("%.0f", seconds),
                         String.format("%.0f", tick[0] / Math.max(seconds, 0.001)), String.format("%.0f", cpu), String.format("%.0f", tick[0] / Math.max(cpu, 0.001)));
             }
             if (tick[0] >= totalTicks) {
-                finalReport(level, helper, out, residents, playerBought);
+                finalReport(level, helper, out, residents, playerBought, switches);
+                restore.forEach(MineNowConfig::set);
                 return;
             }
             helper.assertTrue(false, "soaking, tick " + tick[0]);
         });
+    }
+
+    /** {@code name:off,name:on,...} by the switches' keys in the config file; returns what to put back once the run is over. */
+    private static Map<MineNowConfig.Feature, Boolean> applyFeatures(String spec) {
+        Map<MineNowConfig.Feature, Boolean> restore = new java.util.EnumMap<>(MineNowConfig.Feature.class);
+        for (String entry : spec.split(",")) {
+            if (entry.isBlank()) continue;
+            String[] parts = entry.trim().split(":");
+            MineNowConfig.Feature feature = java.util.Arrays.stream(MineNowConfig.Feature.values())
+                    .filter(f -> f.getSerializedName().equals(parts[0]))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Unknown switch in -PsoakFeatures: " + parts[0]));
+            boolean on = parts.length < 2 || !parts[1].equals("off");
+            restore.putIfAbsent(feature, MineNowConfig.enabled(feature));
+            MineNowConfig.set(feature, on);
+        }
+        return restore;
+    }
+
+    private static String switches() {
+        StringBuilder line = new StringBuilder("switches:");
+        for (MineNowConfig.Feature feature : MineNowConfig.Feature.values()) {
+            line.append(' ').append(feature.getSerializedName()).append('=').append(MineNowConfig.enabled(feature) ? "on" : "off");
+        }
+        return line.toString();
+    }
+
+    /** Every 5 s: [samples, the mason paving, the mason paving while it holds a paving order]. */
+    private static void sampleMason(List<Resident> residents, int[] masonDay) {
+        for (Resident resident : residents) {
+            if (resident.role() != Role.MASON || !resident.villager().isAlive()) continue;
+            Villager mason = resident.villager();
+            masonDay[0]++;
+            boolean paving = mason.getBrain().getRunningBehaviors().stream().anyMatch(b -> b.getClass().getSimpleName().equals("PaveRoads"));
+            if (!paving) continue;
+            masonDay[1]++;
+            if (mason.getData(ModVillagers.COMMISSIONS).stream().anyMatch(order -> order.item().isEmpty())) masonDay[2]++;
+        }
+    }
+
+    /** The structure plus the ground laid around and below it, so miners in their tunnels past the edge are still counted. */
+    private static net.minecraft.world.phys.AABB ground(GameTestHelper helper) {
+        return helper.getBounds().inflate(MARGIN, 0, MARGIN).expandTowards(0, -DEPTH, 0);
+    }
+
+    private static boolean isTool(ItemStack stack) {
+        return stack.has(net.minecraft.core.component.DataComponents.TOOL) || stack.is(Items.FISHING_ROD) || stack.is(Items.SHEARS);
     }
 
     // ---------------------------------------------------------------- world
@@ -497,7 +551,7 @@ public final class VillageSoak {
             Container chest = HomeStorage.chestContainer(level, helper.absolutePos(at(1 + (i % 5) * CELL_W, 1 + (i / 5) * CELL_D, 5, 1, 13)));
             if (chest != null) total += chest.countItem(Items.EMERALD);
         }
-        for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds())) total += v.getInventory().countItem(Items.EMERALD);
+        for (Villager v : level.getEntitiesOfClass(Villager.class, ground(helper))) total += v.getInventory().countItem(Items.EMERALD);
         for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, helper.getBounds().inflate(8), item -> item.getItem().is(Items.EMERALD))) {
             total += item.getItem().getCount();
         }
@@ -521,7 +575,7 @@ public final class VillageSoak {
         return new Tally(emeralds, food, goods, exports);
     }
 
-    private static void dailyReport(ServerLevel level, GameTestHelper helper, Path out, int day, List<Resident> residents, int merchants) {
+    private static void dailyReport(ServerLevel level, GameTestHelper helper, Path out, int day, List<Resident> residents, int merchants, int[] masonDay) {
         Map<String, int[]> byRole = new TreeMap<>();
         Map<String, Map<String, Integer>> reasons = new TreeMap<>();
         int[] all = new int[8];
@@ -550,7 +604,7 @@ public final class VillageSoak {
             herd.merge(animal.getType().toShortString(), animal.isBaby() ? "+1 young" : "+1", (a, b) -> a + b);
         }
         csv.append(day).append(",livestock,0,0,0,0,0,0,0,\"").append(herd).append("\"\n");
-        List<Villager> everyone = level.getEntitiesOfClass(Villager.class, helper.getBounds());
+        List<Villager> everyone = level.getEntitiesOfClass(Villager.class, ground(helper));
         Set<Villager> original = new HashSet<>();
         for (Resident resident : residents) original.add(resident.villager());
         Map<String, Integer> newcomers = new TreeMap<>();
@@ -562,6 +616,41 @@ public final class VillageSoak {
         long inVillage = everyone.stream().filter(v -> com.sheepfromheaven.minenow.villager.Villages.of(level, v).isPresent()).count();
         csv.append(day).append(",population,").append(everyone.size()).append(",0,0,0,0,0,0,\"born here: ").append(newcomers)
                 .append(", villages: ").append(com.sheepfromheaven.minenow.villager.Villages.all(level).size()).append(", in a village: ").append(inVillage).append("\"\n");
+        int adults = 0, employed = 0, needTool = 0, noTool = 0;
+        Map<String, Integer> missingTool = new TreeMap<>();
+        for (Villager v : everyone) {
+            if (v.isBaby()) continue;
+            adults++;
+            if (!v.getBrain().hasMemoryValue(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE)) continue;
+            employed++;
+            if (com.sheepfromheaven.minenow.villager.TradeTable.forVillager(v).filter(IdleReason::requiresTool).isEmpty()) continue;
+            needTool++;
+            if (IdleReason.lacksTool(level, v)) {
+                noTool++;
+                missingTool.merge(v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?"), 1, Integer::sum);
+            }
+        }
+        csv.append(day).append(",jobs,").append(employed).append(",0,0,0,0,0,").append(noTool).append(",\"adults ").append(adults)
+                .append(", employed ").append(employed).append(", trades with a tool ").append(needTool).append(", without their tool ").append(noTool).append(' ').append(missingTool).append("\"\n");
+        Map<String, Integer> stock = new TreeMap<>();
+        for (Resident resident : residents) {
+            if ((resident.role() != Role.TOOLSMITH && resident.role() != Role.FLETCHER) || !resident.villager().isAlive()) continue;
+            for (Container container : containers(level, resident.villager())) {
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    ItemStack stack = container.getItem(i);
+                    if (isTool(stack)) stock.merge(resident.name() + " " + stack.getItem().toString().replace("minecraft:", ""), stack.getCount(), Integer::sum);
+                }
+            }
+        }
+        csv.append(day).append(",crafter_tools,").append(stock.values().stream().mapToInt(Integer::intValue).sum()).append(",0,0,0,0,0,0,\"").append(stock)
+                .append(", upgrades bought so far ").append(BuyFromVillagers.UPGRADES.get()).append("\"\n");
+        long pavingOrders = everyone.stream().flatMap(v -> v.getData(ModVillagers.COMMISSIONS).stream()).filter(order -> order.item().isEmpty()).count();
+        long freeOrders = everyone.stream().flatMap(v -> v.getData(ModVillagers.COMMISSIONS).stream()).filter(order -> order.item().isEmpty() && order.paid() == 0).count();
+        csv.append(day).append(",paving,").append(pavingOrders).append(",0,0,0,0,0,0,\"open paving orders ").append(pavingOrders).append(" (free ").append(freeOrders)
+                .append("), mason samples ").append(masonDay[0]).append(" paving ").append(masonDay[1]).append(" of which on an order ").append(masonDay[2]).append("\"\n");
+        Map<String, Integer> breeding = new TreeMap<>();
+        BuyFromVillagers.BREEDING_FOOD.forEach((item, count) -> breeding.put(item.toString().replace("minecraft:", ""), count));
+        csv.append(day).append(",breeding_food,").append(breeding.values().stream().mapToInt(Integer::intValue).sum()).append(",0,0,0,0,0,0,\"so far ").append(breeding).append("\"\n");
         csv.append(day).append(",ALL");
         for (int i = 0; i < 7; i++) csv.append(',').append(all[i]);
         csv.append(",\"merchants seen so far: ").append(merchants).append(", every emerald in the village: ").append(everyEmerald(level, helper, residents)).append("\"\n");
@@ -574,8 +663,8 @@ public final class VillageSoak {
                 day, all[0], residents.size(), all[1], all[2], all[3], all[4], all[5], all[6], merchants);
     }
 
-    private static void finalReport(ServerLevel level, GameTestHelper helper, Path out, List<Resident> residents, Map<String, Integer> playerBought) {
-        StringBuilder text = new StringBuilder();
+    private static void finalReport(ServerLevel level, GameTestHelper helper, Path out, List<Resident> residents, Map<String, Integer> playerBought, String switches) {
+        StringBuilder text = new StringBuilder("== ").append(switches).append('\n');
         for (Resident resident : residents) {
             Villager v = resident.villager();
             text.append("== ").append(resident.name()).append(" (").append(v.getName().getString()).append(") level ")
@@ -597,7 +686,7 @@ public final class VillageSoak {
         }
         Set<Villager> original = new HashSet<>();
         for (Resident resident : residents) original.add(resident.villager());
-        for (Villager v : level.getEntitiesOfClass(Villager.class, helper.getBounds(), v -> !original.contains(v))) {
+        for (Villager v : level.getEntitiesOfClass(Villager.class, ground(helper), v -> !original.contains(v))) {
             text.append("== born here: ").append(v.getName().getString()).append(v.isBaby() ? " (baby)" : " " + v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?")
                     + " level " + v.getVillagerData().level()).append(" at ").append(helper.relativePos(v.blockPosition()).toShortString())
                     .append(", job site ").append(v.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE).map(g -> helper.relativePos(g.pos()).toShortString()).orElse("-"))

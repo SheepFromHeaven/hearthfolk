@@ -89,10 +89,12 @@ public class RoadNavigation extends GroundPathNavigation {
                         && !isOpenTrapdoor(this.currentContext.level().getBlockState(node.asBlockPos().below()))) neighbors[kept++] = node;
             }
             count = kept;
+            boolean preferRoads = com.sheepfromheaven.minenow.MineNowConfig.enabled(com.sheepfromheaven.minenow.MineNowConfig.Feature.VILLAGERS_PREFER_ROADS);
             for (int i = 0; i < count; i++) {
                 Node node = neighbors[i];
                 if (node.costMalus >= 0.0F) {
-                    node.costMalus = Math.max(node.costMalus, Roads.stepCost(this.currentContext.level(), node.asBlockPos()) + dropCost(pos.y - node.y));
+                    float step = preferRoads ? Roads.stepCost(this.currentContext.level(), node.asBlockPos()) : Roads.OFF_ROAD_COST;
+                    node.costMalus = Math.max(node.costMalus, step + dropCost(pos.y - node.y));
                 }
             }
             return count;

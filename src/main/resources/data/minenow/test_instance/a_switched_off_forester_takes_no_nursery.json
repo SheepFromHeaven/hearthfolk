@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_forester",
+  "function": "minenow:a_switched_off_forester_takes_no_nursery",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 700
+}

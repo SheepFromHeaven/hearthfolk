@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.sheepfromheaven.minenow.villager.FurnaceTending;
 import com.sheepfromheaven.minenow.villager.HomeStorage;
 import com.sheepfromheaven.minenow.villager.Unloading;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -62,7 +63,7 @@ public class SmeltOres extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
-        if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
+        if (!MineNowConfig.professionEnabled(MineNowConfig.Profession.SMELTER) || level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
         if (!body.getVillagerData().profession().is(Smelter.PROFESSION) || !body.getBrain().isActive(Activity.WORK)) return false;
         if (pickTarget(level, body)) return true;
         nextStartAllowed = level.getGameTime() + IDLE_RESCAN_DELAY;

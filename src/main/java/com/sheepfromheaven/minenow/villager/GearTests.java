@@ -349,6 +349,57 @@ public final class GearTests {
     }
 
     /** A level 5 archer (steady aim) at the field's west end, its meeting point the bell. */
+    public static void withoutDefenceAnArmedVillagerPanicsInsteadOfFighting(GameTestHelper helper) {
+        Villager farmer = farmer(helper, COMPOSTER);
+        Gear.wear(farmer, new ItemStack(Items.IRON_SWORD));
+        Monster husk = standing(helper.spawnWithNoFreeWill(EntityTypes.HUSK, new BlockPos(10, 1, 12)));
+        boolean[] seen = {false, false, false};
+
+        helper.onEachTick(() -> {
+            seen[0] |= farmer.getBrain().isActive(Activity.PANIC);
+            seen[1] |= farmer.getBrain().isActive(Activity.FIGHT);
+            seen[2] |= farmer.getMainHandItem().is(Items.IRON_SWORD);
+        });
+        helper.runAfterDelay(100, () -> {
+            helper.assertTrue(seen[0], "With village defence off an armed villager panics as in vanilla");
+            helper.assertTrue(!seen[1] && !seen[2], "...never fighting or drawing its sword");
+            helper.assertTrue(husk.getHealth() == husk.getMaxHealth(), "...and the husk is unhurt, health " + husk.getHealth());
+            helper.assertTrue(Gear.sidearm(farmer).is(Items.IRON_SWORD), "...its sword still at its side");
+            helper.succeed();
+        });
+    }
+
+    public static void withoutDefenceTheBellSendsAnArmedVillagerIntoHiding(GameTestHelper helper) {
+        Villager archer = archerAtBell(helper);
+        BlockPos platform = tower(helper);
+        boolean[] seen = {false, false};
+
+        helper.runAfterDelay(20, () -> ring(helper));
+        helper.onEachTick(() -> {
+            seen[0] |= archer.getBrain().isActive(Activity.HIDE);
+            seen[1] |= archer.getBrain().isActive(Activity.FIGHT);
+        });
+        helper.runAfterDelay(300, () -> {
+            helper.assertTrue(seen[0] && !seen[1], "With village defence off the bell sends an armed villager into hiding as in vanilla");
+            helper.assertTrue(archer.blockPosition().getY() < helper.absolutePos(platform).getY(), "...instead of up to the high ground, standing at " + archer.blockPosition());
+            helper.succeed();
+        });
+    }
+
+    public static void withoutDefenceAVillagerWithSpareMoneyBuysNoArmor(GameTestHelper helper) {
+        Villager armorer = armorer(helper);
+        armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
+        Villager farmer = farmer(helper, COMPOSTER);
+        farmer.getInventory().addItem(new ItemStack(Items.EMERALD, 40));
+
+        helper.runAfterDelay(500, () -> {
+            helper.assertTrue(farmer.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && armorer.getInventory().countItem(Items.IRON_CHESTPLATE) == 1,
+                    "With village defence off a villager with money to spare buys no armor");
+            helper.assertTrue(Commissions.placed(farmer).isEmpty(), "...nor orders any");
+            helper.succeed();
+        });
+    }
+
     private static Villager archerAtBell(GameTestHelper helper) {
         Villager archer = farmer(helper, new BlockPos(6, 1, 6));
         archer.setVillagerData(archer.getVillagerData().withLevel(5));

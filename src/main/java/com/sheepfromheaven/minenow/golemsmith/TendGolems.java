@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow.golemsmith;
 
 import com.google.common.collect.ImmutableMap;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import com.sheepfromheaven.minenow.villager.CraftSkill;
 import com.sheepfromheaven.minenow.villager.Economy;
 import com.sheepfromheaven.minenow.villager.Walking;
@@ -65,7 +66,7 @@ public class TendGolems extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
-        if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
+        if (!MineNowConfig.professionEnabled(MineNowConfig.Profession.GOLEMSMITH) || level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
         if (!body.getVillagerData().profession().is(Golemsmith.PROFESSION) || !body.getBrain().isActive(Activity.WORK)) return false;
         if (plan(level, body)) return true;
         nextStartAllowed = level.getGameTime() + RESCAN;

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_merchant",
+  "function": "minenow:a_switched_off_merchant_ends_its_tour_and_keeps_its_cargo",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 700
+}

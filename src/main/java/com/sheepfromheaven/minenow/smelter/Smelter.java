@@ -2,6 +2,7 @@ package com.sheepfromheaven.minenow.smelter;
 
 import com.google.common.collect.ImmutableSet;
 import com.sheepfromheaven.minenow.MineNow;
+import com.sheepfromheaven.minenow.MineNowConfig;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -87,10 +88,15 @@ public final class Smelter {
         var profession = villager.getVillagerData().profession();
         boolean armorer = profession.is(VillagerProfession.ARMORER);
         if (!armorer && !profession.is(PROFESSION)) return;
+        if (!MineNowConfig.professionEnabled(MineNowConfig.Profession.SMELTER) && !armorer) {
+            villager.setVillagerData(villager.getVillagerData().withProfession(level.registryAccess(), VillagerProfession.ARMORER));
+            villager.refreshBrain(level);
+            return;
+        }
         Optional<BlockPos> site = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
         if (site.isEmpty()) return;
         var block = level.getBlockState(site.get());
-        ResourceKey<VillagerProfession> wanted = block.getBlock() instanceof BlastFurnaceBlock ? PROFESSION : block.is(BlockTags.ANVIL) ? VillagerProfession.ARMORER : null;
+        ResourceKey<VillagerProfession> wanted = block.getBlock() instanceof BlastFurnaceBlock ? (MineNowConfig.professionEnabled(MineNowConfig.Profession.SMELTER) ? PROFESSION : VillagerProfession.ARMORER) : block.is(BlockTags.ANVIL) ? VillagerProfession.ARMORER : null;
         if (wanted == null || profession.is(wanted)) return;
         villager.setVillagerData(villager.getVillagerData().withProfession(level.registryAccess(), wanted));
         villager.refreshBrain(level);

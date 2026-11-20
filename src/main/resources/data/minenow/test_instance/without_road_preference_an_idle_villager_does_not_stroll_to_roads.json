@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_prefer_roads",
+  "function": "minenow:without_road_preference_an_idle_villager_does_not_stroll_to_roads",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

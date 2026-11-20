@@ -1,5 +1,6 @@
 package com.sheepfromheaven.minenow.cleric;
 
+import com.sheepfromheaven.minenow.MineNowConfig;
 import com.sheepfromheaven.minenow.villager.WorkXp;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -45,7 +46,7 @@ public final class ClericFight {
 
     /** A cleric with a splash potion of healing, harming or poison on it. */
     public static boolean armed(Villager villager) {
-        return isCleric(villager) && (has(villager, Potions.HEALING) || has(villager, Potions.HARMING) || has(villager, Potions.POISON));
+        return isCleric(villager) && MineNowConfig.professionEnabled(villager.getVillagerData().profession()) && (has(villager, Potions.HEALING) || has(villager, Potions.HARMING) || has(villager, Potions.POISON));
     }
 
     private static boolean has(Villager villager, Holder<Potion> potion) {

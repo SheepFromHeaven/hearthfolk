@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_forester",
+  "function": "minenow:a_switched_off_forester_loses_its_job_and_keeps_its_items",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

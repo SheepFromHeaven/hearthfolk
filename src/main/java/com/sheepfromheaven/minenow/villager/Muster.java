@@ -82,6 +82,7 @@ public class Muster extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         long now = level.getGameTime();
+        if (!Alarms.on()) return false;
         boolean rang = body.getBrain().hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME);
         if (!rang && now < nextCheck) return false;
         nextCheck = now + CHECK_INTERVAL;
@@ -117,7 +118,7 @@ public class Muster extends Behavior<Villager> {
             raid = raidOn(level, body);
             Alarms.of(level, body).ifPresent(alarm -> alarmUntil = Math.max(alarmUntil, alarm.until()));
         }
-        return post != null && fit(body) && (timestamp < alarmUntil || raid);
+        return Alarms.on() && post != null && fit(body) && (timestamp < alarmUntil || raid);
     }
 
     @Override
@@ -162,7 +163,7 @@ public class Muster extends Behavior<Villager> {
 
     @Override
     protected void stop(ServerLevel level, Villager body, long timestamp) {
-        boolean over = !fit(body) || (timestamp >= alarmUntil && !raid);
+        boolean over = !Alarms.on() || !fit(body) || (timestamp >= alarmUntil && !raid);
         if (!over) return;
         PERCHES.remove(body);
         REFUSED.remove(body);

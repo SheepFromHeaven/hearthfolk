@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villager_chests_locked",
+  "function": "minenow:without_locks_a_hopper_draining_a_villagers_chest_is_not_theft",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

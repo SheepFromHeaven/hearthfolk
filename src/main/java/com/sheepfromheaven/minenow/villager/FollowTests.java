@@ -70,6 +70,19 @@ public final class FollowTests {
         });
     }
 
+    public static void withoutFollowingAnUnemployedVillagerIgnoresTheEmerald(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        Villager villager = GameTestHelpers.spawnWithHome(helper, VILLAGER, new BlockPos(4, 1, 12));
+        playerHolding(helper, Items.EMERALD);
+        boolean[] followed = {false};
+        helper.onEachTick(() -> followed[0] |= villager.getBrain().getRunningBehaviors().stream().anyMatch(FollowEmeraldHolder.class::isInstance));
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertFalse(followed[0], "With following off a villager does not follow a player holding an emerald");
+            helper.succeed();
+        });
+    }
+
     @SuppressWarnings("removal")
     private static ServerPlayer playerHolding(GameTestHelper helper, net.minecraft.world.item.Item item) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
