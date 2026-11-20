@@ -196,7 +196,13 @@ public final class MineNowConfig {
      */
     public enum Profession implements StringRepresentable {
         FARMER(Identifier.fromNamespaceAndPath("minecraft", "farmer"),
-                "Whether farmers tend the fields beside their composter, and never trample farmland. Off: they farm as in vanilla, with vanilla's trades, and take no part in villager trading.");
+                "Whether farmers tend the fields beside their composter, and never trample farmland. Off: they farm as in vanilla, with vanilla's trades, and take no part in villager trading."),
+        FISHERMAN(Identifier.fromNamespaceAndPath("minecraft", "fisherman"),
+                "Whether fishermen go fishing at the water by their barrel. Off: they work and trade as in vanilla, and take no part in villager trading."),
+        SHEPHERD(Identifier.fromNamespaceAndPath("minecraft", "shepherd"),
+                "Whether shepherds shear the sheep by their loom and open fence gates. Off: they work and trade as in vanilla, and take no part in villager trading."),
+        BUTCHER(Identifier.fromNamespaceAndPath("minecraft", "butcher"),
+                "Whether butchers keep a herd by their smoker, smoke meat, feed the young and open fence gates. Off: they work and trade as in vanilla, and take no part in villager trading.");
 
         public static final Codec<Profession> CODEC = StringRepresentable.fromEnum(Profession::values);
 

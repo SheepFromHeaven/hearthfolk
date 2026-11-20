@@ -202,6 +202,14 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "a_farmer_switched_back_on_stops_its_vanilla_farm_work", SwitchedFarmerTests::aFarmerSwitchedBackOnStopsItsVanillaFarmWork);
             test(helper, TestGroup.FARMER, "a_switched_off_farmer_shows_vanilla_trades_for_every_level", SwitchedFarmerTests::aSwitchedOffFarmerShowsVanillaTradesForEveryLevel);
             test(helper, TestGroup.FARMER, "a_switched_off_farmer_keeps_its_vanilla_trades_across_toggling", SwitchedFarmerTests::aSwitchedOffFarmerKeepsItsVanillaTradesAcrossToggling);
+            test(helper, TestGroup.FISHERMAN, "a_switched_off_fisherman_casts_no_bobber_at_the_water_by_his_barrel", com.sheepfromheaven.minenow.fisherman.SwitchedFishermanTests::aSwitchedOffFishermanCastsNoBobberAtTheWaterByHisBarrel);
+            test(helper, TestGroup.FISHERMAN, "a_switched_off_fisherman_shows_vanilla_trades_that_cost_emeralds", com.sheepfromheaven.minenow.fisherman.SwitchedFishermanTests::aSwitchedOffFishermanShowsVanillaTradesThatCostEmeralds);
+            test(helper, TestGroup.SHEPHERD, "a_switched_off_shepherd_shears_no_sheep_by_her_loom_and_opens_no_gate", com.sheepfromheaven.minenow.shepherd.SwitchedShepherdTests::aSwitchedOffShepherdShearsNoSheepByHerLoomAndOpensNoGate);
+            test(helper, TestGroup.SHEPHERD, "a_switched_off_shepherd_shows_vanilla_trades_that_cost_emeralds", com.sheepfromheaven.minenow.shepherd.SwitchedShepherdTests::aSwitchedOffShepherdShowsVanillaTradesThatCostEmeralds);
+            test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_culls_nothing_and_opens_no_gate", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherCullsNothingAndOpensNoGate);
+            test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_breeds_nothing", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherBreedsNothing);
+            test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_feeds_no_baby_animal", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherFeedsNoBabyAnimal);
+            test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_shows_vanilla_trades_that_cost_emeralds", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherShowsVanillaTradesThatCostEmeralds);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_is_diagnosed", IdleCueTests::aWorkerWithoutItsToolIsDiagnosed);
             test(helper, TestGroup.VILLAGERS, "a_worker_without_its_tool_holds_up_an_emerald", IdleCueTests::aWorkerWithoutItsToolHoldsUpAnEmerald);
             test(helper, TestGroup.VILLAGERS, "a_broke_worker_without_its_tool_holds_no_emerald", IdleCueTests::aBrokeWorkerWithoutItsToolHoldsNoEmerald);

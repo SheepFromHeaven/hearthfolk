@@ -164,11 +164,11 @@ public final class ShepherdTests {
         });
     }
 
-    private static void buildPen(GameTestHelper helper, int x) {
+    static void buildPen(GameTestHelper helper, int x) {
         GameTestHelpers.gatedPen(helper, x);
     }
 
-    private static Sheep sheep(GameTestHelper helper, int x, int z, DyeColor color) {
+    static Sheep sheep(GameTestHelper helper, int x, int z, DyeColor color) {
         Sheep sheep = helper.spawn(EntityTypes.SHEEP, new BlockPos(x, 1, z));
         sheep.setColor(color);
         return sheep;

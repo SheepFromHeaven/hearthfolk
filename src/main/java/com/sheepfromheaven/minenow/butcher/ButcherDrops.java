@@ -13,7 +13,8 @@ public final class ButcherDrops {
     private ButcherDrops() {}
 
     public static void onLivingDrops(LivingDropsEvent event) {
-        if (!(event.getSource().getEntity() instanceof Villager butcher) || !butcher.getVillagerData().profession().is(VillagerProfession.BUTCHER)) return;
+        if (!(event.getSource().getEntity() instanceof Villager butcher) || !butcher.getVillagerData().profession().is(VillagerProfession.BUTCHER)
+                || !com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(butcher.getVillagerData().profession())) return;
         if (!(butcher.level() instanceof ServerLevel level) || !event.getEntity().getType().builtInRegistryHolder().is(TendHerd.LIVESTOCK)) return;
         int extra = ButcherSkill.extraCuts(butcher.getVillagerData().level());
         for (ItemEntity drop : event.getDrops()) {

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_fisherman",
+  "function": "minenow:a_switched_off_fisherman_shows_vanilla_trades_that_cost_emeralds",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

@@ -44,5 +44,11 @@
   "minenow.settings.maxMerchantTours.tooltip": "How many village merchants may be on a tour at the same time. A touring merchant keeps the chunks around it loaded; one over the limit waits at home.",
   "minenow.settings.section.professions": "Professions",
   "minenow.settings.profession.farmer": "Farmer",
-  "minenow.settings.profession.farmer.tooltip": "Farmers tend the field beside their composter with a hoe, never trample farmland, and trade their crops with players and other villagers.\nOff: farmers farm and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off."
+  "minenow.settings.profession.farmer.tooltip": "Farmers tend the field beside their composter with a hoe, never trample farmland, and trade their crops with players and other villagers.\nOff: farmers farm and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.fisherman": "Fisherman",
+  "minenow.settings.profession.fisherman.tooltip": "Fishermen cast a rod at the water by their barrel, keep the catch in it, and trade with players and other villagers.\nOff: fishermen work and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.shepherd": "Shepherd",
+  "minenow.settings.profession.shepherd.tooltip": "Shepherds shear the sheep by their loom, spin wool into string, open fence gates, and trade with players and other villagers.\nOff: shepherds work and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.butcher": "Butcher",
+  "minenow.settings.profession.butcher.tooltip": "Butchers keep a herd by their smoker, breed, cull and feed it, smoke meat, open fence gates, and trade with players and other villagers.\nOff: butchers work and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off."
 }
