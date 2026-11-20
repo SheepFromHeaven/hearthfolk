@@ -64,7 +64,7 @@ public final class Forester {
         PROFESSIONS.register("forester", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.forester"),
                 poi -> poi.is(POI),
-                poi -> poi.is(POI),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
                 GATHERS,
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_FLETCHER,

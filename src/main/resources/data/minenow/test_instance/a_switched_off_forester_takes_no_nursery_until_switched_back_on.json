@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_forester_switching",
+  "function": "minenow:a_switched_off_forester_takes_no_nursery_until_switched_back_on",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1500
+}

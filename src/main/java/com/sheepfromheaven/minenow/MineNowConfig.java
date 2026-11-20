@@ -91,6 +91,11 @@ public final class MineNowConfig {
         return Profession.of(profession).map(each -> professionEnabled(each)).orElse(true);
     }
 
+    /** Whether the profession is one of Hearthfolk's own with its switch off. */
+    public static boolean switchedOffHearthfolk(Holder<VillagerProfession> profession) {
+        return profession.unwrapKey().flatMap(Profession::of).filter(each -> each.isHearthfolk() && !professionEnabled(each)).isPresent();
+    }
+
     /** Read live, like {@link #enabled(Feature)}. */
     public static boolean professionEnabled(Profession profession) {
         return world().map(settings -> settings.enabled(profession)).orElseGet(() -> defaultValue(profession));
@@ -220,7 +225,11 @@ public final class MineNowConfig {
         WEAPONSMITH(Identifier.fromNamespaceAndPath("minecraft", "weaponsmith"),
                 "Whether weaponsmiths craft swords, grind worn blades and hang swords on their wall. Off: they do none of it, show vanilla's trades and take no part in villager trading. Swords already on the wall stay theirs."),
         LEATHERWORKER(Identifier.fromNamespaceAndPath("minecraft", "leatherworker"),
-                "Whether leatherworkers craft leather goods, bone-meal tall flowers for dye, dye armor, hang tanning racks and dress armor stands. Off: they do none of it, show vanilla's trades and take no part in villager trading. Racks and stands already up stay theirs.");
+                "Whether leatherworkers craft leather goods, bone-meal tall flowers for dye, dye armor, hang tanning racks and dress armor stands. Off: they do none of it, show vanilla's trades and take no part in villager trading. Racks and stands already up stay theirs."),
+        MINER(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "miner"),
+                "Whether miners dig mines at their furnace minecarts. Off: miners lose their job and keep their items, and no villager takes a furnace minecart as a job site."),
+        FORESTER(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "forester"),
+                "Whether foresters fell and replant the trees around their nurseries. Off: foresters lose their job and keep their items, and no villager takes a nursery as a job site.");
 
         public static final Codec<Profession> CODEC = StringRepresentable.fromEnum(Profession::values);
 
@@ -235,6 +244,15 @@ public final class MineNowConfig {
         /** The switch of this profession, if it has one; a profession without one is always on. */
         public static java.util.Optional<Profession> of(ResourceKey<VillagerProfession> profession) {
             return Arrays.stream(values()).filter(each -> each.profession.equals(profession.identifier())).findFirst();
+        }
+
+        /** A profession of Hearthfolk's own has no vanilla work to fall back to, so switched off its villagers lose the job. */
+        public boolean isHearthfolk() {
+            return profession.getNamespace().equals(MineNow.MOD_ID);
+        }
+
+        public ResourceKey<VillagerProfession> key() {
+            return ResourceKey.create(net.minecraft.core.registries.Registries.VILLAGER_PROFESSION, profession);
         }
 
         /** Its row in the settings menu: {@code minenow.settings.profession.<name>} in en_us.json, and that plus {@code .tooltip}. */

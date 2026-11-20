@@ -51,7 +51,7 @@ public final class Miner {
         PROFESSIONS.register("miner", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.miner"),
                 poi -> poi.is(POI),
-                poi -> poi.is(POI),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_TOOLSMITH,
@@ -179,6 +179,12 @@ public final class Miner {
         if (UNDERGROUND.containsKey(villager.getUUID())) {
             villager.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
         }
+    }
+
+    /** A miner that lost its job no longer works its mine: the shaft is no longer one a miner keeps, and it is no longer down it as a miner. */
+    public static void forgetMine(java.util.UUID miner, net.minecraft.core.BlockPos cart) {
+        SHAFTS.remove(cart);
+        UNDERGROUND.remove(miner);
     }
 
     private record Shaft(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension, java.util.Set<Long> columns, int top) {

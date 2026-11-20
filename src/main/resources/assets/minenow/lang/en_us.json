@@ -68,5 +68,9 @@
   "minenow.settings.profession.weaponsmith": "Weaponsmith",
   "minenow.settings.profession.weaponsmith.tooltip": "Weaponsmiths craft swords at their grindstone, grind worn blades into one, hang their best swords on the wall, and trade them with players and other villagers.\nOff: weaponsmiths craft, grind and hang nothing and trade as in vanilla, and take no part in villager trading. Swords already on the wall stay locked as theirs, and their vanilla trades stay the same each time it is off.",
   "minenow.settings.profession.leatherworker": "Leatherworker",
-  "minenow.settings.profession.leatherworker.tooltip": "Leatherworkers craft leather goods at their cauldron, bone-meal tall flowers for dye, dye armor, hang tanning racks and dress armor stands, and trade with players and other villagers.\nOff: leatherworkers do none of it and trade as in vanilla, and take no part in villager trading. Racks and stands already up stay locked as theirs, and their vanilla trades stay the same each time it is off."
+  "minenow.settings.profession.leatherworker.tooltip": "Leatherworkers craft leather goods at their cauldron, bone-meal tall flowers for dye, dye armor, hang tanning racks and dress armor stands, and trade with players and other villagers.\nOff: leatherworkers do none of it and trade as in vanilla, and take no part in villager trading. Racks and stands already up stay locked as theirs, and their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.miner": "Miner",
+  "minenow.settings.profession.miner.tooltip": "Miners dig a mine at their furnace minecart and sell what they dig.\nOff: miners lose their job and keep their items, and no villager takes a furnace minecart as a job site.",
+  "minenow.settings.profession.forester": "Forester",
+  "minenow.settings.profession.forester.tooltip": "Foresters fell the trees around their nursery and plant new ones.\nOff: foresters lose their job and keep their items, and no villager takes a nursery as a job site."
 }
