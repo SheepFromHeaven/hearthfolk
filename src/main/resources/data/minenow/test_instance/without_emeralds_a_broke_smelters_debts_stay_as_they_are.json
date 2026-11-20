@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_emerald_economy",
+  "function": "minenow:without_emeralds_a_broke_smelters_debts_stay_as_they_are",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1400
+}

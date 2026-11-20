@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_emerald_economy",
+  "function": "minenow:without_emeralds_a_villager_gets_no_starting_purse_and_takes_no_emeralds",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

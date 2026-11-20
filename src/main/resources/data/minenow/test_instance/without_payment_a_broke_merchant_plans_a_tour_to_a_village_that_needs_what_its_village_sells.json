@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:function",
-  "environment": "minenow:feature_villagers_pay_each_other_tour",
-  "function": "minenow:without_payment_a_broke_merchant_plans_a_tour_to_a_village_that_needs_what_its_village_sells",
-  "structure": "minenow:field_72x8x24",
-  "max_ticks": 3000
-}

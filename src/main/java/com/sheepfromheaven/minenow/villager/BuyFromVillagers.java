@@ -410,7 +410,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     public static boolean couldBuyTool(ServerLevel level, Villager buyer, java.util.function.Predicate<ItemStack> fits) {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
         if (table.isEmpty()) return false;
-        int budget = Economy.villagersPay() ? Economy.spendable(level, buyer) + Math.max(0, CREDIT_LIMIT - debt(buyer)) : Integer.MAX_VALUE;
+        int budget = Economy.emeraldEconomy() ? Economy.spendable(level, buyer) + Math.max(0, CREDIT_LIMIT - debt(buyer)) : Integer.MAX_VALUE;
         int buyerLevel = buyer.getVillagerData().level();
         return sellers(level, buyer).stream().anyMatch(seller -> TradeTable.forVillager(seller).stream()
                 .flatMap(sellerTable -> sellerTable.craftsUpTo(seller.getVillagerData().level()).stream()
@@ -458,7 +458,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** A tool or one lot of a supply of its trade, on credit, when it can't pay for them and still owes little enough. */
     private static Optional<Deal> creditDeal(ServerLevel level, Villager buyer) {
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
-        if (table.isEmpty() || !shopsForWork(buyer) || !Economy.villagersPay()) return Optional.empty();
+        if (table.isEmpty() || !shopsForWork(buyer) || !Economy.emeraldEconomy()) return Optional.empty();
         int room = CREDIT_LIMIT - debt(buyer);
         if (room <= 0) return Optional.empty();
         if (IdleReason.lacksTool(level, buyer)) {
@@ -693,6 +693,6 @@ public class BuyFromVillagers extends Behavior<Villager> {
 
     /** What a villager may pay for a supply: fuel it has none of may use everything above its food money, the rest only what is above its reserve. */
     static int budgetFor(ServerLevel level, Villager buyer, TradeTable.Supply supply) {
-        return outOfFuel(level, buyer, supply) ? Math.max(0, Economy.emeralds(level, buyer) - Economy.FOOD_MONEY) : Economy.spendable(level, buyer);
+        return Economy.villagerBudget(outOfFuel(level, buyer, supply) ? Math.max(0, Economy.emeralds(level, buyer) - Economy.FOOD_MONEY) : Economy.spendable(level, buyer));
     }
 }

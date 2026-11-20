@@ -46,13 +46,14 @@ public final class ProfessionTrades {
         ItemStack result = offer.getResult();
         boolean boughtSupply = result.is(Items.EMERALD) && TradeTable.forVillager(villager)
                 .map(table -> !table.isTool(offer.getCostA().getItem())).orElse(false);
+        boolean tracked = Economy.emeraldEconomy();
         if (boughtSupply) {
-            Economy.take(level, villager, Items.EMERALD, result.getCount());
+            if (tracked) Economy.take(level, villager, Items.EMERALD, result.getCount());
             Economy.give(level, villager, new ItemStack(offer.getCostA().getItem(), offer.getCostA().getCount()));
             capSupplyOffers(level, villager);
             resendOffers(event, villager);
         } else if (result.is(Items.EMERALD)) {
-            Economy.take(level, villager, Items.EMERALD, result.getCount());
+            if (tracked) Economy.take(level, villager, Items.EMERALD, result.getCount());
             Economy.give(level, villager, paidStack(event, offer));
             TradeTable table = TradeTable.forVillager(villager).orElse(null);
             villager.getOffers().stream()
@@ -62,7 +63,7 @@ public final class ProfessionTrades {
         } else {
             if (result.getComponentsPatch().isEmpty()) Economy.take(level, villager, result.getItem(), result.getCount());
             else Economy.takeExact(level, villager, result);
-            Economy.give(level, villager, new ItemStack(Items.EMERALD, offer.getCostA().getCount()));
+            if (tracked) Economy.give(level, villager, new ItemStack(Items.EMERALD, offer.getCostA().getCount()));
         }
     }
 
@@ -74,7 +75,7 @@ public final class ProfessionTrades {
             if (!offer.getResult().is(Items.EMERALD) || table.isTool(offer.getCostA().getItem())) continue;
             int spendable = table.suppliesUpTo(villager.getVillagerData().level()).stream()
                     .filter(supply -> supply.item() == offer.getCostA().getItem()).findFirst()
-                    .map(supply -> BuyFromVillagers.budgetFor(level, villager, supply)).orElse(Economy.spendable(level, villager));
+                    .map(supply -> BuyFromVillagers.budgetFor(level, villager, supply)).orElse(Economy.villagerBudget(Economy.spendable(level, villager)));
             int affordable = spendable / offer.getResult().getCount();
             while (offer.getMaxUses() - offer.getUses() > affordable) offer.increaseUses();
         }
@@ -119,7 +120,7 @@ public final class ProfessionTrades {
         if (table == null) return;
         int villagerLevel = villager.getVillagerData().level();
         if (!Unloading.ownsTool(level, villager)) {
-            int wallet = Economy.emeralds(level, villager) - Economy.FOOD_MONEY;
+            int wallet = Economy.villagerBudget(Economy.emeralds(level, villager) - Economy.FOOD_MONEY);
             for (TradeTable.Tool tool : table.toolsUpTo(villagerLevel)) {
                 if (tool.price() > wallet) continue;
                 ItemCost undamaged = new ItemCost(tool.item().builtInRegistryHolder(), 1, DataComponentExactPredicate.expect(DataComponents.DAMAGE, 0));

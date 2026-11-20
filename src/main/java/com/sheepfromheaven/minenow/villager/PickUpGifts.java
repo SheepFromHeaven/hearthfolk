@@ -47,7 +47,7 @@ public class PickUpGifts extends Behavior<Villager> {
 
     /** The most emeralds a villager takes as gifts: what it needs to start a family plus its reserve. */
     static int emeraldCap(ServerLevel level, Villager body) {
-        return Wealth.required(level, body) + Economy.reserve(body);
+        return Economy.emeraldEconomy() ? Wealth.required(level, body) + Economy.reserve(body) : 0;
     }
 
     /** How many of it the villager would take: one tool when it has none, a supply up to its {@code max} when short of a batch. */

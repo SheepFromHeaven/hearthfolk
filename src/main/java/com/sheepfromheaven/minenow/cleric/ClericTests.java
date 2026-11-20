@@ -207,7 +207,7 @@ public final class ClericTests {
         });
     }
 
-    public static void withoutPaymentAClericHealsAHurtVillagerWithNoEmeralds(GameTestHelper helper) {
+    public static void withoutEmeraldsAClericHealsAHurtVillagerWithNoEmeralds(GameTestHelper helper) {
         Villager cleric = spawnCleric(helper, 3);
         cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
         Villager patient = patient(helper, new BlockPos(6, 1, 12), 0, 5.0F);
