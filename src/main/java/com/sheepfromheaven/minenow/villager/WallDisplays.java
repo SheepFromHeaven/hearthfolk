@@ -91,7 +91,7 @@ public class WallDisplays extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(profession) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(profession) || !com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(profession) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + RESCAN;
         return pick(level, body);
     }
@@ -104,7 +104,7 @@ public class WallDisplays extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return (frame != null || spot != null) && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS;
+        return (frame != null || spot != null) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(profession) && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS;
     }
 
     @Override

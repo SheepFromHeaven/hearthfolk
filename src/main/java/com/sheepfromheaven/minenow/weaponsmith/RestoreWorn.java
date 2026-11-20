@@ -49,7 +49,7 @@ public class RestoreWorn extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.WEAPONSMITH) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(VillagerProfession.WEAPONSMITH) || !com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + RESCAN;
         return pair(body) != null;
     }
@@ -65,7 +65,7 @@ public class RestoreWorn extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return body.getBrain().isActive(Activity.WORK) && !body.isTrading() && pair(body) != null;
+        return com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && pair(body) != null;
     }
 
     @Override

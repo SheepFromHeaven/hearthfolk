@@ -69,7 +69,7 @@ public class PracticeArchery extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.FLETCHER) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(VillagerProfession.FLETCHER) || !com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + 100;
         if (body.getInventory().countItem(Items.BOW) == 0 || body.getInventory().countItem(Items.ARROW) < ROUND) return false;
         Optional<BlockPos> table = table(level, body);
@@ -97,7 +97,7 @@ public class PracticeArchery extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return target != null && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS * 2;
+        return target != null && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS * 2;
     }
 
     @Override

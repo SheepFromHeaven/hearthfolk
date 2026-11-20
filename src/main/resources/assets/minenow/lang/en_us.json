@@ -58,5 +58,15 @@
   "minenow.settings.profession.mason": "Mason",
   "minenow.settings.profession.mason.tooltip": "Masons cut stone for sale, and pave dirt paths while a redstone signal reaches their stonecutter or a villager pays them to.\nOff: masons pave nothing, take no paving orders and trade as in vanilla, taking no part in villager trading. Their vanilla trades stay the same each time it is off.",
   "minenow.settings.profession.cartographer": "Cartographer",
-  "minenow.settings.profession.cartographer.tooltip": "Cartographers draw a map of their village and trade it with players and other villagers.\nOff: cartographers draw no map and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off."
+  "minenow.settings.profession.cartographer.tooltip": "Cartographers draw a map of their village and trade it with players and other villagers.\nOff: cartographers draw no map and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.toolsmith": "Toolsmith",
+  "minenow.settings.profession.toolsmith.tooltip": "Toolsmiths craft stone, copper, iron and diamond tools, fishing rods and shears at their smithing table, and trade them with players and other villagers.\nOff: toolsmiths craft nothing and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.fletcher": "Fletcher",
+  "minenow.settings.profession.fletcher.tooltip": "Fletchers craft sticks, ladders, arrows, bows and wooden tools at their fletching table, practise at a target block, and trade them with players and other villagers.\nOff: fletchers craft and practise nothing and trade as in vanilla, and take no part in villager trading. Their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.armorer": "Armorer",
+  "minenow.settings.profession.armorer.tooltip": "Armorers craft armor and shields at their anvil, dress the armor stands beside it, and trade them with players and other villagers.\nOff: armorers craft and dress nothing and trade as in vanilla, and take no part in villager trading. Stands they dressed stay locked as theirs, and their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.weaponsmith": "Weaponsmith",
+  "minenow.settings.profession.weaponsmith.tooltip": "Weaponsmiths craft swords at their grindstone, grind worn blades into one, hang their best swords on the wall, and trade them with players and other villagers.\nOff: weaponsmiths craft, grind and hang nothing and trade as in vanilla, and take no part in villager trading. Swords already on the wall stay locked as theirs, and their vanilla trades stay the same each time it is off.",
+  "minenow.settings.profession.leatherworker": "Leatherworker",
+  "minenow.settings.profession.leatherworker.tooltip": "Leatherworkers craft leather goods at their cauldron, bone-meal tall flowers for dye, dye armor, hang tanning racks and dress armor stands, and trade with players and other villagers.\nOff: leatherworkers do none of it and trade as in vanilla, and take no part in villager trading. Racks and stands already up stay locked as theirs, and their vanilla trades stay the same each time it is off."
 }

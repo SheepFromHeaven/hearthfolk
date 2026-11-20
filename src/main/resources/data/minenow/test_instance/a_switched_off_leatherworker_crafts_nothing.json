@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_leatherworker",
+  "function": "minenow:a_switched_off_leatherworker_crafts_nothing",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}
