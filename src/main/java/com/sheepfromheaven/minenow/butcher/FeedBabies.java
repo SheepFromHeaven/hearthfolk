@@ -41,7 +41,7 @@ public class FeedBabies extends Behavior<Villager> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
-        if (level.getGameTime() < nextSearch || !body.getVillagerData().profession().is(VillagerProfession.BUTCHER) || body.isSleeping() || body.isBaby()) return false;
+        if (level.getGameTime() < nextSearch || !body.getVillagerData().profession().is(VillagerProfession.BUTCHER) || !com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) || body.isSleeping() || body.isBaby()) return false;
         nextSearch = level.getGameTime() + 40;
         Optional<BlockPos> smoker = TendHerd.jobSite(level, body);
         if (smoker.isEmpty()) return false;
@@ -66,7 +66,7 @@ public class FeedBabies extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return young != null && young.isAlive() && young.isBaby() && !fedToday(level, young) && leftover(level, body, young) != null;
+        return com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) && young != null && young.isAlive() && young.isBaby() && !fedToday(level, young) && leftover(level, body, young) != null;
     }
 
     @Override

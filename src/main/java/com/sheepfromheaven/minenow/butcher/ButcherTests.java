@@ -473,17 +473,17 @@ public final class ButcherTests {
         });
     }
 
-    private static <T extends Animal> List<Animal> herd(GameTestHelper helper, EntityType<T> type, int size) {
+    static <T extends Animal> List<Animal> herd(GameTestHelper helper, EntityType<T> type, int size) {
         List<Animal> herd = new ArrayList<>();
         for (int i = 0; i < size; i++) herd.add(helper.spawn(type, new BlockPos(10 + i % 5, 1, 10 + i / 5 * 2)));
         return herd;
     }
 
-    private static int alive(List<Animal> animals) {
+    static int alive(List<Animal> animals) {
         return (int) animals.stream().filter(Animal::isAlive).count();
     }
 
-    private static int count(Villager villager, Item item) {
+    static int count(Villager villager, Item item) {
         int count = 0;
         for (ItemStack stack : villager.getInventory().getItems()) if (stack.is(item)) count += stack.getCount();
         return count;
@@ -538,7 +538,7 @@ public final class ButcherTests {
         });
     }
 
-    private static Animal spawnCalf(GameTestHelper helper) {
+    static Animal spawnCalf(GameTestHelper helper) {
         Animal calf = helper.spawn(EntityTypes.COW, new BlockPos(11, 1, 11));
         calf.setAge(-24000);
         return calf;

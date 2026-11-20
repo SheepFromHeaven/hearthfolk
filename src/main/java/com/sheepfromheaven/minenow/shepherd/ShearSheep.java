@@ -74,6 +74,7 @@ public class ShearSheep extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
+        if (!com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession())) return false;
         if (!body.getVillagerData().profession().is(VillagerProfession.SHEPHERD) || !body.getBrain().isActive(Activity.WORK)) return false;
         if (pickTarget(level, body)) return true;
         nextStartAllowed = level.getGameTime() + IDLE_RESCAN_DELAY;
@@ -89,7 +90,7 @@ public class ShearSheep extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return (sheep != null || chest != null) && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && jobSite(level, body).isPresent();
+        return (sheep != null || chest != null) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) && !body.isTrading() && body.getBrain().isActive(Activity.WORK) && jobSite(level, body).isPresent();
     }
 
     @Override

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_fisherman",
+  "function": "minenow:a_switched_off_fisherman_casts_no_bobber_at_the_water_by_his_barrel",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

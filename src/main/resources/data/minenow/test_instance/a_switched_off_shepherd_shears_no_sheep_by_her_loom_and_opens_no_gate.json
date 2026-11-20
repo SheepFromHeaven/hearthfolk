@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_shepherd",
+  "function": "minenow:a_switched_off_shepherd_shears_no_sheep_by_her_loom_and_opens_no_gate",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}
