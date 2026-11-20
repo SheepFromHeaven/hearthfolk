@@ -59,7 +59,7 @@ public class TendFlowers extends Behavior<Villager> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, Villager body) {
         if (level.getGameTime() < nextStartAllowed || body.isTrading()) return false;
-        if (!body.getVillagerData().profession().is(VillagerProfession.LEATHERWORKER) || !body.getBrain().isActive(Activity.WORK)) return false;
+        if (!body.getVillagerData().profession().is(VillagerProfession.LEATHERWORKER) || !com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) || !body.getBrain().isActive(Activity.WORK)) return false;
         nextStartAllowed = level.getGameTime() + RESCAN;
         if (body.getInventory().countItem(Items.BONE_MEAL) == 0) return false;
         Optional<BlockPos> cauldron = body.getBrain().getMemory(MemoryModuleType.JOB_SITE).filter(pos -> pos.dimension() == level.dimension()).map(GlobalPos::pos);
@@ -80,7 +80,7 @@ public class TendFlowers extends Behavior<Villager> {
 
     @Override
     protected boolean canStillUse(ServerLevel level, Villager body, long timestamp) {
-        return flower != null && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS;
+        return flower != null && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(body.getVillagerData().profession()) && body.getBrain().isActive(Activity.WORK) && !body.isTrading() && timestamp - since < GIVE_UP_AFTER_TICKS;
     }
 
     @Override

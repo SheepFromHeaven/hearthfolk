@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_fletcher",
+  "function": "minenow:a_switched_off_fletcher_shows_vanilla_trades",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

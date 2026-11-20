@@ -210,7 +210,17 @@ public final class MineNowConfig {
         MASON(Identifier.fromNamespaceAndPath("minecraft", "mason"),
                 "Whether masons cut stone for sale and pave dirt paths while a redstone signal reaches their stonecutter. Off: they pave nothing and take no paving orders, with vanilla's trades, and take no part in villager trading."),
         CARTOGRAPHER(Identifier.fromNamespaceAndPath("minecraft", "cartographer"),
-                "Whether cartographers draw a map of their village at their cartography table. Off: they draw no map, with vanilla's trades, and take no part in villager trading.");
+                "Whether cartographers draw a map of their village at their cartography table. Off: they draw no map, with vanilla's trades, and take no part in villager trading."),
+        TOOLSMITH(Identifier.fromNamespaceAndPath("minecraft", "toolsmith"),
+                "Whether toolsmiths craft tools at their smithing table. Off: they craft nothing, show vanilla's trades and take no part in villager trading."),
+        FLETCHER(Identifier.fromNamespaceAndPath("minecraft", "fletcher"),
+                "Whether fletchers craft at their fletching table and practise archery at a target block. Off: they do neither, show vanilla's trades and take no part in villager trading."),
+        ARMORER(Identifier.fromNamespaceAndPath("minecraft", "armorer"),
+                "Whether armorers craft armor and shields and dress the armor stands by their anvil. Off: they craft and dress nothing, show vanilla's trades and take no part in villager trading. Stands they dressed stay theirs."),
+        WEAPONSMITH(Identifier.fromNamespaceAndPath("minecraft", "weaponsmith"),
+                "Whether weaponsmiths craft swords, grind worn blades and hang swords on their wall. Off: they do none of it, show vanilla's trades and take no part in villager trading. Swords already on the wall stay theirs."),
+        LEATHERWORKER(Identifier.fromNamespaceAndPath("minecraft", "leatherworker"),
+                "Whether leatherworkers craft leather goods, bone-meal tall flowers for dye, dye armor, hang tanning racks and dress armor stands. Off: they do none of it, show vanilla's trades and take no part in villager trading. Racks and stands already up stay theirs.");
 
         public static final Codec<Profession> CODEC = StringRepresentable.fromEnum(Profession::values);
 
