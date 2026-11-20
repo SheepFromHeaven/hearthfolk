@@ -93,7 +93,7 @@ public final class MineNowConfig {
 
     /** Whether the profession is one of Hearthfolk's own with its switch off. */
     public static boolean switchedOffHearthfolk(Holder<VillagerProfession> profession) {
-        return profession.unwrapKey().flatMap(Profession::of).filter(each -> each.isHearthfolk() && !professionEnabled(each)).isPresent();
+        return profession.unwrapKey().flatMap(Profession::of).filter(each -> each.losesJobWhenOff() && !professionEnabled(each)).isPresent();
     }
 
     /** Read live, like {@link #enabled(Feature)}. */
@@ -229,7 +229,13 @@ public final class MineNowConfig {
         MINER(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "miner"),
                 "Whether miners dig mines at their furnace minecarts. Off: miners lose their job and keep their items, and no villager takes a furnace minecart as a job site."),
         FORESTER(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "forester"),
-                "Whether foresters fell and replant the trees around their nurseries. Off: foresters lose their job and keep their items, and no villager takes a nursery as a job site.");
+                "Whether foresters fell and replant the trees around their nurseries. Off: foresters lose their job and keep their items, and no villager takes a nursery as a job site."),
+        SMELTER(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "smelter"),
+                "Whether smelters smelt ore and burn charcoal at their blast furnaces. Off: a villager at a blast furnace is an armorer, and keeps its items."),
+        GOLEMSMITH(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "golemsmith"),
+                "Whether golemsmiths mend and build iron golems at their workshops. Off: golemsmiths lose their job and keep their items, and no villager takes a golem workshop as a job site. A half-built golem stays where it stands, and with villagersSummonGolems off a village gets no new golems."),
+        MERCHANT(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "merchant"),
+                "Whether merchants keep pack mules and go on tours to other villages. Off: merchants lose their job and keep their items, a tour in progress ends, their mules are let go with their cargo given to the merchant, and no villager takes a pack station as a job site.");
 
         public static final Codec<Profession> CODEC = StringRepresentable.fromEnum(Profession::values);
 
@@ -249,6 +255,11 @@ public final class MineNowConfig {
         /** A profession of Hearthfolk's own has no vanilla work to fall back to, so switched off its villagers lose the job. */
         public boolean isHearthfolk() {
             return profession.getNamespace().equals(MineNow.MOD_ID);
+        }
+
+        /** The smelter shares vanilla's armorer job site, so switched off it becomes an armorer instead of losing its job. */
+        public boolean losesJobWhenOff() {
+            return isHearthfolk() && this != SMELTER;
         }
 
         public ResourceKey<VillagerProfession> key() {

@@ -74,6 +74,10 @@ public final class Tours {
         return found;
     }
 
+    static boolean active(Villager merchant) {
+        return ACTIVE.contains(merchant.getUUID());
+    }
+
     static void resume(Villager merchant) {
         ACTIVE.add(merchant.getUUID());
     }

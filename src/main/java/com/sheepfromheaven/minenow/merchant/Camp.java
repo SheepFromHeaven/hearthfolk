@@ -92,7 +92,7 @@ final class Camp {
     }
 
     /** Vanilla's straw bed is used once: it falls apart when its sleeper gets up, so what's left of the camp is cleared and a new bed is needed tomorrow. */
-    private static void wake(ServerLevel level, Villager merchant) {
+    static void wake(ServerLevel level, Villager merchant) {
         Optional<BlockPos> head = merchant.getData(Merchant.CAMP);
         merchant.setData(Merchant.CAMP, Optional.empty());
         if (merchant.isSleeping()) merchant.stopSleeping();

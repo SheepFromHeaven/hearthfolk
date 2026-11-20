@@ -68,8 +68,8 @@ public final class Golemsmith {
         POI_TYPES.register("golemsmith", () -> new PoiType(ImmutableSet.copyOf(WORKSHOP.get().getStateDefinition().getPossibleStates()), 1, 1));
         PROFESSIONS.register("golemsmith", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.golemsmith"),
-                poi -> poi.is(POI),
-                poi -> poi.is(POI),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_ARMORER,
@@ -99,7 +99,7 @@ public final class Golemsmith {
     public static void onBreak(BreakBlockEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !event.getState().is(Blocks.IRON_BLOCK) || event.getPlayer() == null) return;
         for (Villager owner : level.getEntitiesOfClass(Villager.class, new AABB(event.getPos()).inflate(SITE_SEARCH),
-                villager -> villager.hasData(SITE) && villager.getData(SITE).ironCells().contains(event.getPos()))) {
+                villager -> villager.getVillagerData().profession().is(PROFESSION) && villager.hasData(SITE) && villager.getData(SITE).ironCells().contains(event.getPos()))) {
             StorageTheft.punish(level, owner, event.getPlayer().getUUID(), StorageTheft.BREAK_GOSSIP);
         }
     }

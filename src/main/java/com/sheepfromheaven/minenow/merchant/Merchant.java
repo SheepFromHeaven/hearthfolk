@@ -105,8 +105,8 @@ public final class Merchant {
         POI_TYPES.register("merchant", () -> new PoiType(ImmutableSet.copyOf(PACK_STATION.get().getStateDefinition().getPossibleStates()), 1, 1));
         PROFESSIONS.register("merchant", () -> new VillagerProfession(
                 Component.translatable("entity.minenow.villager.merchant"),
-                poi -> poi.is(POI),
-                poi -> poi.is(POI),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
+                poi -> poi.is(POI) && com.sheepfromheaven.minenow.MineNowConfig.professionEnabled(PROFESSION),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 SoundEvents.VILLAGER_WORK_LEATHERWORKER,
@@ -174,6 +174,33 @@ public final class Merchant {
             mule.clearHome();
         });
         Tours.forget(villager);
+    }
+
+    /**
+     * A merchant whose profession was switched off: its tour ends (and its chunk ticket goes), its mules are let go and
+     * what their chests carried is given to it, and a night camp is packed up as at dawn. Called before it loses the trade,
+     * while its mules still count as its goods.
+     */
+    public static void release(ServerLevel level, Villager villager) {
+        Tours.forget(villager);
+        villager.setData(TOUR, Optional.empty());
+        if (villager.getData(CAMP).isPresent()) Camp.wake(level, villager);
+        List<Mule> mules = ownedMules(level, villager, villager.getBoundingBox().inflate(RELEASE_SEARCH));
+        List<ItemStack> cargo = new java.util.ArrayList<>();
+        for (Mule mule : mules) {
+            mule.setData(MULE_OWNER, Optional.empty());
+            mule.clearHome();
+            mule.dropLeash();
+            if (!mule.hasChest()) continue;
+            Container pack = mule.getInventory();
+            for (int slot = 0; slot < pack.getContainerSize(); slot++) {
+                ItemStack stack = pack.getItem(slot);
+                if (stack.isEmpty()) continue;
+                cargo.add(stack.copy());
+                pack.setItem(slot, ItemStack.EMPTY);
+            }
+        }
+        for (ItemStack stack : cargo) Economy.give(level, villager, stack);
     }
 
     public static void onEntityLeave(EntityLeaveLevelEvent event) {

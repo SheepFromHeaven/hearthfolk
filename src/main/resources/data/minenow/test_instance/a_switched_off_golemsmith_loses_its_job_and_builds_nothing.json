@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:profession_golemsmith",
+  "function": "minenow:a_switched_off_golemsmith_loses_its_job_and_builds_nothing",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 700
+}

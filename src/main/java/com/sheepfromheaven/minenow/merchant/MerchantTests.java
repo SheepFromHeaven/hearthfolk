@@ -370,7 +370,7 @@ public final class MerchantTests {
         return butcher;
     }
 
-    private static Villager spawnMerchant(GameTestHelper helper, int level) {
+    static Villager spawnMerchant(GameTestHelper helper, int level) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(STATION, Merchant.PACK_STATION.get());
