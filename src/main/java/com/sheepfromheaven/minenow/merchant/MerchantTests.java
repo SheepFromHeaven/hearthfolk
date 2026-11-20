@@ -157,7 +157,7 @@ public final class MerchantTests {
         });
     }
 
-    public static void withoutPaymentABrokeMerchantPlansATourToAVillageThatNeedsWhatItsVillageSells(GameTestHelper helper) {
+    public static void withoutEmeraldsABrokeMerchantPlansATourToAVillageThatNeedsWhatItsVillageSells(GameTestHelper helper) {
         Villager merchant = homeVillage(helper, true);
         Economy.take(helper.getLevel(), merchant, Items.EMERALD, Economy.emeralds(helper.getLevel(), merchant));
         Villager butcher = butcherAcross(helper);

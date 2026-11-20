@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_emerald_economy_commission",
+  "function": "minenow:without_emeralds_a_broke_villager_commissions_missing_armor_and_gets_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 4800
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_emerald_economy",
+  "function": "minenow:without_emeralds_breeding_food_is_fetched_only_with_a_free_bed",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1600
+}

@@ -127,7 +127,7 @@ public class SeekGoods extends Behavior<Villager> {
     /** Vanilla's trade display uses the main hand while a player looks at it; the emerald goes back up once it's done. */
     private static void showEmerald(ServerLevel level, Villager body) {
         boolean canPay = wantsATool(level, body) ? TradeTable.forVillager(body).map(table -> table.toolsUpTo(body.getVillagerData().level()).stream()
-                .anyMatch(tool -> tool.price() <= Economy.emeralds(level, body) - Economy.FOOD_MONEY)).orElse(false)
+                .anyMatch(tool -> tool.price() <= Economy.villagerBudget(Economy.emeralds(level, body) - Economy.FOOD_MONEY))).orElse(false)
                 : Shortage.canPayAPlayer(level, body);
         if (canPay && body.getMainHandItem().isEmpty() && !body.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET)) {
             body.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.EMERALD));

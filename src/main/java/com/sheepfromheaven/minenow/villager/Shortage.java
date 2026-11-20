@@ -31,7 +31,7 @@ final class Shortage {
 
     /** Whether it has the emeralds for a player's price, with its food money left over, as it does for a first tool. */
     static boolean canPayAPlayer(ServerLevel level, Villager villager) {
-        return fuel(level, villager).filter(supply -> supply.price().emeralds() <= Economy.emeralds(level, villager) - Economy.FOOD_MONEY).isPresent();
+        return fuel(level, villager).filter(supply -> supply.price().emeralds() <= Economy.villagerBudget(Economy.emeralds(level, villager) - Economy.FOOD_MONEY)).isPresent();
     }
 
     private static List<TradeTable.Supply> fuels(ServerLevel level, TradeTable table, Villager villager) {

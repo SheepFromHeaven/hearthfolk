@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_emerald_economy",
+  "function": "minenow:without_emeralds_a_player_trades_with_a_villager_that_has_none",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

@@ -147,7 +147,7 @@ public final class VillagerInspector {
         lines.add(Component.literal("Position: " + villager.blockPosition().toShortString()));
         villager.getBrain().getMemory(MemoryModuleType.HOME).ifPresent(home -> lines.add(Component.literal("Bed: " + home.pos().toShortString())));
         villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).ifPresent(site -> lines.add(Component.literal("Job block: " + site.pos().toShortString())));
-        lines.add(Component.literal("Emeralds: " + Economy.emeralds(level, villager) + " (it starts a family at " + Wealth.required(level, villager) + ")"));
+        lines.add(Component.literal(Economy.emeraldEconomy() ? "Emeralds: " + Economy.emeralds(level, villager) + " (it starts a family at " + Wealth.required(level, villager) + ")" : "Emeralds: not counted (emerald economy is off)"));
         lines.add(Component.literal("Experience: " + villager.getVillagerXp()));
         lines.addAll(IdleReport.describe(level, villager));
         return lines;

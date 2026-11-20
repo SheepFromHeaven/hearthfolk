@@ -43,7 +43,7 @@ public final class Economy {
 
     /** Granted once, when the villager first takes a job, so a village's money grows with the villagers working in it. */
     public static void grantStartingPurseOnce(ServerLevel level, Villager villager) {
-        if (villager.getExistingData(ModVillagers.PURSE_GRANTED).orElse(false)) return;
+        if (!emeraldEconomy() || villager.getExistingData(ModVillagers.PURSE_GRANTED).orElse(false)) return;
         villager.setData(ModVillagers.PURSE_GRANTED, true);
         give(level, villager, new ItemStack(Items.EMERALD, STARTING_PURSE));
     }
@@ -64,11 +64,11 @@ public final class Economy {
     }
 
     /**
-     * Whether villagers pay each other ({@code villagersPayEachOther}). Off, they take what they need from each other
+     * Whether villagers pay each other ({@code emeraldEconomy}). Off, they take what they need from each other
      * for free; players still pay villagers and are paid by them as always.
      */
-    public static boolean villagersPay() {
-        return com.sheepfromheaven.minenow.MineNowConfig.enabled(com.sheepfromheaven.minenow.MineNowConfig.Feature.VILLAGERS_PAY_EACH_OTHER);
+    public static boolean emeraldEconomy() {
+        return com.sheepfromheaven.minenow.MineNowConfig.enabled(com.sheepfromheaven.minenow.MineNowConfig.Feature.EMERALD_ECONOMY);
     }
 
     /**
@@ -76,7 +76,7 @@ public final class Economy {
      * travelling merchant). Nothing moves while villagers don't pay each other. Returns what was paid.
      */
     public static int pay(ServerLevel level, Villager from, @org.jspecify.annotations.Nullable Villager to, int emeralds) {
-        if (!villagersPay() || emeralds <= 0) return 0;
+        if (!emeraldEconomy() || emeralds <= 0) return 0;
         int paid = take(level, from, Items.EMERALD, emeralds);
         if (to != null) give(level, to, new ItemStack(Items.EMERALD, paid));
         return paid;
@@ -84,7 +84,7 @@ public final class Economy {
 
     /** What a villager may spend on another villager's goods out of {@code budget}: no limit while villagers don't pay each other. */
     public static int villagerBudget(int budget) {
-        return villagersPay() ? budget : Integer.MAX_VALUE;
+        return emeraldEconomy() ? budget : Integer.MAX_VALUE;
     }
 
     /** Chests a villager's goods may sit in: none while a merchant is on tour, since they're days away. */

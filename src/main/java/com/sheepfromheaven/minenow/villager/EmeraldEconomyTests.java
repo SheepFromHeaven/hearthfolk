@@ -19,11 +19,11 @@ import net.minecraft.world.level.block.Blocks;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/** {@code villagersPayEachOther} off: villagers take what they need from each other for free, players still pay and are paid. */
-public final class PayEachOtherTests {
-    private PayEachOtherTests() {}
+/** {@code emeraldEconomy} off: villagers take what they need from each other for free, players still pay and are paid. */
+public final class EmeraldEconomyTests {
+    private EmeraldEconomyTests() {}
 
-    public static void withoutPaymentAButcherWithNoEmeraldsGetsWheatFromTheFarmer(GameTestHelper helper) {
+    public static void withoutEmeraldsAButcherWithNoEmeraldsGetsWheatFromTheFarmer(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos smoker = new BlockPos(4, 1, 12);
@@ -44,7 +44,7 @@ public final class PayEachOtherTests {
     }
 
     /** Free breeding food without a free bed only fed a village whose beds were full: in the soak, 50 carrots and potatoes a day left the farmers for nothing. */
-    public static void withoutPaymentBreedingFoodIsFetchedOnlyWithAFreeBed(GameTestHelper helper) {
+    public static void withoutEmeraldsBreedingFoodIsFetchedOnlyWithAFreeBed(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos composter = new BlockPos(19, 1, 12);
@@ -73,7 +73,7 @@ public final class PayEachOtherTests {
         });
     }
 
-    public static void withoutPaymentABrokeVillagerCommissionsMissingArmorAndGetsIt(GameTestHelper helper) {
+    public static void withoutEmeraldsABrokeVillagerCommissionsMissingArmorAndGetsIt(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos anvil = new BlockPos(5, 1, 12);
@@ -107,7 +107,7 @@ public final class PayEachOtherTests {
         });
     }
 
-    public static void withoutPaymentABrokeSmeltersDebtsStayAsTheyAre(GameTestHelper helper) {
+    public static void withoutEmeraldsABrokeSmeltersDebtsStayAsTheyAre(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos blastFurnace = new BlockPos(5, 1, 12);
@@ -136,7 +136,7 @@ public final class PayEachOtherTests {
         });
     }
 
-    public static void withoutPaymentAFuellessButcherWithNoMoneyIsNotOutOfMaterials(GameTestHelper helper) {
+    public static void withoutEmeraldsAFuellessButcherWithNoMoneyIsNotOutOfMaterials(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos smoker = new BlockPos(11, 1, 14);
@@ -156,7 +156,8 @@ public final class PayEachOtherTests {
         helper.succeed();
     }
 
-    public static void withoutPaymentAPlayerStillPaysAndIsPaid(GameTestHelper helper) {
+    /** The user's case: a villager with nothing left above its reserve could not buy from a player, and with the economy off it counts nothing. */
+    public static void withoutEmeraldsAPlayerTradesWithAVillagerThatHasNone(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         BlockPos smoker = new BlockPos(4, 1, 12);
@@ -165,26 +166,37 @@ public final class PayEachOtherTests {
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
         butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 3));
         butcher.getInventory().addItem(new ItemStack(Items.COOKED_PORKCHOP, 20));
-        butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
         @SuppressWarnings("removal")
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
         openTrades(player, butcher);
         MerchantOffer meat = offer(butcher, Items.EMERALD, Items.COOKED_PORKCHOP);
         helper.assertTrue(meat != null, "The butcher sells cooked pork to a player, offers " + describe(butcher));
-        int before = Economy.emeralds(helper.getLevel(), butcher);
         ItemStack bought = trade(player, new ItemStack(Items.EMERALD, meat.getCostA().getCount()));
         helper.assertTrue(bought.is(Items.COOKED_PORKCHOP), "The player gets the pork, got " + bought);
-        helper.assertTrue(Economy.emeralds(helper.getLevel(), butcher) == before + meat.getCostA().getCount(),
-                "...and pays its emeralds to the butcher, which has " + Economy.emeralds(helper.getLevel(), butcher) + " of " + before + " plus " + meat.getCostA().getCount());
+        helper.assertTrue(Economy.emeralds(helper.getLevel(), butcher) == 0,
+                "...and the emeralds it paid are not kept, the butcher has " + Economy.emeralds(helper.getLevel(), butcher));
 
         openTrades(player, butcher);
         MerchantOffer coal = offer(butcher, Items.COAL, Items.EMERALD);
-        helper.assertTrue(coal != null, "The butcher buys coal from a player, offers " + describe(butcher));
-        before = Economy.emeralds(helper.getLevel(), butcher);
+        helper.assertTrue(coal != null, "The butcher buys coal from a player although it holds no emeralds, offers " + describe(butcher));
         ItemStack paid = trade(player, new ItemStack(Items.COAL, coal.getCostA().getCount()));
         helper.assertTrue(paid.is(Items.EMERALD) && paid.getCount() == coal.getResult().getCount(), "The butcher pays the player emeralds for coal, got " + paid);
-        helper.assertTrue(Economy.emeralds(helper.getLevel(), butcher) == before - paid.getCount(), "...out of its own emeralds, has " + Economy.emeralds(helper.getLevel(), butcher));
+        helper.assertTrue(Economy.emeralds(helper.getLevel(), butcher) == 0, "...out of nothing, it still has " + Economy.emeralds(helper.getLevel(), butcher));
+        helper.assertTrue(butcher.getInventory().countItem(Items.COAL) == coal.getCostA().getCount(), "...and it has the coal, has " + butcher.getInventory().countItem(Items.COAL));
+        helper.succeed();
+    }
+
+    /** What the economy being off is for: no purse is granted, nor emeralds gathered. */
+    public static void withoutEmeraldsAVillagerGetsNoStartingPurseAndTakesNoEmeralds(GameTestHelper helper) {
+        helper.setTime(GameTestHelpers.WORK_HOURS);
+        GameTestHelpers.fence(helper);
+        BlockPos smoker = new BlockPos(4, 1, 12);
+        helper.setBlock(smoker, Blocks.SMOKER);
+        Villager butcher = GameTestHelpers.spawnEmployed(helper, smoker.east(), smoker, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
+        Economy.grantStartingPurseOnce(helper.getLevel(), butcher);
+        helper.assertTrue(Economy.emeralds(helper.getLevel(), butcher) == 0, "No starting purse, has " + Economy.emeralds(helper.getLevel(), butcher));
+        helper.assertTrue(PickUpGifts.emeraldCap(helper.getLevel(), butcher) == 0, "...and it wants no emeralds thrown to it, cap " + PickUpGifts.emeraldCap(helper.getLevel(), butcher));
         helper.succeed();
     }
 

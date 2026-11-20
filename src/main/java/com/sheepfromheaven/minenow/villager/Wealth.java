@@ -25,7 +25,7 @@ public final class Wealth {
     /** While villagers don't pay each other money limits nothing, so a free bed is what limits it instead. */
     static boolean wantsFoodForAFamily(ServerLevel level, Villager villager) {
         return !villager.isBaby() && Economy.villagerBudget(Economy.emeralds(level, villager)) >= required(level, villager) && breedingFoodPoints(level, villager) < Villager.BREEDING_FOOD_THRESHOLD
-                && (Economy.villagersPay() || VillageBeds.anyFree(level, villager));
+                && (Economy.emeraldEconomy() || VillageBeds.anyFree(level, villager));
     }
 
     static boolean isBreedingFood(ItemStack stack) {
