@@ -22,7 +22,7 @@ import java.util.WeakHashMap;
 
 /** A villager says what it needs in a speech bubble: the item icon of the first reason {@link IdleReason#of} finds. */
 public final class NeedBubbles {
-    static final Identifier FRIGHT = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "fright");
+    public static final Identifier FRIGHT = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "fright");
     private static final int INTERVAL = 80;
     static final int SHOWN_TICKS = 60;
     static final int COOLDOWN_TICKS = 160;
@@ -39,7 +39,7 @@ public final class NeedBubbles {
 
     /** Shows the bubble if one is due: the switch is on, it is awake, a player is near and its cooldown is over. Returns what it showed. */
     static Shown poll(ServerLevel level, Villager villager) {
-        if (!MineNowConfig.enabled(MineNowConfig.Feature.SPEECH_BUBBLES)) return Shown.NONE;
+        if (!MineNowConfig.enabled(MineNowConfig.Feature.SPEECH_BUBBLES) || villager.entityTags().contains(SpeechBubbles.SHOWCASE_TAG)) return Shown.NONE;
         if (!IdleCues.isAwake(villager) || level.getNearestPlayer(villager, SpeechBubbles.RANGE) == null) return Shown.NONE;
         long now = level.getGameTime();
         if (now < NEXT_AT.getOrDefault(villager, 0L)) return Shown.NONE;
@@ -92,7 +92,7 @@ public final class NeedBubbles {
         return item == null || item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
     }
 
-    private static Item toolIcon(Villager villager) {
+    public static Item toolIcon(Villager villager) {
         return TradeTable.forVillager(villager).map(table -> {
             if (!table.tools().isEmpty()) return table.tools().getFirst().item();
             return table.toolTag().flatMap(tag -> {
@@ -102,7 +102,7 @@ public final class NeedBubbles {
         }).orElse(null);
     }
 
-    static Item jobBlockIcon(Villager villager) {
+    public static Item jobBlockIcon(Villager villager) {
         Holder<VillagerProfession> profession = villager.getVillagerData().profession();
         if (profession.is(VillagerProfession.NONE)) return Items.LECTERN;
         for (Holder<PoiType> type : BuiltInRegistries.POINT_OF_INTEREST_TYPE.listElements().toList()) {

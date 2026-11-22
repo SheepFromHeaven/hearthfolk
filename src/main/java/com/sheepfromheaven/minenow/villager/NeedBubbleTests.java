@@ -103,6 +103,26 @@ public final class NeedBubbleTests {
     }
 
     @SuppressWarnings("removal")
+    public static void aShowcaseVillagerGetsNoNeedBubble(GameTestHelper helper) {
+        Villager farmer = farmer(helper, true);
+        net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.snapTo(farmer.getX() + 3, farmer.getY(), farmer.getZ());
+        Meals.makeHungry(farmer);
+        farmer.addTag(SpeechBubbles.SHOWCASE_TAG);
+        helper.assertTrue(!NeedBubbles.bubbleFor(helper.getLevel(), farmer).isEmpty(), "Without the tag this farmer would show a bubble");
+        List<SpeechBubbles.Payload> sent = new ArrayList<>();
+        var original = SpeechBubbles.sender;
+        SpeechBubbles.sender = (to, payload) -> sent.add(payload);
+        try {
+            helper.assertTrue(NeedBubbles.poll(helper.getLevel(), farmer).isEmpty(), "A showcase villager shows nothing from poll");
+        } finally {
+            SpeechBubbles.sender = original;
+        }
+        helper.assertTrue(sent.isEmpty(), "Nothing is sent over a showcase villager: " + sent);
+        helper.succeed();
+    }
+
+    @SuppressWarnings("removal")
     public static void withoutSpeechBubblesNothingIsSent(GameTestHelper helper) {
         Villager farmer = farmer(helper, true);
         net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();

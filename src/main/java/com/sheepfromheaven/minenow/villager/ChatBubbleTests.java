@@ -95,6 +95,19 @@ public final class ChatBubbleTests {
         });
     }
 
+    public static void showcaseVillagersAreNeverPickedToChat(GameTestHelper helper) {
+        Villager[] pair = farmersAtTheBell(helper);
+        pair[0].addTag(SpeechBubbles.SHOWCASE_TAG);
+        pair[1].addTag(SpeechBubbles.SHOWCASE_TAG);
+        List<SpeechBubbles.Payload> sent = record(pair);
+        helper.assertTrue(!ChatBubbles.topics(helper.getLevel(), pair[0]).isEmpty(), "The farmer has something to say, so only the tag holds the chat back");
+
+        helper.runAfterDelay(300, () -> {
+            helper.assertTrue(sent.isEmpty(), "Showcase villagers never chat: " + sent);
+            helper.succeed();
+        });
+    }
+
     public static void withoutSpeechBubblesVillagersDoNotChat(GameTestHelper helper) {
         Villager[] pair = farmersAtTheBell(helper);
         List<SpeechBubbles.Payload> sent = record(pair);
