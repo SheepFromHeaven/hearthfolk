@@ -199,6 +199,7 @@ public final class VillagerInspectorTests {
         GameTestHelpers.fence(helper);
         BlockPos bell = new BlockPos(4, 1, 12);
         Villager jim = GameTestHelpers.spawnWithHome(helper, new BlockPos(6, 1, 6), new BlockPos(4, 1, 4));
+        jim.setVillagerData(jim.getVillagerData().withProfession(helper.getLevel().registryAccess(), net.minecraft.world.entity.npc.villager.VillagerProfession.NITWIT));
         VillageTests.claimBell(helper, jim, bell);
         BlockPos farBed = new BlockPos(50, 1, 12);
         GameTestHelpers.placeBed(helper, farBed);
