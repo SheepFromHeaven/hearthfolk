@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_49",
+  "function": "minenow:a_villager_claims_a_free_job_block_up_to_48_blocks_outside_its_village_border",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

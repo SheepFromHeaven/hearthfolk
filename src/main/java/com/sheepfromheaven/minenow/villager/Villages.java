@@ -31,6 +31,7 @@ import java.util.WeakHashMap;
 public final class Villages {
     public static final int REACH = 16;
     static final int HEIGHT = 48;
+    public static final int SEARCH = 48;
     static final int REFRESH = 100;
 
     private static final net.minecraft.world.level.block.Block MARKER_BASE = net.minecraft.world.level.block.Blocks.HAY_BLOCK;
@@ -63,6 +64,33 @@ public final class Villages {
 
         public boolean contains(BlockPos pos) {
             return anchors.stream().anyMatch(anchor -> within(anchor, pos, REACH));
+        }
+
+        /** Points of interest of a type inside the village border or up to {@link #SEARCH} blocks outside it, nearest to {@code from} first. */
+        public List<BlockPos> pois(ServerLevel level, java.util.function.Predicate<net.minecraft.core.Holder<net.minecraft.world.entity.ai.village.poi.PoiType>> type,
+                                   net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy occupancy, BlockPos from) {
+            return anchors.stream()
+                    .flatMap(anchor -> level.getPoiManager().getInRange(type, anchor, REACH + SEARCH, occupancy))
+                    .map(record -> record.getPos())
+                    .distinct()
+                    .filter(pos -> anchors.stream().anyMatch(anchor -> within(anchor, pos, REACH + SEARCH)))
+                    .sorted(java.util.Comparator.comparingDouble(pos -> pos.distSqr(from)))
+                    .toList();
+        }
+
+        /** Free beds within the border or {@link #SEARCH} blocks outside it. */
+        public List<BlockPos> freeBeds(ServerLevel level) {
+            return pois(level, type -> type.is(PoiTypes.HOME), net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.HAS_SPACE, anchors.get(0));
+        }
+
+        /** Free job blocks of any profession within the border or {@link #SEARCH} blocks outside it. */
+        public List<BlockPos> freeJobBlocks(ServerLevel level) {
+            return pois(level, type -> type.is(net.minecraft.tags.PoiTypeTags.ACQUIRABLE_JOB_SITE), net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.HAS_SPACE, anchors.get(0));
+        }
+
+        /** The free beds and job blocks outside the border that a villager of the village could claim, which would widen it. */
+        public List<BlockPos> claimableOutside(ServerLevel level) {
+            return java.util.stream.Stream.concat(freeBeds(level).stream(), freeJobBlocks(level).stream()).distinct().filter(pos -> !contains(pos)).toList();
         }
 
         /** The members loaded in the level. */

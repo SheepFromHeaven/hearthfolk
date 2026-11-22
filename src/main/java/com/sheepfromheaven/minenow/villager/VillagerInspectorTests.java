@@ -195,6 +195,82 @@ public final class VillagerInspectorTests {
         });
     }
 
+    public static void aBellReportsFreeBedsAndJobBlocksAndItsBorderShowsWhereTheyWouldWidenIt(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        BlockPos bell = new BlockPos(4, 1, 12);
+        Villager jim = GameTestHelpers.spawnWithHome(helper, new BlockPos(6, 1, 6), new BlockPos(4, 1, 4));
+        VillageTests.claimBell(helper, jim, bell);
+        BlockPos farBed = new BlockPos(50, 1, 12);
+        GameTestHelpers.placeBed(helper, farBed);
+        BlockPos loom = new BlockPos(52, 1, 18);
+        helper.setBlock(loom, Blocks.LOOM);
+        BlockPos tooFar = new BlockPos(70, 1, 12);
+        helper.setBlock(tooFar, Blocks.COMPOSTER);
+
+        helper.runAfterDelay(5, () -> {
+            var lines = VillagerInspector.villageReport(helper.getLevel(), helper.absolutePos(bell)).map(list -> list.stream().map(net.minecraft.network.chat.Component::getString).toList()).orElse(java.util.List.of());
+            String all = String.join("\n", lines);
+            helper.assertTrue(all.contains("Free beds: 1"), "It counts the free bed outside the border, got " + all);
+            helper.assertTrue(all.contains("Loom") && all.contains("outside the border"), "It lists the free job block outside the border, got " + all);
+            helper.assertFalse(all.contains("Composter"), "A job block more than 48 blocks past the border is not listed, got " + all);
+            var claimable = VillageBorders.claimableAround(helper.getLevel(), helper.absolutePos(bell));
+            helper.assertTrue(claimable.contains(helper.absolutePos(loom)) && !claimable.contains(helper.absolutePos(tooFar)), "The border would widen towards the loom only, got " + claimable);
+            helper.succeed();
+        });
+    }
+
+    public static void leftClickingABellWithTheInspectorTogglesTheVillageBorders(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        BlockPos bell = new BlockPos(12, 1, 12);
+        Villager jim = GameTestHelpers.spawnWithHome(helper, new BlockPos(6, 1, 6), new BlockPos(4, 1, 4));
+        VillageTests.claimBell(helper, jim, bell);
+        ServerPlayer player = playerWithInspector(helper);
+        BlockPos abs = helper.absolutePos(bell);
+
+        helper.succeedWhen(() -> {
+            helper.assertFalse(VillageBorders.isShowing(player), "No borders to begin with");
+            var first = leftClick(player, abs);
+            helper.assertTrue(first.isCanceled(), "The click never breaks or rings the bell");
+            helper.assertTrue(VillageBorders.isShowing(player), "A left click turns the borders on");
+            helper.assertTrue(VillageBorders.anchorsAround(helper.getLevel(), abs).contains(helper.absolutePos(new BlockPos(4, 1, 4))), "...of the village the bell belongs to, with its bed among the places");
+            leftClick(player, abs);
+            helper.assertFalse(VillageBorders.isShowing(player), "A second left click turns them off again");
+        });
+    }
+
+    public static void leftClickingABellNobodyClaimedShowsNoBorders(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        BlockPos bell = new BlockPos(12, 1, 12);
+        helper.setBlock(bell, Blocks.BELL);
+        ServerPlayer player = playerWithInspector(helper);
+
+        helper.runAfterDelay(5, () -> {
+            var event = leftClick(player, helper.absolutePos(bell));
+            helper.assertTrue(event.isCanceled(), "The inspector still never hits the bell");
+            helper.assertFalse(VillageBorders.isShowing(player), "A bell that belongs to no village has no border to show");
+            helper.succeed();
+        });
+    }
+
+    public static void leftClickingABellWithoutTheInspectorChangesNothing(GameTestHelper helper) {
+        GameTestHelpers.fence(helper);
+        BlockPos bell = new BlockPos(12, 1, 12);
+        helper.setBlock(bell, Blocks.BELL);
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        helper.runAfterDelay(5, () -> {
+            helper.assertFalse(leftClick(player, helper.absolutePos(bell)).isCanceled(), "Any other hand leaves the bell alone");
+            helper.assertFalse(VillageBorders.isShowing(player), "and shows no borders");
+            helper.succeed();
+        });
+    }
+
+    private static net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock leftClick(ServerPlayer player, BlockPos abs) {
+        return net.neoforged.neoforge.common.CommonHooks.onLeftClickBlock(player, abs, net.minecraft.core.Direction.UP,
+                net.minecraft.network.protocol.game.ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK);
+    }
+
     public static void aBellNobodyClaimedBelongsToNoVillage(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         BlockPos bell = new BlockPos(12, 1, 12);

@@ -62,6 +62,7 @@ public final class MineNow {
         com.sheepfromheaven.minenow.villager.WallDisplays.register(modBus);
         com.sheepfromheaven.minenow.cartographer.Cartographer.register(modBus);
         com.sheepfromheaven.minenow.villager.VillagerInspector.register(modBus);
+        com.sheepfromheaven.minenow.villager.VillageBorders.register(modBus);
         NeoForge.EVENT_BUS.addListener(ButcherDrops::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(Miner::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.forester.Forester::onRightClickBlock);
@@ -204,6 +205,8 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "a_switched_off_farmer_keeps_its_vanilla_trades_across_toggling", SwitchedFarmerTests::aSwitchedOffFarmerKeepsItsVanillaTradesAcrossToggling);
             test(helper, TestGroup.FISHERMAN, "a_switched_off_fisherman_casts_no_bobber_at_the_water_by_his_barrel", com.sheepfromheaven.minenow.fisherman.SwitchedFishermanTests::aSwitchedOffFishermanCastsNoBobberAtTheWaterByHisBarrel);
             test(helper, TestGroup.FISHERMAN, "a_switched_off_fisherman_shows_vanilla_trades_that_cost_emeralds", com.sheepfromheaven.minenow.fisherman.SwitchedFishermanTests::aSwitchedOffFishermanShowsVanillaTradesThatCostEmeralds);
+            test(helper, TestGroup.SHEPHERD, "shepherd_offers_string_once_however_many_wools_make_it", com.sheepfromheaven.minenow.shepherd.ShepherdTests::shepherdOffersStringOnceHoweverManyWoolsMakeIt);
+            test(helper, TestGroup.SHEPHERD, "shepherd_sells_the_wool_it_sheared_in_the_colour_it_holds", com.sheepfromheaven.minenow.shepherd.ShepherdTests::shepherdSellsTheWoolItShearedInTheColourItHolds);
             test(helper, TestGroup.SHEPHERD, "a_switched_off_shepherd_shears_no_sheep_by_her_loom_and_opens_no_gate", com.sheepfromheaven.minenow.shepherd.SwitchedShepherdTests::aSwitchedOffShepherdShearsNoSheepByHerLoomAndOpensNoGate);
             test(helper, TestGroup.SHEPHERD, "a_switched_off_shepherd_shows_vanilla_trades_that_cost_emeralds", com.sheepfromheaven.minenow.shepherd.SwitchedShepherdTests::aSwitchedOffShepherdShowsVanillaTradesThatCostEmeralds);
             test(helper, TestGroup.BUTCHER, "a_switched_off_butcher_culls_nothing_and_opens_no_gate", com.sheepfromheaven.minenow.butcher.SwitchedButcherTests::aSwitchedOffButcherCullsNothingAndOpensNoGate);
@@ -483,6 +486,9 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "toolsmith_buys_diamonds_from_the_miner_at_its_price", MinerTests::toolsmithBuysDiamondsFromTheMinerAtItsPrice);
             test(helper, TestGroup.MINER, "miner_lights_its_quarry_with_torches", MinerTests::minerLightsItsQuarryWithTorches);
             test(helper, TestGroup.MINER, "miner_leaves_platforms_and_branches_tunnels_off_them", MinerTests::minerLeavesPlatformsAndBranchesTunnelsOffThem);
+            test(helper, TestGroup.VILLAGERS, "a_villager_walks_round_a_long_wall_to_its_bed", com.sheepfromheaven.minenow.villager.NightDoorTests::aVillagerWalksRoundALongWallToItsBed);
+            test(helper, TestGroup.VILLAGERS, "a_villager_closes_a_door_the_player_left_open_behind_it", com.sheepfromheaven.minenow.villager.NightDoorTests::aVillagerClosesADoorThePlayerLeftOpenBehindIt);
+            test(helper, TestGroup.VILLAGERS, "a_villager_closes_the_door_behind_it_on_its_way_to_bed", com.sheepfromheaven.minenow.villager.NightDoorTests::aVillagerClosesTheDoorBehindItOnItsWayToBed);
             test(helper, TestGroup.ROADS, "a_villager_walks_over_a_closed_trapdoor_lying_in_its_way", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksOverAClosedTrapdoorLyingInItsWay);
             test(helper, TestGroup.ROADS, "a_villager_walks_around_an_open_trapdoor_in_a_wide_corridor", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksAroundAnOpenTrapdoorInAWideCorridor);
             test(helper, TestGroup.ROADS, "a_villager_walks_around_a_top_half_trapdoor_in_a_wide_corridor", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksAroundATopHalfTrapdoorInAWideCorridor);
@@ -728,7 +734,15 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_banner_on_another_block_links_nothing", com.sheepfromheaven.minenow.villager.VillageMarkerTests::aBannerOnAnotherBlockLinksNothing);
             test(helper, TestGroup.VILLAGERS, "a_partner_anywhere_in_the_village_counts", com.sheepfromheaven.minenow.villager.BreedingReportTests::aPartnerAnywhereInTheVillageCounts);
             test(helper, TestGroup.VILLAGERS, "a_free_bed_anywhere_in_the_village_lets_them_breed", com.sheepfromheaven.minenow.villager.BreedingReportTests::aFreeBedAnywhereInTheVillageLetsThemBreed);
+            test(helper, TestGroup.VILLAGERS, "a_villager_without_a_job_block_claims_a_free_one_across_the_village", com.sheepfromheaven.minenow.villager.FarJobSiteTests::aVillagerWithoutAJobBlockClaimsAFreeOneAcrossTheVillage);
+            test(helper, TestGroup.VILLAGERS, "a_villager_does_not_claim_a_job_block_further_than_48_blocks_from_its_village_border", com.sheepfromheaven.minenow.villager.FarJobSiteTests::aVillagerDoesNotClaimAJobBlockFurtherThan48BlocksFromItsVillageBorder);
+            test(helper, TestGroup.VILLAGERS, "a_villager_claims_a_free_job_block_up_to_48_blocks_outside_its_village_border", com.sheepfromheaven.minenow.villager.FarJobSiteTests::aVillagerClaimsAFreeJobBlockUpTo48BlocksOutsideItsVillageBorder);
+            test(helper, TestGroup.VILLAGERS, "a_villager_without_a_bed_claims_a_free_one_up_to_48_blocks_outside_its_village_border", com.sheepfromheaven.minenow.villager.FarJobSiteTests::aVillagerWithoutABedClaimsAFreeOneUpTo48BlocksOutsideItsVillageBorder);
             test(helper, TestGroup.VILLAGERS, "a_baby_takes_a_free_bed_of_the_village", com.sheepfromheaven.minenow.villager.VillageBedsTests::aBabyTakesAFreeBedOfTheVillage);
+            test(helper, TestGroup.VILLAGERS, "left_clicking_a_bell_with_the_inspector_toggles_the_village_borders", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::leftClickingABellWithTheInspectorTogglesTheVillageBorders);
+            test(helper, TestGroup.VILLAGERS, "a_bell_reports_free_beds_and_job_blocks_and_its_border_shows_where_they_would_widen_it", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::aBellReportsFreeBedsAndJobBlocksAndItsBorderShowsWhereTheyWouldWidenIt);
+            test(helper, TestGroup.VILLAGERS, "left_clicking_a_bell_nobody_claimed_shows_no_borders", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::leftClickingABellNobodyClaimedShowsNoBorders);
+            test(helper, TestGroup.VILLAGERS, "left_clicking_a_bell_without_the_inspector_changes_nothing", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::leftClickingABellWithoutTheInspectorChangesNothing);
             test(helper, TestGroup.VILLAGERS, "a_bell_with_the_inspector_lists_the_villagers_of_its_village", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::aBellWithTheInspectorListsTheVillagersOfItsVillage);
             test(helper, TestGroup.VILLAGERS, "a_bell_nobody_claimed_belongs_to_no_village", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::aBellNobodyClaimedBelongsToNoVillage);
             test(helper, TestGroup.VILLAGERS, "the_inspector_never_uses_a_bed_whichever_half_it_clicks", com.sheepfromheaven.minenow.villager.VillagerInspectorTests::theInspectorNeverUsesABedWhicheverHalfItClicks);

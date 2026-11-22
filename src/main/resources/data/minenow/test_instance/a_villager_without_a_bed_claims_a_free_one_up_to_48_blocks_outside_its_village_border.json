@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_51",
+  "function": "minenow:a_villager_without_a_bed_claims_a_free_one_up_to_48_blocks_outside_its_village_border",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

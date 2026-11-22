@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_48",
+  "function": "minenow:a_villager_does_not_claim_a_job_block_further_than_48_blocks_from_its_village_border",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

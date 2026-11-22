@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:shepherd_sells_the_wool_it_sheared_in_the_colour_it_holds",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

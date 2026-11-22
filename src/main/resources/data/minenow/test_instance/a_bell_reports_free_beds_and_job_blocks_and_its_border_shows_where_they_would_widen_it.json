@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_50",
+  "function": "minenow:a_bell_reports_free_beds_and_job_blocks_and_its_border_shows_where_they_would_widen_it",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}
