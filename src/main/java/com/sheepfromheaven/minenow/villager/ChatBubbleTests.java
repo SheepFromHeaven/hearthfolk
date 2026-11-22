@@ -38,7 +38,7 @@ public final class ChatBubbleTests {
     @SuppressWarnings("removal")
     private static void playerNear(GameTestHelper helper, Villager villager) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
-        player.snapTo(villager.getX() + 6, villager.getY(), villager.getZ());
+        player.snapTo(villager.getX(), villager.getY(), villager.getZ() - 2);
     }
 
     private static Villager[] farmersAtTheBell(GameTestHelper helper) {
@@ -61,6 +61,12 @@ public final class ChatBubbleTests {
         Villager a = pair[0];
         Villager b = pair[1];
         List<SpeechBubbles.Payload> sent = record(a, b);
+        var posA = helper.absoluteVec(new net.minecraft.world.phys.Vec3(11.5, 1, 12.5));
+        var posB = helper.absoluteVec(new net.minecraft.world.phys.Vec3(13.5, 1, 12.5));
+        helper.onEachTick(() -> {
+            a.snapTo(posA.x, posA.y, posA.z);
+            b.snapTo(posB.x, posB.y, posB.z);
+        });
 
         helper.succeedWhen(() -> {
             helper.assertTrue(sent.size() >= 2 * ChatBubbles.EXCHANGES, "Three exchanges are six bubbles, got " + sent.size());
