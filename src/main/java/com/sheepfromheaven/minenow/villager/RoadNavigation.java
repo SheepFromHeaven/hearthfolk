@@ -23,7 +23,7 @@ import net.minecraft.core.BlockPos;
  */
 public class RoadNavigation extends GroundPathNavigation {
     /** Extra costs make the search look further, so it gets more room than vanilla's follow range allows. */
-    private static final int MIN_VISITED_NODES = 1024;
+    private static final int MIN_VISITED_NODES = 4096;
 
     public RoadNavigation(Mob mob, Level level) {
         super(mob, level);
