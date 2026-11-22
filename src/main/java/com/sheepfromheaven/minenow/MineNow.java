@@ -121,6 +121,8 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(HomeStorage::onConversion);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Belongings::onEntityLeave);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Belongings::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.SpeechBubbles::onRegisterCommands);
+        modBus.addListener(com.sheepfromheaven.minenow.villager.SpeechBubbles::onRegisterPayloads);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onLevelTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onEntityTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Exports::onEntityLeave);
@@ -251,6 +253,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_named_villagers_death_message_has_its_name", com.sheepfromheaven.minenow.villager.DeathMessagesTests::aNamedVillagersDeathMessageHasItsName);
             test(helper, TestGroup.VILLAGERS, "an_unnamed_villager_dies_without_a_message", com.sheepfromheaven.minenow.villager.DeathMessagesTests::anUnnamedVillagerDiesWithoutAMessage);
             test(helper, TestGroup.VILLAGERS, "only_players_near_the_villager_are_told_of_its_death", com.sheepfromheaven.minenow.villager.DeathMessagesTests::onlyPlayersNearTheVillagerAreTold);
+            test(helper, TestGroup.VILLAGERS, "a_bubble_is_sent_to_players_within_16_blocks_only", com.sheepfromheaven.minenow.villager.SpeechBubbleTests::aBubbleIsSentToPlayersWithin16BlocksOnly);
             test(helper, TestGroup.VILLAGERS, "a_named_babys_birth_message_has_its_name", com.sheepfromheaven.minenow.villager.BirthMessagesTests::aNamedBabysBirthMessageHasItsName);
             test(helper, TestGroup.VILLAGERS, "an_adult_villager_is_not_announced_as_born", com.sheepfromheaven.minenow.villager.BirthMessagesTests::anAdultVillagerIsNotAnnouncedAsBorn);
             test(helper, TestGroup.STORAGE, "a_fishermans_barrel_opens_again_when_he_dies", com.sheepfromheaven.minenow.villager.AbandonedStorageTests::aFishermansBarrelOpensAgainWhenHeDies);
