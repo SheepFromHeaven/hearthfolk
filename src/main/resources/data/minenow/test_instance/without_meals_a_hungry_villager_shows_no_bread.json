@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_villagers_eat_meals",
+  "function": "minenow:without_meals_a_hungry_villager_shows_no_bread",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 20
+}

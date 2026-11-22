@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_44",
+  "function": "minenow:a_villager_in_an_alarm_shows_a_bell",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}
