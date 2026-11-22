@@ -102,7 +102,7 @@ public final class NeedBubbles {
         }).orElse(null);
     }
 
-    private static Item jobBlockIcon(Villager villager) {
+    static Item jobBlockIcon(Villager villager) {
         Holder<VillagerProfession> profession = villager.getVillagerData().profession();
         if (profession.is(VillagerProfession.NONE)) return Items.LECTERN;
         for (Holder<PoiType> type : BuiltInRegistries.POINT_OF_INTEREST_TYPE.listElements().toList()) {

@@ -41,6 +41,7 @@ public final class DeathMessages {
     public static void onJoin(EntityJoinLevelEvent event) {
         if (event.loadedFromDisk() || !(event.getEntity() instanceof Villager villager) || !villager.isBaby() || !(event.getLevel() instanceof ServerLevel level)) return;
         VillagerNames.nameIfMissing(villager);
+        if (birth(villager).isPresent()) ChatBubbles.noteBirth(level, villager);
         birth(villager).ifPresent(message -> level.players().stream()
                 .filter(player -> player.distanceToSqr(villager) <= (double) RANGE * RANGE)
                 .forEach(player -> player.sendSystemMessage(message)));
@@ -48,6 +49,7 @@ public final class DeathMessages {
 
     public static void onDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) return;
+        if (message(villager, event.getSource()).isPresent()) ChatBubbles.noteDeath(level, villager);
         if (!level.getGameRules().get(GameRules.SHOW_DEATH_MESSAGES)) return;
         message(villager, event.getSource()).ifPresent(message -> recipients(level, villager).forEach(player -> player.sendSystemMessage(message)));
     }
