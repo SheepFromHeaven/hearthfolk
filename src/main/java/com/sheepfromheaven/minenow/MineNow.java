@@ -97,6 +97,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleReport::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleCues::onEntityTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.NeedBubbles::onEntityTick);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.ChatBubbles::onLevelTick);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onFarmlandTrample);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(ProfessionTrades::onEntityInteract);
@@ -644,6 +645,9 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_walking_to_shelter_shows_a_water_bucket", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aVillagerWalkingToShelterShowsAWaterBucket);
             test(helper, TestGroup.VILLAGERS, "a_panicking_villager_shows_a_fright_icon", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aPanickingVillagerShowsAFrightIcon);
             test(helper, TestGroup.VILLAGERS, "a_villager_in_an_alarm_shows_a_bell", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aVillagerInAnAlarmShowsABell);
+            test(helper, TestGroup.VILLAGERS, "two_villagers_at_a_bell_chat_in_turn_about_their_goods", com.sheepfromheaven.minenow.villager.ChatBubbleTests::twoVillagersAtABellChatInTurnAboutTheirGoods);
+            test(helper, TestGroup.VILLAGERS, "after_a_death_in_the_village_a_members_bubble_is_a_poppy", com.sheepfromheaven.minenow.villager.ChatBubbleTests::afterADeathInTheVillageAMembersBubbleIsAPoppy);
+            test(helper, TestGroup.VILLAGERS, "without_speech_bubbles_villagers_do_not_chat", com.sheepfromheaven.minenow.villager.ChatBubbleTests::withoutSpeechBubblesVillagersDoNotChat);
             test(helper, TestGroup.VILLAGERS, "without_names_a_spawned_villager_stays_nameless", VillagerNamesTests::withoutNamesASpawnedVillagerStaysNameless);
             test(helper, TestGroup.VILLAGERS, "without_names_a_born_villager_stays_nameless", VillagerNamesTests::withoutNamesABornVillagerStaysNameless);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);

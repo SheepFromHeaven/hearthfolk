@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_speech_bubbles",
+  "function": "minenow:without_speech_bubbles_villagers_do_not_chat",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}
