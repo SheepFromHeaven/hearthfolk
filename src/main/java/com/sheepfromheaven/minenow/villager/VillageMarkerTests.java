@@ -18,6 +18,7 @@ public final class VillageMarkerTests {
         GameTestHelpers.fence(helper);
         Villager near = GameTestHelpers.spawnWithHome(helper, new BlockPos(8, 1, 8), new BlockPos(6, 1, 4));
         Villager far = GameTestHelpers.spawnWithHome(helper, new BlockPos(66, 1, 8), new BlockPos(68, 1, 4));
+        far.setNoAi(true);
         VillageTests.claimBell(helper, near, BELL);
         helper.setBlock(MARKER, base);
         helper.setBlock(MARKER.above(), top);
