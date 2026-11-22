@@ -638,6 +638,12 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_without_a_job_site_shows_its_job_block", com.sheepfromheaven.minenow.villager.NeedBubbleTests::aVillagerWithoutAJobSiteShowsItsJobBlock);
             test(helper, TestGroup.VILLAGERS, "a_worker_with_no_work_area_shows_what_its_work_needs", com.sheepfromheaven.minenow.villager.NeedBubbleTests::aWorkerWithNoWorkAreaShowsWhatItsWorkNeeds);
             test(helper, TestGroup.VILLAGERS, "without_speech_bubbles_nothing_is_sent", com.sheepfromheaven.minenow.villager.NeedBubbleTests::withoutSpeechBubblesNothingIsSent);
+            test(helper, TestGroup.VILLAGERS, "a_hungry_villager_shows_bread", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aHungryVillagerShowsBread);
+            test(helper, TestGroup.VILLAGERS, "without_meals_a_hungry_villager_shows_no_bread", com.sheepfromheaven.minenow.villager.StatusBubbleTests::withoutMealsAHungryVillagerShowsNoBread);
+            test(helper, TestGroup.VILLAGERS, "a_need_shows_instead_of_hunger", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aNeedShowsInsteadOfHunger);
+            test(helper, TestGroup.VILLAGERS, "a_villager_walking_to_shelter_shows_a_water_bucket", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aVillagerWalkingToShelterShowsAWaterBucket);
+            test(helper, TestGroup.VILLAGERS, "a_panicking_villager_shows_a_fright_icon", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aPanickingVillagerShowsAFrightIcon);
+            test(helper, TestGroup.VILLAGERS, "a_villager_in_an_alarm_shows_a_bell", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aVillagerInAnAlarmShowsABell);
             test(helper, TestGroup.VILLAGERS, "without_names_a_spawned_villager_stays_nameless", VillagerNamesTests::withoutNamesASpawnedVillagerStaysNameless);
             test(helper, TestGroup.VILLAGERS, "without_names_a_born_villager_stays_nameless", VillagerNamesTests::withoutNamesABornVillagerStaysNameless);
             test(helper, TestGroup.ROADS, "villager_takes_the_road_instead_of_cutting_across_grass", RoadTests::villagerTakesTheRoadInsteadOfCuttingAcrossGrass);

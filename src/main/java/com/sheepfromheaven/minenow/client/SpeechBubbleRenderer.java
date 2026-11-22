@@ -26,6 +26,7 @@ import net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEve
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Draws the speech bubble the server sent for an entity ({@code villager/SpeechBubbles}) over its head, billboarded. It hooks
@@ -48,20 +49,22 @@ public final class SpeechBubbleRenderer {
 
     private static final class Bubble {
         final ItemStack icon;
+        final RenderType image;
         final int total;
         int age;
         final ItemStackRenderState item = new ItemStackRenderState();
 
-        Bubble(ItemStack icon, int total) {
+        Bubble(ItemStack icon, Optional<Identifier> image, int total) {
             this.icon = icon;
+            this.image = image.map(id -> RenderTypes.entityCutoutCull(Identifier.fromNamespaceAndPath(id.getNamespace(), "textures/gui/bubble/" + id.getPath() + ".png"))).orElse(null);
             this.total = total;
         }
     }
 
     /** One bubble per entity at a time: a new one replaces the old, an empty icon clears it. */
-    public static void set(int entityId, ItemStack icon, int ticks) {
-        if (icon.isEmpty() || ticks <= 0) BUBBLES.remove(entityId);
-        else BUBBLES.put(entityId, new Bubble(icon, ticks));
+    public static void set(int entityId, ItemStack icon, Optional<Identifier> image, int ticks) {
+        if (icon.isEmpty() && image.isEmpty() || ticks <= 0) BUBBLES.remove(entityId);
+        else BUBBLES.put(entityId, new Bubble(icon, image, ticks));
     }
 
     @SubscribeEvent
@@ -109,6 +112,20 @@ public final class SpeechBubbleRenderer {
         });
         poseStack.popPose();
 
+        if (bubble.image != null) {
+            float size = 16 * PIXEL;
+            float x = (WIDTH_PX - 16) / 2F * PIXEL - WIDTH_PX * PIXEL / 2F;
+            float y = HEIGHT_PX * PIXEL - (2 + 16) * PIXEL;
+            poseStack.translate(x, y, -0.01F);
+            event.getSubmitNodeCollector().submitCustomGeometry(poseStack, bubble.image, (pose, buffer) -> {
+                vertex(buffer, pose, 0, 0, 0, 1, argb);
+                vertex(buffer, pose, size, 0, 1, 1, argb);
+                vertex(buffer, pose, size, size, 1, 0, argb);
+                vertex(buffer, pose, 0, size, 0, 0, argb);
+            });
+            poseStack.popPose();
+            return;
+        }
         minecraft.getItemModelResolver().updateForTopItem(bubble.item, bubble.icon, ItemDisplayContext.GUI, minecraft.level, null, 0);
         if (!bubble.item.isEmpty()) {
             float centre = HEIGHT_PX * PIXEL - (2 + 8) * PIXEL;

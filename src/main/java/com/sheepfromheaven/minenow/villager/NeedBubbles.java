@@ -1,6 +1,10 @@
 package com.sheepfromheaven.minenow.villager;
 
+import com.sheepfromheaven.minenow.MineNow;
 import com.sheepfromheaven.minenow.MineNowConfig;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.schedule.Activity;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -18,6 +22,7 @@ import java.util.WeakHashMap;
 
 /** A villager says what it needs in a speech bubble: the item icon of the first reason {@link IdleReason#of} finds. */
 public final class NeedBubbles {
+    static final Identifier FRIGHT = Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "fright");
     private static final int INTERVAL = 80;
     static final int SHOWN_TICKS = 60;
     static final int COOLDOWN_TICKS = 160;
@@ -33,16 +38,42 @@ public final class NeedBubbles {
     }
 
     /** Shows the bubble if one is due: the switch is on, it is awake, a player is near and its cooldown is over. Returns what it showed. */
-    static ItemStack poll(ServerLevel level, Villager villager) {
-        if (!MineNowConfig.enabled(MineNowConfig.Feature.SPEECH_BUBBLES)) return ItemStack.EMPTY;
-        if (!IdleCues.isAwake(villager) || level.getNearestPlayer(villager, SpeechBubbles.RANGE) == null) return ItemStack.EMPTY;
+    static Shown poll(ServerLevel level, Villager villager) {
+        if (!MineNowConfig.enabled(MineNowConfig.Feature.SPEECH_BUBBLES)) return Shown.NONE;
+        if (!IdleCues.isAwake(villager) || level.getNearestPlayer(villager, SpeechBubbles.RANGE) == null) return Shown.NONE;
         long now = level.getGameTime();
-        if (now < NEXT_AT.getOrDefault(villager, 0L)) return ItemStack.EMPTY;
-        ItemStack icon = iconFor(level, villager);
-        if (icon.isEmpty()) return ItemStack.EMPTY;
-        SpeechBubbles.show(villager, icon, SHOWN_TICKS);
+        if (now < NEXT_AT.getOrDefault(villager, 0L)) return Shown.NONE;
+        Shown shown = bubbleFor(level, villager);
+        if (shown.isEmpty()) return Shown.NONE;
+        if (shown.image() != null) SpeechBubbles.show(villager, shown.image(), SHOWN_TICKS);
+        else SpeechBubbles.show(villager, shown.item(), SHOWN_TICKS);
         NEXT_AT.put(villager, now + SHOWN_TICKS + COOLDOWN_TICKS);
-        return icon;
+        return shown;
+    }
+
+    /** What a bubble shows: an item, or a picture of our own when no item fits. */
+    record Shown(ItemStack item, @Nullable Identifier image) {
+        static final Shown NONE = new Shown(ItemStack.EMPTY, null);
+
+        boolean isEmpty() {
+            return item.isEmpty() && image == null;
+        }
+    }
+
+    /** A need wins over a status when both apply. */
+    static Shown bubbleFor(ServerLevel level, Villager villager) {
+        ItemStack need = iconFor(level, villager);
+        if (!need.isEmpty()) return new Shown(need, null);
+        return statusFor(level, villager);
+    }
+
+    /** What the villager is going through: panic, an alarm, walking out of the rain, hunger, in that order. */
+    static Shown statusFor(ServerLevel level, Villager villager) {
+        if (villager.getBrain().isActive(Activity.PANIC)) return new Shown(ItemStack.EMPTY, FRIGHT);
+        if (Alarms.of(level, villager).isPresent()) return new Shown(new ItemStack(Items.BELL), null);
+        if (villager.getBrain().getRunningBehaviors().stream().anyMatch(SeekShelter.class::isInstance)) return new Shown(new ItemStack(Items.WATER_BUCKET), null);
+        if (Meals.isHungry(villager)) return new Shown(new ItemStack(Items.BREAD), null);
+        return Shown.NONE;
     }
 
     /** The icon of the villager's first reason (broke beats out of fuel, since NO_MONEY is only ever listed after NO_MATERIALS), or empty when nothing is wrong or the reason has no icon. */

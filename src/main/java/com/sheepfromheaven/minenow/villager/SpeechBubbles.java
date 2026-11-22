@@ -22,6 +22,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /** A speech bubble with an item icon over a villager's head: the server says who shows what, the client draws it ({@code client/SpeechBubbleRenderer}). */
@@ -30,11 +31,12 @@ public final class SpeechBubbles {
     private static final double COMMAND_RANGE = 8;
     private static final int DEFAULT_SECONDS = 5;
 
-    public record Payload(int entityId, ItemStack icon, int ticks) implements CustomPacketPayload {
+    public record Payload(int entityId, ItemStack icon, Optional<Identifier> image, int ticks) implements CustomPacketPayload {
         public static final Type<Payload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "speech_bubble"));
         public static final StreamCodec<RegistryFriendlyByteBuf, Payload> CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, Payload::entityId,
                 ItemStack.OPTIONAL_STREAM_CODEC, Payload::icon,
+                ByteBufCodecs.optional(Identifier.STREAM_CODEC), Payload::image,
                 ByteBufCodecs.VAR_INT, Payload::ticks,
                 Payload::new);
 
@@ -53,7 +55,15 @@ public final class SpeechBubbles {
 
     /** Shows {@code icon} over the villager for {@code ticks} to the players within {@link #RANGE} blocks of it; an empty icon clears the bubble. */
     public static void show(Villager villager, ItemStack icon, int ticks) {
-        Payload payload = new Payload(villager.getId(), icon.copy(), icon.isEmpty() ? 0 : ticks);
+        send(villager, new Payload(villager.getId(), icon.copy(), Optional.empty(), icon.isEmpty() ? 0 : ticks));
+    }
+
+    /** Shows a picture that is not an item, a texture under {@code textures/gui/bubble/}, the same way. */
+    public static void show(Villager villager, Identifier image, int ticks) {
+        send(villager, new Payload(villager.getId(), ItemStack.EMPTY, Optional.of(image), ticks));
+    }
+
+    private static void send(Villager villager, Payload payload) {
         for (ServerPlayer player : recipients(villager)) sender.accept(player, payload);
     }
 
@@ -67,7 +77,7 @@ public final class SpeechBubbles {
     }
 
     private static void handle(Payload payload, IPayloadContext context) {
-        if (FMLEnvironment.getDist() == Dist.CLIENT) context.enqueueWork(() -> SpeechBubbleRenderer.set(payload.entityId(), payload.icon(), payload.ticks()));
+        if (FMLEnvironment.getDist() == Dist.CLIENT) context.enqueueWork(() -> SpeechBubbleRenderer.set(payload.entityId(), payload.icon(), payload.image(), payload.ticks()));
     }
 
     /** {@code /minenow bubble <item> [seconds]}: shows the bubble on the nearest villager within 8 blocks. */
