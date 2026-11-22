@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_broke_worker_shows_an_emerald",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 20
+}

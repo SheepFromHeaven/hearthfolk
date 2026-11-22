@@ -34,6 +34,8 @@
   "minenow.settings.villagersLevelThroughWork.tooltip": "Villagers earn experience from their work, not only from trading with players. Levels decide how far a farmer's field reaches, how deep a miner digs and which recipes a craftsman knows.\nOff: only trading levels them up, as in vanilla, so they progress much more slowly.",
   "minenow.settings.villagersGetNames": "Villagers Get Names",
   "minenow.settings.villagersGetNames.tooltip": "Every villager gets a name, and their births and deaths are announced.\nOff: new villagers stay nameless as in vanilla. Names already given stay.",
+  "minenow.settings.speechBubbles": "Speech Bubbles",
+  "minenow.settings.speechBubbles.tooltip": "Villagers show what they need in a speech bubble with an item icon: a tool, fuel, an emerald, a chest.\nOff: villagers show no speech bubbles.",
   "minenow.settings.travellingMerchants": "Travelling Merchants",
   "minenow.settings.travellingMerchants.tooltip": "A village's export goods draw travelling merchants that buy them for new emeralds and sell goods the village can't make.\nOff: none come.",
   "minenow.settings.villagersSummonGolems": "Villagers Summon Golems",

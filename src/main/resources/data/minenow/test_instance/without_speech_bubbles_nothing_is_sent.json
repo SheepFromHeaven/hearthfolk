@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_speech_bubbles",
+  "function": "minenow:without_speech_bubbles_nothing_is_sent",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 20
+}
