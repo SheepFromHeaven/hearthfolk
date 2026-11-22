@@ -137,7 +137,7 @@ public final class SpeechBubbleRenderer {
             float centre = HEIGHT_PX * PIXEL - (2 + 8) * PIXEL;
             poseStack.translate(0.0F, centre + 0.0F, -0.01F);
             float size = 16 * PIXEL;
-            poseStack.scale(size, size, size * 0.05F);
+            poseStack.scale(size, size, size);
             bubble.item.submit(poseStack, event.getSubmitNodeCollector(), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
         }
         poseStack.popPose();
