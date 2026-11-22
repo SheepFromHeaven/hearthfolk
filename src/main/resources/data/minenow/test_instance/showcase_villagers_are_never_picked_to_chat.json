@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_47",
+  "function": "minenow:showcase_villagers_are_never_picked_to_chat",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 900
+}

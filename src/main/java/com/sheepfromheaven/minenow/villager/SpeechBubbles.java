@@ -27,6 +27,7 @@ import java.util.function.BiConsumer;
 
 /** A speech bubble with an item icon over a villager's head: the server says who shows what, the client draws it ({@code client/SpeechBubbleRenderer}). */
 public final class SpeechBubbles {
+    public static final String SHOWCASE_TAG = "minenow_showcase";
     public static final double RANGE = 16;
     private static final double COMMAND_RANGE = 8;
     private static final int DEFAULT_SECONDS = 5;

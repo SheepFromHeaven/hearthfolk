@@ -255,6 +255,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_named_villagers_death_message_has_its_name", com.sheepfromheaven.minenow.villager.DeathMessagesTests::aNamedVillagersDeathMessageHasItsName);
             test(helper, TestGroup.VILLAGERS, "an_unnamed_villager_dies_without_a_message", com.sheepfromheaven.minenow.villager.DeathMessagesTests::anUnnamedVillagerDiesWithoutAMessage);
             test(helper, TestGroup.VILLAGERS, "only_players_near_the_villager_are_told_of_its_death", com.sheepfromheaven.minenow.villager.DeathMessagesTests::onlyPlayersNearTheVillagerAreTold);
+            test(helper, TestGroup.VILLAGERS, "a_showcase_villager_gets_no_need_bubble", com.sheepfromheaven.minenow.villager.NeedBubbleTests::aShowcaseVillagerGetsNoNeedBubble);
             test(helper, TestGroup.VILLAGERS, "a_bubble_is_sent_to_players_within_16_blocks_only", com.sheepfromheaven.minenow.villager.SpeechBubbleTests::aBubbleIsSentToPlayersWithin16BlocksOnly);
             test(helper, TestGroup.VILLAGERS, "a_named_babys_birth_message_has_its_name", com.sheepfromheaven.minenow.villager.BirthMessagesTests::aNamedBabysBirthMessageHasItsName);
             test(helper, TestGroup.VILLAGERS, "an_adult_villager_is_not_announced_as_born", com.sheepfromheaven.minenow.villager.BirthMessagesTests::anAdultVillagerIsNotAnnouncedAsBorn);
@@ -647,6 +648,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_in_an_alarm_shows_a_bell", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aVillagerInAnAlarmShowsABell);
             test(helper, TestGroup.VILLAGERS, "two_villagers_at_a_bell_chat_in_turn_about_their_goods", com.sheepfromheaven.minenow.villager.ChatBubbleTests::twoVillagersAtABellChatInTurnAboutTheirGoods);
             test(helper, TestGroup.VILLAGERS, "after_a_death_in_the_village_a_members_bubble_is_a_poppy", com.sheepfromheaven.minenow.villager.ChatBubbleTests::afterADeathInTheVillageAMembersBubbleIsAPoppy);
+            test(helper, TestGroup.VILLAGERS, "showcase_villagers_are_never_picked_to_chat", com.sheepfromheaven.minenow.villager.ChatBubbleTests::showcaseVillagersAreNeverPickedToChat);
             test(helper, TestGroup.VILLAGERS, "without_speech_bubbles_villagers_do_not_chat", com.sheepfromheaven.minenow.villager.ChatBubbleTests::withoutSpeechBubblesVillagersDoNotChat);
             test(helper, TestGroup.VILLAGERS, "without_names_a_spawned_villager_stays_nameless", VillagerNamesTests::withoutNamesASpawnedVillagerStaysNameless);
             test(helper, TestGroup.VILLAGERS, "without_names_a_born_villager_stays_nameless", VillagerNamesTests::withoutNamesABornVillagerStaysNameless);

@@ -49,22 +49,28 @@ public final class SpeechBubbleRenderer {
 
     private static final class Bubble {
         final ItemStack icon;
+        final Optional<Identifier> imageId;
         final RenderType image;
-        final int total;
+        int total;
         int age;
         final ItemStackRenderState item = new ItemStackRenderState();
 
         Bubble(ItemStack icon, Optional<Identifier> image, int total) {
             this.icon = icon;
+            this.imageId = image;
             this.image = image.map(id -> RenderTypes.entityCutoutCull(Identifier.fromNamespaceAndPath(id.getNamespace(), "textures/gui/bubble/" + id.getPath() + ".png"))).orElse(null);
             this.total = total;
         }
     }
 
-    /** One bubble per entity at a time: a new one replaces the old, an empty icon clears it. */
+    /** One bubble per entity at a time: a new one replaces the old, the same one again only extends its time, an empty icon clears it. */
     public static void set(int entityId, ItemStack icon, Optional<Identifier> image, int ticks) {
         if (icon.isEmpty() && image.isEmpty() || ticks <= 0) BUBBLES.remove(entityId);
-        else BUBBLES.put(entityId, new Bubble(icon, image, ticks));
+        else {
+            Bubble shown = BUBBLES.get(entityId);
+            if (shown != null && shown.imageId.equals(image) && ItemStack.matches(shown.icon, icon)) shown.total = shown.age + ticks;
+            else BUBBLES.put(entityId, new Bubble(icon, image, ticks));
+        }
     }
 
     @SubscribeEvent

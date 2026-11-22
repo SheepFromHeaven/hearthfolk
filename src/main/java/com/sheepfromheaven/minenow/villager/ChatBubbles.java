@@ -139,7 +139,7 @@ public final class ChatBubbles {
             Job job = JOBS.get(villager);
             if (job == null) JOBS.put(villager, new Job(profession, Long.MIN_VALUE));
             else if (!job.profession().equals(profession)) JOBS.put(villager, new Job(profession, profession.is(VillagerProfession.NONE) ? Long.MIN_VALUE : now));
-            if (BUSY.containsKey(villager) || now < QUIET_UNTIL.getOrDefault(villager, 0L) || !chatting(villager)) continue;
+            if (villager.entityTags().contains(SpeechBubbles.SHOWCASE_TAG) || BUSY.containsKey(villager) || now < QUIET_UNTIL.getOrDefault(villager, 0L) || !chatting(villager)) continue;
             if (level.getNearestPlayer(villager, SpeechBubbles.RANGE) == null || topics(level, villager).isEmpty()) continue;
             ready.add(villager);
         }
