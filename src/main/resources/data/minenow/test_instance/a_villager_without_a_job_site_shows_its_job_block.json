@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_villager_without_a_job_site_shows_its_job_block",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 20
+}

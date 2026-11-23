@@ -50,13 +50,24 @@ public final class RainShelterTests {
         }
     }
 
+    private static final java.util.List<Runnable> AFTER_TICK = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        if (AFTER_TICK.isEmpty()) return;
+        java.util.List<Runnable> due = java.util.List.copyOf(AFTER_TICK);
+        AFTER_TICK.clear();
+        due.forEach(Runnable::run);
+    }
+
     /** Runs {@code then} once the rain is falling: it fades in over about twenty ticks, and behaviour that starts before it would not feel it. */
     public static void whenItRains(GameTestHelper helper, Runnable then) {
         boolean[] started = {false};
         helper.onEachTick(() -> {
             if (started[0] || !helper.getLevel().isRaining()) return;
             started[0] = true;
-            then.run();
+            // the test framework iterates its scheduled tasks while running this one, and `then` schedules more (onEachTick, succeedWhen):
+            // adding to that map mid-iteration crashes the server when it grows, so the body runs at the end of the tick
+            AFTER_TICK.add(then);
         });
     }
 

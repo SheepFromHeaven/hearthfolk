@@ -104,6 +104,8 @@ public final class IdleReport {
         if (extra != null) extra.accept(villager, job);
         job.forEach(line -> add(lines, line));
         List<IdleReason> reasons = IdleReason.of(level, villager);
+        ItemStack bubble = com.sheepfromheaven.minenow.MineNowConfig.enabled(com.sheepfromheaven.minenow.MineNowConfig.Feature.SPEECH_BUBBLES) ? NeedBubbles.iconFor(level, villager) : ItemStack.EMPTY;
+        if (!bubble.isEmpty()) add(lines, "Speech bubble: " + bubble.getHoverName().getString());
         add(lines, reasons.isEmpty() ? "Nothing is stopping it" : "Stopping it: " + String.join("; ", reasons.stream().map(reason -> reason.message).toList()));
     }
 

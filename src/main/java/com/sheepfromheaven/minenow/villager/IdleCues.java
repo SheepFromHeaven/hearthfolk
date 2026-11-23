@@ -23,7 +23,7 @@ public final class IdleCues {
         return !villager.isBaby() && TradeTable.forVillager(villager).isPresent() && villager.getBrain().isActive(Activity.WORK);
     }
 
-    private static boolean isAwake(Villager villager) {
+    static boolean isAwake(Villager villager) {
         return !villager.isBaby() && !villager.isSleeping() && !villager.isTrading() && TradeTable.forVillager(villager).isPresent();
     }
 

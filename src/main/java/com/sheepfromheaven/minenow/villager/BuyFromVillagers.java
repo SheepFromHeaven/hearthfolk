@@ -195,6 +195,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             if (old >= 0) buyer.getInventory().removeItemNoUpdate(old);
             int handed = Economy.take(level, seller, deal.item(), lots * price.count());
             Economy.give(level, buyer, new ItemStack(deal.item(), handed));
+            if (handed > 0) ChatBubbles.bought(buyer, deal.item());
             if (deal.upgrade()) UPGRADES.incrementAndGet();
             if (deal.breeding()) BREEDING_FOOD.merge(deal.item(), handed, Integer::sum);
             if (old >= 0 && !buyer.getMainHandItem().isEmpty()) Tools.showInHand(buyer, true);

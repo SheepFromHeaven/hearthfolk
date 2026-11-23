@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_54",
+  "function": "minenow:after_a_death_in_the_village_a_members_bubble_is_a_poppy",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

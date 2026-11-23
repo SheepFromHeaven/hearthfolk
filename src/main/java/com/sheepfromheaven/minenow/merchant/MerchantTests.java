@@ -112,7 +112,7 @@ public final class MerchantTests {
 
     public static void aMerchantLeavesFarMulesAlone(GameTestHelper helper) {
         Villager merchant = spawnMerchant(helper, 1);
-        Mule mule = helper.spawn(EntityTypes.MULE, new BlockPos(22, 1, 22));
+        Mule mule = helper.spawnWithNoFreeWill(EntityTypes.MULE, new BlockPos(22, 1, 22));
 
         helper.runAfterDelay(200, () -> {
             helper.assertTrue(mule.getData(Merchant.MULE_OWNER).isEmpty(), "A mule 12 blocks from the station isn't the merchant's, owner " + mule.getData(Merchant.MULE_OWNER) + " " + merchant.getUUID());

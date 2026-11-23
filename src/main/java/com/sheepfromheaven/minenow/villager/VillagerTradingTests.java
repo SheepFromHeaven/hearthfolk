@@ -97,7 +97,7 @@ public final class VillagerTradingTests {
 
     public static void aVillagerBuysItsSupplyFromATravellingMerchant(GameTestHelper helper) {
         Villager smith = spawnToolsmith(helper, 20);
-        var merchant = Exports.sendTrader(helper.getLevel(), smith);
+        var merchant = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, smith);
         helper.assertTrue(merchant != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> {
@@ -111,7 +111,7 @@ public final class VillagerTradingTests {
     public static void aVillagerNeverBuysFromAMerchantBelowItsReserve(GameTestHelper helper) {
         Villager smith = spawnToolsmith(helper, 0);
         smith.getInventory().addItem(new ItemStack(Items.EMERALD, 2));
-        Exports.sendTrader(helper.getLevel(), smith);
+        com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, smith);
 
         helper.runAfterDelay(600, () -> {
             helper.assertTrue(count(smith, Items.STRING) == 0, "Its food money is not for string, has " + count(smith, Items.STRING));
@@ -121,7 +121,7 @@ public final class VillagerTradingTests {
 
     public static void aVillagerBuysNothingFromAMerchantOutOfStock(GameTestHelper helper) {
         Villager smith = spawnToolsmith(helper, 20);
-        var merchant = Exports.sendTrader(helper.getLevel(), smith);
+        var merchant = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, smith);
         var string = offerOf(merchant, Items.STRING);
         while (!string.isOutOfStock()) string.increaseUses();
 
@@ -187,7 +187,7 @@ public final class VillagerTradingTests {
         helper.setBlock(table, Blocks.SMITHING_TABLE);
         Villager smith = GameTestHelpers.spawnEmployed(helper, table.south(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
         VillageTests.claimBell(helper, smith, bell);
-        var merchant = Exports.sendTrader(helper.getLevel(), smith);
+        var merchant = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, smith);
         helper.assertTrue(merchant != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> {
@@ -209,7 +209,7 @@ public final class VillagerTradingTests {
         Villager smith = GameTestHelpers.spawnEmployed(helper, table.south(), table, VillagerProfession.TOOLSMITH, PoiTypes.TOOLSMITH);
         smith.getInventory().addItem(new ItemStack(Items.EMERALD, 20));
         VillageTests.claimBell(helper, smith, bell);
-        helper.assertTrue(Exports.sendTrader(helper.getLevel(), neighbour) != null, "A travelling merchant comes");
+        helper.assertTrue(com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, neighbour) != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> helper.assertTrue(count(smith, Items.STRING) >= 8,
                 "A toolsmith 60 blocks from the merchant hears the market open and walks over to buy string, has " + count(smith, Items.STRING)));

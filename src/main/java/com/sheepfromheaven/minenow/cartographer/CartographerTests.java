@@ -187,7 +187,7 @@ public final class CartographerTests {
 
         helper.onEachTick(() -> {
             if (!sent[0] && cartographer.getInventory().countItem(Items.FILLED_MAP) > 0) {
-                sent[0] = com.sheepfromheaven.minenow.villager.Exports.sendTrader(helper.getLevel(), cartographer) != null;
+                sent[0] = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, cartographer) != null;
             }
         });
         helper.succeedWhen(() -> {
@@ -201,7 +201,7 @@ public final class CartographerTests {
         Villager cartographer = spawn(helper, 1, false);
         cartographer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
 
-        var merchant = com.sheepfromheaven.minenow.villager.Exports.sendTrader(helper.getLevel(), cartographer);
+        var merchant = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, cartographer);
 
         helper.assertTrue(merchant != null, "A travelling merchant comes");
         helper.assertTrue(merchant.getOffers().stream().anyMatch(offer -> offer.getResult().is(Items.GLASS_BOTTLE)), "...selling glass bottles for the cartographer's quills");

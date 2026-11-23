@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:hostiles",
+  "function": "minenow:a_panicking_villager_shows_a_fright_icon",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

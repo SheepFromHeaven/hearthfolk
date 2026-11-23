@@ -27,11 +27,23 @@ public enum IdleReason {
     public final String message;
 
     /** Professions say when there is nothing to work on around their job site: no field, no water, no flock, no herd, no marked mine. */
-    private static final java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.entity.npc.villager.VillagerProfession>, java.util.function.BiPredicate<ServerLevel, Villager>> NO_WORK_AREA_CHECKS = new java.util.HashMap<>();
+    private static final java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.entity.npc.villager.VillagerProfession>, java.util.function.BiPredicate<ServerLevel, Villager>> NO_WORK_AREA_CHECKS = new java.util.LinkedHashMap<>();
+    private static final java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.entity.npc.villager.VillagerProfession>, net.minecraft.world.item.Item> NO_WORK_AREA_ICONS = new java.util.LinkedHashMap<>();
 
     public static void addWorkAreaCheck(net.minecraft.resources.ResourceKey<net.minecraft.world.entity.npc.villager.VillagerProfession> profession,
-                                        java.util.function.BiPredicate<ServerLevel, Villager> hasNoWorkArea) {
+                                        java.util.function.BiPredicate<ServerLevel, Villager> hasNoWorkArea,
+                                        net.minecraft.world.item.Item icon) {
         NO_WORK_AREA_CHECKS.put(profession, hasNoWorkArea);
+        NO_WORK_AREA_ICONS.put(profession, icon);
+    }
+
+    /** What the profession's work needs, shown in the speech bubble when it has no work area; null if it has none registered. */
+    public static java.util.List<net.minecraft.resources.ResourceKey<net.minecraft.world.entity.npc.villager.VillagerProfession>> workAreaProfessions() {
+        return java.util.List.copyOf(NO_WORK_AREA_ICONS.keySet());
+    }
+
+    public static net.minecraft.world.item.Item workAreaIcon(Villager villager) {
+        return villager.getVillagerData().profession().unwrapKey().map(NO_WORK_AREA_ICONS::get).orElse(null);
     }
 
     IdleReason(String message) {
