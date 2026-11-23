@@ -98,6 +98,7 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleReport::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleCues::onEntityTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.NeedBubbles::onEntityTick);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.RainShelterTests::onServerTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.ChatBubbles::onLevelTick);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onFarmlandTrample);
         NeoForge.EVENT_BUS.addListener(FarmerRules::onEntityJoin);
