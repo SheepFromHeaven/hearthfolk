@@ -60,6 +60,9 @@ public final class ChatBubbleTests {
         Villager[] pair = farmersAtTheBell(helper);
         Villager a = pair[0];
         Villager b = pair[1];
+        // standing still: villagers that wander off during the chat drift out of earshot, and it ends before six bubbles
+        a.setNoAi(true);
+        b.setNoAi(true);
         List<SpeechBubbles.Payload> sent = record(a, b);
 
         helper.succeedWhen(() -> {
