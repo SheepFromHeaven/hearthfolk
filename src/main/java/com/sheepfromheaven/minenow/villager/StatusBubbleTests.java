@@ -40,7 +40,7 @@ public final class StatusBubbleTests {
         Villager farmer = content(helper, COMPOSTER);
         helper.assertTrue(IdleReason.of(helper.getLevel(), farmer).isEmpty(), "The farmer needs nothing: " + IdleReason.of(helper.getLevel(), farmer));
         Meals.makeHungry(farmer);
-        showsItem(helper, farmer, Items.BREAD);
+        helper.assertTrue(NeedBubbles.HUNGER.equals(NeedBubbles.bubbleFor(helper.getLevel(), farmer).image()), "A hungry villager shows the bread with an exclamation mark");
         helper.succeed();
     }
 
@@ -48,6 +48,20 @@ public final class StatusBubbleTests {
         Villager farmer = content(helper, COMPOSTER);
         Meals.makeHungry(farmer);
         helper.assertTrue(NeedBubbles.bubbleFor(helper.getLevel(), farmer).isEmpty(), "With meals off nobody is hungry, so no bubble");
+        helper.succeed();
+    }
+
+    @SuppressWarnings("removal")
+    public static void aVillagerWithoutABedAsksForOneOnlyWhenAPlayerIsNear(GameTestHelper helper) {
+        Villager farmer = content(helper, COMPOSTER);
+        helper.assertTrue(!NeedBubbles.BED.equals(NeedBubbles.statusFor(helper.getLevel(), farmer).image()), "Nobody is near, so it asks for nothing");
+        net.minecraft.server.level.ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.snapTo(farmer.getX() + 10, farmer.getY(), farmer.getZ());
+        helper.assertTrue(!NeedBubbles.BED.equals(NeedBubbles.statusFor(helper.getLevel(), farmer).image()), "A player 10 blocks away is too far");
+        player.snapTo(farmer.getX() + 3, farmer.getY(), farmer.getZ());
+        helper.assertTrue(NeedBubbles.BED.equals(NeedBubbles.statusFor(helper.getLevel(), farmer).image()), "A player 3 blocks away hears that it wants a home");
+        farmer.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.HOME, net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(new BlockPos(2, 1, 2))));
+        helper.assertTrue(!NeedBubbles.BED.equals(NeedBubbles.statusFor(helper.getLevel(), farmer).image()), "With a bed it asks for nothing");
         helper.succeed();
     }
 
@@ -59,8 +73,8 @@ public final class StatusBubbleTests {
         Villager farmer = GameTestHelpers.spawnEmployed(helper, COMPOSTER.east(), COMPOSTER, VillagerProfession.FARMER, PoiTypes.FARMER);
         Meals.makeHungry(farmer);
         helper.assertTrue(IdleReason.of(helper.getLevel(), farmer).contains(IdleReason.NO_TOOL), "A farmer without a hoe lacks its tool");
-        helper.assertTrue(NeedBubbles.statusFor(helper.getLevel(), farmer).item().is(Items.BREAD), "It is hungry too");
-        showsItem(helper, farmer, TradeTable.forVillager(farmer).orElseThrow().tools().getFirst().item());
+        helper.assertTrue(NeedBubbles.HUNGER.equals(NeedBubbles.statusFor(helper.getLevel(), farmer).image()), "It is hungry too");
+        helper.assertTrue(NeedBubbles.TOOL.equals(NeedBubbles.bubbleFor(helper.getLevel(), farmer).image()), "The missing tool wins over hunger");
         helper.succeed();
     }
 
@@ -73,7 +87,7 @@ public final class StatusBubbleTests {
             Villager butcher = GameTestHelpers.spawnEmployed(helper, SMOKER.west(), SMOKER, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);
             boolean[] shown = {false};
             helper.onEachTick(() -> shown[0] |= butcher.getBrain().getRunningBehaviors().stream().anyMatch(SeekShelter.class::isInstance)
-                    && NeedBubbles.statusFor(helper.getLevel(), butcher).item().is(Items.WATER_BUCKET));
+                    && NeedBubbles.SHELTER.equals(NeedBubbles.statusFor(helper.getLevel(), butcher).image()));
             helper.succeedWhen(() -> {
                 helper.assertTrue(shown[0], "A villager walking out of the rain shows a water bucket");
                 RainShelterTests.restoreSky(helper);
@@ -87,7 +101,7 @@ public final class StatusBubbleTests {
         boolean[] shown = {false};
         helper.onEachTick(() -> {
             NeedBubbles.Shown status = NeedBubbles.statusFor(helper.getLevel(), farmer);
-            shown[0] |= farmer.getBrain().isActive(Activity.PANIC) && NeedBubbles.FRIGHT.equals(status.image()) && status.item().isEmpty();
+            shown[0] |= farmer.getBrain().isActive(Activity.PANIC) && NeedBubbles.FRIGHT.equals(status.image());
         });
         helper.succeedWhen(() -> helper.assertTrue(shown[0], "A villager fleeing a husk shows the fright icon"));
     }
@@ -107,7 +121,7 @@ public final class StatusBubbleTests {
         helper.runAfterDelay(20, () -> ((net.minecraft.world.level.block.BellBlock) Blocks.BELL).attemptToRing(helper.getLevel(), helper.absolutePos(BELL), net.minecraft.core.Direction.EAST));
         helper.succeedWhen(() -> {
             helper.assertTrue(Alarms.of(helper.getLevel(), farmer).isPresent(), "The village is in an alarm");
-            helper.assertTrue(NeedBubbles.statusFor(helper.getLevel(), farmer).item().is(Items.BELL), "A villager in an alarm shows a bell");
+            helper.assertTrue(NeedBubbles.ALARM.equals(NeedBubbles.statusFor(helper.getLevel(), farmer).image()), "A villager in an alarm shows a bell");
         });
     }
 }

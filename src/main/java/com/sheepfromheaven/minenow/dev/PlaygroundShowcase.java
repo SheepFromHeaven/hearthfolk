@@ -7,6 +7,7 @@ import com.sheepfromheaven.minenow.smelter.Smelter;
 import com.sheepfromheaven.minenow.villager.FurnaceTending;
 import com.sheepfromheaven.minenow.villager.Gear;
 import com.sheepfromheaven.minenow.villager.IdleReason;
+import com.sheepfromheaven.minenow.villager.ChatBubbles;
 import com.sheepfromheaven.minenow.villager.NeedBubbles;
 import com.sheepfromheaven.minenow.villager.SpeechBubbles;
 import com.sheepfromheaven.minenow.villager.TradeTable;
@@ -57,21 +58,14 @@ final class PlaygroundShowcase {
     private static final int BUBBLE_TICKS = 60;
     private static final float FACING_HUB = 180.0F;
 
-    /** What a showcase villager's speech bubble shows for good: an item, or one of our own pictures. */
-    private record Icon(ItemStack item, @Nullable Identifier image) {
-        static Icon of(@Nullable Item item) {
-            return new Icon(item == null ? ItemStack.EMPTY : new ItemStack(item), null);
-        }
-    }
+    private record Showing(Villager villager, NeedBubbles.Shown icon) {}
 
-    private record Showing(Villager villager, Icon icon) {}
-
-    private record Look(String name, ResourceKey<VillagerProfession> profession, ItemStack hand, List<ItemStack> armor, boolean swinging, @Nullable Function<Villager, Icon> bubble) {
+    private record Look(String name, ResourceKey<VillagerProfession> profession, ItemStack hand, List<ItemStack> armor, boolean swinging, @Nullable Function<Villager, NeedBubbles.Shown> bubble) {
         Look(String name, ResourceKey<VillagerProfession> profession, ItemStack hand, List<ItemStack> armor, boolean swinging) {
             this(name, profession, hand, armor, swinging, null);
         }
 
-        Look(String name, ResourceKey<VillagerProfession> profession, Function<Villager, Icon> bubble) {
+        Look(String name, ResourceKey<VillagerProfession> profession, Function<Villager, NeedBubbles.Shown> bubble) {
             this(name, profession, ItemStack.EMPTY, List.of(), false, bubble);
         }
 
@@ -192,8 +186,7 @@ final class PlaygroundShowcase {
     }
 
     private static void showBubble(Showing showing) {
-        if (showing.icon().image() != null) SpeechBubbles.show(showing.villager(), showing.icon().image(), BUBBLE_TICKS);
-        else SpeechBubbles.show(showing.villager(), showing.icon().item(), BUBBLE_TICKS);
+        NeedBubbles.show(showing.villager(), showing.icon(), BUBBLE_TICKS);
     }
 
     private static @Nullable Villager spawn(ServerLevel level, BlockPos pos, Look look) {
@@ -249,38 +242,34 @@ final class PlaygroundShowcase {
                         new Look("Nothing", VillagerProfession.NITWIT, Items.AIR, false))),
                 new Row("Speech bubbles: needs", needBubbles()),
                 new Row("Speech bubbles: status", List.of(
-                        fixed("Hungry", VillagerProfession.FARMER, Items.BREAD),
-                        fixed("Seeking shelter", VillagerProfession.FISHERMAN, Items.WATER_BUCKET),
-                        new Look("Frightened", VillagerProfession.LIBRARIAN, villager -> new Icon(ItemStack.EMPTY, NeedBubbles.FRIGHT)),
-                        fixed("Alarm", VillagerProfession.WEAPONSMITH, Items.BELL))),
+                        new Look("Hungry", VillagerProfession.FARMER, villager -> NeedBubbles.hungry()),
+                        new Look("Seeking shelter", VillagerProfession.FISHERMAN, villager -> NeedBubbles.sheltering()),
+                        new Look("Frightened", VillagerProfession.LIBRARIAN, villager -> NeedBubbles.frightened()),
+                        new Look("Alarm", VillagerProfession.WEAPONSMITH, villager -> NeedBubbles.alarm()))),
                 new Row("Speech bubbles: chat", List.of(
-                        fixed("Chat: my goods", VillagerProfession.FARMER, Items.WHEAT),
-                        fixed("Chat: what I bought", VillagerProfession.BUTCHER, Items.WHEAT),
-                        new Look("Chat: new job", VillagerProfession.FARMER, villager -> Icon.of(NeedBubbles.jobBlockIcon(villager))),
-                        fixed("Chat: a birth", VillagerProfession.CLERIC, Items.CAKE),
-                        fixed("Chat: a death", VillagerProfession.MASON, Items.POPPY))));
+                        new Look("Chat: my goods", VillagerProfession.FARMER, villager -> NeedBubbles.Shown.item(Items.WHEAT)),
+                        new Look("Chat: what I bought", VillagerProfession.BUTCHER, villager -> NeedBubbles.Shown.item(Items.WHEAT)),
+                        new Look("Chat: new job", VillagerProfession.FARMER, NeedBubbles::chatJobBlock),
+                        new Look("Chat: a birth", VillagerProfession.CLERIC, villager -> NeedBubbles.Shown.item(ChatBubbles.BIRTH_ICON)),
+                        new Look("Chat: a death", VillagerProfession.MASON, villager -> NeedBubbles.Shown.item(ChatBubbles.DEATH_ICON)))));
     }
 
-    private static Look fixed(String name, ResourceKey<VillagerProfession> profession, Item icon) {
-        return new Look(name, profession, villager -> Icon.of(icon));
-    }
-
-    /** The icons come from the code that picks them, so the row stays true when one changes. */
+    /** The needs come from the code that picks them, one look per reason, so the row stays true when one changes. */
     private static List<Look> needBubbles() {
         List<Look> looks = new ArrayList<>(List.of(
-                new Look("Needs a tool", VillagerProfession.FARMER, villager -> Icon.of(NeedBubbles.toolIcon(villager))),
-                new Look("Needs fuel", VillagerProfession.BUTCHER, villager -> Icon.of(TradeTable.forVillager(villager)
-                        .flatMap(table -> table.suppliesUpTo(villager.getVillagerData().level()).stream()
-                                .filter(supply -> FurnaceTending.isFuel(new ItemStack(supply.item()))).findFirst())
-                        .map(TradeTable.Supply::item).orElse(null))),
-                fixed("Needs money", VillagerProfession.LIBRARIAN, Items.EMERALD),
-                fixed("Storage full", VillagerProfession.FISHERMAN, Items.CHEST),
-                new Look("No job block", VillagerProfession.FARMER, villager -> Icon.of(NeedBubbles.jobBlockIcon(villager))),
-                new Look("No job block (unemployed)", VillagerProfession.NONE, villager -> Icon.of(NeedBubbles.jobBlockIcon(villager)))));
+                need("Needs a tool", VillagerProfession.FARMER, IdleReason.NO_TOOL),
+                need("Needs fuel", VillagerProfession.BUTCHER, IdleReason.NO_MATERIALS),
+                need("Needs money", VillagerProfession.LIBRARIAN, IdleReason.NO_MONEY),
+                need("Storage full", VillagerProfession.FISHERMAN, IdleReason.STORAGE_FULL),
+                need("No job block", VillagerProfession.FARMER, IdleReason.NO_JOB_SITE)));
         for (ResourceKey<VillagerProfession> profession : IdleReason.workAreaProfessions()) {
-            looks.add(new Look("No work area: " + profession.identifier().getPath(), profession, villager -> Icon.of(IdleReason.workAreaIcon(villager))));
+            looks.add(need("No work area: " + profession.identifier().getPath(), profession, IdleReason.NO_WORK_AREA));
         }
         return looks;
+    }
+
+    private static Look need(String name, ResourceKey<VillagerProfession> profession, IdleReason reason) {
+        return new Look(name, profession, villager -> NeedBubbles.needFor((ServerLevel) villager.level(), reason, villager));
     }
 
     private static List<Look> tools(boolean swinging) {

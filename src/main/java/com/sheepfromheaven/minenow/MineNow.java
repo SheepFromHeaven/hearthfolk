@@ -92,9 +92,9 @@ public final class MineNow {
         FarmerReport.register();
         com.sheepfromheaven.minenow.butcher.TendHerd.registerWants();
         com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(net.minecraft.world.entity.npc.villager.VillagerProfession.FISHERMAN, com.sheepfromheaven.minenow.fisherman.GoFishing::hasNoWater, net.minecraft.world.item.Items.WATER_BUCKET);
-        com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(net.minecraft.world.entity.npc.villager.VillagerProfession.SHEPHERD, com.sheepfromheaven.minenow.shepherd.ShearSheep::hasNoFlock, net.minecraft.world.item.Items.WOOL.white());
+        com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(net.minecraft.world.entity.npc.villager.VillagerProfession.SHEPHERD, com.sheepfromheaven.minenow.shepherd.ShearSheep::hasNoFlock, net.minecraft.world.item.Items.SHEARS);
         com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(net.minecraft.world.entity.npc.villager.VillagerProfession.BUTCHER, com.sheepfromheaven.minenow.butcher.TendHerd::hasNoHerd, net.minecraft.world.item.Items.WHEAT);
-        com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(Miner.PROFESSION, com.sheepfromheaven.minenow.miner.DigQuarry::hasNoMine, net.minecraft.world.item.Items.COBBLESTONE);
+        com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(Miner.PROFESSION, com.sheepfromheaven.minenow.miner.DigQuarry::hasNoMine, net.minecraft.world.item.Items.IRON_PICKAXE);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleReport::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.IdleCues::onEntityTick);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.NeedBubbles::onEntityTick);
@@ -648,6 +648,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "without_speech_bubbles_nothing_is_sent", com.sheepfromheaven.minenow.villager.NeedBubbleTests::withoutSpeechBubblesNothingIsSent);
             test(helper, TestGroup.VILLAGERS, "a_hungry_villager_shows_bread", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aHungryVillagerShowsBread);
             test(helper, TestGroup.VILLAGERS, "without_meals_a_hungry_villager_shows_no_bread", com.sheepfromheaven.minenow.villager.StatusBubbleTests::withoutMealsAHungryVillagerShowsNoBread);
+            test(helper, TestGroup.VILLAGERS, "a_villager_without_a_bed_asks_for_one_only_when_a_player_is_near", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aVillagerWithoutABedAsksForOneOnlyWhenAPlayerIsNear);
             test(helper, TestGroup.VILLAGERS, "a_need_shows_instead_of_hunger", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aNeedShowsInsteadOfHunger);
             test(helper, TestGroup.VILLAGERS, "a_villager_walking_to_shelter_shows_a_water_bucket", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aVillagerWalkingToShelterShowsAWaterBucket);
             test(helper, TestGroup.VILLAGERS, "a_panicking_villager_shows_a_fright_icon", com.sheepfromheaven.minenow.villager.StatusBubbleTests::aPanickingVillagerShowsAFrightIcon);

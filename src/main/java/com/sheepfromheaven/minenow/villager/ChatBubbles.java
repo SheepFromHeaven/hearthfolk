@@ -39,6 +39,9 @@ public final class ChatBubbles {
 
     private record Bought(Item item, long at) {}
 
+    /** What a villager says: an item, or the block of a job it just took (drawn as the job block picture). */
+    record Topic(Item item, boolean jobBlock) {}
+
     private record Job(Holder<VillagerProfession> profession, long since) {}
 
     private static final class Chat {
@@ -61,14 +64,17 @@ public final class ChatBubbles {
     private static final Map<Villager, Job> JOBS = new WeakHashMap<>();
     private static final Map<Villager, Long> QUIET_UNTIL = new WeakHashMap<>();
 
+    public static final Item DEATH_ICON = Items.POPPY;
+    public static final Item BIRTH_ICON = Items.CAKE;
+
     private ChatBubbles() {}
 
     public static void noteDeath(ServerLevel level, Villager villager) {
-        note(level, villager, Items.POPPY);
+        note(level, villager, DEATH_ICON);
     }
 
     public static void noteBirth(ServerLevel level, Villager villager) {
-        note(level, villager, Items.CAKE);
+        note(level, villager, BIRTH_ICON);
     }
 
     private static void note(ServerLevel level, Villager villager, Item icon) {
@@ -108,9 +114,11 @@ public final class ChatBubbles {
         if (!chatting(chat.first) || !chatting(chat.second) || chat.first.distanceToSqr(chat.second) > EARSHOT * EARSHOT) return finish(chat, now);
         if (now < chat.start + (long) chat.turn * TURN_TICKS) return false;
         Villager speaker = chat.turn % 2 == 0 ? chat.first : chat.second;
-        List<Item> topics = topics(level, speaker);
+        List<Topic> topics = topics(level, speaker);
         if (topics.isEmpty()) return finish(chat, now);
-        SpeechBubbles.show(speaker, new ItemStack(topics.get((chat.turn / 2) % topics.size())), SHOWN_TICKS);
+        Topic topic = topics.get((chat.turn / 2) % topics.size());
+        if (topic.jobBlock()) NeedBubbles.show(speaker, NeedBubbles.chatJobBlock(speaker), SHOWN_TICKS);
+        else SpeechBubbles.show(speaker, new ItemStack(topic.item()), SHOWN_TICKS);
         return ++chat.turn >= 2 * EXCHANGES && finish(chat, now);
     }
 
@@ -164,25 +172,24 @@ public final class ChatBubbles {
     }
 
     /** What the villager has to say: what is new today, else the products of its trade that it holds. */
-    static List<Item> topics(ServerLevel level, Villager villager) {
+    static List<Topic> topics(ServerLevel level, Villager villager) {
         long now = level.getGameTime();
-        List<Item> topics = new ArrayList<>();
+        List<Topic> topics = new ArrayList<>();
         Villages.of(level, villager).ifPresent(village -> {
             for (News news : NEWS.getOrDefault(level, List.of())) {
-                if (now - news.at() < TODAY && village.bells().stream().anyMatch(news.bells()::contains) && !topics.contains(news.icon())) topics.add(news.icon());
+                if (now - news.at() < TODAY && village.bells().stream().anyMatch(news.bells()::contains) && topics.stream().noneMatch(topic -> topic.item() == news.icon())) topics.add(new Topic(news.icon(), false));
             }
         });
         Job job = JOBS.get(villager);
         if (job != null && job.since() != Long.MIN_VALUE && now - job.since() < TODAY) {
-            Item block = NeedBubbles.jobBlockIcon(villager);
-            if (block != null) topics.add(block);
+            topics.add(new Topic(NeedBubbles.jobBlockItem(villager), true));
         }
         Bought bought = BOUGHT.get(villager);
-        if (bought != null && now - bought.at() < TODAY) topics.add(bought.item());
+        if (bought != null && now - bought.at() < TODAY) topics.add(new Topic(bought.item(), false));
         if (!topics.isEmpty()) return topics;
         TradeTable.forVillager(villager).ifPresent(table -> {
             for (TradeTable.Produce produce : table.produceUpTo(villager.getVillagerData().level())) {
-                if (!topics.contains(produce.item()) && Economy.count(level, villager, produce.item()) > 0) topics.add(produce.item());
+                if (topics.stream().noneMatch(topic -> topic.item() == produce.item()) && Economy.count(level, villager, produce.item()) > 0) topics.add(new Topic(produce.item(), false));
             }
         });
         return topics;

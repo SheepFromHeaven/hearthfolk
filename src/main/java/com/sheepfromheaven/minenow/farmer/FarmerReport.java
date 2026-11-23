@@ -31,7 +31,7 @@ public final class FarmerReport {
         IdleReason.addWorkAreaCheck(VillagerProfession.FARMER, (level, farmer) -> farmer.getBrain().getMemory(MemoryModuleType.JOB_SITE)
                 .filter(site -> site.dimension() == level.dimension())
                 .map(site -> Field.ground(level, site.pos(), Field.radiusFor(farmer.getVillagerData().level())).isEmpty()).orElse(false),
-                net.minecraft.world.item.Items.DIRT);
+                net.minecraft.world.item.Items.WHEAT_SEEDS);
         com.sheepfromheaven.minenow.villager.SupplyNeeds.add(VillagerProfession.FARMER, Crops::isSeed, FarmerReport::needsSeeds);
         IdleReport.addExtra(VillagerProfession.FARMER, (farmer, lines) -> {
             if (farmer.level() instanceof ServerLevel level) lines.add(fieldLine(level, farmer));

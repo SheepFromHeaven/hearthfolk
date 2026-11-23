@@ -53,6 +53,7 @@ public final class NeedBubbleTests {
         Villager farmer = farmer(helper, true);
         helper.assertTrue(IdleReason.of(helper.getLevel(), farmer).getFirst() == IdleReason.NO_TOOL, "A farmer without a hoe lacks its tool");
         shows(helper, farmer, TradeTable.forVillager(farmer).orElseThrow().tools().getFirst().item());
+        helper.assertTrue(NeedBubbles.TOOL.equals(NeedBubbles.bubbleFor(helper.getLevel(), farmer).image()), "A missing tool is shown as the crossed pickaxe and axe with an exclamation mark");
         helper.succeed();
     }
 
@@ -61,6 +62,7 @@ public final class NeedBubbleTests {
         butcher.getInventory().addItem(new ItemStack(Items.EMERALD, 20));
         helper.assertTrue(IdleReason.of(helper.getLevel(), butcher).getFirst() == IdleReason.NO_MATERIALS, "A butcher without fuel is out of materials");
         shows(helper, butcher, Shortage.fuel(helper.getLevel(), butcher).orElseThrow().item());
+        helper.assertTrue(NeedBubbles.FUEL.equals(NeedBubbles.bubbleFor(helper.getLevel(), butcher).image()), "Missing fuel is shown as coal with an exclamation mark");
         helper.succeed();
     }
 
@@ -68,6 +70,7 @@ public final class NeedBubbleTests {
         Villager butcher = butcher(helper);
         helper.assertTrue(IdleReason.of(helper.getLevel(), butcher).contains(IdleReason.NO_MONEY), "A butcher that can't pay for fuel is broke");
         shows(helper, butcher, Items.EMERALD);
+        helper.assertTrue(NeedBubbles.MONEY.equals(NeedBubbles.bubbleFor(helper.getLevel(), butcher).image()), "Missing money is shown as an emerald with an exclamation mark");
         helper.succeed();
     }
 
@@ -81,7 +84,8 @@ public final class NeedBubbleTests {
         farmer.setData(ModVillagers.STORAGE, net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(HOME_CHEST)));
         for (int i = 0; i < farmer.getInventory().getContainerSize() - 1; i++) farmer.getInventory().setItem(i + 1, new ItemStack(Items.DIRT, 64));
         helper.assertTrue(IdleReason.of(helper.getLevel(), farmer).getFirst() == IdleReason.STORAGE_FULL, "A full villager with a full chest can't unload");
-        shows(helper, farmer, Items.CHEST);
+        shows(helper, farmer, Items.CHEST_MINECART);
+        helper.assertTrue(NeedBubbles.STORAGE_FULL.equals(NeedBubbles.bubbleFor(helper.getLevel(), farmer).image()), "A full chest is shown as a chest seen from the front with an exclamation mark");
         helper.succeed();
     }
 
@@ -90,7 +94,9 @@ public final class NeedBubbleTests {
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
         farmer.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
         helper.assertTrue(IdleReason.of(helper.getLevel(), farmer).getFirst() == IdleReason.NO_JOB_SITE, "A farmer that lost its workstation has no job site");
-        shows(helper, farmer, Items.COMPOSTER);
+        shows(helper, farmer, NeedBubbles.toolIcon(farmer));
+        NeedBubbles.Shown block = NeedBubbles.bubbleFor(helper.getLevel(), farmer);
+        helper.assertTrue(NeedBubbles.JOB_BLOCK.equals(block.image()) && block.item().is(Items.COMPOSTER), "A farmer without a job site shows the front of a composter, got " + block);
         helper.succeed();
     }
 
@@ -98,7 +104,9 @@ public final class NeedBubbleTests {
         Villager farmer = farmer(helper, false);
         farmer.getInventory().addItem(new ItemStack(Items.IRON_HOE));
         helper.assertTrue(IdleReason.of(helper.getLevel(), farmer).getFirst() == IdleReason.NO_WORK_AREA, "A farmer with no field has no work area");
-        shows(helper, farmer, Items.DIRT);
+        shows(helper, farmer, Items.WHEAT_SEEDS);
+        NeedBubbles.Shown area = NeedBubbles.bubbleFor(helper.getLevel(), farmer);
+        helper.assertTrue(NeedBubbles.WORK_AREA.equals(area.image()) && area.item().is(Items.WHEAT_SEEDS), "A farmer with no field shows the picture of a field, got " + area);
         helper.succeed();
     }
 
