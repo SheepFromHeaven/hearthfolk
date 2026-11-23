@@ -9,8 +9,8 @@ import net.minecraft.world.level.block.Blocks;
 
 /** A banner on a hay bale links the places within 32 blocks of it, so a bed too far from the bell still joins the village. */
 public final class VillageMarkerTests {
-    private static final BlockPos BELL = new BlockPos(8, 1, 12);
-    private static final BlockPos MARKER = new BlockPos(36, 1, 12);
+    private static final BlockPos BELL = new BlockPos(14, 1, 12);
+    private static final BlockPos MARKER = new BlockPos(38, 1, 12);
 
     private VillageMarkerTests() {}
 
