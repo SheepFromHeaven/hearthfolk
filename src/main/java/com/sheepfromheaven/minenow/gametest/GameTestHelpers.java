@@ -88,6 +88,20 @@ public final class GameTestHelpers {
         for (int i = 0; i < stacks.length; i++) container.setItem(i, stacks[i]);
     }
 
+    /**
+     * Sends a travelling merchant to the villager, inside the test arena: {@code Exports.sendTrader} picks any open ground within eight blocks,
+     * which can be outside the barrier walls, where the merchant (and its mules) can never reach the villager.
+     */
+    public static net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader sendTrader(GameTestHelper helper, Villager villager) {
+        var trader = com.sheepfromheaven.minenow.villager.Exports.sendTrader(helper.getLevel(), villager);
+        if (trader == null || helper.getBounds().intersects(trader.getBoundingBox())) return trader;
+        var at = villager.position().add(2, 0, 0);
+        var mules = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.equine.Mule.class, trader.getBoundingBox().inflate(12), mule -> mule.getLeashHolder() == trader);
+        trader.snapTo(at.x, at.y, at.z);
+        mules.forEach(mule -> mule.snapTo(at.x, at.y, at.z));
+        return trader;
+    }
+
     /** An employed villager without its starting purse, so tests start from the emeralds they hand it. */
     public static Villager spawnEmployed(GameTestHelper helper, BlockPos spawnAt, BlockPos jobSite,
                                          ResourceKey<VillagerProfession> profession, ResourceKey<PoiType> poi) {

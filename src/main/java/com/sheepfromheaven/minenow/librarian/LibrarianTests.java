@@ -136,7 +136,7 @@ public final class LibrarianTests {
     public static void aLibrarianBuysSugarCaneFromATravellingMerchant(GameTestHelper helper) {
         Villager librarian = spawnLibrarian(helper, 1);
         librarian.getInventory().addItem(new ItemStack(Items.EMERALD, 20));
-        var merchant = Exports.sendTrader(helper.getLevel(), librarian);
+        var merchant = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, librarian);
         helper.assertTrue(merchant != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> {

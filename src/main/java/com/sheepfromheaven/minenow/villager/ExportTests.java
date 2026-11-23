@@ -21,7 +21,7 @@ public final class ExportTests {
         Villager armorer = spawnArmorer(helper);
         armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
         armorer.getInventory().addItem(new ItemStack(Items.IRON_HELMET));
-        helper.assertTrue(Exports.sendTrader(helper.getLevel(), armorer) != null, "A travelling merchant comes");
+        helper.assertTrue(com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, armorer) != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> {
             helper.assertTrue(armorer.getInventory().countItem(Items.IRON_CHESTPLATE) + armorer.getInventory().countItem(Items.IRON_HELMET) < 2,
@@ -39,7 +39,7 @@ public final class ExportTests {
         miner.getInventory().addItem(new ItemStack(Items.WOODEN_PICKAXE));
         for (int i = 0; i < 3; i++) miner.getInventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
         helper.assertTrue(Exports.surplus(helper.getLevel(), miner) > 0, "A pile of cobblestone nobody in the village needs is worth a visit, surplus " + Exports.surplus(helper.getLevel(), miner));
-        helper.assertTrue(Exports.sendTrader(helper.getLevel(), miner) != null, "A travelling merchant comes");
+        helper.assertTrue(com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, miner) != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> {
             int cobble = miner.getInventory().countItem(Items.COBBLESTONE);
@@ -62,7 +62,7 @@ public final class ExportTests {
         for (int i = 0; i < 3; i++) cleric.getInventory().addItem(com.sheepfromheaven.minenow.cleric.PotionGoods.stack(Items.POTION, swiftness));
         for (int i = 0; i < 3; i++) cleric.getInventory().addItem(com.sheepfromheaven.minenow.cleric.PotionGoods.stack(Items.POTION, awkward));
         helper.assertTrue(Exports.surplus(helper.getLevel(), cleric) >= 4, "Two spare swiftness potions are worth a visit, surplus " + Exports.surplus(helper.getLevel(), cleric));
-        helper.assertTrue(Exports.sendTrader(helper.getLevel(), cleric) != null, "A travelling merchant comes");
+        helper.assertTrue(com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, cleric) != null, "A travelling merchant comes");
 
         helper.succeedWhen(() -> {
             int swift = com.sheepfromheaven.minenow.cleric.PotionGoods.count(helper.getLevel(), cleric, Items.POTION, swiftness);
@@ -78,7 +78,7 @@ public final class ExportTests {
         for (int i = 0; i < 4; i++) armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
         helper.assertTrue(Exports.surplus(helper.getLevel(), armorer) >= 8, "Four chestplates are worth a visit, surplus " + Exports.surplus(helper.getLevel(), armorer));
 
-        WanderingTrader trader = Exports.sendTrader(helper.getLevel(), armorer);
+        WanderingTrader trader = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, armorer);
 
         helper.assertTrue(trader != null && trader.distanceTo(armorer) <= 16, "A wandering trader comes to the village with goods to export, " + trader);
         helper.succeed();
@@ -88,7 +88,7 @@ public final class ExportTests {
         Villager armorer = spawnArmorer(helper);
         for (int i = 0; i < 4; i++) armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
 
-        WanderingTrader merchant = Exports.sendTrader(helper.getLevel(), armorer);
+        WanderingTrader merchant = com.sheepfromheaven.minenow.gametest.GameTestHelpers.sendTrader(helper, armorer);
 
         helper.assertTrue(merchant != null && Exports.isMerchant(merchant), "A travelling merchant comes");
         helper.assertTrue(merchant.hasCustomName() && merchant.getCustomName().getString().equals("Travelling Merchant"), "...named so, " + merchant.getCustomName());
