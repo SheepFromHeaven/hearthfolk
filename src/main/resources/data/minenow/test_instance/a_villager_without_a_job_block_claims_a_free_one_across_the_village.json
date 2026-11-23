@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_47",
+  "function": "minenow:a_villager_without_a_job_block_claims_a_free_one_across_the_village",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 1200
+}

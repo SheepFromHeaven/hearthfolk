@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:shepherd_offers_string_once_however_many_wools_make_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 100
+}

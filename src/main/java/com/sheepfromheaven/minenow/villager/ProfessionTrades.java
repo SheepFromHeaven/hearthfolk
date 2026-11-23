@@ -127,6 +127,7 @@ public final class ProfessionTrades {
                 offers.add(new MerchantOffer(undamaged, new ItemStack(Items.EMERALD, tool.price()), 1, XP_PER_TRADE, 0.0F));
             }
         }
+        java.util.Map<net.minecraft.world.item.Item, MerchantOffer> crafted = new java.util.LinkedHashMap<>();
         for (TradeTable.Craft craft : table.craftsUpTo(villagerLevel)) {
             if (table.hasProduceEntry(craft.item())) continue;
             Price price = table.craftPrice(craft);
@@ -140,9 +141,12 @@ public final class ProfessionTrades {
             int batches = spare / price.count();
             if (batches > 0) {
                 ItemStack sold = craft.item() == Items.FILLED_MAP ? Economy.peekOne(level, villager, craft.item()) : new ItemStack(craft.item(), price.count());
-                offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), sold, batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
+                MerchantOffer offer = new MerchantOffer(new ItemCost(Items.EMERALD, price.emeralds()), sold, batches, XP_PER_TRADE, SELL_PRICE_MULTIPLIER);
+                MerchantOffer earlier = crafted.get(craft.item());
+                if (earlier == null || cheaperPerItem(offer, earlier)) crafted.put(craft.item(), offer);
             }
         }
+        offers.addAll(crafted.values());
         for (TradeTable.Supply supply : table.suppliesWanted(level, villager)) {
             int purse = BuyFromVillagers.budgetFor(level, villager, supply);
             int room = (supply.max() - Economy.count(level, villager, supply.item())) / supply.price().count();
@@ -169,5 +173,10 @@ public final class ProfessionTrades {
                         trades, XP_PER_TRADE, SELL_PRICE_MULTIPLIER));
             }
         }
+    }
+
+    /** Alternative recipes for one item (string from any wool, sticks from any planks) are one offer, the cheapest per item. */
+    private static boolean cheaperPerItem(MerchantOffer offer, MerchantOffer than) {
+        return (long) offer.getCostA().count() * than.getResult().getCount() < (long) than.getCostA().count() * offer.getResult().getCount();
     }
 }

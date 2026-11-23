@@ -120,6 +120,14 @@ public final class VillagerInspector {
             lines.add(Component.literal("- " + villager.getDisplayName().getString() + ", " + profession + " level " + villager.getVillagerData().level()
                     + (villager.isBaby() ? " (child)" : "") + " at " + villager.blockPosition().toShortString()));
         }
+        List<BlockPos> beds = village.get().freeBeds(level);
+        lines.add(ReportBook.heading("Free to claim"));
+        lines.add(Component.literal("Free beds: " + beds.size() + " (within " + Villages.SEARCH + " blocks of the border)"));
+        List<BlockPos> jobBlocks = village.get().freeJobBlocks(level);
+        lines.add(Component.literal(jobBlocks.isEmpty() ? "Free job blocks: none" : "Free job blocks: " + jobBlocks.size()));
+        for (BlockPos pos : jobBlocks) {
+            lines.add(Component.literal("- " + level.getBlockState(pos).getBlock().getName().getString() + " at " + pos.toShortString() + (village.get().contains(pos) ? "" : " (outside the border)")));
+        }
         return Optional.of(lines);
     }
 

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_45",
+  "function": "minenow:left_clicking_a_bell_nobody_claimed_shows_no_borders",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}
