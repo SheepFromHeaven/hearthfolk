@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_44",
+  "function": "minenow:left_clicking_a_bell_with_the_inspector_toggles_the_village_borders",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

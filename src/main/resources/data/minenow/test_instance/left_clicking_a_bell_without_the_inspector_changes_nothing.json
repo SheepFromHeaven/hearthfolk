@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_46",
+  "function": "minenow:left_clicking_a_bell_without_the_inspector_changes_nothing",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 600
+}

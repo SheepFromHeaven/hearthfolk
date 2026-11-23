@@ -198,4 +198,37 @@ public final class ShepherdTests {
         helper.setBlock(LOOM, Blocks.LOOM);
         return GameTestHelpers.spawnEmployed(helper, LOOM.east(), LOOM, VillagerProfession.SHEPHERD, PoiTypes.SHEPHERD);
     }
+
+    /** Sixteen craft entries make string, one per wool colour, but a player must see string offered once. */
+    public static void shepherdOffersStringOnceHoweverManyWoolsMakeIt(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
+        shepherd.getInventory().addItem(new ItemStack(Items.STRING, 48));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.interactOn(shepherd, InteractionHand.MAIN_HAND, shepherd.position());
+
+        long stringOffers = shepherd.getOffers().stream().filter(o -> o.getCostA().is(Items.EMERALD) && o.getResult().is(Items.STRING)).count();
+        helper.assertTrue(stringOffers == 1, "String is offered once, not once per wool colour, offers " + stringOffers);
+        helper.succeed();
+    }
+
+    public static void shepherdSellsTheWoolItShearedInTheColourItHolds(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.getInventory().addItem(new ItemStack(Items.SHEARS));
+        shepherd.getInventory().addItem(new ItemStack(Items.WOOL.white(), 40));
+        shepherd.getInventory().addItem(new ItemStack(Items.WOOL.red(), 40));
+        @SuppressWarnings("removal")
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.interactOn(shepherd, InteractionHand.MAIN_HAND, shepherd.position());
+
+        String offers = shepherd.getOffers().stream().map(o -> o.getCostA() + " -> " + o.getResult()).toList().toString();
+        helper.assertTrue(shepherd.getOffers().stream().anyMatch(o -> o.getCostA().is(Items.EMERALD) && o.getResult().is(Items.WOOL.white())), "It sells white wool, offers " + offers);
+        helper.assertTrue(shepherd.getOffers().stream().anyMatch(o -> o.getCostA().is(Items.EMERALD) && o.getResult().is(Items.WOOL.red())), "...and red wool, offers " + offers);
+        helper.succeed();
+    }
 }

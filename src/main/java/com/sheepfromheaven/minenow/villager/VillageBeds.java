@@ -13,15 +13,15 @@ public final class VillageBeds {
 
     private VillageBeds() {}
 
-    /** Takes a free bed within {@link #NEAR} blocks of the villager, else one anywhere in its village, nearest to its places first. */
+    /** Takes a free bed inside the villager's village border or up to {@link Villages#SEARCH} blocks outside it, nearest to the villager first; without a village, one within {@link #NEAR} blocks. */
     public static Optional<BlockPos> take(ServerLevel level, Villager villager) {
         PoiManager pois = level.getPoiManager();
-        Optional<BlockPos> near = pois.take(type -> type.is(PoiTypes.HOME), (type, pos) -> true, villager.blockPosition(), NEAR);
-        if (near.isPresent()) return near;
         Optional<Villages.Village> village = Villages.of(level, villager);
-        if (village.isEmpty()) return Optional.empty();
-        for (BlockPos anchor : village.get().anchors()) {
-            Optional<BlockPos> bed = pois.take(type -> type.is(PoiTypes.HOME), (type, pos) -> village.get().contains(pos), anchor, NEAR);
+        if (village.isEmpty()) {
+            return pois.take(type -> type.is(PoiTypes.HOME), (type, pos) -> true, villager.blockPosition(), NEAR);
+        }
+        for (BlockPos pos : village.get().pois(level, type -> type.is(PoiTypes.HOME), PoiManager.Occupancy.HAS_SPACE, villager.blockPosition())) {
+            Optional<BlockPos> bed = pois.take(type -> type.is(PoiTypes.HOME), (type, at) -> at.equals(pos), pos, 1);
             if (bed.isPresent()) return bed;
         }
         return Optional.empty();
@@ -29,9 +29,8 @@ public final class VillageBeds {
 
     public static boolean anyFree(ServerLevel level, Villager villager) {
         PoiManager pois = level.getPoiManager();
-        if (pois.getCountInRange(type -> type.is(PoiTypes.HOME), villager.blockPosition(), NEAR, PoiManager.Occupancy.HAS_SPACE) > 0) return true;
-        return Villages.of(level, villager).filter(village -> village.anchors().stream().anyMatch(anchor ->
-                pois.getInRange(type -> type.is(PoiTypes.HOME), anchor, NEAR, PoiManager.Occupancy.HAS_SPACE)
-                        .anyMatch(record -> village.contains(record.getPos())))).isPresent();
+        return Villages.of(level, villager)
+                .map(village -> !village.pois(level, type -> type.is(PoiTypes.HOME), PoiManager.Occupancy.HAS_SPACE, villager.blockPosition()).isEmpty())
+                .orElseGet(() -> pois.getCountInRange(type -> type.is(PoiTypes.HOME), villager.blockPosition(), NEAR, PoiManager.Occupancy.HAS_SPACE) > 0);
     }
 }
