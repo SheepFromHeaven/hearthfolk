@@ -483,6 +483,9 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "toolsmith_buys_diamonds_from_the_miner_at_its_price", MinerTests::toolsmithBuysDiamondsFromTheMinerAtItsPrice);
             test(helper, TestGroup.MINER, "miner_lights_its_quarry_with_torches", MinerTests::minerLightsItsQuarryWithTorches);
             test(helper, TestGroup.MINER, "miner_leaves_platforms_and_branches_tunnels_off_them", MinerTests::minerLeavesPlatformsAndBranchesTunnelsOffThem);
+            test(helper, TestGroup.VILLAGERS, "a_villager_walks_round_a_long_wall_to_its_bed", com.sheepfromheaven.minenow.villager.NightDoorTests::aVillagerWalksRoundALongWallToItsBed);
+            test(helper, TestGroup.VILLAGERS, "a_villager_closes_a_door_the_player_left_open_behind_it", com.sheepfromheaven.minenow.villager.NightDoorTests::aVillagerClosesADoorThePlayerLeftOpenBehindIt);
+            test(helper, TestGroup.VILLAGERS, "a_villager_closes_the_door_behind_it_on_its_way_to_bed", com.sheepfromheaven.minenow.villager.NightDoorTests::aVillagerClosesTheDoorBehindItOnItsWayToBed);
             test(helper, TestGroup.ROADS, "a_villager_walks_over_a_closed_trapdoor_lying_in_its_way", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksOverAClosedTrapdoorLyingInItsWay);
             test(helper, TestGroup.ROADS, "a_villager_walks_around_an_open_trapdoor_in_a_wide_corridor", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksAroundAnOpenTrapdoorInAWideCorridor);
             test(helper, TestGroup.ROADS, "a_villager_walks_around_a_top_half_trapdoor_in_a_wide_corridor", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksAroundATopHalfTrapdoorInAWideCorridor);

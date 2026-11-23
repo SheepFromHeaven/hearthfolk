@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:night",
+  "function": "minenow:a_villager_walks_round_a_long_wall_to_its_bed",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 2400
+}

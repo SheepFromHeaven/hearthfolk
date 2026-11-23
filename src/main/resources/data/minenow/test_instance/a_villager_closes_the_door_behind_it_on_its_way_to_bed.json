@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:night",
+  "function": "minenow:a_villager_closes_the_door_behind_it_on_its_way_to_bed",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

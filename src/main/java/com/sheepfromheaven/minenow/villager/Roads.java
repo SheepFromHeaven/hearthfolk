@@ -99,7 +99,7 @@ public final class Roads {
         RoadNavigation navigation = new RoadNavigation(mob, level);
         navigation.setCanOpenDoors(mob instanceof Villager);
         navigation.setCanFloat(true);
-        navigation.setRequiredPathLength(48.0F);
+        navigation.setRequiredPathLength(160.0F);
         mob.navigation = navigation;
     }
 }
