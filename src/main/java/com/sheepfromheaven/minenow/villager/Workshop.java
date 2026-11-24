@@ -37,8 +37,8 @@ public final class Workshop {
     }
 
     /** Food and emeralds belong at home; everything else a villager unloads is trade goods for its workshop. */
-    static boolean personal(ItemStack stack) {
-        return stack.is(Items.EMERALD) || stack.has(DataComponents.VILLAGER_FOOD) || Meals.isMeal(stack);
+    static boolean personal(Villager villager, ItemStack stack) {
+        return stack.is(Items.EMERALD) || Wealth.isFamilyFood(villager, stack) || Meals.isMeal(stack);
     }
 
     static boolean isWorkshopChest(ServerLevel level, Villager villager, BlockPos pos) {

@@ -63,6 +63,7 @@ public final class ButcherTests {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
         butcher.getInventory().addItem(new ItemStack(Items.COOKED_PORKCHOP, 64));
+        butcher.getInventory().addItem(new ItemStack(Items.COOKED_PORKCHOP, 64));
         butcher.getInventory().addItem(new ItemStack(Items.PORKCHOP, 20));
         BlockPos chest = new BlockPos(4, 1, 18);
         helper.setBlock(chest, Blocks.CHEST);
@@ -71,8 +72,9 @@ public final class ButcherTests {
         helper.succeedWhen(() -> {
             var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
             int cooked = 0;
+            int held = com.sheepfromheaven.minenow.villager.Unloading.keepLimit(butcher, new ItemStack(Items.COOKED_PORKCHOP));
             for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(Items.COOKED_PORKCHOP)) cooked += container.getItem(i).getCount();
-            helper.assertTrue(cooked >= 64, "The butcher should unload its cooked meat, chest has " + cooked);
+            helper.assertTrue(cooked >= 128 - held, "The butcher should unload its cooked meat but for the " + held + " it holds back for a meal and a family, chest has " + cooked);
             helper.assertTrue(count(butcher, Items.PORKCHOP) == 20, "It keeps the raw meat to smoke, holds " + count(butcher, Items.PORKCHOP));
         });
     }
@@ -461,6 +463,7 @@ public final class ButcherTests {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
         butcher.getInventory().addItem(new ItemStack(Items.COOKED_PORKCHOP, 64));
+        butcher.getInventory().addItem(new ItemStack(Items.COOKED_PORKCHOP, 64));
         BlockPos chest = new BlockPos(4, 1, 18);
         helper.setBlock(chest, Blocks.CHEST);
         GameTestHelpers.giveHome(helper, butcher, new BlockPos(4, 1, 15));
@@ -468,8 +471,9 @@ public final class ButcherTests {
         helper.succeedWhen(() -> {
             var container = helper.getBlockEntity(chest, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
             int meat = 0;
+            int held = com.sheepfromheaven.minenow.villager.Unloading.keepLimit(butcher, new ItemStack(Items.COOKED_PORKCHOP));
             for (int i = 0; i < container.getContainerSize(); i++) if (container.getItem(i).is(Items.COOKED_PORKCHOP)) meat += container.getItem(i).getCount();
-            helper.assertTrue(meat >= 64, "The butcher should carry its meat to its home chest, chest has " + meat);
+            helper.assertTrue(meat >= 128 - held, "The butcher should carry its meat to its home chest but for the " + held + " it holds back for a meal and a family, chest has " + meat);
         });
     }
 

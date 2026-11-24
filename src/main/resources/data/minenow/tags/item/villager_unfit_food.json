@@ -1,0 +1,22 @@
+{
+  "values": [
+    "minecraft:beef",
+    "minecraft:porkchop",
+    "minecraft:mutton",
+    "minecraft:chicken",
+    "minecraft:rabbit",
+    "minecraft:cod",
+    "minecraft:salmon",
+    "minecraft:tropical_fish",
+    "minecraft:pufferfish",
+    "minecraft:rotten_flesh",
+    "minecraft:poisonous_potato",
+    "minecraft:spider_eye",
+    "minecraft:chorus_fruit",
+    "minecraft:golden_apple",
+    "minecraft:enchanted_golden_apple",
+    { "id": "#c:foods/raw_meat", "required": false },
+    { "id": "#c:foods/raw_fish", "required": false },
+    { "id": "#c:foods/food_poisoning", "required": false }
+  ]
+}

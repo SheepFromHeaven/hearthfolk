@@ -216,6 +216,7 @@ public final class MealsTests {
         helper.setBlock(composter, Blocks.COMPOSTER);
         Villager farmer = GameTestHelpers.spawnEmployed(helper, composter.west(), composter, VillagerProfession.FARMER, PoiTypes.FARMER);
         farmer.getInventory().addItem(new ItemStack(Items.POTATO, 64));
+        GameTestHelpers.placeBed(helper, new BlockPos(10, 1, 3));
         return helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
     }
 }

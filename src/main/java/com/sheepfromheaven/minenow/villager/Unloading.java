@@ -57,7 +57,7 @@ public final class Unloading {
         List<ItemStack> surplus = surplus(villager);
         if (surplus.isEmpty()) return Optional.empty();
         Optional<BlockPos> home = HomeStorage.storageIn(level, villager).filter(pos -> HomeStorage.isStorageBlock(level.getBlockState(pos)));
-        List<ItemStack> trade = surplus.stream().filter(stack -> !Workshop.personal(stack)).toList();
+        List<ItemStack> trade = surplus.stream().filter(stack -> !Workshop.personal(villager, stack)).toList();
         Optional<BlockPos> workshop = nearestWorkshopWithRoom(level, villager, trade);
         if (workshop.isPresent()) return workshop;
         if (home.isPresent()) return home;
@@ -110,7 +110,8 @@ public final class Unloading {
         if (supplyMax > 0) return supplyMax;
         int keepMax = TradeTable.forVillager(villager).map(table -> table.keepMax(stack)).orElse(0);
         if (keepMax > 0) return keepMax;
-        if (Crops.isSeed(stack) || Crops.isStemSeed(stack) || stack.has(DataComponents.VILLAGER_FOOD)) return KEEP_PER_ITEM;
+        if (Wealth.isBreedingFood(stack)) return Wealth.holdBack(stack);
+        if (Crops.isSeed(stack) || Crops.isStemSeed(stack)) return KEEP_PER_ITEM;
         return 0;
     }
 
@@ -195,7 +196,7 @@ public final class Unloading {
             kept.put(stack.getItem(), alreadyKept + keep);
             int give = stack.getCount() - keep;
             if (give <= 0) continue;
-            boolean personal = Workshop.personal(stack);
+            boolean personal = Workshop.personal(villager, stack);
             boolean belongs = workshop ? !personal || !hasHome : personal || nearestWorkshopWithRoom(level, villager, List.of(stack)).isEmpty();
             if (!belongs) continue;
             ItemStack rest = HopperBlockEntity.addItem(null, chest, stack.copyWithCount(give), null);

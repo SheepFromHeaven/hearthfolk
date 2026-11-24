@@ -31,7 +31,7 @@ public final class BreedingReport {
             int chests = Wealth.chestFoodPoints(level, villager);
             int emeralds = Economy.emeralds(level, villager);
             int needed = Wealth.required(level, villager);
-            blockers.add("too little food in its pockets: " + pockets + " of " + Villager.BREEDING_FOOD_THRESHOLD + " breeding food points (bread 4, carrot, potato, beetroot 1)"
+            blockers.add("too little food in its pockets: " + pockets + " of " + Villager.BREEDING_FOOD_THRESHOLD + " breeding food points (bread 4, carrot, potato, beetroot 1, other food by its saturation)"
                     + (chests > 0 ? ", " + chests + " more in its chests do not count" : "")
                     + (emeralds >= needed ? ", it has the emeralds to buy some" : ", and with " + emeralds + " of the " + needed + " emeralds it needs to buy family food it can only be given some"));
         }

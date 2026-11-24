@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_villager_holds_back_only_what_feeds_and_breeds",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 300
+}

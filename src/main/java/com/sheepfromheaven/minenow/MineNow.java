@@ -50,6 +50,7 @@ public final class MineNow {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.LOCAL, MineNowConfig.SPEC);
         NeoForge.EVENT_BUS.addListener(WorldSettings::onServerStopped);
         ModVillagers.register(modBus);
+        modBus.addListener(com.sheepfromheaven.minenow.villager.BreedingFood::onModifyDefaultComponents);
         FishermanEntities.register(modBus);
         Miner.register(modBus);
         com.sheepfromheaven.minenow.forester.Forester.register(modBus);
@@ -749,6 +750,12 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "the_book_carries_the_report_as_its_pages", com.sheepfromheaven.minenow.villager.ReportBookTests::theBookCarriesTheReportAsItsPages);
             test(helper, TestGroup.VILLAGERS, "a_villager_with_no_food_no_bed_and_no_partner_says_so", com.sheepfromheaven.minenow.villager.BreedingReportTests::aVillagerWithNoFoodNoBedAndNoPartnerSaysSo);
             test(helper, TestGroup.VILLAGERS, "two_willing_villagers_with_a_free_bed_are_ready", com.sheepfromheaven.minenow.villager.BreedingReportTests::twoWillingVillagersWithAFreeBedAreReady);
+            test(helper, TestGroup.VILLAGERS, "any_food_is_breeding_food", com.sheepfromheaven.minenow.villager.BreedingFoodTests::anyFoodIsBreedingFood);
+            test(helper, TestGroup.VILLAGERS, "more_saturating_food_is_worth_more", com.sheepfromheaven.minenow.villager.BreedingFoodTests::moreSaturatingFoodIsWorthMore);
+            test(helper, TestGroup.VILLAGERS, "vanilla_breeding_food_values_stay", com.sheepfromheaven.minenow.villager.BreedingFoodTests::vanillaValuesStay);
+            test(helper, TestGroup.VILLAGERS, "raw_and_unsafe_food_is_not_breeding_food", com.sheepfromheaven.minenow.villager.BreedingFoodTests::rawAndUnsafeFoodIsNotBreedingFood);
+            test(helper, TestGroup.VILLAGERS, "a_villager_holds_back_only_what_feeds_and_breeds", com.sheepfromheaven.minenow.villager.BreedingFoodTests::aVillagerHoldsBackOnlyWhatFeedsAndBreeds);
+            test(helper, TestGroup.VILLAGERS, "a_wealthy_villager_buys_only_the_food_it_needs_to_breed", com.sheepfromheaven.minenow.villager.BreedingFoodTests::aWealthyVillagerBuysOnlyTheFoodItNeedsToBreed);
             test(helper, TestGroup.VILLAGERS, "a_child_says_when_it_grows_up", com.sheepfromheaven.minenow.villager.BreedingReportTests::aChildSaysWhenItGrowsUp);
             test(helper, TestGroup.VILLAGERS, "a_novice_without_a_job_site_for_a_day_loses_its_trade", com.sheepfromheaven.minenow.villager.JobLossTests::aNoviceWithoutAJobSiteForADayLosesItsTrade);
             test(helper, TestGroup.VILLAGERS, "a_novice_that_lost_its_job_site_just_now_keeps_its_trade", com.sheepfromheaven.minenow.villager.JobLossTests::aNoviceThatLostItsJobSiteJustNowKeepsItsTrade);
