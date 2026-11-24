@@ -6,6 +6,7 @@ license="All Rights Reserved"
 modId="minenow"
 version="0.6.0" # x-release-please-version
 displayName="Hearthfolk"
+logoFile="icon.png"
 authors="Marc Emmanuel"
 description='''Villagers that work the farms and workshops you build.'''
 
