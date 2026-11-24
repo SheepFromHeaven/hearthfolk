@@ -54,6 +54,7 @@ public class PickUpGifts extends Behavior<Villager> {
     static int wanted(ServerLevel level, Villager body, ItemStack stack) {
         if (Unloading.isTool(body, stack)) return hasTool(body) ? 0 : 1;
         if (stack.is(net.minecraft.world.item.Items.EMERALD)) return Math.max(0, emeraldCap(level, body) - Economy.emeralds(level, body));
+        if (Wealth.isFamilyFood(body, stack)) return Wealth.wantsFoodGift(level, body) ? Wealth.itemsFor(stack, Villager.BREEDING_FOOD_THRESHOLD - Wealth.pocketFoodPoints(body)) : 0;
         return TradeTable.forVillager(body).flatMap(table -> table.suppliesWanted(level, body).stream()
                         .filter(supply -> stack.is(supply.item()))
                         .findFirst())

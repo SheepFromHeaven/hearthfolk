@@ -212,7 +212,7 @@ public final class Economy {
 
     private static void putInChests(ServerLevel level, Villager villager, ItemStack rest) {
         List<BlockPos> chests = com.sheepfromheaven.minenow.merchant.Merchant.onTour(villager) ? new java.util.ArrayList<>() : new java.util.ArrayList<>(Workshop.allChests(level, villager));
-        boolean personal = Workshop.personal(rest);
+        boolean personal = Workshop.personal(villager, rest);
         chests.sort(java.util.Comparator.comparing(pos -> Workshop.isWorkshopChest(level, villager, pos) == personal));
         for (BlockPos pos : chests) {
             if (rest.isEmpty()) break;

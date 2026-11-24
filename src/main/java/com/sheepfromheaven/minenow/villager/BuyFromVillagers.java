@@ -49,25 +49,30 @@ public class BuyFromVillagers extends Behavior<Villager> {
     /** {@code gift}: a meal it is given, {@code room} items of it, by a neighbour with far more than it could sell. */
     /** {@code upgrade}: a better tool of its trade, replacing its old one, which it throws away: nobody buys a worn tool. */
     /** {@code breeding}: food bought to start a family ({@link Wealth}), counted for the soak report. */
-    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit, boolean gift, boolean upgrade, boolean breeding) {
+    private record Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit, boolean gift, boolean upgrade, boolean breeding, boolean capped) {
         Deal(Villager seller, Item item, Price price, int room, int budget) {
-            this(seller, item, price, room, budget, false, false, false, false, false);
+            this(seller, item, price, room, budget, false, false, false, false, false, false);
         }
 
         Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear) {
-            this(seller, item, price, room, budget, wear, false, false, false, false);
+            this(seller, item, price, room, budget, wear, false, false, false, false, false);
         }
 
         Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit) {
-            this(seller, item, price, room, budget, wear, credit, false, false, false);
+            this(seller, item, price, room, budget, wear, credit, false, false, false, false);
         }
 
         Deal(Villager seller, Item item, Price price, int room, int budget, boolean wear, boolean credit, boolean gift, boolean upgrade) {
-            this(seller, item, price, room, budget, wear, credit, gift, upgrade, false);
+            this(seller, item, price, room, budget, wear, credit, gift, upgrade, false, false);
         }
 
         Deal forBreeding() {
-            return new Deal(seller, item, price, room, budget, wear, credit, gift, upgrade, true);
+            return new Deal(seller, item, price, room, budget, wear, credit, gift, upgrade, true, true);
+        }
+
+        /** {@code capped}: food for a need: as many lots as cover {@code room} items, and the whole of each lot paid for is taken. */
+        Deal capped(int items) {
+            return new Deal(seller, item, price, items, budget, wear, credit, gift, upgrade, breeding, true);
         }
     }
 
@@ -176,7 +181,10 @@ public class BuyFromVillagers extends Behavior<Villager> {
             return;
         }
         Price price = deal.price();
+        int wanted = deal.capped() ? Math.max(1, deal.room()) : 0;
         int lots = deal.credit() ? (sellable(level, seller, deal.item()) >= price.count() ? 1 : 0)
+                : deal.capped() ? Math.min(Economy.villagerBudget(Math.min(deal.budget(), Economy.emeralds(level, buyer))) / price.emeralds(),
+                Math.min(sellable(level, seller, deal.item()) / price.count(), (wanted + price.count() - 1) / price.count()))
                 : Math.min(Economy.villagerBudget(Math.min(deal.budget(), Economy.emeralds(level, buyer))) / price.emeralds(),
                 Math.min(sellable(level, seller, deal.item()) / price.count(), Math.max(1, deal.room() / price.count())));
         if (lots <= 0) return;
@@ -284,7 +292,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> change = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Meals.isMeal(new ItemStack(item)) && Meals.isMeat(item) == meat)
-                            .flatMap(item -> offer(level, seller, item, 0, spendable).stream()))
+                            .flatMap(item -> offer(level, seller, item, 0, spendable).map(deal -> deal.capped(mealItems(item))).stream()))
                     .max(Comparator.comparingDouble((Deal deal) -> (double) deal.price().count() * Meals.nutrition(deal.item()) / deal.price().emeralds()));
             if (change.isPresent()) return change;
         }
@@ -293,7 +301,7 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> meal = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Meals.isMeal(new ItemStack(item)))
-                            .flatMap(item -> offer(level, seller, item, 0, wallet).stream()))
+                            .flatMap(item -> offer(level, seller, item, 0, wallet).map(deal -> deal.capped(mealItems(item))).stream()))
                     .max(Comparator.comparingDouble((Deal deal) -> (double) deal.price().count() * Meals.nutrition(deal.item()) / deal.price().emeralds())
                             .thenComparing(Comparator.comparingDouble((Deal deal) -> buyer.distanceToSqr(deal.seller())).reversed()));
             if (meal.isPresent()) return meal;
@@ -302,8 +310,10 @@ public class BuyFromVillagers extends Behavior<Villager> {
             Optional<Deal> food = sellers(level, buyer).stream()
                     .flatMap(seller -> Economy.items(level, seller).stream()
                             .filter(item -> Wealth.isBreedingFood(new ItemStack(item)))
-                            .flatMap(item -> offer(level, seller, item, 0, spendable).stream()))
-                    .findFirst().map(Deal::forBreeding);
+                            .flatMap(item -> offer(level, seller, item, 0, spendable)
+                                    .map(deal -> deal.capped(Wealth.itemsFor(new ItemStack(item), Wealth.missingPoints(level, buyer)))).stream()))
+                    .max(Comparator.comparingDouble((Deal deal) -> (double) deal.price().count() * Wealth.pointsOf(new ItemStack(deal.item())) / deal.price().emeralds()))
+                    .map(Deal::forBreeding);
             if (food.isPresent()) return food;
         }
         Optional<TradeTable> table = TradeTable.forVillager(buyer);
@@ -553,6 +563,10 @@ public class BuyFromVillagers extends Behavior<Villager> {
                         && (!awakeAndUp || !seller.isSleeping() && !com.sheepfromheaven.minenow.miner.Miner.isDownAMine(level, seller)))
                 .sorted(Comparator.comparingDouble(buyer::distanceToSqr))
                 .toList();
+    }
+
+    private static int mealItems(Item item) {
+        return (Meals.MEAL_NUTRITION + Meals.nutrition(item) - 1) / Math.max(1, Meals.nutrition(item));
     }
 
     private static Optional<Deal> offer(ServerLevel level, Villager seller, Item item, int room, int budget) {

@@ -25,7 +25,38 @@ public final class Wealth {
     /** While villagers don't pay each other money limits nothing, so a free bed is what limits it instead. */
     static boolean wantsFoodForAFamily(ServerLevel level, Villager villager) {
         return !villager.isBaby() && Economy.villagerBudget(Economy.emeralds(level, villager)) >= required(level, villager) && breedingFoodPoints(level, villager) < Villager.BREEDING_FOOD_THRESHOLD
-                && (Economy.emeraldEconomy() || VillageBeds.anyFree(level, villager));
+                && VillageBeds.anyFree(level, villager);
+    }
+
+    /** Food thrown to it is wanted while it carries too little to breed and a bed is free, whatever it can pay. */
+    static boolean wantsFoodGift(ServerLevel level, Villager villager) {
+        return !villager.isBaby() && pocketFoodPoints(villager) < Villager.BREEDING_FOOD_THRESHOLD && VillageBeds.anyFree(level, villager);
+    }
+
+    /** Points still missing to be willing to breed: pockets and chests together, as the buy decision counts them. */
+    static int missingPoints(ServerLevel level, Villager villager) {
+        return Math.max(0, Villager.BREEDING_FOOD_THRESHOLD - breedingFoodPoints(level, villager));
+    }
+
+    static int pointsOf(ItemStack stack) {
+        VillagerFood food = stack.get(DataComponents.VILLAGER_FOOD);
+        return food == null ? 0 : food.nutrition();
+    }
+
+    /** How many of an item make up {@code points}, rounded up. */
+    static int itemsFor(ItemStack stack, int points) {
+        int each = pointsOf(stack);
+        return each <= 0 ? 0 : (points + each - 1) / each;
+    }
+
+    /** What a villager holds back of a food: as many as breeding takes by themselves, so the rest is for sale. */
+    static int holdBack(ItemStack stack) {
+        return itemsFor(stack, Villager.BREEDING_FOOD_THRESHOLD);
+    }
+
+    /** Breeding food that is not what the villager's own trade sells: a butcher's cooked meat or a fisherman's cod is trade goods. */
+    static boolean isFamilyFood(Villager villager, ItemStack stack) {
+        return isBreedingFood(stack) && TradeTable.forVillager(villager).flatMap(table -> table.sellPrice(stack.getItem(), 5)).isEmpty();
     }
 
     static boolean isBreedingFood(ItemStack stack) {
