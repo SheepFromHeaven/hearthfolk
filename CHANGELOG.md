@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.6.0...v0.7.0) (2026-11-24)
+
+
+### Features
+
+* add a mod icon ([#109](https://github.com/SheepFromHeaven/mine-now/issues/109)) ([481adc9](https://github.com/SheepFromHeaven/mine-now/commit/481adc99b78669b3fc7fcae80994606971187304))
+* **villager:** any safe food counts for breeding, bought and held back only as needed ([#112](https://github.com/SheepFromHeaven/mine-now/issues/112)) ([7b6b61b](https://github.com/SheepFromHeaven/mine-now/commit/7b6b61b573018d8a3f2d4f93bc4c184c397b2465))
+* **villager:** fed villagers heal over time ([#111](https://github.com/SheepFromHeaven/mine-now/issues/111)) ([1b7bbcf](https://github.com/SheepFromHeaven/mine-now/commit/1b7bbcf03393933e3a6e9ce4ffcf28aefe172d5d))
+
 ## [0.6.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.5.1...v0.6.0) (2026-11-24)
 
 
