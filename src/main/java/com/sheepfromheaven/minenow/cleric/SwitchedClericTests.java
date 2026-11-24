@@ -36,6 +36,7 @@ public final class SwitchedClericTests {
         Villager patient = helper.spawn(EntityTypes.VILLAGER, new BlockPos(6, 1, 12));
         patient.getInventory().addItem(new ItemStack(Items.EMERALD, 5));
         patient.setHealth(5.0F);
+        com.sheepfromheaven.minenow.villager.Meals.makeHungry(patient);
 
         helper.runAfterDelay(400, () -> {
             helper.assertTrue(patient.getHealth() <= 5.5F && patient.getInventory().countItem(Items.EMERALD) == 5,

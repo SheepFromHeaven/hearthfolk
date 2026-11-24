@@ -223,6 +223,7 @@ public final class ClericTests {
         Villager cleric = spawnCleric(helper, 3);
         cleric.getInventory().addItem(PotionGoods.stack(Items.POTION, Potions.HEALING));
         Villager patient = patient(helper, new BlockPos(6, 1, 12), 0, 5.0F);
+        com.sheepfromheaven.minenow.villager.Meals.makeHungry(patient);
 
         helper.runAfterDelay(400, () -> {
             helper.assertTrue(patient.getHealth() <= 5.5F && count(helper, cleric, Potions.HEALING) == 1, "A villager with no emeralds isn't healed, health " + patient.getHealth());

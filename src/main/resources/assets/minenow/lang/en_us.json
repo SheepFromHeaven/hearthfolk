@@ -34,6 +34,8 @@
   "minenow.settings.villagersLevelThroughWork.tooltip": "Villagers earn experience from their work, not only from trading with players. Levels decide how far a farmer's field reaches, how deep a miner digs and which recipes a craftsman knows.\nOff: only trading levels them up, as in vanilla, so they progress much more slowly.",
   "minenow.settings.villagersGetNames": "Villagers Get Names",
   "minenow.settings.villagersGetNames.tooltip": "Every villager gets a name, and their births and deaths are announced.\nOff: new villagers stay nameless as in vanilla. Names already given stay.",
+  "minenow.settings.villagersHeal": "Villagers Heal",
+  "minenow.settings.villagersHeal.tooltip": "Villagers that have eaten recently slowly heal, half a heart every 4 seconds, as a well fed player does. Needs Villagers Eat Meals.\nOff: they only heal through a cleric, as in vanilla.",
   "minenow.settings.speechBubbles": "Speech Bubbles",
   "minenow.settings.speechBubbles.tooltip": "Villagers show what they need in a speech bubble with an item icon: a tool, fuel, an emerald, a chest.\nOff: villagers show no speech bubbles.",
   "minenow.settings.travellingMerchants": "Travelling Merchants",

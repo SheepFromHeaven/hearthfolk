@@ -178,6 +178,8 @@ public final class MineNowConfig {
                 "Whether villagers earn experience from their work, not only from trading with players. Levels gate a lot (how far a farmer's field reaches, how deep a miner digs, which recipes a craftsman knows), so with this off they progress much more slowly. Off: only trading levels them up, as in vanilla."),
         VILLAGERS_GET_NAMES("villagersGetNames",
                 "Whether every villager gets a name, and their births and deaths are announced. Off: new villagers stay nameless as in vanilla."),
+        VILLAGERS_HEAL("villagersHeal",
+                "Whether villagers that have eaten recently slowly heal, half a heart every 4 seconds, as a well fed player does. Off: they only heal through a cleric, as in vanilla."),
         SPEECH_BUBBLES("speechBubbles",
                 "Whether villagers show what they need in a speech bubble with an item icon. Off: villagers show no speech bubbles.");
 
