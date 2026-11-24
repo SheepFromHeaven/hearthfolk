@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.5.1...v0.6.0) (2026-11-24)
+
+
+### Features
+
+* **config:** per-world switches for every feature and profession, with a settings menu ([#93](https://github.com/SheepFromHeaven/mine-now/issues/93)) ([a30f905](https://github.com/SheepFromHeaven/mine-now/commit/a30f905dd628a2b8f13e17cb2cbfe323349b5e02))
+* **config:** the emerald economy switch stops counting emeralds when it is off ([#94](https://github.com/SheepFromHeaven/mine-now/issues/94)) ([75c25f1](https://github.com/SheepFromHeaven/mine-now/commit/75c25f1800a34a627abda630965bd2e9c4d8d30e))
+* **villager:** village borders, far claims outside the border and doors closed behind villagers ([#107](https://github.com/SheepFromHeaven/mine-now/issues/107)) ([c7869ad](https://github.com/SheepFromHeaven/mine-now/commit/c7869ade91e9c790f0ed3ca6397a1b6be2b961e9))
+* **villager:** villages, rain shelter, inspector, job loss and moved workstations ([#78](https://github.com/SheepFromHeaven/mine-now/issues/78)) ([7d03c87](https://github.com/SheepFromHeaven/mine-now/commit/7d03c873a8850e8b11006ab4cc4128243a2b192d))
+
+
+### Bug Fixes
+
+* **villager:** close doors behind villagers and plan long walks round buildings ([#106](https://github.com/SheepFromHeaven/mine-now/issues/106)) ([35df535](https://github.com/SheepFromHeaven/mine-now/commit/35df535fbefd8c3c095aa00bce45c6817e09d09e))
+
 ## [0.5.1](https://github.com/SheepFromHeaven/mine-now/compare/v0.5.0...v0.5.1) (2026-11-13)
 
 
