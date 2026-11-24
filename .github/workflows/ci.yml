@@ -18,12 +18,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build and run tests
-        run: ./gradlew build runGameTestServer --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew build runGameTestServer --stacktrace 2>&1 | tee gradle.log
+
+      - name: Summarize test results
+        if: always()
+        run: python3 .github/scripts/test_summary.py build/test-report.xml gradle.log build/test-results/test
 
       - name: Upload GameTest report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gametest-report
-          path: build/test-report.xml
+          path: |
+            build/test-report.xml
+            gradle.log
           if-no-files-found: ignore
