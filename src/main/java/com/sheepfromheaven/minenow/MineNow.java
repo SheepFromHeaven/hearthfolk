@@ -290,7 +290,9 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_worker_out_of_fuel_seeks_out_a_nearby_player", IdleCueTests::aWorkerOutOfFuelSeeksOutANearbyPlayer);
             test(helper, TestGroup.VILLAGERS, "a_villager_without_a_job_site_shakes_its_head_even_off_duty", IdleCueTests::aVillagerWithoutAJobSiteShakesItsHeadEvenOffDuty);
             test(helper, TestGroup.FARMER, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
-            test(helper, TestGroup.FARMER, "farmer_does_not_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotCompostSeedsAtTheComposter);
+            test(helper, TestGroup.FARMER, "a_farmer_keeps_the_seeds_it_plants_and_sells", FarmerTests::aFarmerKeepsTheSeedsItPlantsAndSells);
+            test(helper, TestGroup.FARMER, "a_farmer_composts_its_surplus_seeds_into_bone_meal", FarmerTests::aFarmerCompostsItsSurplusSeedsIntoBoneMeal);
+            test(helper, TestGroup.FARMER, "a_farmer_with_enough_bone_meal_composts_nothing", FarmerTests::aFarmerWithEnoughBoneMealCompostsNothing);
             test(helper, TestGroup.FARMER, "a_farmer_does_not_bake_bread", FarmerTests::aFarmerDoesNotBakeBread);
             test(helper, TestGroup.FARMER, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);
             test(helper, TestGroup.TRADING, "farmer_buys_bone_meal_in_batches_of_eight_up_to_thirty_two", FarmerTradeTests::farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo);

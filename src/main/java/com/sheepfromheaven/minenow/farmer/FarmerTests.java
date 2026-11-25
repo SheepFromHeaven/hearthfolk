@@ -1,6 +1,7 @@
 package com.sheepfromheaven.minenow.farmer;
 
 import com.sheepfromheaven.minenow.gametest.GameTestHelpers;
+import com.sheepfromheaven.minenow.villager.Economy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -344,23 +345,55 @@ public final class FarmerTests {
         });
     }
 
-    public static void farmerDoesNotCompostSeedsAtTheComposter(GameTestHelper helper) {
+    public static void aFarmerKeepsTheSeedsItPlantsAndSells(GameTestHelper helper) {
+        Villager farmer = atItsComposter(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 30));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 48));
+        farmer.getInventory().addItem(new ItemStack(Items.POTATO, 64));
+
+        helper.runAfterDelay(1200, () -> {
+            helper.assertTrue(Economy.count(helper.getLevel(), farmer, Items.WHEAT_SEEDS) == 48,
+                    "16 seeds to plant and a sale batch of 32 are never composted, has " + Economy.count(helper.getLevel(), farmer, Items.WHEAT_SEEDS));
+            helper.assertTrue(Economy.count(helper.getLevel(), farmer, Items.POTATO) == 64 && Economy.count(helper.getLevel(), farmer, Items.WHEAT) == 30,
+                    "...nor its crops, which are food, has " + Economy.count(helper.getLevel(), farmer, Items.POTATO) + " potatoes, " + Economy.count(helper.getLevel(), farmer, Items.WHEAT) + " wheat");
+            helper.assertTrue(helper.getBlockState(COMPOSTER).getValue(net.minecraft.world.level.block.ComposterBlock.LEVEL) == 0, "The composter stays empty");
+            helper.succeed();
+        });
+    }
+
+    public static void aFarmerCompostsItsSurplusSeedsIntoBoneMeal(GameTestHelper helper) {
+        Villager farmer = atItsComposter(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
+
+        helper.succeedWhen(() -> {
+            int seeds = Economy.count(helper.getLevel(), farmer, Items.WHEAT_SEEDS);
+            helper.assertTrue(Economy.count(helper.getLevel(), farmer, Items.BONE_MEAL) >= 1,
+                    "The farmer composts the seeds it can neither plant nor sell into bone meal, has " + seeds + " seeds, composter at "
+                            + helper.getBlockState(COMPOSTER).getValue(net.minecraft.world.level.block.ComposterBlock.LEVEL));
+            helper.assertTrue(seeds >= 48, "...but keeps what it plants and sells, has " + seeds);
+        });
+    }
+
+    public static void aFarmerWithEnoughBoneMealCompostsNothing(GameTestHelper helper) {
+        Villager farmer = atItsComposter(helper);
+        farmer.getInventory().addItem(new ItemStack(Items.BONE_MEAL, 32));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
+        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
+
+        helper.runAfterDelay(1200, () -> {
+            helper.assertTrue(Economy.count(helper.getLevel(), farmer, Items.WHEAT_SEEDS) == 128,
+                    "With 32 bone meal the farmer has all it uses and composts nothing, has " + Economy.count(helper.getLevel(), farmer, Items.WHEAT_SEEDS) + " seeds");
+            helper.succeed();
+        });
+    }
+
+    /** A farmer at its composter with a hoe and no field: the fence's stone floor has nothing to till. */
+    private static Villager atItsComposter(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(COMPOSTER, Blocks.COMPOSTER);
-        Villager farmer = spawnFarmer(helper);
-        farmer.getInventory().addItem(new ItemStack(Items.WHEAT, 30));
-        farmer.getInventory().addItem(new ItemStack(Items.WHEAT_SEEDS, 64));
-        helper.onEachTick(() -> {
-            BlockPos at = helper.absolutePos(COMPOSTER.east());
-            farmer.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
-        });
-
-        helper.runAfterDelay(2300, () -> {
-            helper.assertTrue(farmer.getInventory().countItem(Items.WHEAT_SEEDS) == 64, "Seeds should not be composted, has " + farmer.getInventory().countItem(Items.WHEAT_SEEDS));
-            helper.assertTrue(helper.getBlockState(COMPOSTER).getValue(net.minecraft.world.level.block.ComposterBlock.LEVEL) == 0, "The composter should stay empty");
-            helper.succeed();
-        });
+        return spawnFarmer(helper);
     }
 
     public static void farmerUsesBoneMealOnGrowingCrops(GameTestHelper helper) {
