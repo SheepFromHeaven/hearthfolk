@@ -212,6 +212,7 @@ public final class MineNow {
             test(helper, TestGroup.FARMER, "a_switched_off_farmer_keeps_its_vanilla_trades_across_toggling", SwitchedFarmerTests::aSwitchedOffFarmerKeepsItsVanillaTradesAcrossToggling);
             test(helper, TestGroup.FISHERMAN, "a_switched_off_fisherman_casts_no_bobber_at_the_water_by_his_barrel", com.sheepfromheaven.minenow.fisherman.SwitchedFishermanTests::aSwitchedOffFishermanCastsNoBobberAtTheWaterByHisBarrel);
             test(helper, TestGroup.FISHERMAN, "a_switched_off_fisherman_shows_vanilla_trades_that_cost_emeralds", com.sheepfromheaven.minenow.fisherman.SwitchedFishermanTests::aSwitchedOffFishermanShowsVanillaTradesThatCostEmeralds);
+            test(helper, TestGroup.SHEPHERD, "a_shepherd_only_counts_sheep_in_an_enclosed_pen", com.sheepfromheaven.minenow.shepherd.ShepherdTests::aShepherdOnlyCountsSheepInAnEnclosedPen);
             test(helper, TestGroup.SHEPHERD, "shepherd_offers_string_once_however_many_wools_make_it", com.sheepfromheaven.minenow.shepherd.ShepherdTests::shepherdOffersStringOnceHoweverManyWoolsMakeIt);
             test(helper, TestGroup.SHEPHERD, "shepherd_sells_the_wool_it_sheared_in_the_colour_it_holds", com.sheepfromheaven.minenow.shepherd.ShepherdTests::shepherdSellsTheWoolItShearedInTheColourItHolds);
             test(helper, TestGroup.SHEPHERD, "a_switched_off_shepherd_shears_no_sheep_by_her_loom_and_opens_no_gate", com.sheepfromheaven.minenow.shepherd.SwitchedShepherdTests::aSwitchedOffShepherdShearsNoSheepByHerLoomAndOpensNoGate);
@@ -343,6 +344,8 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "culling_takes_as_many_swings_as_the_axe_needs", ButcherTests::cullingTakesAsManySwingsAsTheAxeNeeds);
             test(helper, TestGroup.BUTCHER, "butcher_culls_down_to_its_breeding_stock", ButcherTests::butcherCullsDownToItsBreedingStock);
             test(helper, TestGroup.BUTCHER, "butchers_and_shepherds_open_fence_gates_but_not_others", ButcherTests::butchersAndShepherdsOpenFenceGatesButNotOthers);
+            test(helper, TestGroup.BUTCHER, "a_butchers_pen_grows_with_its_level", ButcherTests::aButchersPenGrowsWithItsLevel);
+            test(helper, TestGroup.BUTCHER, "a_butcher_only_counts_livestock_in_an_enclosed_pen", ButcherTests::aButcherOnlyCountsLivestockInAnEnclosedPen);
             test(helper, TestGroup.BUTCHER, "butcher_breeds_a_small_herd", ButcherTests::butcherBreedsASmallHerd);
             test(helper, TestGroup.BUTCHER, "a_butcher_without_an_axe_or_fuel_still_breeds_its_herd", ButcherTests::aButcherWithoutAnAxeOrFuelStillBreedsItsHerd);
             test(helper, TestGroup.BUTCHER, "a_butcher_without_an_axe_culls_nothing", ButcherTests::aButcherWithoutAnAxeCullsNothing);

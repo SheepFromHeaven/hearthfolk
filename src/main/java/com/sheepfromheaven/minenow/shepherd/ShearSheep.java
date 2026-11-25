@@ -191,19 +191,19 @@ public class ShearSheep extends Behavior<Villager> {
         }
         if (!Tools.has(body)) return false;
         sheep = level.getEntitiesOfClass(Sheep.class, flockArea(loom.get()),
-                        candidate -> candidate.readyForShearing() && !unreachableSheep.containsKey(candidate.getUUID()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.blockPosition())).stream()
+                        candidate -> candidate.readyForShearing() && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, candidate) && !unreachableSheep.containsKey(candidate.getUUID()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.blockPosition())).stream()
                 .min(Comparator.comparingDouble(body::distanceToSqr))
                 .orElse(null);
         return sheep != null;
     }
 
     private static boolean inFlock(ServerLevel level, Villager body, Sheep sheep) {
-        return jobSite(level, body).map(loom -> flockArea(loom).contains(sheep.position())).orElse(false);
+        return jobSite(level, body).map(loom -> flockArea(loom).contains(sheep.position()) && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, sheep)).orElse(false);
     }
 
     /** No adult sheep within reach of its loom, shearable or not. */
     public static boolean hasNoFlock(ServerLevel level, Villager body) {
-        return jobSite(level, body).map(loom -> level.getEntitiesOfClass(Sheep.class, flockArea(loom), sheep -> !sheep.isBaby()).isEmpty()).orElse(false);
+        return jobSite(level, body).map(loom -> level.getEntitiesOfClass(Sheep.class, flockArea(loom), sheep -> !sheep.isBaby() && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, sheep)).isEmpty()).orElse(false);
     }
 
     private static AABB flockArea(BlockPos loom) {

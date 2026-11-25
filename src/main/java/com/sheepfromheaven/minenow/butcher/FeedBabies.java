@@ -45,8 +45,8 @@ public class FeedBabies extends Behavior<Villager> {
         nextSearch = level.getGameTime() + 40;
         Optional<BlockPos> smoker = TendHerd.jobSite(level, body);
         if (smoker.isEmpty()) return false;
-        young = level.getEntitiesOfClass(Animal.class, TendHerd.pen(smoker.get()),
-                        animal -> animal.isAlive() && animal.isBaby() && animal.getType().builtInRegistryHolder().is(TendHerd.LIVESTOCK) && !fedToday(level, animal) && leftover(level, body, animal) != null)
+        young = level.getEntitiesOfClass(Animal.class, TendHerd.pen(smoker.get(), body),
+                        animal -> animal.isAlive() && animal.isBaby() && animal.getType().builtInRegistryHolder().is(TendHerd.LIVESTOCK) && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, animal) && !fedToday(level, animal) && leftover(level, body, animal) != null)
                 .stream().min(Comparator.comparingDouble(body::distanceToSqr)).orElse(null);
         feed = young == null ? null : leftover(level, body, young);
         return young != null;
