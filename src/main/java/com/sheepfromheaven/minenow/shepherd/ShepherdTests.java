@@ -61,8 +61,8 @@ public final class ShepherdTests {
                     + ", running " + shepherd.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).toList()
                     + ", walk target " + shepherd.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(walk -> helper.relativePos(walk.getTarget().currentBlockPosition()).toShortString() + " speed " + walk.getSpeedModifier()).orElse("none")
                     + ", gate open " + helper.getBlockState(new BlockPos(9, 1, 12)).getValue(net.minecraft.world.level.block.FenceGateBlock.OPEN));
-            helper.assertTrue(count(shepherd, Items.WOOL.white()) >= 1 && count(shepherd, Items.WOOL.red()) >= 1,
-                    "The wool goes into the shepherd's inventory in the sheep's colour");
+            helper.assertTrue(count(shepherd, Items.WOOL.white()) + count(shepherd, Items.CARPET.white()) >= 1 && count(shepherd, Items.WOOL.red()) + count(shepherd, Items.CARPET.red()) >= 1,
+                    "The wool goes into the shepherd's inventory in the sheep's colour (a master may already have woven it into carpets)");
         });
     }
 
