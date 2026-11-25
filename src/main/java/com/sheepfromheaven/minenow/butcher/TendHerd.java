@@ -43,14 +43,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * The butcher keeps the livestock ({@link #LIVESTOCK}) within {@link #RANGE} blocks of its smoker at a steady herd
+ * The butcher keeps the livestock ({@link #LIVESTOCK}) within {@link ButcherSkill#penRange} blocks of its smoker at a steady herd
  * ({@link ButcherHerd}): it culls surplus adults with its axe ({@link Butchering}), breeds small herds with the food it holds, smokes raw
  * meat in its smoker with the coal it holds and takes the cooked meat out, and carries its goods to its home chest.
  * Named or leashed animals are pets and never culled. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class TendHerd extends Behavior<Villager> {
     public static final TagKey<EntityType<?>> LIVESTOCK = TagKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(MineNow.MOD_ID, "butcher_livestock"));
-    static final int RANGE = 8;
     private static final int HEIGHT = 3;
     private static final float SPEED = 0.5F;
     private static final double REACH = 2.0;
@@ -219,8 +218,7 @@ public class TendHerd extends Behavior<Villager> {
         if (FurnaceTending.needsTending(level, body, smoker.get(), RecipeType.SMOKING, stack -> true)) return target(Task.SMOKE, null, smoker.get());
 
         Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
-        for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()),
-                candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK))) {
+        for (Animal candidate : livestock(level, body, smoker.get())) {
             herds.computeIfAbsent(candidate.getType(), type -> new java.util.ArrayList<>()).add(candidate);
         }
         Comparator<Animal> nearest = Comparator.comparingDouble(body::distanceToSqr);
@@ -268,7 +266,7 @@ public class TendHerd extends Behavior<Villager> {
     }
 
     private static boolean inPen(ServerLevel level, Villager body, Animal animal) {
-        return jobSite(level, body).map(smoker -> pen(smoker).contains(animal.position())).orElse(false);
+        return jobSite(level, body).map(smoker -> pen(smoker, body).contains(animal.position()) && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, animal)).orElse(false);
     }
 
     /**
@@ -292,7 +290,7 @@ public class TendHerd extends Behavior<Villager> {
         boolean breed = false;
         boolean feed = false;
         Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
-        for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()), candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK))) {
+        for (Animal candidate : livestock(level, body, smoker.get())) {
             herds.computeIfAbsent(candidate.getType(), type -> new java.util.ArrayList<>()).add(candidate);
         }
         for (List<Animal> herd : herds.values()) {
@@ -312,7 +310,7 @@ public class TendHerd extends Behavior<Villager> {
         Optional<BlockPos> smoker = jobSite(level, body);
         if (smoker.isEmpty()) return 0;
         Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
-        for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()), candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK))) {
+        for (Animal candidate : livestock(level, body, smoker.get())) {
             herds.computeIfAbsent(candidate.getType(), type -> new java.util.ArrayList<>()).add(candidate);
         }
         int needed = 0;
@@ -339,7 +337,7 @@ public class TendHerd extends Behavior<Villager> {
         Optional<BlockPos> smoker = jobSite(level, body);
         if (smoker.isEmpty()) return false;
         Map<EntityType<?>, List<Animal>> herds = new HashMap<>();
-        for (Animal candidate : level.getEntitiesOfClass(Animal.class, pen(smoker.get()), candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK))) {
+        for (Animal candidate : livestock(level, body, smoker.get())) {
             herds.computeIfAbsent(candidate.getType(), type -> new java.util.ArrayList<>()).add(candidate);
         }
         return herds.values().stream().anyMatch(herd -> {
@@ -350,12 +348,18 @@ public class TendHerd extends Behavior<Villager> {
 
     /** No livestock within reach of its smoker. */
     public static boolean hasNoHerd(ServerLevel level, Villager body) {
-        return jobSite(level, body).map(smoker -> level.getEntitiesOfClass(Animal.class, pen(smoker),
-                animal -> animal.isAlive() && animal.getType().builtInRegistryHolder().is(LIVESTOCK)).isEmpty()).orElse(false);
+        return jobSite(level, body).map(smoker -> livestock(level, body, smoker).isEmpty()).orElse(false);
     }
 
-    static AABB pen(BlockPos smoker) {
-        return new AABB(smoker).inflate(RANGE, HEIGHT, RANGE);
+    /** The livestock within reach of its smoker that stands in an enclosed pen. */
+    static List<Animal> livestock(ServerLevel level, Villager body, BlockPos smoker) {
+        return com.sheepfromheaven.minenow.villager.Pens.penned(level, level.getEntitiesOfClass(Animal.class, pen(smoker, body),
+                candidate -> candidate.isAlive() && candidate.getType().builtInRegistryHolder().is(LIVESTOCK)));
+    }
+
+    static AABB pen(BlockPos smoker, Villager body) {
+        int range = ButcherSkill.penRange(body.getVillagerData().level());
+        return new AABB(smoker).inflate(range, HEIGHT, range);
     }
 
     private boolean inReach(Villager body) {

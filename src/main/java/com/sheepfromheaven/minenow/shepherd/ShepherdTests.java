@@ -231,4 +231,14 @@ public final class ShepherdTests {
         helper.assertTrue(shepherd.getOffers().stream().anyMatch(o -> o.getCostA().is(Items.EMERALD) && o.getResult().is(Items.WOOL.red())), "...and red wool, offers " + offers);
         helper.succeed();
     }
+
+    public static void aShepherdOnlyCountsSheepInAnEnclosedPen(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        buildPen(helper, 9);
+        sheep(helper, 4, 4, DyeColor.WHITE);
+        helper.assertTrue(ShearSheep.hasNoFlock(helper.getLevel(), shepherd), "A sheep running free in the open is no flock");
+        sheep(helper, 12, 12, DyeColor.RED);
+        helper.assertFalse(ShearSheep.hasNoFlock(helper.getLevel(), shepherd), "A sheep inside a fenced pen is a flock");
+        helper.succeed();
+    }
 }

@@ -582,4 +582,25 @@ public final class ButcherTests {
             helper.succeed();
         });
     }
+
+    public static void aButchersPenGrowsWithItsLevel(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        helper.spawn(EntityTypes.COW, new BlockPos(22, 1, 12));
+
+        butcher.setVillagerData(butcher.getVillagerData().withLevel(1));
+        helper.assertTrue(TendHerd.hasNoHerd(helper.getLevel(), butcher), "A novice's pen reaches 8 blocks, a cow 16 away is no herd");
+        butcher.setVillagerData(butcher.getVillagerData().withLevel(2));
+        helper.assertFalse(TendHerd.hasNoHerd(helper.getLevel(), butcher), "An apprentice's pen reaches 16 blocks, so a cow 16 away is its herd");
+        helper.succeed();
+    }
+
+    public static void aButcherOnlyCountsLivestockInAnEnclosedPen(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        GameTestHelpers.gatedPen(helper, 9);
+        helper.spawn(EntityTypes.COW, new BlockPos(4, 1, 4));
+        helper.assertTrue(TendHerd.hasNoHerd(helper.getLevel(), butcher), "A cow running free in the open is no herd");
+        helper.spawn(EntityTypes.COW, new BlockPos(12, 1, 12));
+        helper.assertFalse(TendHerd.hasNoHerd(helper.getLevel(), butcher), "A cow inside a fenced pen is a herd");
+        helper.succeed();
+    }
 }
