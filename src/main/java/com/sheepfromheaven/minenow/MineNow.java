@@ -94,6 +94,7 @@ public final class MineNow {
         FarmerReport.register();
         com.sheepfromheaven.minenow.butcher.TendHerd.registerWants();
         com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(net.minecraft.world.entity.npc.villager.VillagerProfession.FISHERMAN, com.sheepfromheaven.minenow.fisherman.GoFishing::hasNoWater, net.minecraft.world.item.Items.WATER_BUCKET);
+        com.sheepfromheaven.minenow.villager.SupplyNeeds.add(net.minecraft.world.entity.npc.villager.VillagerProfession.SHEPHERD, stack -> stack.is(net.minecraft.world.item.Items.WHEAT), com.sheepfromheaven.minenow.shepherd.ShearSheep::needsWheat);
         com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(net.minecraft.world.entity.npc.villager.VillagerProfession.SHEPHERD, com.sheepfromheaven.minenow.shepherd.ShearSheep::hasNoFlock, net.minecraft.world.item.Items.SHEARS);
         com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(net.minecraft.world.entity.npc.villager.VillagerProfession.BUTCHER, com.sheepfromheaven.minenow.butcher.TendHerd::hasNoHerd, net.minecraft.world.item.Items.WHEAT);
         com.sheepfromheaven.minenow.villager.IdleReason.addWorkAreaCheck(Miner.PROFESSION, com.sheepfromheaven.minenow.miner.DigQuarry::hasNoMine, net.minecraft.world.item.Items.IRON_PICKAXE);
@@ -338,6 +339,12 @@ public final class MineNow {
             test(helper, TestGroup.SHEPHERD, "shepherd_ignores_sheep_far_from_its_loom", ShepherdTests::shepherdIgnoresSheepFarFromItsLoom);
             test(helper, TestGroup.SHEPHERD, "shearing_a_sheep_takes_time", ShepherdTests::shearingASheepTakesTime);
             test(helper, TestGroup.SHEPHERD, "shepherd_unloads_its_wool_at_home", ShepherdTests::shepherdUnloadsItsWoolAtHome);
+            test(helper, TestGroup.SHEPHERD, "a_shepherd_breeds_its_flock_with_wheat", ShepherdTests::aShepherdBreedsItsFlockWithWheat);
+            test(helper, TestGroup.SHEPHERD, "a_shepherd_stops_breeding_at_its_flock_size", ShepherdTests::aShepherdStopsBreedingAtItsFlockSize);
+            test(helper, TestGroup.SHEPHERD, "a_master_shepherd_keeps_a_bigger_flock", ShepherdTests::aMasterShepherdKeepsABiggerFlock);
+            test(helper, TestGroup.SHEPHERD, "a_shepherd_wants_wheat_only_while_its_flock_can_grow", ShepherdTests::aShepherdWantsWheatOnlyWhileItsFlockCanGrow);
+            test(helper, TestGroup.SHEPHERD, "a_journeyman_shepherd_weaves_carpets", ShepherdTests::aJourneymanShepherdWeavesCarpets);
+            test(helper, TestGroup.SHEPHERD, "an_apprentice_shepherd_weaves_no_carpets", ShepherdTests::anApprenticeShepherdWeavesNoCarpets);
             test(helper, TestGroup.BUTCHER, "butcher_without_an_axe_offers_to_buy_one", ButcherTests::butcherWithoutAnAxeOffersToBuyOne);
             test(helper, TestGroup.BUTCHER, "butcher_never_buys_meat", ButcherTests::butcherNeverBuysMeat);
             test(helper, TestGroup.BUTCHER, "butcher_keeps_its_raw_meat_for_the_smoker", ButcherTests::butcherKeepsItsRawMeatForTheSmoker);

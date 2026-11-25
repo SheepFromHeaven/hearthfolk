@@ -23,6 +23,7 @@ import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
@@ -37,14 +38,16 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * The shepherd shears the sheep within {@link #RANGE} blocks of its loom: it walks up to a sheep, holds it still and
- * shears for as long as its level dictates ({@link ShepherdSkill}), keeping the wool it doesn't tear. When the wool
- * piles up it carries it to its home chest. Lives in CORE after MoveToTargetSink, like TendFields.
+ * shears for as long as its level dictates ({@link ShepherdSkill}), keeping the wool it doesn't tear. With nothing to
+ * shear it breeds its flock with wheat, shears or not, up to {@link ShepherdSkill#flockSize}; it never culls. When the
+ * wool piles up it carries it to its home chest. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class ShearSheep extends Behavior<Villager> {
     static final int RANGE = 8;
@@ -58,6 +61,7 @@ public class ShearSheep extends Behavior<Villager> {
 
     private final Map<UUID, Long> unreachableSheep = new HashMap<>();
     private @Nullable Sheep sheep;
+    private boolean breeding;
     private @Nullable BlockPos chest;
     private long targetSince;
     private long nextStartAllowed;
@@ -109,12 +113,14 @@ public class ShearSheep extends Behavior<Villager> {
             return;
         }
         if (sheep == null) return;
-        if (!sheep.isAlive() || !sheep.readyForShearing() || !Tools.has(body) || !inFlock(level, body, sheep)) {
+        boolean stillWanted = breeding ? readyToBreed(sheep) && wheat(body).isPresent() : sheep.readyForShearing() && Tools.has(body);
+        if (!sheep.isAlive() || !stillWanted || !inFlock(level, body, sheep)) {
             advance(level, body, timestamp);
             return;
         }
         if (body.distanceTo(sheep) <= SHEAR_REACH) {
-            shear(level, body, timestamp);
+            if (breeding) feed(level, body, timestamp);
+            else shear(level, body, timestamp);
         } else {
             shearing = 0;
             if (pathCannotReach(body) || timestamp - targetSince > GIVE_UP_AFTER_TICKS) {
@@ -129,6 +135,7 @@ public class ShearSheep extends Behavior<Villager> {
     @Override
     protected void stop(ServerLevel level, Villager body, long timestamp) {
         sheep = null;
+        breeding = false;
         chest = null;
         shearing = 0;
         body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
@@ -167,6 +174,16 @@ public class ShearSheep extends Behavior<Villager> {
         advance(level, body, timestamp);
     }
 
+    private void feed(ServerLevel level, Villager body, long timestamp) {
+        sheep.getNavigation().stop();
+        body.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+        body.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(sheep, true));
+        wheat(body).ifPresent(stack -> stack.shrink(1));
+        sheep.setInLove(null);
+        body.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+        advance(level, body, timestamp);
+    }
+
     private void advance(ServerLevel level, Villager body, long timestamp) {
         shearing = 0;
         if (pickTarget(level, body)) {
@@ -178,6 +195,7 @@ public class ShearSheep extends Behavior<Villager> {
     private boolean pickTarget(ServerLevel level, Villager body) {
         sheep = null;
         chest = null;
+        breeding = false;
         Optional<BlockPos> loom = jobSite(level, body);
         if (loom.isEmpty()) return false;
         long now = level.getGameTime();
@@ -189,12 +207,50 @@ public class ShearSheep extends Behavior<Villager> {
                 return true;
             }
         }
-        if (!Tools.has(body)) return false;
-        sheep = level.getEntitiesOfClass(Sheep.class, flockArea(loom.get()),
-                        candidate -> candidate.readyForShearing() && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, candidate) && !unreachableSheep.containsKey(candidate.getUUID()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.blockPosition())).stream()
-                .min(Comparator.comparingDouble(body::distanceToSqr))
-                .orElse(null);
-        return sheep != null;
+        List<Sheep> flock = flock(level, loom.get());
+        Comparator<Sheep> nearest = Comparator.comparingDouble(body::distanceToSqr);
+        if (Tools.has(body)) {
+            sheep = flock.stream().filter(candidate -> candidate.readyForShearing() && workable(level, candidate)).min(nearest).orElse(null);
+            if (sheep != null) return true;
+        }
+        if (canGrow(flock, body.getVillagerData().level())) {
+            int wheat = wheat(body).map(ItemStack::getCount).orElse(0);
+            List<Sheep> ready = flock.stream().filter(candidate -> readyToBreed(candidate) && workable(level, candidate)).toList();
+            boolean partnerWaiting = flock.stream().anyMatch(Sheep::isInLove);
+            if (!ready.isEmpty() && wheat > 0 && (partnerWaiting || (ready.size() >= 2 && wheat >= 2))) {
+                sheep = ready.stream().min(nearest).get();
+                breeding = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean workable(ServerLevel level, Sheep candidate) {
+        return !unreachableSheep.containsKey(candidate.getUUID()) && com.sheepfromheaven.minenow.villager.RainShelter.allows(level, candidate.blockPosition());
+    }
+
+    /** The penned sheep within reach of its loom, lambs included. */
+    private static List<Sheep> flock(ServerLevel level, BlockPos loom) {
+        return level.getEntitiesOfClass(Sheep.class, flockArea(loom), candidate -> candidate.isAlive() && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, candidate));
+    }
+
+    /** Two adults to breed and room for a lamb under its level's flock size. */
+    private static boolean canGrow(List<Sheep> flock, int villagerLevel) {
+        return flock.stream().filter(member -> !member.isBaby()).count() >= 2 && flock.size() < ShepherdSkill.flockSize(villagerLevel);
+    }
+
+    /** Whether its flock can grow, so wheat to breed it is worth buying ({@link com.sheepfromheaven.minenow.villager.SupplyNeeds}). */
+    public static boolean needsWheat(ServerLevel level, Villager body) {
+        return jobSite(level, body).map(loom -> canGrow(flock(level, loom), body.getVillagerData().level())).orElse(false);
+    }
+
+    private static boolean readyToBreed(Sheep sheep) {
+        return !sheep.isBaby() && sheep.getAge() == 0 && sheep.canFallInLove();
+    }
+
+    private static Optional<ItemStack> wheat(Villager body) {
+        return body.getInventory().getItems().stream().filter(stack -> stack.is(Items.WHEAT)).findFirst();
     }
 
     private static boolean inFlock(ServerLevel level, Villager body, Sheep sheep) {
