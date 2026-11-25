@@ -76,4 +76,14 @@ public final class TrapdoorTests {
     public static void aTopHalfTrapdoorFillingAOneBlockCorridorIsNotPlannedThrough(GameTestHelper helper) {
         noWayThrough(helper, corridor(helper, 1, trapdoor(false, Half.TOP)));
     }
+
+    public static void aVillagerWalksAlongOpenTrapdoorsLyingFlatAgainstItsPath(GameTestHelper helper) {
+        Villager villager = corridor(helper, 1, Blocks.AIR.defaultBlockState());
+        for (int x = 5; x <= 13; x++) {
+            for (int y = 1; y <= 2; y++) {
+                helper.setBlock(new BlockPos(x, y, 6), trapdoor(true, y == 1 ? Half.BOTTOM : Half.TOP).setValue(TrapDoorBlock.FACING, Direction.NORTH));
+            }
+        }
+        reaches(helper, villager);
+    }
 }

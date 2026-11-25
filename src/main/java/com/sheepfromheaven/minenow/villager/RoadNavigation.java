@@ -49,10 +49,14 @@ public class RoadNavigation extends GroundPathNavigation {
     /**
      * Vanilla plans straight through these and the villager then stands in front of them for good: an open trapdoor is a solid
      * panel across its cell, and one in the top half of its cell leaves 1.81 blocks of headroom for a villager of 1.95. A closed
-     * trapdoor in the bottom half is a floor a villager walks over, so that one stays.
+     * trapdoor in the bottom half is a floor a villager walks over, so that one stays. An open one lies flat against one edge of
+     * its cell, so it only stops a move across that edge (along its facing axis): a ledge running along a wall of open
+     * trapdoors stays walkable.
      */
-    static boolean blockedByTrapdoor(BlockState state) {
-        return state.getBlock() instanceof TrapDoorBlock && (state.getValue(TrapDoorBlock.OPEN) || state.getValue(TrapDoorBlock.HALF) == Half.TOP);
+    static boolean blockedByTrapdoor(BlockState state, int dx, int dz) {
+        if (!(state.getBlock() instanceof TrapDoorBlock)) return false;
+        if (!state.getValue(TrapDoorBlock.OPEN)) return state.getValue(TrapDoorBlock.HALF) == Half.TOP;
+        return state.getValue(TrapDoorBlock.FACING).getAxis() == net.minecraft.core.Direction.Axis.X ? dx != 0 : dz != 0;
     }
 
     /** Nobody stands on an open trapdoor: it has no top, so vanilla's hop onto it ends in a fall into the cell. */
@@ -85,7 +89,7 @@ public class RoadNavigation extends GroundPathNavigation {
             for (int i = 0; i < count; i++) {
                 Node node = neighbors[i];
                 if (!com.sheepfromheaven.minenow.miner.Miner.shaftClosedTo(this.mob, node.x, node.y, node.z)
-                        && !blockedByTrapdoor(this.currentContext.level().getBlockState(node.asBlockPos()))
+                        && !blockedByTrapdoor(this.currentContext.level().getBlockState(node.asBlockPos()), node.x - pos.x, node.z - pos.z)
                         && !isOpenTrapdoor(this.currentContext.level().getBlockState(node.asBlockPos().below()))) neighbors[kept++] = node;
             }
             count = kept;
