@@ -104,6 +104,8 @@ public final class VillagerBrains {
                 Pair.of(10, SetLookAndInteract.create(EntityTypes.PLAYER, 4)),
                 Pair.of(2, new WalkToPoi(MemoryModuleType.MEETING_POINT, SPEED, 6, 200)),
                 Pair.of(3, new GiveGiftToHero(100)),
+                Pair.of(3, InteractWith.of(EntityTypes.VILLAGER, 8, AgeableMob::canBreed, AgeableMob::canBreed, MemoryModuleType.BREED_TARGET, SPEED, 2)),
+                Pair.of(3, makeLove()),
                 Pair.of(3, ValidateNearbyPoi.create(type -> type.is(PoiTypes.MEETING), MemoryModuleType.MEETING_POINT)),
                 fullLook(),
                 Pair.of(99, UpdateActivityFromSchedule.create()));
@@ -122,14 +124,18 @@ public final class VillagerBrains {
                 Pair.of(3, new GiveGiftToHero(100)),
                 Pair.of(3, SetLookAndInteract.create(EntityTypes.PLAYER, 4)),
                 Pair.of(3, new ShowTradesToPlayer(400, 1600)),
-                Pair.of(3, new GateBehavior<>(
-                        java.util.Map.of(),
-                        ImmutableSet.of(MemoryModuleType.BREED_TARGET),
-                        GateBehavior.OrderPolicy.ORDERED,
-                        GateBehavior.RunningPolicy.RUN_ONE,
-                        ImmutableList.of(Pair.of(new VillageMakeLove(), 1)))),
+                Pair.of(3, makeLove()),
                 fullLook(),
                 Pair.of(99, UpdateActivityFromSchedule.create()));
+    }
+
+    private static BehaviorControl<Villager> makeLove() {
+        return new GateBehavior<>(
+                java.util.Map.of(),
+                ImmutableSet.of(MemoryModuleType.BREED_TARGET),
+                GateBehavior.OrderPolicy.ORDERED,
+                GateBehavior.RunningPolicy.RUN_ONE,
+                ImmutableList.of(Pair.of(new VillageMakeLove(), 1)));
     }
 
     private static Pair<Integer, BehaviorControl<LivingEntity>> fullLook() {

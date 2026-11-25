@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:village_56",
+  "function": "minenow:two_willing_villagers_at_the_bell_have_a_child",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1500
+}
