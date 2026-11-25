@@ -507,6 +507,7 @@ public final class MineNow {
             test(helper, TestGroup.ROADS, "a_villager_walks_around_a_top_half_trapdoor_in_a_wide_corridor", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksAroundATopHalfTrapdoorInAWideCorridor);
             test(helper, TestGroup.ROADS, "an_open_trapdoor_filling_a_one_block_corridor_is_not_planned_through", com.sheepfromheaven.minenow.villager.TrapdoorTests::anOpenTrapdoorFillingAOneBlockCorridorIsNotPlannedThrough);
             test(helper, TestGroup.ROADS, "a_top_half_trapdoor_filling_a_one_block_corridor_is_not_planned_through", com.sheepfromheaven.minenow.villager.TrapdoorTests::aTopHalfTrapdoorFillingAOneBlockCorridorIsNotPlannedThrough);
+            test(helper, TestGroup.ROADS, "a_villager_walks_along_open_trapdoors_lying_flat_against_its_path", com.sheepfromheaven.minenow.villager.TrapdoorTests::aVillagerWalksAlongOpenTrapdoorsLyingFlatAgainstItsPath);
             test(helper, TestGroup.ROADS, "villager_takes_the_stairs_rather_than_jumping_off_a_ledge", RoadTests::villagerTakesTheStairsRatherThanJumpingOffALedge);
             test(helper, TestGroup.ROADS, "villager_still_jumps_down_when_there_is_no_other_way", RoadTests::villagerStillJumpsDownWhenThereIsNoOtherWay);
             test(helper, TestGroup.MINER, "miner_leaves_out_torches_where_your_light_is_enough", MinerTests::minerLeavesOutTorchesWhereYourLightIsEnough);
