@@ -771,6 +771,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_banner_on_another_block_links_nothing", com.sheepfromheaven.minenow.villager.VillageMarkerTests::aBannerOnAnotherBlockLinksNothing);
             test(helper, TestGroup.VILLAGERS, "a_partner_anywhere_in_the_village_counts", com.sheepfromheaven.minenow.villager.BreedingReportTests::aPartnerAnywhereInTheVillageCounts);
             test(helper, TestGroup.VILLAGERS, "a_free_bed_anywhere_in_the_village_lets_them_breed", com.sheepfromheaven.minenow.villager.BreedingReportTests::aFreeBedAnywhereInTheVillageLetsThemBreed);
+            test(helper, TestGroup.VILLAGERS, "two_willing_villagers_at_the_bell_have_a_child", com.sheepfromheaven.minenow.villager.MeetingBreedingTests::twoWillingVillagersAtTheBellHaveAChild);
             test(helper, TestGroup.VILLAGERS, "a_villager_without_a_job_block_claims_a_free_one_across_the_village", com.sheepfromheaven.minenow.villager.FarJobSiteTests::aVillagerWithoutAJobBlockClaimsAFreeOneAcrossTheVillage);
             test(helper, TestGroup.VILLAGERS, "a_villager_does_not_claim_a_job_block_further_than_48_blocks_from_its_village_border", com.sheepfromheaven.minenow.villager.FarJobSiteTests::aVillagerDoesNotClaimAJobBlockFurtherThan48BlocksFromItsVillageBorder);
             test(helper, TestGroup.VILLAGERS, "a_villager_claims_a_free_job_block_up_to_48_blocks_outside_its_village_border", com.sheepfromheaven.minenow.villager.FarJobSiteTests::aVillagerClaimsAFreeJobBlockUpTo48BlocksOutsideItsVillageBorder);
