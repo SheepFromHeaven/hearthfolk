@@ -341,6 +341,7 @@ public final class MineNow {
             test(helper, TestGroup.SHEPHERD, "shepherd_unloads_its_wool_at_home", ShepherdTests::shepherdUnloadsItsWoolAtHome);
             test(helper, TestGroup.SHEPHERD, "a_shepherd_breeds_its_flock_with_wheat", ShepherdTests::aShepherdBreedsItsFlockWithWheat);
             test(helper, TestGroup.SHEPHERD, "a_shepherd_stops_breeding_at_its_flock_size", ShepherdTests::aShepherdStopsBreedingAtItsFlockSize);
+            test(helper, TestGroup.SHEPHERD, "a_novice_shepherd_keeps_four_sheep_of_every_colour", ShepherdTests::aNoviceShepherdKeepsFourSheepOfEveryColour);
             test(helper, TestGroup.SHEPHERD, "a_master_shepherd_keeps_a_bigger_flock", ShepherdTests::aMasterShepherdKeepsABiggerFlock);
             test(helper, TestGroup.SHEPHERD, "a_shepherd_wants_wheat_only_while_its_flock_can_grow", ShepherdTests::aShepherdWantsWheatOnlyWhileItsFlockCanGrow);
             test(helper, TestGroup.SHEPHERD, "a_journeyman_shepherd_weaves_carpets", ShepherdTests::aJourneymanShepherdWeavesCarpets);
@@ -354,6 +355,7 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "a_butchers_pen_grows_with_its_level", ButcherTests::aButchersPenGrowsWithItsLevel);
             test(helper, TestGroup.BUTCHER, "a_butcher_only_counts_livestock_in_an_enclosed_pen", ButcherTests::aButcherOnlyCountsLivestockInAnEnclosedPen);
             test(helper, TestGroup.BUTCHER, "butcher_breeds_a_small_herd", ButcherTests::butcherBreedsASmallHerd);
+            test(helper, TestGroup.BUTCHER, "a_butcher_keeps_a_herd_of_each_kind", ButcherTests::aButcherKeepsAHerdOfEachKind);
             test(helper, TestGroup.BUTCHER, "a_butcher_without_an_axe_or_fuel_still_breeds_its_herd", ButcherTests::aButcherWithoutAnAxeOrFuelStillBreedsItsHerd);
             test(helper, TestGroup.BUTCHER, "a_butcher_without_an_axe_culls_nothing", ButcherTests::aButcherWithoutAnAxeCullsNothing);
             test(helper, TestGroup.BUTCHER, "a_butcher_with_nothing_to_cook_is_not_stopped_by_missing_fuel", ButcherTests::aButcherWithNothingToCookIsNotStoppedByMissingFuel);

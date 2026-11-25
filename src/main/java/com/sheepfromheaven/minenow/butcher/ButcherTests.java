@@ -166,6 +166,22 @@ public final class ButcherTests {
         });
     }
 
+    public static void aButcherKeepsAHerdOfEachKind(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+        butcher.getInventory().addItem(new ItemStack(Items.CARROT, 4));
+        GameTestHelpers.gatedPen(helper, 9);
+        List<Animal> pigs = herd(helper, EntityTypes.PIG, 12);
+        herd(helper, EntityTypes.COW, 2);
+
+        helper.succeedWhen(() -> {
+            var calves = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.cow.Cow.class, helper.getBounds(), Animal::isBaby);
+            var piglets = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.pig.Pig.class, helper.getBounds(), Animal::isBaby);
+            helper.assertTrue(piglets.isEmpty() && alive(pigs) == 12 && count(butcher, Items.CARROT) == 4, "12 pigs are a full herd of pigs, it breeds no more, carrots left " + count(butcher, Items.CARROT));
+            helper.assertTrue(!calves.isEmpty(), "...but the cows are a herd of their own, so it breeds them, wheat left " + count(butcher, Items.WHEAT));
+        });
+    }
+
     public static void aButcherWithoutAnAxeOrFuelStillBreedsItsHerd(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
