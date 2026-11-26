@@ -108,6 +108,33 @@ public final class ButcherTests {
         });
     }
 
+    public static void aButcherWalkingToAnAnimalIsNotPulledBackToItsSmoker(GameTestHelper helper) {
+        Villager butcher = spawnButcher(helper);
+        butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));
+        GameTestHelpers.gatedPen(helper, 9);
+        herd(helper, EntityTypes.COW, ButcherHerd.BREEDING_STOCK + 2);
+        long[] pulledAt = {-1};
+        boolean[] done = {false};
+        helper.onEachTick(() -> {
+            var brain = butcher.getBrain();
+            var walk = brain.getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET);
+            if (pulledAt[0] < 0) {
+                boolean running = brain.getRunningBehaviors().stream().anyMatch(behavior -> behavior instanceof TendHerd);
+                if (running && walk.isPresent() && walk.get().getTarget() instanceof net.minecraft.world.entity.ai.behavior.EntityTracker) {
+                    brain.setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET,
+                            new net.minecraft.world.entity.ai.memory.WalkTarget(helper.absolutePos(new BlockPos(1, 1, 21)), 0.5F, 1));
+                    pulledAt[0] = helper.getTick();
+                }
+            } else if (!done[0] && helper.getTick() >= pulledAt[0] + 2) {
+                done[0] = true;
+                helper.assertTrue(walk.isPresent() && walk.get().getTarget() instanceof net.minecraft.world.entity.ai.behavior.EntityTracker,
+                        "A butcher on its way to an animal should walk to it again once vanilla pulled it to the smoker, walk target "
+                                + walk.map(target -> helper.relativePos(target.getTarget().currentBlockPosition()).toShortString()).orElse("none"));
+            }
+        });
+        helper.succeedWhen(() -> helper.assertTrue(done[0], "The butcher never started walking to an animal"));
+    }
+
     public static void butcherCullsDownToItsBreedingStock(GameTestHelper helper) {
         Villager butcher = spawnButcher(helper);
         butcher.getInventory().addItem(new ItemStack(Items.STONE_AXE));

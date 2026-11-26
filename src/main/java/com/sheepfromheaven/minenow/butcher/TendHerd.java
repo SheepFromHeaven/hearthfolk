@@ -128,7 +128,7 @@ public class TendHerd extends Behavior<Villager> {
         if (timestamp - targetSince > GIVE_UP_AFTER_TICKS || (animal != null && pathCannotReach(body))) {
             if (animal != null && !swingsLanded.containsKey(animal.getUUID())) unreachable.put(animal.getUUID(), timestamp + UNREACHABLE_COOLDOWN);
             advance(level, body, timestamp);
-        } else if (animal != null ? !body.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET) : block != null && !com.sheepfromheaven.minenow.villager.Walking.towards(body, block)) {
+        } else if (animal != null ? !com.sheepfromheaven.minenow.villager.Walking.towards(body, animal) : block != null && !com.sheepfromheaven.minenow.villager.Walking.towards(body, block)) {
             walk(body);
         }
     }

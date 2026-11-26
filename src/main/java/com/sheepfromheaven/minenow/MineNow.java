@@ -359,6 +359,7 @@ public final class MineNow {
             test(helper, TestGroup.BUTCHER, "butcher_never_buys_meat", ButcherTests::butcherNeverBuysMeat);
             test(helper, TestGroup.BUTCHER, "butcher_keeps_its_raw_meat_for_the_smoker", ButcherTests::butcherKeepsItsRawMeatForTheSmoker);
             test(helper, TestGroup.BUTCHER, "culling_takes_as_many_swings_as_the_axe_needs", ButcherTests::cullingTakesAsManySwingsAsTheAxeNeeds);
+            test(helper, TestGroup.BUTCHER, "a_butcher_walking_to_an_animal_is_not_pulled_back_to_its_smoker", ButcherTests::aButcherWalkingToAnAnimalIsNotPulledBackToItsSmoker);
             test(helper, TestGroup.BUTCHER, "butcher_culls_down_to_its_breeding_stock", ButcherTests::butcherCullsDownToItsBreedingStock);
             test(helper, TestGroup.BUTCHER, "butchers_and_shepherds_open_fence_gates_but_not_others", ButcherTests::butchersAndShepherdsOpenFenceGatesButNotOthers);
             test(helper, TestGroup.BUTCHER, "a_butchers_pen_grows_with_its_level", ButcherTests::aButchersPenGrowsWithItsLevel);
