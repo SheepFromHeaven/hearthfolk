@@ -40,15 +40,14 @@ public final class WorkshopTests {
         });
     }
 
-    public static void aWorkshopDoesNotClaimAChestThatAlreadyHoldsItems(GameTestHelper helper) {
+    public static void aWorkshopClaimsAChestThatAlreadyHoldsItems(GameTestHelper helper) {
         Villager shepherd = spawnShepherd(helper);
         helper.setBlock(NEAR_CHEST, Blocks.CHEST);
         helper.getBlockEntity(NEAR_CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
 
-        helper.runAfterDelay(200, () -> {
-            helper.assertTrue(Workshop.chestsOf(helper.getLevel(), shepherd).isEmpty(), "A chest with items in it is the player's, not a workshop's, has " + Workshop.chestsOf(helper.getLevel(), shepherd));
-            helper.assertTrue(!helper.getBlockEntity(NEAR_CHEST, ChestBlockEntity.class).isLocked(), "...and stays unlocked");
-            helper.succeed();
+        helper.succeedWhen(() -> {
+            helper.assertTrue(Workshop.chestsOf(helper.getLevel(), shepherd).contains(helper.absolutePos(NEAR_CHEST)), "A chest that holds items is a workshop's like any other, has " + Workshop.chestsOf(helper.getLevel(), shepherd));
+            helper.assertTrue(helper.getBlockEntity(NEAR_CHEST, ChestBlockEntity.class).isLocked(), "...and is locked for players");
         });
     }
 

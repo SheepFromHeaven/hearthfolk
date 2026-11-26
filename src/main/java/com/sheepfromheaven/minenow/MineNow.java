@@ -272,7 +272,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_named_babys_birth_message_has_its_name", com.sheepfromheaven.minenow.villager.BirthMessagesTests::aNamedBabysBirthMessageHasItsName);
             test(helper, TestGroup.VILLAGERS, "an_adult_villager_is_not_announced_as_born", com.sheepfromheaven.minenow.villager.BirthMessagesTests::anAdultVillagerIsNotAnnouncedAsBorn);
             test(helper, TestGroup.STORAGE, "a_fishermans_barrel_opens_again_when_he_dies", com.sheepfromheaven.minenow.villager.AbandonedStorageTests::aFishermansBarrelOpensAgainWhenHeDies);
-            test(helper, TestGroup.STORAGE, "a_barrel_with_the_players_items_stays_open_when_a_fisherman_takes_it_as_workplace", com.sheepfromheaven.minenow.villager.AbandonedStorageTests::aBarrelWithThePlayersItemsStaysOpenWhenAFishermanTakesItAsWorkplace);
+            test(helper, TestGroup.STORAGE, "a_barrel_with_items_in_it_is_locked_when_a_fisherman_takes_it_as_workplace", com.sheepfromheaven.minenow.villager.AbandonedStorageTests::aBarrelWithItemsInItIsLockedWhenAFishermanTakesItAsWorkplace);
             test(helper, TestGroup.STORAGE, "an_abandoned_locked_barrel_opens_when_a_right_click_finds_no_owner", com.sheepfromheaven.minenow.villager.AbandonedStorageTests::anAbandonedLockedBarrelOpensWhenARightClickFindsNoOwner);
             test(helper, TestGroup.VILLAGERS, "a_seeking_worker_picks_up_a_tool_thrown_to_it", IdleCueTests::aSeekingWorkerPicksUpAToolThrownToIt);
             test(helper, TestGroup.VILLAGERS, "a_worker_with_nowhere_to_unload_shakes_its_head", IdleCueTests::aWorkerWithNowhereToUnloadShakesItsHead);
@@ -733,10 +733,10 @@ public final class MineNow {
             test(helper, TestGroup.STORAGE, "a_dead_owners_goods_are_free_to_take", HomeStorageTests::aDeadOwnersGoodsAreFreeToTake);
             test(helper, TestGroup.STORAGE, "a_workshop_claims_as_many_chests_as_its_level_allows", com.sheepfromheaven.minenow.villager.WorkshopTests::aWorkshopClaimsAsManyChestsAsItsLevelAllows);
             test(helper, TestGroup.STORAGE, "trapped_chests_are_never_claimed", com.sheepfromheaven.minenow.villager.WorkshopTests::trappedChestsAreNeverClaimed);
-            test(helper, TestGroup.STORAGE, "a_workshop_does_not_claim_a_chest_that_already_holds_items", com.sheepfromheaven.minenow.villager.WorkshopTests::aWorkshopDoesNotClaimAChestThatAlreadyHoldsItems);
-            test(helper, TestGroup.STORAGE, "a_villager_does_not_claim_a_chest_that_already_holds_items", HomeStorageTests::aVillagerDoesNotClaimAChestThatAlreadyHoldsItems);
+            test(helper, TestGroup.STORAGE, "a_workshop_claims_a_chest_that_already_holds_items", com.sheepfromheaven.minenow.villager.WorkshopTests::aWorkshopClaimsAChestThatAlreadyHoldsItems);
+            test(helper, TestGroup.STORAGE, "a_villager_claims_a_chest_that_already_holds_items", HomeStorageTests::aVillagerClaimsAChestThatAlreadyHoldsItems);
             test(helper, TestGroup.STORAGE, "the_free_command_gives_dropped_belongings_back_to_the_player", HomeStorageTests::theFreeCommandGivesDroppedBelongingsBackToThePlayer);
-            test(helper, TestGroup.STORAGE, "a_villager_with_only_a_full_chest_near_claims_nothing", HomeStorageTests::aVillagerWithOnlyAFullChestNearClaimsNothing);
+            test(helper, TestGroup.STORAGE, "a_villager_with_only_a_full_chest_near_claims_it", HomeStorageTests::aVillagerWithOnlyAFullChestNearClaimsIt);
             test(helper, TestGroup.VILLAGERS, "a_bed_a_player_uses_is_not_claimed_by_a_villager", com.sheepfromheaven.minenow.villager.PlayerBedTests::aBedAPlayerUsesIsNotClaimedByAVillager);
             test(helper, TestGroup.VILLAGERS, "a_player_using_a_villagers_bed_takes_it_over", com.sheepfromheaven.minenow.villager.PlayerBedTests::aPlayerUsingAVillagersBedTakesItOver);
             test(helper, TestGroup.STORAGE, "trade_goods_go_to_the_workshop_and_emeralds_go_home", com.sheepfromheaven.minenow.villager.WorkshopTests::tradeGoodsGoToTheWorkshopAndEmeraldsGoHome);
