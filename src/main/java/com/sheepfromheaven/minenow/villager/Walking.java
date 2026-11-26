@@ -1,6 +1,8 @@
 package com.sheepfromheaven.minenow.villager;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.villager.Villager;
 
@@ -13,5 +15,9 @@ public final class Walking {
 
     public static boolean towards(Villager body, BlockPos pos) {
         return body.getBrain().getMemory(MemoryModuleType.WALK_TARGET).filter(walk -> walk.getTarget().currentBlockPosition().equals(pos)).isPresent();
+    }
+
+    public static boolean towards(Villager body, Entity entity) {
+        return body.getBrain().getMemory(MemoryModuleType.WALK_TARGET).filter(walk -> walk.getTarget() instanceof EntityTracker tracker && tracker.getEntity() == entity).isPresent();
     }
 }
