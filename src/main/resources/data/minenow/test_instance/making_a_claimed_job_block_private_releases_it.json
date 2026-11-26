@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:private_3",
+  "function": "minenow:making_a_claimed_job_block_private_releases_it",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 400
+}

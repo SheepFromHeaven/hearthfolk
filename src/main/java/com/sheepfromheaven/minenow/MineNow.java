@@ -124,6 +124,10 @@ public final class MineNow {
         NeoForge.EVENT_BUS.addListener(HomeStorage::onDeath);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.DeathMessages::onDeath);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.DeathMessages::onJoin);
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, com.sheepfromheaven.minenow.villager.PrivateBlocks::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.PrivateBlocks::onPlace);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.PrivateBlocks::onBreak);
+        NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.PrivateBlocks::onLevelTick);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(HomeStorage::onConversion);
         NeoForge.EVENT_BUS.addListener(com.sheepfromheaven.minenow.villager.Belongings::onEntityLeave);
@@ -713,6 +717,12 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_villager_loses_a_job_site_that_was_broken", com.sheepfromheaven.minenow.villager.JobSiteTests::aVillagerLosesAJobSiteThatWasBroken);
             test(helper, TestGroup.VILLAGERS, "a_name_from_a_name_tag_is_kept", VillagerNamesTests::aNameFromANameTagIsKept);
             test(helper, TestGroup.STORAGE, "villager_claims_and_locks_chest_near_its_bed", HomeStorageTests::villagerClaimsAndLocksChestNearItsBed);
+            test(helper, TestGroup.STORAGE, "a_chest_a_player_places_stays_theirs", com.sheepfromheaven.minenow.villager.PrivateBlockTests::aChestAPlayerPlacesStaysTheirs);
+            test(helper, TestGroup.STORAGE, "a_chest_allowed_with_an_emerald_is_claimed", com.sheepfromheaven.minenow.villager.PrivateBlockTests::aChestAllowedWithAnEmeraldIsClaimed);
+            test(helper, TestGroup.STORAGE, "making_a_claimed_chest_private_frees_it_and_its_goods", com.sheepfromheaven.minenow.villager.PrivateBlockTests::makingAClaimedChestPrivateFreesItAndItsGoods);
+            test(helper, TestGroup.STORAGE, "a_job_block_a_player_places_is_not_taken", com.sheepfromheaven.minenow.villager.PrivateBlockTests::aJobBlockAPlayerPlacesIsNotTaken);
+            test(helper, TestGroup.STORAGE, "a_job_block_allowed_with_an_emerald_is_taken", com.sheepfromheaven.minenow.villager.PrivateBlockTests::aJobBlockAllowedWithAnEmeraldIsTaken);
+            test(helper, TestGroup.STORAGE, "making_a_claimed_job_block_private_releases_it", com.sheepfromheaven.minenow.villager.PrivateBlockTests::makingAClaimedJobBlockPrivateReleasesIt);
             test(helper, TestGroup.STORAGE, "a_villager_keeps_its_goods_in_a_barrel_when_there_is_no_chest", HomeStorageTests::aVillagerKeepsItsGoodsInABarrelWhenThereIsNoChest);
             test(helper, TestGroup.STORAGE, "a_chest_is_preferred_over_a_barrel", HomeStorageTests::aChestIsPreferredOverABarrel);
             test(helper, TestGroup.STORAGE, "breaking_a_home_barrel_keeps_its_goods_the_owners", HomeStorageTests::breakingAHomeBarrelKeepsItsGoodsTheOwners);
