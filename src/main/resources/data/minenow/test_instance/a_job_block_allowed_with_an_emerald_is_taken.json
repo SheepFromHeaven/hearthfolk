@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:private_2",
+  "function": "minenow:a_job_block_allowed_with_an_emerald_is_taken",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}
