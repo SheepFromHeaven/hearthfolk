@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.7.0...v0.8.0) (2026-11-26)
+
+
+### Features
+
+* **butcher:** pen range grows with level and herds count only inside an enclosed pen ([#116](https://github.com/SheepFromHeaven/mine-now/issues/116)) ([c8d3418](https://github.com/SheepFromHeaven/mine-now/commit/c8d34186deaab80e7b274c48eb7e0f95de6673bc))
+* **farmer:** composts the seeds it can neither plant nor sell into bone meal for its field ([#119](https://github.com/SheepFromHeaven/mine-now/issues/119)) ([d754f47](https://github.com/SheepFromHeaven/mine-now/commit/d754f47a23003a9be49eea2797eeb72d98425d90))
+* **merchant:** without the emerald economy, exports bring no emeralds and market sales go to the player ([#118](https://github.com/SheepFromHeaven/mine-now/issues/118)) ([9dd7e65](https://github.com/SheepFromHeaven/mine-now/commit/9dd7e65f8d52d7ef7e48f9e18d17e03fa9befcae))
+* **shepherd:** breeds its flock with wheat, and weaves carpets from journeyman ([#121](https://github.com/SheepFromHeaven/mine-now/issues/121)) ([a57a4d0](https://github.com/SheepFromHeaven/mine-now/commit/a57a4d042f39e3c515c13b08bb50bd24c1c7820b))
+* **shepherd:** the flock size counts each colour on its own ([#122](https://github.com/SheepFromHeaven/mine-now/issues/122)) ([72646a6](https://github.com/SheepFromHeaven/mine-now/commit/72646a6f3da98da6131a80d1b5a4f294fee6c9a5))
+* **villager:** blocks a player places are private until allowed with an emerald ([#123](https://github.com/SheepFromHeaven/mine-now/issues/123)) ([24a273c](https://github.com/SheepFromHeaven/mine-now/commit/24a273c3a2b36960b77d3bdfb0dea479727eeee2))
+
+
+### Bug Fixes
+
+* **gametest:** deflake the suite and add a flaky-test runner ([#125](https://github.com/SheepFromHeaven/mine-now/issues/125)) ([627c8d2](https://github.com/SheepFromHeaven/mine-now/commit/627c8d25acc8c2b855992552cfba5587689abe00))
+* **villager:** open trapdoors along a path no longer block walking beside them ([#113](https://github.com/SheepFromHeaven/mine-now/issues/113)) ([62494a3](https://github.com/SheepFromHeaven/mine-now/commit/62494a3d38142146490cea26ef071fc0960c7b64))
+* **villager:** shepherds and butchers no longer let animals out through the gate they hold ([#120](https://github.com/SheepFromHeaven/mine-now/issues/120)) ([726c199](https://github.com/SheepFromHeaven/mine-now/commit/726c199d614185e09ee21ba45a7ea582eadb603e))
+* **villager:** willing villagers pair up at the bell, not only when idle ([#115](https://github.com/SheepFromHeaven/mine-now/issues/115)) ([8119014](https://github.com/SheepFromHeaven/mine-now/commit/811901422fac7a6dfc72739bd295860a28d75c90))
+
 ## [0.7.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.6.0...v0.7.0) (2026-11-24)
 
 
