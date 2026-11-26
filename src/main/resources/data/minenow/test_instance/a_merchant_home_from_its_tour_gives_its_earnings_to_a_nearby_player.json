@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:pack_14",
+  "function": "minenow:a_merchant_home_from_its_tour_gives_its_earnings_to_a_nearby_player",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1200
+}

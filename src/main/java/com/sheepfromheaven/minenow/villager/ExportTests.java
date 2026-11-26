@@ -30,6 +30,19 @@ public final class ExportTests {
         });
     }
 
+    public static void withoutEmeraldsATravellingMerchantTakesExportsAndPaysNothing(GameTestHelper helper) {
+        Villager armorer = spawnArmorer(helper);
+        armorer.getInventory().addItem(new ItemStack(Items.IRON_CHESTPLATE));
+        armorer.getInventory().addItem(new ItemStack(Items.IRON_HELMET));
+        helper.assertTrue(GameTestHelpers.sendTrader(helper, armorer) != null, "A travelling merchant comes");
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(armorer.getInventory().countItem(Items.IRON_CHESTPLATE) + armorer.getInventory().countItem(Items.IRON_HELMET) < 2,
+                    "With the emerald economy off the merchant still takes the armorer's armor, it has " + armorer.getInventory().countItem(Items.IRON_CHESTPLATE) + " chestplates, " + armorer.getInventory().countItem(Items.IRON_HELMET) + " helmets");
+            helper.assertTrue(armorer.getInventory().countItem(Items.EMERALD) == 0, "...but pays no emeralds into a village that counts none, it has " + armorer.getInventory().countItem(Items.EMERALD));
+        });
+    }
+
     public static void aTravellingMerchantBuysBulkSurplusAtHalfPrice(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
