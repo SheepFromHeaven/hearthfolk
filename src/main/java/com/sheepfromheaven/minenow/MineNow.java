@@ -291,7 +291,9 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGERS, "a_worker_out_of_fuel_seeks_out_a_nearby_player", IdleCueTests::aWorkerOutOfFuelSeeksOutANearbyPlayer);
             test(helper, TestGroup.VILLAGERS, "a_villager_without_a_job_site_shakes_its_head_even_off_duty", IdleCueTests::aVillagerWithoutAJobSiteShakesItsHeadEvenOffDuty);
             test(helper, TestGroup.FARMER, "farmer_report_explains_what_the_farmer_is_missing", FarmerTests::farmerReportExplainsWhatTheFarmerIsMissing);
-            test(helper, TestGroup.FARMER, "farmer_does_not_compost_seeds_at_the_composter", FarmerTests::farmerDoesNotCompostSeedsAtTheComposter);
+            test(helper, TestGroup.FARMER, "a_farmer_keeps_the_seeds_it_plants_and_sells", FarmerTests::aFarmerKeepsTheSeedsItPlantsAndSells);
+            test(helper, TestGroup.FARMER, "a_farmer_composts_its_surplus_seeds_into_bone_meal", FarmerTests::aFarmerCompostsItsSurplusSeedsIntoBoneMeal);
+            test(helper, TestGroup.FARMER, "a_farmer_with_enough_bone_meal_composts_nothing", FarmerTests::aFarmerWithEnoughBoneMealCompostsNothing);
             test(helper, TestGroup.FARMER, "a_farmer_does_not_bake_bread", FarmerTests::aFarmerDoesNotBakeBread);
             test(helper, TestGroup.FARMER, "farmer_uses_bone_meal_on_growing_crops", FarmerTests::farmerUsesBoneMealOnGrowingCrops);
             test(helper, TestGroup.TRADING, "farmer_buys_bone_meal_in_batches_of_eight_up_to_thirty_two", FarmerTradeTests::farmerBuysBoneMealInBatchesOfEightUpToThirtyTwo);
@@ -345,6 +347,9 @@ public final class MineNow {
             test(helper, TestGroup.SHEPHERD, "a_shepherd_wants_wheat_only_while_its_flock_can_grow", ShepherdTests::aShepherdWantsWheatOnlyWhileItsFlockCanGrow);
             test(helper, TestGroup.SHEPHERD, "a_journeyman_shepherd_weaves_carpets", ShepherdTests::aJourneymanShepherdWeavesCarpets);
             test(helper, TestGroup.SHEPHERD, "an_apprentice_shepherd_weaves_no_carpets", ShepherdTests::anApprenticeShepherdWeavesNoCarpets);
+            test(helper, TestGroup.SHEPHERD, "a_sheep_in_the_gateway_goes_back_into_the_pen_when_the_shepherd_closes_the_gate_behind_it_on_the_way_in", ShepherdTests::aSheepInTheGatewayGoesBackIntoThePenWhenTheShepherdClosesTheGateBehindItOnTheWayIn);
+            test(helper, TestGroup.SHEPHERD, "a_sheep_in_the_gateway_goes_back_into_the_pen_when_the_shepherd_closes_the_gate_behind_it_on_the_way_out", ShepherdTests::aSheepInTheGatewayGoesBackIntoThePenWhenTheShepherdClosesTheGateBehindItOnTheWayOut);
+            test(helper, TestGroup.SHEPHERD, "a_sheep_stepping_into_a_gateway_held_open_is_kept_in_the_pen", ShepherdTests::aSheepSteppingIntoAGatewayHeldOpenIsKeptInThePen);
             test(helper, TestGroup.BUTCHER, "butcher_without_an_axe_offers_to_buy_one", ButcherTests::butcherWithoutAnAxeOffersToBuyOne);
             test(helper, TestGroup.BUTCHER, "butcher_never_buys_meat", ButcherTests::butcherNeverBuysMeat);
             test(helper, TestGroup.BUTCHER, "butcher_keeps_its_raw_meat_for_the_smoker", ButcherTests::butcherKeepsItsRawMeatForTheSmoker);
@@ -411,6 +416,7 @@ public final class MineNow {
             test(helper, TestGroup.VILLAGER_TRADING, "a_villager_keeps_its_reserve_when_buying_from_villagers", VillagerTradingTests::aVillagerKeepsItsReserveWhenBuyingFromVillagers);
             test(helper, TestGroup.VILLAGER_TRADING, "travelling_merchants_can_be_switched_off", com.sheepfromheaven.minenow.villager.ExportTests::travellingMerchantsCanBeSwitchedOff);
             test(helper, TestGroup.VILLAGER_TRADING, "a_wandering_trader_buys_a_villages_surplus_goods", com.sheepfromheaven.minenow.villager.ExportTests::aWanderingTraderBuysAVillagesSurplusGoods);
+            test(helper, TestGroup.VILLAGER_TRADING, "without_emeralds_a_travelling_merchant_takes_exports_and_pays_nothing", com.sheepfromheaven.minenow.villager.ExportTests::withoutEmeraldsATravellingMerchantTakesExportsAndPaysNothing);
             test(helper, TestGroup.VILLAGER_TRADING, "a_travelling_merchant_buys_bulk_surplus_at_half_price", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantBuysBulkSurplusAtHalfPrice);
             test(helper, TestGroup.VILLAGER_TRADING, "surplus_goods_draw_a_wandering_trader_to_the_village", com.sheepfromheaven.minenow.villager.ExportTests::surplusGoodsDrawAWanderingTraderToTheVillage);
             test(helper, TestGroup.VILLAGER_TRADING, "a_travelling_merchant_looks_and_trades_unlike_a_wandering_trader", com.sheepfromheaven.minenow.villager.ExportTests::aTravellingMerchantLooksAndTradesUnlikeAWanderingTrader);
@@ -612,6 +618,9 @@ public final class MineNow {
             test(helper, TestGroup.MERCHANT, "a_merchant_brings_a_village_what_it_lacks", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantBringsAVillageWhatItLacks);
             test(helper, TestGroup.MERCHANT, "without_emeralds_a_broke_merchant_plans_a_tour_to_a_village_that_needs_what_its_village_sells", com.sheepfromheaven.minenow.merchant.MerchantTests::withoutEmeraldsABrokeMerchantPlansATourToAVillageThatNeedsWhatItsVillageSells);
             test(helper, TestGroup.MERCHANT, "a_merchant_sells_above_what_it_paid", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantSellsAboveWhatItPaid);
+            test(helper, TestGroup.MERCHANT, "without_emeralds_what_a_merchant_sells_at_a_market_is_kept_for_the_player", com.sheepfromheaven.minenow.merchant.MerchantTests::withoutEmeraldsWhatAMerchantSellsAtAMarketIsKeptForThePlayer);
+            test(helper, TestGroup.MERCHANT, "a_merchant_home_from_its_tour_gives_its_earnings_to_a_nearby_player", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantHomeFromItsTourGivesItsEarningsToANearbyPlayer);
+            test(helper, TestGroup.MERCHANT, "a_touring_merchant_keeps_its_earnings_until_it_is_home", com.sheepfromheaven.minenow.merchant.MerchantTests::aTouringMerchantKeepsItsEarningsUntilItIsHome);
             test(helper, TestGroup.MERCHANT, "a_merchant_stays_home_when_nothing_is_needed", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantStaysHomeWhenNothingIsNeeded);
             test(helper, TestGroup.MERCHANT, "a_merchant_stays_home_when_its_village_cannot_sell_what_is_needed", com.sheepfromheaven.minenow.merchant.MerchantTests::aMerchantStaysHomeWhenItsVillageCannotSellWhatIsNeeded);
             test(helper, TestGroup.MERCHANT, "tours_are_capped", com.sheepfromheaven.minenow.merchant.MerchantTests::toursAreCapped);

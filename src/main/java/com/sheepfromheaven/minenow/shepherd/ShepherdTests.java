@@ -178,6 +178,41 @@ public final class ShepherdTests {
         return com.sheepfromheaven.minenow.villager.TradeTable.forVillager(shepherd).map(table -> table.suppliesWanted(helper.getLevel(), shepherd).stream().anyMatch(supply -> supply.item() == Items.WHEAT)).orElse(false);
     }
 
+    public static void aSheepInTheGatewayGoesBackIntoThePenWhenTheShepherdClosesTheGateBehindItOnTheWayIn(GameTestHelper helper) {
+        Sheep sheep = sheepInOpenGateway(helper, 11);
+        helper.succeedWhen(() -> helper.assertTrue(helper.relativePos(sheep.blockPosition()).getX() >= 10,
+                "The shepherd walked into the pen; the sheep caught in the gateway goes back in, not out, it is at " + helper.relativePos(sheep.blockPosition()).toShortString()));
+    }
+
+    public static void aSheepInTheGatewayGoesBackIntoThePenWhenTheShepherdClosesTheGateBehindItOnTheWayOut(GameTestHelper helper) {
+        Sheep sheep = sheepInOpenGateway(helper, 7);
+        helper.succeedWhen(() -> helper.assertTrue(helper.relativePos(sheep.blockPosition()).getX() >= 10,
+                "The shepherd walked out of the pen; the sheep caught in the gateway stays in, it is at " + helper.relativePos(sheep.blockPosition()).toShortString()));
+    }
+
+    public static void aSheepSteppingIntoAGatewayHeldOpenIsKeptInThePen(GameTestHelper helper) {
+        spawnShepherd(helper);
+        BlockPos gate = GameTestHelpers.gatedPen(helper, 9);
+        helper.setBlock(gate, helper.getBlockState(gate).setValue(FenceGateBlock.OPEN, true));
+        Sheep sheep = helper.spawn(EntityTypes.SHEEP, new BlockPos(9, 1, 12));
+        sheep.setNoAi(true);
+        com.sheepfromheaven.minenow.villager.OpenFenceGates.keepAnimalsIn(helper.getLevel(), helper.absolutePos(gate));
+        helper.succeedWhen(() -> helper.assertTrue(helper.relativePos(sheep.blockPosition()).getX() >= 10,
+                "While a villager holds the gate open, a sheep in the gateway is shooed back into the pen, it is at " + helper.relativePos(sheep.blockPosition()).toShortString()));
+    }
+
+    /** A shepherd at x {@code shepherdX} (pen inside is 10 to 14, the gate at 9) closes the gate on a sheep standing in the gateway. */
+    private static Sheep sheepInOpenGateway(GameTestHelper helper, int shepherdX) {
+        Villager shepherd = spawnShepherd(helper);
+        BlockPos gate = GameTestHelpers.gatedPen(helper, 9);
+        helper.setBlock(gate, helper.getBlockState(gate).setValue(FenceGateBlock.OPEN, true));
+        shepherd.snapTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(shepherdX + 0.5, 1, 12.5)));
+        Sheep sheep = helper.spawn(EntityTypes.SHEEP, new BlockPos(9, 1, 12));
+        sheep.setNoAi(true);
+        com.sheepfromheaven.minenow.villager.OpenFenceGates.close(helper.getLevel(), shepherd, helper.absolutePos(gate));
+        return sheep;
+    }
+
     public static void otherVillagersLeaveFenceGatesShut(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);

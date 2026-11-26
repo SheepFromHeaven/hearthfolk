@@ -345,7 +345,7 @@ public final class Exports {
             int lots = Math.min((budget - spent) / price.emeralds(), sellable(level, seller, item) / price.count());
             if (lots <= 0) continue;
             Economy.take(level, seller, item, lots * price.count());
-            Economy.give(level, seller, new ItemStack(Items.EMERALD, lots * price.emeralds()));
+            Economy.mint(level, seller, lots * price.emeralds());
             spent += lots * price.emeralds();
         }
         for (Item item : Economy.items(level, seller)) {
@@ -356,7 +356,7 @@ public final class Exports {
             int lots = Math.min((budget - spent) / price.emeralds(), bulk / price.count());
             if (lots <= 0) continue;
             Economy.take(level, seller, item, lots * price.count());
-            Economy.give(level, seller, new ItemStack(Items.EMERALD, lots * price.emeralds()));
+            Economy.mint(level, seller, lots * price.emeralds());
             spent += lots * price.emeralds();
         }
         return spent;

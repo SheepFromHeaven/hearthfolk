@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_emerald_economy_export",
+  "function": "minenow:without_emeralds_a_travelling_merchant_takes_exports_and_pays_nothing",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 1800
+}
