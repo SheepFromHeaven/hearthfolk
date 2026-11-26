@@ -175,8 +175,8 @@ public final class HomeStorage {
     /** A chest first; a barrel only when no chest is free, so a barrel meant for a fisherman isn't taken while a chest would do. */
     private static void claim(ServerLevel level, Villager villager, BlockPos home) {
         PoiManager pois = level.getPoiManager();
-        pois.take(HomeStorage::isChestPoi, (type, pos) -> otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos) && !holdsItems(level, pos), home, RADIUS)
-                .or(() -> pois.take(HomeStorage::isBarrelPoi, (type, pos) -> !StorageTheft.hasHopperBelow(level, pos) && !holdsItems(level, pos), home, RADIUS))
+        pois.take(HomeStorage::isChestPoi, (type, pos) -> otherHalfIsFree(level, pos) && !StorageTheft.hasHopperBelow(level, pos), home, RADIUS)
+                .or(() -> pois.take(HomeStorage::isBarrelPoi, (type, pos) -> !StorageTheft.hasHopperBelow(level, pos), home, RADIUS))
                 .ifPresent(chest -> {
             takeAllHalves(level, chest);
             villager.setData(ModVillagers.STORAGE, GlobalPos.of(level.dimension(), chest));
@@ -191,14 +191,6 @@ public final class HomeStorage {
             }
             setLocked(level, half, StorageTheft.locked());
         }
-    }
-
-    /** Something is already in it (either half of a double chest): a chest the player has been using is theirs, never a villager's. */
-    static boolean holdsItems(ServerLevel level, BlockPos chest) {
-        for (BlockPos half : halves(level, chest)) {
-            if (level.getBlockEntity(half) instanceof Container container && !container.isEmpty()) return true;
-        }
-        return false;
     }
 
     static boolean otherHalfIsFree(ServerLevel level, BlockPos chest) {

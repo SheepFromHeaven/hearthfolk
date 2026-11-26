@@ -65,33 +65,26 @@ public final class HomeStorageTests {
         });
     }
 
-    public static void aVillagerDoesNotClaimAChestThatAlreadyHoldsItems(GameTestHelper helper) {
+    public static void aVillagerClaimsAChestThatAlreadyHoldsItems(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);
         helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
-        BlockPos empty = CHEST.east(2);
-        helper.setBlock(empty, Blocks.CHEST);
         Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
 
         helper.succeedWhen(() -> {
             Optional<GlobalPos> claimed = HomeStorage.storageOf(villager);
-            helper.assertTrue(claimed.isPresent(), "It should claim the empty chest");
-            helper.assertTrue(claimed.get().pos().equals(helper.absolutePos(empty)), "A chest with items in it is the player's, claimed " + claimed.get());
-            helper.assertTrue(!helper.getBlockEntity(CHEST, ChestBlockEntity.class).isLocked(), "...and stays unlocked");
+            helper.assertTrue(claimed.isPresent() && claimed.get().pos().equals(helper.absolutePos(CHEST)), "A chest that holds items is claimed like any other, claimed " + claimed);
         });
     }
 
-    public static void aVillagerWithOnlyAFullChestNearClaimsNothing(GameTestHelper helper) {
+    public static void aVillagerWithOnlyAFullChestNearClaimsIt(GameTestHelper helper) {
         GameTestHelpers.fence(helper);
         helper.setBlock(CHEST, Blocks.CHEST);
         helper.getBlockEntity(CHEST, ChestBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
         Villager villager = GameTestHelpers.spawnWithHome(helper, BED.east(2).south(), BED);
         nitwit(helper, villager);
 
-        helper.runAfterDelay(400, () -> {
-            helper.assertTrue(HomeStorage.storageOf(villager).isEmpty(), "A chest that already holds items is never claimed, claimed " + HomeStorage.storageOf(villager));
-            helper.succeed();
-        });
+        helper.succeedWhen(() -> helper.assertTrue(HomeStorage.storageOf(villager).isPresent(), "A chest that holds items is claimed, claimed " + HomeStorage.storageOf(villager)));
     }
 
     public static void aVillagerKeepsItsGoodsInABarrelWhenThereIsNoChest(GameTestHelper helper) {

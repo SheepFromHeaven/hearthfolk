@@ -60,7 +60,7 @@ public final class AbandonedStorageTests {
     }
 
     @SuppressWarnings("removal")
-    public static void aBarrelWithThePlayersItemsStaysOpenWhenAFishermanTakesItAsWorkplace(GameTestHelper helper) {
+    public static void aBarrelWithItemsInItIsLockedWhenAFishermanTakesItAsWorkplace(GameTestHelper helper) {
         helper.setTime(GameTestHelpers.WORK_HOURS);
         GameTestHelpers.fence(helper);
         helper.setBlock(BARREL, Blocks.BARREL);
@@ -68,10 +68,9 @@ public final class AbandonedStorageTests {
         GameTestHelpers.spawnEmployed(helper, BARREL.east(), BARREL, VillagerProfession.FISHERMAN, PoiTypes.FISHERMAN);
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
-        helper.runAfterDelay(100, () -> {
+        helper.succeedWhen(() -> {
             BaseContainerBlockEntity barrel = (BaseContainerBlockEntity) helper.getBlockEntity(BARREL, BaseContainerBlockEntity.class);
-            helper.assertTrue(barrel.canOpen(player), "The player's things are not locked away from the player");
-            helper.succeed();
+            helper.assertFalse(barrel.canOpen(player), "A barrel that holds items is the fisherman's storage like any other, locked for players");
         });
     }
 }
