@@ -27,7 +27,7 @@ A new world starts from the defaults in `config/minenow-local.toml`. A world sav
 | Travelling Merchants | Export goods draw a travelling merchant. | None come. |
 | Villagers Summon Golems | As in vanilla. | The golemsmith builds a village's golems. Default off. |
 | Ink and Quill Recipes | You can craft the ink and quill and use it in a book and quill. | Vanilla's recipe stays. Default off. |
-| Merchant Tours at Once | How many village merchants may tour at once (default 4). A touring merchant keeps nearby chunks loaded. | |
+| Merchant Tours at Once | How many village merchants may tour at once, 0 to 64 (default 4). 0 means none go. A touring merchant keeps nearby chunks loaded. | |
 
 ## Professions
 
@@ -39,7 +39,7 @@ For miner, forester, golemsmith and merchant, off means villagers lose the job a
 
 ## The toml
 
-`config/minenow-local.toml` holds the defaults. It has top-level keys for `villagersSummonGolems`, `travellingMerchants`, `inkAndQuillRecipes` and `maxMerchantTours`, then a `[features]` section with one key per village life switch and a `[professions]` section with one key per profession. Each key has a comment. The file reloads live, but only new worlds read it.
+`config/minenow-local.toml` holds the defaults. It has four top-level keys, `villagersSummonGolems`, `travellingMerchants`, `inkAndQuillRecipes` and `maxMerchantTours`. Below them is a `[features]` section with the ten other village life switches, then a `[professions]` section with one key per profession. Each key has a comment. The file reloads live. A world only reads it for settings it has no saved value for yet, which means a new world or a switch added after the world was saved.
 
 ## Commands
 
