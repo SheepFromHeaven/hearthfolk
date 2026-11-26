@@ -86,6 +86,9 @@ public final class ChatBubbleTests {
         VillageTests.claimBell(helper, b, BELL);
         VillageTests.claimBell(helper, victim, BELL);
         playerNear(helper, a);
+        // standing still: villagers that wander off during the wait drift out of earshot and never chat
+        a.setNoAi(true);
+        b.setNoAi(true);
         List<SpeechBubbles.Payload> sent = record(a, b);
         helper.runAfterDelay(2, () -> {
             helper.assertTrue(victim.hasCustomName(), "A villager has a name, so its death is announced");

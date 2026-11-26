@@ -220,13 +220,14 @@ public final class MerchantTests {
         helper.runAfterDelay(200, () -> {
             helper.assertTrue(merchant.getData(Merchant.TOUR).isPresent(), "The merchant is still holding its market, tour " + merchant.getData(Merchant.TOUR));
             helper.assertTrue(merchant.getData(Merchant.EARNINGS) == 5 && thrownEmeralds(helper) == 0 && player.getInventory().countItem(Items.EMERALD) == 0,
-                    "A merchant on its tour brings its earnings home before it hands them over, holds " + merchant.getData(Merchant.EARNINGS));
+                    "A merchant on its tour brings its earnings home before it hands them over, holds " + merchant.getData(Merchant.EARNINGS)
+                            + ", thrown " + thrownEmeralds(helper) + ", player has " + player.getInventory().countItem(Items.EMERALD));
             helper.succeed();
         });
     }
 
     private static int thrownEmeralds(GameTestHelper helper) {
-        return helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(helper.absolutePos(BlockPos.ZERO)).inflate(30),
+        return helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, helper.getBounds(),
                         item -> item.getItem().is(Items.EMERALD)).stream().mapToInt(item -> item.getItem().getCount()).sum();
     }
 

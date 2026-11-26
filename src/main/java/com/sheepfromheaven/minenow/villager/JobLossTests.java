@@ -73,7 +73,7 @@ public final class JobLossTests {
     }
 
     public static void aBrokenJobBlockFarAwayIsForgottenEvenAtNight(GameTestHelper helper) {
-        helper.setTime(18000);
+        helper.setTime(NightDoorTests.NIGHT);
         GameTestHelpers.fence(helper);
         helper.setBlock(SMOKER, Blocks.SMOKER);
         Villager villager = GameTestHelpers.spawnEmployed(helper, SMOKER.east(), SMOKER, VillagerProfession.BUTCHER, PoiTypes.BUTCHER);

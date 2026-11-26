@@ -3,5 +3,5 @@
   "environment": "minenow:feature_villagers_level_through_work",
   "function": "minenow:without_level_through_work_a_harvesting_farmer_gains_no_experience",
   "structure": "minenow:field_24x6x24",
-  "max_ticks": 1200
+  "max_ticks": 4800
 }

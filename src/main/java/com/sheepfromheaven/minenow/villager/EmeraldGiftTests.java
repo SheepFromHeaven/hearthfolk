@@ -25,14 +25,16 @@ public final class EmeraldGiftTests {
 
     public static void aVillagerTakesOnlyAsManyEmeraldsAsItNeeds(GameTestHelper helper) {
         Villager farmer = farmer(helper);
-        int cap = PickUpGifts.emeraldCap(helper.getLevel(), farmer);
-        farmer.getInventory().addItem(new ItemStack(Items.EMERALD, cap - 2));
-        helper.runAfterDelay(40, () -> throwEmeralds(helper, 10));
-
-        helper.runAfterDelay(400, () -> {
-            helper.assertTrue(farmer.getInventory().countItem(Items.EMERALD) == cap,
-                    "The farmer takes emeralds up to " + cap + ", has " + farmer.getInventory().countItem(Items.EMERALD));
-            helper.succeed();
+        // The cap depends on its village, which the index only learns of at its next refresh (every 100 ticks).
+        helper.runAfterDelay(Villages.REFRESH + 20, () -> {
+            int cap = PickUpGifts.emeraldCap(helper.getLevel(), farmer);
+            farmer.getInventory().addItem(new ItemStack(Items.EMERALD, cap - 2));
+            throwEmeralds(helper, 10);
+            helper.runAfterDelay(300, () -> {
+                helper.assertTrue(farmer.getInventory().countItem(Items.EMERALD) == cap && cap == PickUpGifts.emeraldCap(helper.getLevel(), farmer),
+                        "The farmer takes emeralds up to " + cap + " (now " + PickUpGifts.emeraldCap(helper.getLevel(), farmer) + "), has " + farmer.getInventory().countItem(Items.EMERALD));
+                helper.succeed();
+            });
         });
     }
 
