@@ -340,6 +340,9 @@ public final class MineNow {
             test(helper, TestGroup.SHEPHERD, "shepherd_ignores_sheep_far_from_its_loom", ShepherdTests::shepherdIgnoresSheepFarFromItsLoom);
             test(helper, TestGroup.SHEPHERD, "shearing_a_sheep_takes_time", ShepherdTests::shearingASheepTakesTime);
             test(helper, TestGroup.SHEPHERD, "shepherd_unloads_its_wool_at_home", ShepherdTests::shepherdUnloadsItsWoolAtHome);
+            test(helper, TestGroup.SHEPHERD, "a_sheep_in_the_gateway_goes_back_into_the_pen_when_the_shepherd_closes_the_gate_behind_it_on_the_way_in", ShepherdTests::aSheepInTheGatewayGoesBackIntoThePenWhenTheShepherdClosesTheGateBehindItOnTheWayIn);
+            test(helper, TestGroup.SHEPHERD, "a_sheep_in_the_gateway_goes_back_into_the_pen_when_the_shepherd_closes_the_gate_behind_it_on_the_way_out", ShepherdTests::aSheepInTheGatewayGoesBackIntoThePenWhenTheShepherdClosesTheGateBehindItOnTheWayOut);
+            test(helper, TestGroup.SHEPHERD, "a_sheep_stepping_into_a_gateway_held_open_is_kept_in_the_pen", ShepherdTests::aSheepSteppingIntoAGatewayHeldOpenIsKeptInThePen);
             test(helper, TestGroup.BUTCHER, "butcher_without_an_axe_offers_to_buy_one", ButcherTests::butcherWithoutAnAxeOffersToBuyOne);
             test(helper, TestGroup.BUTCHER, "butcher_never_buys_meat", ButcherTests::butcherNeverBuysMeat);
             test(helper, TestGroup.BUTCHER, "butcher_keeps_its_raw_meat_for_the_smoker", ButcherTests::butcherKeepsItsRawMeatForTheSmoker);

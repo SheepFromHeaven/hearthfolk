@@ -34,7 +34,11 @@ public final class Pens {
     private Pens() {}
 
     public static boolean isPenned(ServerLevel level, Entity animal) {
-        BlockPos start = animal.blockPosition();
+        return isEnclosed(level, animal.blockPosition());
+    }
+
+    /** Whether an animal standing at {@code start} can reach fewer than {@link #MAX_CELLS} cells, gates and doors counting as shut. */
+    public static boolean isEnclosed(ServerLevel level, BlockPos start) {
         Map<Long, Long> known = REMEMBERED.computeIfAbsent(level, key -> new HashMap<>());
         Long entry = known.get(start.asLong());
         if (entry != null && (entry >> 1) > level.getGameTime()) return (entry & 1) == 1;
@@ -59,6 +63,22 @@ public final class Pens {
         long value = ((level.getGameTime() + REMEMBER) << 1) | (penned ? 1 : 0);
         for (long cell : seen) known.put(cell, value);
         return penned;
+    }
+
+    /** How many cells an animal standing at {@code start} can reach, gates and doors counting as shut; more than {@link #MAX_CELLS} counts as open land. */
+    public static int reach(ServerLevel level, BlockPos start) {
+        Set<Long> seen = new HashSet<>();
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        seen.add(start.asLong());
+        queue.add(start);
+        while (!queue.isEmpty() && seen.size() <= MAX_CELLS) {
+            BlockPos from = queue.poll();
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                BlockPos next = step(level, from, direction);
+                if (next != null && seen.add(next.asLong())) queue.add(next);
+            }
+        }
+        return seen.size();
     }
 
     public static <T extends Entity> List<T> penned(ServerLevel level, List<T> animals) {
