@@ -19,15 +19,18 @@ import net.minecraft.sounds.SoundSource;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 
 /**
  * Shepherds and butchers open the fence gates on their path, like every villager opens doors, and close them as soon
- * as they're clear of the gateway. An animal caught in the gateway is shooed back to the side away from the villager,
- * so a closing gate never lets it slip out. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
+ * as they're clear of the gateway. An animal in the gateway of a gate they hold open, or caught there when it closes, is
+ * shooed back to the pen's side ({@link #keepAnimalsIn}), whichever way the villager is going, so it never slips out. Their navigation plans through closed gates ({@link #canOpen}); other villagers' doesn't.
  */
 public class OpenFenceGates extends Behavior<Villager> {
     private static final double REACH = 1.2;
+    private static final long PEN_SIDE_REMEMBERED = 20;
+    private static final java.util.Map<ServerLevel, java.util.Map<BlockPos, PenSide>> PEN_SIDES = new java.util.WeakHashMap<>();
 
     private final Set<BlockPos> opened = new HashSet<>();
 
@@ -58,6 +61,7 @@ public class OpenFenceGates extends Behavior<Villager> {
     @Override
     protected void tick(ServerLevel level, Villager body, long timestamp) {
         body.getBrain().getMemory(MemoryModuleType.PATH).ifPresent(path -> openAhead(level, body, path));
+        for (BlockPos gate : opened) keepAnimalsIn(level, gate);
         closeBehind(level, body);
     }
 
@@ -93,14 +97,59 @@ public class OpenFenceGates extends Behavior<Villager> {
         }
     }
 
+    /**
+     * An animal in the gateway of an open gate goes back to the pen's side: the one of the two cells the gate leads
+     * between from which an animal is enclosed ({@link Pens#isEnclosed}). With both or neither enclosed, it stays where it is.
+     */
+    public static void keepAnimalsIn(ServerLevel level, BlockPos gate) {
+        BlockState state = level.getBlockState(gate);
+        if (!(state.getBlock() instanceof FenceGateBlock)) return;
+        penSide(level, gate, state).ifPresent(inside -> shoo(level, gate, inside));
+    }
+
+    /** Before a gate closes, an animal in its gateway goes to the pen's side, or failing that to the side it is on, so the closing gate never puts it out. */
     private static void shooBack(ServerLevel level, Villager body, BlockPos gate, BlockState state) {
         Direction through = state.getValue(FenceGateBlock.FACING);
-        double villagerSide = (body.getX() - gate.getX() - 0.5) * through.getStepX() + (body.getZ() - gate.getZ() - 0.5) * through.getStepZ();
-        BlockPos away = gate.relative(villagerSide > 0 ? through.getOpposite() : through);
+        Optional<BlockPos> pen = penSide(level, gate, state);
         for (Animal animal : level.getEntitiesOfClass(Animal.class, new AABB(gate))) {
-            animal.snapTo(away.getX() + 0.5, away.getY(), away.getZ() + 0.5, animal.getYRot(), animal.getXRot());
-            animal.getNavigation().stop();
+            BlockPos inside = pen.orElseGet(() -> {
+                double animalSide = offset(animal.getX(), animal.getZ(), gate, through);
+                double side = Math.abs(animalSide) > 0.05 ? animalSide : -offset(body.getX(), body.getZ(), gate, through);
+                return gate.relative(side > 0 ? through : through.getOpposite());
+            });
+            snap(animal, inside);
         }
+    }
+
+    /** The pen's side of a gate: of the two cells it leads between, the one in the smaller enclosure ({@link Pens#reach}); none when they're alike. */
+    private static Optional<BlockPos> penSide(ServerLevel level, BlockPos gate, BlockState state) {
+        java.util.Map<BlockPos, PenSide> sides = PEN_SIDES.computeIfAbsent(level, key -> new java.util.HashMap<>());
+        PenSide known = sides.get(gate);
+        if (known != null && known.until() > level.getGameTime()) return known.inside();
+        Direction through = state.getValue(FenceGateBlock.FACING);
+        BlockPos ahead = gate.relative(through);
+        BlockPos behind = gate.relative(through.getOpposite());
+        int aheadCells = Pens.reach(level, ahead);
+        int behindCells = Pens.reach(level, behind);
+        Optional<BlockPos> inside = aheadCells == behindCells ? Optional.empty() : Optional.of(aheadCells < behindCells ? ahead : behind);
+        if (sides.size() > 256) sides.clear();
+        sides.put(gate.immutable(), new PenSide(inside, level.getGameTime() + PEN_SIDE_REMEMBERED));
+        return inside;
+    }
+
+    private record PenSide(Optional<BlockPos> inside, long until) {}
+
+    private static void shoo(ServerLevel level, BlockPos gate, BlockPos inside) {
+        for (Animal animal : level.getEntitiesOfClass(Animal.class, new AABB(gate))) snap(animal, inside);
+    }
+
+    private static void snap(Animal animal, BlockPos to) {
+        animal.snapTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5, animal.getYRot(), animal.getXRot());
+        animal.getNavigation().stop();
+    }
+
+    private static double offset(double x, double z, BlockPos gate, Direction through) {
+        return (x - gate.getX() - 0.5) * through.getStepX() + (z - gate.getZ() - 0.5) * through.getStepZ();
     }
 
     private static boolean inGateway(Villager body, BlockPos gate) {
@@ -119,7 +168,7 @@ public class OpenFenceGates extends Behavior<Villager> {
                 .orElse(false);
     }
 
-    private static void close(ServerLevel level, Villager body, BlockPos gate) {
+    public static void close(ServerLevel level, Villager body, BlockPos gate) {
         BlockState state = level.getBlockState(gate);
         if (!(state.getBlock() instanceof FenceGateBlock gateBlock) || !state.getValue(FenceGateBlock.OPEN)) return;
         shooBack(level, body, gate, state);

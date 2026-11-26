@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minenow:a_farmer_composts_its_surplus_seeds_into_bone_meal",
+  "structure": "minenow:field_24x6x24",
+  "max_ticks": 2400
+}

@@ -46,7 +46,7 @@ public final class ClericExports {
             int potions = price == 0 ? 0 : Math.min(sellable(level, villager, brew), (budget - spent) / price);
             for (int i = 0; i < potions; i++) {
                 if (PotionGoods.takeOne(level, villager, brew.output().form(), brew.output().potion()).isEmpty()) break;
-                Economy.give(level, villager, new ItemStack(Items.EMERALD, price));
+                Economy.mint(level, villager, price);
                 spent += price;
             }
         }
