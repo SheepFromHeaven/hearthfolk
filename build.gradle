@@ -115,7 +115,7 @@ tasks.withType(JavaCompile).configureEach {
 // so it comes from `modrinthProfile` in ~/.gradle/gradle.properties, never from this repo.
 tasks.register('installToModrinth', Copy) {
     group = 'distribution'
-    description = 'Builds the mod and replaces its jar in the mods folder of the profile set as modrinthProfile.'
+    description = 'Builds the mod and adds its dev jar to the mods folder of the profile set as modrinthProfile, disabling the Modrinth release jar so the app keeps it linked.'
     def profile = providers.gradleProperty('modrinthProfile')
     from tasks.named('jar')
     rename { it.replace('.jar', '-dev.jar') }
@@ -123,6 +123,9 @@ tasks.register('installToModrinth', Copy) {
     def mods = profile.map { new File(it, 'mods') }.getOrNull()
     doFirst {
         if (mods == null) throw new GradleException('Set modrinthProfile=<profile folder> in ~/.gradle/gradle.properties')
-        mods.listFiles({ File f -> f.name ==~ /(minenow|hearthfolk)-.*\.jar/ } as FileFilter)?.each { it.delete() }
+        mods.listFiles({ File f -> f.name ==~ /(minenow|hearthfolk)-.*-dev\.jar/ } as FileFilter)?.each { it.delete() }
+        mods.listFiles({ File f -> f.name ==~ /(minenow|hearthfolk)-.*\.jar/ } as FileFilter)?.each {
+            it.renameTo(new File(it.parentFile, it.name + '.disabled'))
+        }
     }
 }
