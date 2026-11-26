@@ -61,8 +61,8 @@ public final class ShepherdTests {
                     + ", running " + shepherd.getBrain().getRunningBehaviors().stream().map(b -> b.getClass().getSimpleName()).toList()
                     + ", walk target " + shepherd.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET).map(walk -> helper.relativePos(walk.getTarget().currentBlockPosition()).toShortString() + " speed " + walk.getSpeedModifier()).orElse("none")
                     + ", gate open " + helper.getBlockState(new BlockPos(9, 1, 12)).getValue(net.minecraft.world.level.block.FenceGateBlock.OPEN));
-            helper.assertTrue(count(shepherd, Items.WOOL.white()) >= 1 && count(shepherd, Items.WOOL.red()) >= 1,
-                    "The wool goes into the shepherd's inventory in the sheep's colour");
+            helper.assertTrue(count(shepherd, Items.WOOL.white()) + count(shepherd, Items.CARPET.white()) >= 1 && count(shepherd, Items.WOOL.red()) + count(shepherd, Items.CARPET.red()) >= 1,
+                    "The wool goes into the shepherd's inventory in the sheep's colour (a master may already have woven it into carpets)");
         });
     }
 
@@ -89,6 +89,93 @@ public final class ShepherdTests {
                 helper.assertTrue(at.getX() > 9 && at.getX() < 15 && at.getZ() > 9 && at.getZ() < 15, "No sheep escaped through the gate, one is at " + at);
             }
         });
+    }
+
+    public static void aShepherdBreedsItsFlockWithWheat(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        buildPen(helper, 9);
+        flock(helper, 2);
+        shepherd.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+
+        helper.succeedWhen(() -> helper.assertTrue(pennedSheep(helper) >= 3,
+                "A novice shepherd with two sheep and wheat breeds them, even without shears; the pen holds " + pennedSheep(helper) + ", wheat left " + shepherd.getInventory().countItem(Items.WHEAT)));
+    }
+
+    public static void aShepherdStopsBreedingAtItsFlockSize(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        buildPen(helper, 9);
+        flock(helper, 4);
+        shepherd.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(shepherd.getInventory().countItem(Items.WHEAT) == 4 && pennedSheep(helper) == 4,
+                    "A novice keeps a flock of 4 and breeds no more, wheat " + shepherd.getInventory().countItem(Items.WHEAT) + ", sheep " + pennedSheep(helper));
+            helper.succeed();
+        });
+    }
+
+    public static void aMasterShepherdKeepsABiggerFlock(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.setVillagerData(shepherd.getVillagerData().withLevel(5));
+        buildPen(helper, 9);
+        flock(helper, 4);
+        shepherd.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+
+        helper.succeedWhen(() -> helper.assertTrue(pennedSheep(helper) >= 5,
+                "A master shepherd grows its flock past a novice's 4, the pen holds " + pennedSheep(helper)));
+    }
+
+    public static void aShepherdWantsWheatOnlyWhileItsFlockCanGrow(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        buildPen(helper, 9);
+        List<Sheep> sheep = flock(helper, 4);
+        helper.assertFalse(wantsWheat(helper, shepherd), "With a full flock of 4 a novice shepherd buys no wheat");
+        sheep.get(0).discard();
+        sheep.get(1).discard();
+        helper.runAfterDelay(1, () -> {
+            helper.assertTrue(wantsWheat(helper, shepherd), "With two sheep and room for more it wants wheat to breed them");
+            sheep.get(2).discard();
+            helper.runAfterDelay(1, () -> {
+                helper.assertFalse(wantsWheat(helper, shepherd), "A single sheep can't breed, so it wants no wheat");
+                helper.succeed();
+            });
+        });
+    }
+
+    public static void aJourneymanShepherdWeavesCarpets(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.setVillagerData(shepherd.getVillagerData().withLevel(3));
+        shepherd.getInventory().addItem(new ItemStack(Items.WOOL.red(), 24));
+
+        helper.succeedWhen(() -> helper.assertTrue(com.sheepfromheaven.minenow.villager.Economy.count(helper.getLevel(), shepherd, Items.CARPET.red()) >= 3,
+                "A journeyman weaves its red wool into red carpets at its loom, has " + com.sheepfromheaven.minenow.villager.Economy.count(helper.getLevel(), shepherd, Items.CARPET.red())
+                        + ", string " + com.sheepfromheaven.minenow.villager.Economy.count(helper.getLevel(), shepherd, Items.STRING) + ", red wool " + com.sheepfromheaven.minenow.villager.Economy.count(helper.getLevel(), shepherd, Items.WOOL.red())));
+    }
+
+    public static void anApprenticeShepherdWeavesNoCarpets(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        shepherd.setVillagerData(shepherd.getVillagerData().withLevel(2));
+        shepherd.getInventory().addItem(new ItemStack(Items.WOOL.red(), 24));
+
+        helper.runAfterDelay(600, () -> {
+            helper.assertTrue(com.sheepfromheaven.minenow.villager.Economy.count(helper.getLevel(), shepherd, Items.CARPET.red()) == 0, "Carpets wait for a journeyman, wool left " + com.sheepfromheaven.minenow.villager.Economy.count(helper.getLevel(), shepherd, Items.WOOL.red()));
+            helper.succeed();
+        });
+    }
+
+    /** {@code count} adult sheep inside the pen at x 9 (inside 10 to 14). */
+    private static List<Sheep> flock(GameTestHelper helper, int count) {
+        List<Sheep> sheep = new java.util.ArrayList<>();
+        for (int i = 0; i < count; i++) sheep.add(sheep(helper, 11 + i % 3, 11 + i / 3 * 2, DyeColor.WHITE));
+        return sheep;
+    }
+
+    private static int pennedSheep(GameTestHelper helper) {
+        return helper.getLevel().getEntitiesOfClass(Sheep.class, new net.minecraft.world.phys.AABB(helper.absolutePos(new BlockPos(10, 1, 10))).expandTowards(4, 2, 4), Sheep::isAlive).size();
+    }
+
+    private static boolean wantsWheat(GameTestHelper helper, Villager shepherd) {
+        return com.sheepfromheaven.minenow.villager.TradeTable.forVillager(shepherd).map(table -> table.suppliesWanted(helper.getLevel(), shepherd).stream().anyMatch(supply -> supply.item() == Items.WHEAT)).orElse(false);
     }
 
     public static void aSheepInTheGatewayGoesBackIntoThePenWhenTheShepherdClosesTheGateBehindItOnTheWayIn(GameTestHelper helper) {
