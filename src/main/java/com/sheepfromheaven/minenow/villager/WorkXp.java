@@ -20,6 +20,7 @@ public final class WorkXp {
     public static final double PAVED = 0.1;
     public static final double FURNACE_OUTPUT = 0.5;
     public static final double BONE_MEALED = 0.5;
+    public static final double COMPOSTED = 0.5;
     public static final double DYED = 1;
     public static final double DISPLAYED = 1;
     public static final double ARCHERY_ROUND = 1;
