@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minenow:feature_emerald_economy_market",
+  "function": "minenow:without_emeralds_what_a_merchant_sells_at_a_market_is_kept_for_the_player",
+  "structure": "minenow:field_72x8x24",
+  "max_ticks": 9000
+}
