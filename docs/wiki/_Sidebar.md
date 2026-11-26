@@ -1,0 +1,8 @@
+- [Home](Home)
+- [Getting Started](Getting-Started)
+- [How Villages Work](How-Villages-Work)
+- [Professions](Professions)
+- [Settings](Settings)
+- [Customizing with Data Packs](Customizing-with-Data-Packs)
+- [Commands and the Inspector](Commands-and-the-Inspector)
+- [Troubleshooting](Troubleshooting)
