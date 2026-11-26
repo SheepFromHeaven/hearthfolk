@@ -76,10 +76,19 @@ public final class Economy {
      * travelling merchant). Nothing moves while villagers don't pay each other. Returns what was paid.
      */
     public static int pay(ServerLevel level, Villager from, @org.jspecify.annotations.Nullable Villager to, int emeralds) {
-        if (!emeraldEconomy() || emeralds <= 0) return 0;
+        if (emeralds <= 0) return 0;
+        if (!emeraldEconomy()) {
+            if (to != null && com.sheepfromheaven.minenow.merchant.Merchant.isSelling(to)) com.sheepfromheaven.minenow.merchant.Merchant.earn(to, emeralds);
+            return 0;
+        }
         int paid = take(level, from, Items.EMERALD, emeralds);
         if (to != null) give(level, to, new ItemStack(Items.EMERALD, paid));
         return paid;
+    }
+
+    /** New emeralds from outside the village (a travelling merchant buying its exports); none while the emerald economy is off. */
+    public static void mint(ServerLevel level, Villager to, int emeralds) {
+        if (emeraldEconomy() && emeralds > 0) give(level, to, new ItemStack(Items.EMERALD, emeralds));
     }
 
     /** What a villager may spend on another villager's goods out of {@code budget}: no limit while villagers don't pay each other. */

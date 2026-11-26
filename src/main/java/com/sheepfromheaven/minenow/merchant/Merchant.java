@@ -94,6 +94,15 @@ public final class Merchant {
                     .serialize(BlockPos.CODEC.optionalFieldOf("head"))
                     .build());
 
+    /**
+     * Emeralds a merchant's market sales would have fetched while the emerald economy is off, kept apart from its goods,
+     * since then only the player has a use for emeralds; it hands them over once it is home ({@link GiveEarnings}).
+     */
+    public static final Supplier<AttachmentType<Integer>> EARNINGS = ATTACHMENT_TYPES.register("earnings",
+            () -> AttachmentType.builder(() -> 0)
+                    .serialize(Codec.INT.fieldOf("emeralds"))
+                    .build());
+
     /** What a merchant adds to the price a village's trade sells a good for when it brings it from elsewhere. */
     public static final double IMPORT_MARKUP = 1.25;
     private static final int BED_WHEAT = 27;
@@ -205,6 +214,11 @@ public final class Merchant {
 
     public static void onEntityLeave(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof Villager villager && !villager.level().isClientSide()) Tours.forget(villager);
+    }
+
+    /** Keeps what a market sale would have fetched for the player, while the emerald economy is off. */
+    public static void earn(Villager merchant, int emeralds) {
+        merchant.setData(EARNINGS, merchant.getData(EARNINGS) + emeralds);
     }
 
     public static boolean isMerchant(Villager villager) {

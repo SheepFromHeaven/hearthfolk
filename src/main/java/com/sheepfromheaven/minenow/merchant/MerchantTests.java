@@ -182,6 +182,54 @@ public final class MerchantTests {
         });
     }
 
+    public static void withoutEmeraldsWhatAMerchantSellsAtAMarketIsKeptForThePlayer(GameTestHelper helper) {
+        Villager merchant = homeVillage(helper, true);
+        Villager butcher = butcherAcross(helper);
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(Economy.count(helper.getLevel(), butcher, Items.WHEAT) >= 16, "Waiting for the butcher to buy, has " + Economy.count(helper.getLevel(), butcher, Items.WHEAT)
+                    + "; merchant " + merchant.getData(Merchant.TOUR));
+            helper.assertTrue(butcher.getInventory().countItem(Items.EMERALD) == 6, "The butcher pays nothing with the emerald economy off, has " + butcher.getInventory().countItem(Items.EMERALD));
+            helper.assertTrue(merchant.getData(Merchant.EARNINGS) == 1, "The merchant keeps the emerald 16 wheat would have fetched for the player, earned " + merchant.getData(Merchant.EARNINGS));
+        });
+    }
+
+    public static void aMerchantHomeFromItsTourGivesItsEarningsToANearbyPlayer(GameTestHelper helper) {
+        Villager merchant = spawnMerchant(helper, 1);
+        merchant.setData(Merchant.EARNINGS, 5);
+        ServerPlayer player = player(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.snapTo(helper.absoluteVec(new Vec3(4.5, 1, 6.5)));
+
+        helper.succeedWhen(() -> {
+            int handed = player.getInventory().countItem(Items.EMERALD) + thrownEmeralds(helper);
+            helper.assertTrue(handed == 5, "The merchant walks up to the player and hands over its 5 earned emeralds, handed " + handed
+                    + ", merchant at " + helper.relativePos(merchant.blockPosition()).toShortString() + " still holding " + merchant.getData(Merchant.EARNINGS));
+            helper.assertTrue(merchant.getData(Merchant.EARNINGS) == 0, "...and owes nothing more, holds " + merchant.getData(Merchant.EARNINGS));
+        });
+    }
+
+    public static void aTouringMerchantKeepsItsEarningsUntilItIsHome(GameTestHelper helper) {
+        Villager merchant = touring(helper, Tour.Phase.MARKET);
+        merchant.getInventory().addItem(new ItemStack(Items.WHEAT, 20));
+        merchant.setData(Merchant.EARNINGS, 5);
+        ServerPlayer player = player(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.snapTo(helper.absoluteVec(new Vec3(12.5, 1, 14.5)));
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertTrue(merchant.getData(Merchant.TOUR).isPresent(), "The merchant is still holding its market, tour " + merchant.getData(Merchant.TOUR));
+            helper.assertTrue(merchant.getData(Merchant.EARNINGS) == 5 && thrownEmeralds(helper) == 0 && player.getInventory().countItem(Items.EMERALD) == 0,
+                    "A merchant on its tour brings its earnings home before it hands them over, holds " + merchant.getData(Merchant.EARNINGS));
+            helper.succeed();
+        });
+    }
+
+    private static int thrownEmeralds(GameTestHelper helper) {
+        return helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(helper.absolutePos(BlockPos.ZERO)).inflate(30),
+                        item -> item.getItem().is(Items.EMERALD)).stream().mapToInt(item -> item.getItem().getCount()).sum();
+    }
+
     public static void aMerchantStaysHomeWhenNothingIsNeeded(GameTestHelper helper) {
         Villager merchant = homeVillage(helper, true);
         helper.getLevel().getEntities(EntityTypes.VILLAGER, merchant.getBoundingBox().inflate(80), v -> v.getVillagerData().profession().is(VillagerProfession.BUTCHER)).forEach(v -> v.discard());
