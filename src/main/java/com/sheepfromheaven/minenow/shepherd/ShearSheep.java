@@ -22,6 +22,7 @@ import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SwingAnimation;
@@ -46,7 +47,8 @@ import java.util.UUID;
 /**
  * The shepherd shears the sheep within {@link #RANGE} blocks of its loom: it walks up to a sheep, holds it still and
  * shears for as long as its level dictates ({@link ShepherdSkill}), keeping the wool it doesn't tear. With nothing to
- * shear it breeds its flock with wheat, shears or not, up to {@link ShepherdSkill#flockSize}; it never culls. When the
+ * shear it breeds its flock with wheat, shears or not, each colour on its own up to {@link ShepherdSkill#flockSize}, pairing
+ * only sheep of one colour so the lamb keeps it; it never culls. When the
  * wool piles up it carries it to its home chest. Lives in CORE after MoveToTargetSink, like TendFields.
  */
 public class ShearSheep extends Behavior<Villager> {
@@ -213,17 +215,20 @@ public class ShearSheep extends Behavior<Villager> {
             sheep = flock.stream().filter(candidate -> candidate.readyForShearing() && workable(level, candidate)).min(nearest).orElse(null);
             if (sheep != null) return true;
         }
-        if (canGrow(flock, body.getVillagerData().level())) {
-            int wheat = wheat(body).map(ItemStack::getCount).orElse(0);
-            List<Sheep> ready = flock.stream().filter(candidate -> readyToBreed(candidate) && workable(level, candidate)).toList();
-            boolean partnerWaiting = flock.stream().anyMatch(Sheep::isInLove);
-            if (!ready.isEmpty() && wheat > 0 && (partnerWaiting || (ready.size() >= 2 && wheat >= 2))) {
-                sheep = ready.stream().min(nearest).get();
-                breeding = true;
-                return true;
-            }
+        int wheat = wheat(body).map(ItemStack::getCount).orElse(0);
+        if (wheat == 0) return false;
+        Map<DyeColor, List<Sheep>> byColour = flock.stream().collect(java.util.stream.Collectors.groupingBy(Sheep::getColor));
+        List<Sheep> waitingForAPartner = new java.util.ArrayList<>();
+        List<Sheep> pairs = new java.util.ArrayList<>();
+        for (List<Sheep> colour : byColour.values()) {
+            if (!canGrow(colour, body.getVillagerData().level())) continue;
+            List<Sheep> ready = colour.stream().filter(candidate -> readyToBreed(candidate) && workable(level, candidate)).toList();
+            if (colour.stream().anyMatch(Sheep::isInLove)) waitingForAPartner.addAll(ready);
+            else if (ready.size() >= 2 && wheat >= 2) pairs.addAll(ready);
         }
-        return false;
+        sheep = (waitingForAPartner.isEmpty() ? pairs : waitingForAPartner).stream().min(nearest).orElse(null);
+        breeding = sheep != null;
+        return breeding;
     }
 
     private boolean workable(ServerLevel level, Sheep candidate) {
@@ -235,14 +240,15 @@ public class ShearSheep extends Behavior<Villager> {
         return level.getEntitiesOfClass(Sheep.class, flockArea(loom), candidate -> candidate.isAlive() && com.sheepfromheaven.minenow.villager.Pens.isPenned(level, candidate));
     }
 
-    /** Two adults to breed and room for a lamb under its level's flock size. */
-    private static boolean canGrow(List<Sheep> flock, int villagerLevel) {
-        return flock.stream().filter(member -> !member.isBaby()).count() >= 2 && flock.size() < ShepherdSkill.flockSize(villagerLevel);
+    /** Sheep of one colour: two adults to breed and room for a lamb under its level's flock size for that colour. */
+    private static boolean canGrow(List<Sheep> colour, int villagerLevel) {
+        return colour.stream().filter(member -> !member.isBaby()).count() >= 2 && colour.size() < ShepherdSkill.flockSize(villagerLevel);
     }
 
     /** Whether its flock can grow, so wheat to breed it is worth buying ({@link com.sheepfromheaven.minenow.villager.SupplyNeeds}). */
     public static boolean needsWheat(ServerLevel level, Villager body) {
-        return jobSite(level, body).map(loom -> canGrow(flock(level, loom), body.getVillagerData().level())).orElse(false);
+        return jobSite(level, body).map(loom -> flock(level, loom).stream().collect(java.util.stream.Collectors.groupingBy(Sheep::getColor)).values().stream()
+                .anyMatch(colour -> canGrow(colour, body.getVillagerData().level()))).orElse(false);
     }
 
     private static boolean readyToBreed(Sheep sheep) {

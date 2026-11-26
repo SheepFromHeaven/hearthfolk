@@ -21,7 +21,7 @@ final class ShepherdSkill {
         return WOOL_LOSS_CHANCE[index(villagerLevel)];
     }
 
-    /** How many sheep, lambs included, a shepherd breeds its flock up to. */
+    /** How many sheep of each colour, lambs included, a shepherd breeds its flock up to. */
     static int flockSize(int villagerLevel) {
         return FLOCK_SIZE[index(villagerLevel)];
     }

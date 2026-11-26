@@ -125,6 +125,21 @@ public final class ShepherdTests {
                 "A master shepherd grows its flock past a novice's 4, the pen holds " + pennedSheep(helper)));
     }
 
+    public static void aNoviceShepherdKeepsFourSheepOfEveryColour(GameTestHelper helper) {
+        Villager shepherd = spawnShepherd(helper);
+        buildPen(helper, 9);
+        flock(helper, 4);
+        sheep(helper, 11, 14, DyeColor.RED);
+        sheep(helper, 13, 14, DyeColor.RED);
+        shepherd.getInventory().addItem(new ItemStack(Items.WHEAT, 4));
+
+        helper.succeedWhen(() -> {
+            helper.assertTrue(pennedSheep(helper, DyeColor.WHITE) == 4, "Four white sheep are a full white flock, it has " + pennedSheep(helper, DyeColor.WHITE));
+            helper.assertTrue(pennedSheep(helper, DyeColor.RED) >= 3, "...but the red ones are counted on their own, so it breeds them into a red lamb, red " + pennedSheep(helper, DyeColor.RED)
+                    + ", wheat left " + shepherd.getInventory().countItem(Items.WHEAT));
+        });
+    }
+
     public static void aShepherdWantsWheatOnlyWhileItsFlockCanGrow(GameTestHelper helper) {
         Villager shepherd = spawnShepherd(helper);
         buildPen(helper, 9);
@@ -172,6 +187,10 @@ public final class ShepherdTests {
 
     private static int pennedSheep(GameTestHelper helper) {
         return helper.getLevel().getEntitiesOfClass(Sheep.class, new net.minecraft.world.phys.AABB(helper.absolutePos(new BlockPos(10, 1, 10))).expandTowards(4, 2, 4), Sheep::isAlive).size();
+    }
+
+    private static int pennedSheep(GameTestHelper helper, DyeColor color) {
+        return helper.getLevel().getEntitiesOfClass(Sheep.class, new net.minecraft.world.phys.AABB(helper.absolutePos(new BlockPos(10, 1, 10))).expandTowards(4, 2, 4), sheep -> sheep.isAlive() && sheep.getColor() == color).size();
     }
 
     private static boolean wantsWheat(GameTestHelper helper, Villager shepherd) {
