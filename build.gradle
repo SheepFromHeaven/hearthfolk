@@ -4,7 +4,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.148'
 }
 
-version = '0.8.0' // x-release-please-version
+version = '0.9.0' // x-release-please-version
 group = 'com.sheepfromheaven.minenow'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)

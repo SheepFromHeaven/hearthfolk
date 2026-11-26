@@ -4,7 +4,7 @@ license="All Rights Reserved"
 
 [[mods]]
 modId="minenow"
-version="0.8.0" # x-release-please-version
+version="0.9.0" # x-release-please-version
 displayName="Hearthfolk"
 logoFile="icon.png"
 authors="Marc Emmanuel"

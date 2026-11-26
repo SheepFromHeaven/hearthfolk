@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/SheepFromHeaven/hearthfolk/compare/v0.8.0...v0.9.0) (2026-11-26)
+
+
+### Features
+
+* **villager:** villagers claim chests and barrels that already hold items ([#127](https://github.com/SheepFromHeaven/hearthfolk/issues/127)) ([a34369d](https://github.com/SheepFromHeaven/hearthfolk/commit/a34369d65f0694a3d77bea6386cd021164c26e57))
+
+
+### Bug Fixes
+
+* **butcher:** keep walking to an animal when vanilla pulls it back to the smoker ([#126](https://github.com/SheepFromHeaven/hearthfolk/issues/126)) ([ccacbc5](https://github.com/SheepFromHeaven/hearthfolk/commit/ccacbc561f6f62d966f611ddef6aaa80ed37da6a))
+
 ## [0.8.0](https://github.com/SheepFromHeaven/mine-now/compare/v0.7.0...v0.8.0) (2026-11-26)
 
 
