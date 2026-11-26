@@ -79,7 +79,10 @@ public final class SwitchedFarmerTests {
         helper.onEachTick(() -> tended[0] |= farmer.getBrain().getRunningBehaviors().stream().anyMatch(TendFields.class::isInstance));
         helper.succeedWhen(() -> {
             BlockState state = helper.getBlockState(CROP);
-            helper.assertTrue(state.getBlock() instanceof CropBlock crop && crop.getAge(state) > 0, "Expected bone meal to grow the crop");
+            helper.assertTrue(state.getBlock() instanceof CropBlock crop && crop.getAge(state) > 0, "Expected bone meal to grow the crop, it is " + state + " on " + helper.getBlockState(CROP.below()).getBlock()
+                    + ", bone meal left " + farmer.getInventory().countItem(Items.BONE_MEAL) + ", activity " + farmer.getBrain().getActiveNonCoreActivity()
+                    + ", farmer at " + helper.relativePos(farmer.blockPosition()).toShortString() + ", running " + farmer.getBrain().getRunningBehaviors()
+                    + ", walk " + farmer.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET));
             helper.assertTrue(!tended[0], "Expected TendFields to stay out while the farmer is switched off");
         });
     }
@@ -115,6 +118,7 @@ public final class SwitchedFarmerTests {
     public static void aFarmerSwitchedBackOnStopsItsVanillaFarmWork(GameTestHelper helper) {
         helper.assertTrue(!MineNowConfig.professionEnabled(Profession.FARMER), "The farmer starts switched off");
         setUpCrop(helper);
+        helper.setBlock(LATER_CROP.below().south(3), Blocks.WATER);
         helper.setBlock(LATER_CROP.below(), Blocks.FARMLAND);
         helper.setBlock(LATER_CROP.below().west(), Blocks.FARMLAND);
         Villager farmer = spawnFarmer(helper);
