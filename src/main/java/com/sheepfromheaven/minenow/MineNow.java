@@ -803,6 +803,9 @@ public final class MineNow {
 
     private static void test(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> helper, TestGroup group, String name, Consumer<GameTestHelper> test) {
         TestGroup.assign(name, group);
-        helper.register(Identifier.fromNamespaceAndPath(MOD_ID, name), Boolean.getBoolean("minenow.soak.only") ? skipped -> { skipped.succeed(); assert name != null; } : test);
+        helper.register(Identifier.fromNamespaceAndPath(MOD_ID, name), Boolean.getBoolean("minenow.soak.only") ? skipped -> { skipped.succeed(); assert name != null; } : gameTest -> {
+            com.sheepfromheaven.minenow.gametest.ArenaCleanup.install(gameTest);
+            test.accept(gameTest);
+        });
     }
 }
